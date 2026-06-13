@@ -24,6 +24,7 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 
 - Original idea: `docs/original-idea.md`
 - Product brief: `docs/product-brief.md`
+- SWOT analysis: `docs/swot-analysis.md`
 - Research notes: `docs/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
 - Seed glossary: `data/pronunciation-seed.json`

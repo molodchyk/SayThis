@@ -1,8 +1,50 @@
+# Dependencies and generated builds
 node_modules/
 dist/
 build/
-*.log
 *.zip
+*.crx
+
+# Chrome extension signing keys and packaged-extension secrets
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Local environment and API credentials
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+service-account*.json
+
+# Private planning notes that should not be published
+private/
+notes/private/
+docs/private/
+docs/*private*.md
+docs/*sensitive*.md
+docs/*internal*.md
+raw-research/
+research/private/
+
+# Non-public pronunciation assets or third-party licensed source files
+assets/audio/private/
+assets/audio/licensed/
+assets/audio/raw/
+data/private/
+data/licensed/
+
+# Local scratch files and diagnostics
+tmp/
+scratch/
+*.log
+*.local
+*.debug.json
+
+# OS/editor noise
 .DS_Store
 Thumbs.db
-
+.vscode/
+.idea/
