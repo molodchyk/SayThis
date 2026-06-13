@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SayThis</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <h1>SayThis</h1>
+        <p id="status">Select text, then speak it.</p>
+      </header>
+
+      <label class="field">
+        <span>Selection</span>
+        <textarea id="selection" rows="3" maxlength="160" spellcheck="false"></textarea>
+      </label>
+
+      <label class="field">
+        <span>Voice hint</span>
+        <select id="language">
+          <option value="auto">Auto</option>
+          <option value="ru-RU">Russian</option>
+          <option value="pl-PL">Polish</option>
+          <option value="es-ES">Spanish</option>
+          <option value="fr-FR">French</option>
+          <option value="de-DE">German</option>
+          <option value="it-IT">Italian</option>
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+        </select>
+      </label>
+
+      <div class="actions">
+        <button id="speak" type="button">Speak</button>
+        <button id="stop" type="button" class="secondary">Stop</button>
+      </div>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

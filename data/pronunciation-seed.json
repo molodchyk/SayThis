@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "description": "Early seed list for SayThis pronunciation entries. These entries define lookup shape, not final pronunciation authority.",
+  "entries": [
+    {
+      "id": "nguyen",
+      "language": "vi",
+      "display": "Nguyen",
+      "native": "Nguyen",
+      "aliases": ["Nguyen", "Nguyễn"],
+      "category": "surname",
+      "priority": "high",
+      "sourceStatus": "needs-curated-native-audio",
+      "notes": "Common name with frequent pronunciation uncertainty for English speakers."
+    },
+    {
+      "id": "qatar",
+      "language": "ar",
+      "display": "Qatar",
+      "native": "Qatar",
+      "aliases": ["Qatar"],
+      "category": "place",
+      "priority": "high",
+      "sourceStatus": "needs-curated-native-audio",
+      "notes": "Common public-speech example with multiple English approximations."
+    },
+    {
+      "id": "saoirse",
+      "language": "ga",
+      "display": "Saoirse",
+      "native": "Saoirse",
+      "aliases": ["Saoirse"],
+      "category": "given-name",
+      "priority": "medium",
+      "sourceStatus": "needs-curated-native-audio",
+      "notes": "Useful example for name-focused lookup and audio source confidence."
+    },
+    {
+      "id": "gnocchi",
+      "language": "it",
+      "display": "Gnocchi",
+      "native": "Gnocchi",
+      "aliases": ["Gnocchi"],
+      "category": "term",
+      "priority": "medium",
+      "sourceStatus": "needs-curated-native-audio",
+      "notes": "Common imported term where spelling is a weak guide for English speakers."
+    }
+  ]
+}
+

@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "SayThis",
+  "description": "One-click pronunciation help for highlighted text.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "SayThis",
+    "default_popup": "src/popup.html"
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "storage",
+    "tts"
+  ]
+}
+
