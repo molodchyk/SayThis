@@ -6,21 +6,28 @@ Initial Chrome Manifest V3 components:
 
 - `background.js`: creates the context menu and handles text-to-speech messages.
 - `popup.html/js/css`: captures current selection and provides speak/stop controls.
-- `data/pronunciation-seed.json`: stores early glossary entries and fields.
+- `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 
 The scaffold currently uses Chrome's `tts` API as a placeholder. That is only a fallback path for the final product.
 
 ## Future Lookup Pipeline
 
 1. Normalize the selected text.
-2. Match against a curated dictionary of aliases and common misspellings.
-3. If matched, resolve to canonical native spelling and available audio.
-4. If unmatched, attempt source-specific lookup:
-   - Forvo API by exact selected text.
-   - Forvo API by known transliteration candidates.
-   - Local transliteration and entity lookup.
-5. If no native audio exists, fall back to generated speech with a visible fallback label.
-6. Cache successful lookups locally.
+2. Detect script and obvious language hints.
+3. Check local cache and community-confirmed entries.
+4. Resolve known entities and terms through structured sources:
+   - knowledge graphs and aliases
+   - dictionaries and pronunciation databases
+   - gazetteers and map databases
+   - domain-specific term sources
+5. Resolve native/source form and candidate languages.
+6. Query pronunciation sources for native audio.
+7. Generate TTS from the resolved source form if native audio is unavailable.
+8. Show confidence and source labels.
+9. Collect correction, confirmation, or missing-entry feedback.
+10. Cache successful lookups locally.
+
+For Latin-script input, entity or term resolution should happen before generic language detection. A romanized term can look like many languages, but a matched entity can provide a reliable native/source form.
 
 ## Data Model
 
@@ -31,20 +38,41 @@ Core fields:
 - `display`: default user-facing form.
 - `native`: native-script form when known.
 - `aliases`: romanized forms, alternate spellings, common old spellings.
-- `category`: city, village, region, person, organization, term.
+- `category`: place, person, organization, term, loanword, scientific-term, technical-term, other.
+- `origin`: source language, etymological root, or domain where known.
+- `pronunciation`: IPA, simple guide, and audio references.
 - `priority`: high, medium, low.
-- `sourceStatus`: curated, needs-audio, generated-fallback, unknown.
+- `sourceStatus`: verified-audio, community-confirmed, structured-source, generated-fallback, unknown.
+- `confidence`: high, medium, low, unknown.
+- `community`: correction and confirmation summary.
 - `sources`: source URLs or source IDs.
 - `notes`: curator notes.
+
+## Community Memory Layer
+
+The resolver should improve through constrained user feedback, not open-ended chat.
+
+Supported feedback:
+
+- correct pronunciation
+- wrong pronunciation
+- better native/source spelling
+- better audio source
+- phonetic guide
+- regional variant
+- missing term request
+
+Community entries should be promoted only when they are source-backed, repeated, or manually verified. The system should preserve variants rather than forcing one global pronunciation when multiple are valid.
 
 ## Privacy
 
 The MVP should avoid sending every highlighted word to a server by default. A conservative sequence:
 
-1. Check local curated dictionary.
+1. Check local cache and bundled resolver data.
 2. Ask for remote lookup only when needed.
 3. Cache only lookup data, not page URLs or browsing history.
 4. Do not collect selected text analytics unless explicitly opted in.
+5. Keep community submissions scoped to the selected term and pronunciation metadata.
 
 ## Technical Risks
 
@@ -53,12 +81,14 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 - TTS voices may pronounce proper nouns incorrectly.
 - Native-audio databases may have multiple variants or stale entries.
 - Some pages block extension selection capture.
+- Community data can introduce spam, regional disputes, or confident incorrect corrections.
+- Etymology and origin notes can expand scope unless kept pronunciation-relevant.
 
 ## Near-Term Tasks
 
 - Replace raw Chrome TTS with a lookup result object.
 - Add a result popover with source and confidence.
-- Build the curated pronunciation dictionary.
+- Build resolver adapters for local data, structured sources, and pronunciation databases.
 - Add audio playback from bundled or remote MP3 sources.
-- Add a request/report workflow.
+- Add correction, confirmation, and missing-term workflows.
 - Add lightweight tests for normalization and alias matching.

@@ -8,6 +8,8 @@ One-button pronunciation extension: highlight the word, determine the likely lan
 
 The problem: creators and professionals often run into unfamiliar names and terms while preparing spoken content. Existing lookup flows take too many steps, so people either guess or lose momentum. The product should make it easy to get audio for quick practice. Implementation can differ, but the core idea is for it to be easy to use and high return: highlight a word, match it against a relevant database or detect the likely language/source form, transform it to a native script when useful, and provide audio output.
 
+The later product insight is broader: SayThis should not be just a text-to-speech button, a chatbot, or a static word list. It should become a community-driven pronunciation memory layer for unfamiliar terms on the web. The extension should resolve selected text into the most likely pronounceable source form, play audio, show why the result is trustworthy, and learn from corrections.
+
 ## Naming Decision
 
 The product name is `SayThis`.
@@ -24,14 +26,26 @@ SayThis should make pronunciation lookup feel like one button:
 4. SayThis plays the best available audio.
 5. SayThis shows confidence, source, and a simple fallback guide.
 
+## Product Thesis
+
+SayThis is a pronunciation resolver. It should answer one narrow question: how should this selected term be pronounced, and why should the user trust that result?
+
+The product should avoid two weak extremes:
+
+- It should not become a built-in chatbot or generic AI assistant.
+- It should not depend on a manually maintained list of pre-curated words.
+
+Instead, SayThis should combine structured sources, pronunciation services, language rules, and community corrections.
+
 ## Initial Wedge
 
-The first high-value audience is English-speaking creators and professionals preparing spoken content with unfamiliar names, places, and terms.
+The first high-value audience is English-speaking creators, researchers, educators, and professionals preparing spoken content with unfamiliar names, places, technical terms, loanwords, and research vocabulary.
 
 ## Product Constraints
 
 - Accuracy matters more than broad coverage.
 - Native or curated audio should outrank generated speech.
 - Synthetic TTS should be visibly labeled as fallback.
-- Single-word language detection is unreliable, so entity matching and curated dictionaries should be preferred for the MVP.
+- Single-word language detection is unreliable, so entity and term resolution should happen before generic language detection.
 - The workflow must stay fast enough to use while scripting or recording.
+- Etymology, roots, and origin notes are useful only when they improve pronunciation or trust.
