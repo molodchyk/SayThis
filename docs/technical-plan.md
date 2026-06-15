@@ -11,6 +11,7 @@ Chrome Manifest V3 components:
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card after context-menu or keyboard-command use.
+- `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
@@ -37,7 +38,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
 - Community service request-size limits and in-memory public submission rate limiting.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
-- Verified-audio playback from resolver results, with TTS playback from resolved source form as fallback.
+- Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
 
 ## Future Lookup Pipeline

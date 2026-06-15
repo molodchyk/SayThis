@@ -17,6 +17,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - A popup with selected-text capture and speak/stop controls.
 - A resolver result card with source form, language, origin, IPA/simple guide, confidence, and evidence.
 - A compact on-page result card after context-menu or keyboard use.
+- An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, and corrections.
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
 - Local cache for successful online lookup results.

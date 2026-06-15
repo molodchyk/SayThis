@@ -20,13 +20,14 @@ test("manifest exposes extension resolver capabilities", () => {
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.options_ui.page, "src/options.html");
   assert.ok(manifest.permissions.includes("contextMenus"));
+  assert.ok(manifest.permissions.includes("offscreen"));
   assert.ok(manifest.permissions.includes("storage"));
   assert.ok(manifest.permissions.includes("tts"));
   assert.ok(manifest.host_permissions.includes("https://www.wikidata.org/*"));
   assert.ok(manifest.host_permissions.includes("https://en.wiktionary.org/*"));
   assert.ok(manifest.host_permissions.includes("https://*/*"));
   assert.ok(manifest.host_permissions.includes("https://commons.wikimedia.org/*"));
-  assert.ok(manifest.content_security_policy.extension_pages.includes("media-src"));
+  assert.ok(manifest.content_security_policy.extension_pages.includes("media-src 'self' https:"));
   assert.ok(manifest.web_accessible_resources[0].resources.includes("assets/audio/public/*"));
 });
 

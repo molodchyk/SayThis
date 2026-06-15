@@ -30,6 +30,7 @@ import {
 } from "./community-sync.js";
 
 const MENU_ID = "saythis-pronounce-selection";
+const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
   communityEntries: "communityEntries",
@@ -49,6 +50,7 @@ const DEFAULT_SETTINGS = {
 };
 
 let seedPromise;
+let offscreenCreatePromise;
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -127,7 +129,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message?.type === "SAYTHIS_STOP") {
     chrome.tts.stop();
-    sendResponse({ ok: true });
+    stopOffscreenAudio()
+      .then(() => {
+        sendResponse({ ok: true });
+      })
+      .catch(() => {
+        sendResponse({ ok: true });
+      });
     return true;
   }
 
@@ -382,10 +390,79 @@ async function playResolvedResult(result, tabId) {
     if (shown) {
       return;
     }
+
+    const played = await playAudioOffscreen(result);
+    if (played) {
+      showResultOnTab(tabId, result);
+      return;
+    }
   }
 
   speakResult(result);
   showResultOnTab(tabId, result);
+}
+
+async function playAudioOffscreen(result, rate = 0.82) {
+  const audio = getBestAudio(result);
+  if (!audio?.url || !chrome.offscreen) {
+    return false;
+  }
+
+  try {
+    await ensureOffscreenAudioDocument();
+    const response = await chrome.runtime.sendMessage({
+      type: "SAYTHIS_OFFSCREEN_PLAY_AUDIO",
+      audio,
+      playbackRate: rate < 0.7 ? 0.75 : 1
+    });
+    return Boolean(response?.ok);
+  } catch {
+    return false;
+  }
+}
+
+async function stopOffscreenAudio() {
+  if (!chrome.offscreen) {
+    return;
+  }
+
+  try {
+    await chrome.runtime.sendMessage({ type: "SAYTHIS_OFFSCREEN_STOP_AUDIO" });
+  } catch {
+    // The offscreen document may not exist yet.
+  }
+}
+
+async function ensureOffscreenAudioDocument() {
+  if (await hasOffscreenAudioDocument()) {
+    return;
+  }
+
+  if (!offscreenCreatePromise) {
+    offscreenCreatePromise = chrome.offscreen.createDocument({
+      url: OFFSCREEN_AUDIO_URL,
+      reasons: ["AUDIO_PLAYBACK"],
+      justification: "Play pronunciation audio when a page overlay is unavailable."
+    }).finally(() => {
+      offscreenCreatePromise = null;
+    });
+  }
+
+  await offscreenCreatePromise;
+}
+
+async function hasOffscreenAudioDocument() {
+  if (typeof chrome.offscreen.hasDocument === "function") {
+    return chrome.offscreen.hasDocument();
+  }
+
+  if (typeof clients === "undefined" || typeof clients.matchAll !== "function") {
+    return false;
+  }
+
+  const offscreenUrl = chrome.runtime.getURL(OFFSCREEN_AUDIO_URL);
+  const matchedClients = await clients.matchAll();
+  return matchedClients.some((client) => client.url === offscreenUrl);
 }
 
 async function showResultOnTab(tabId, result, options = {}) {
