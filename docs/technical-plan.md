@@ -10,6 +10,7 @@ Chrome Manifest V3 components:
 - `wikidata-adapter.js`: extracts source forms, native/official names, IPA, and pronunciation audio from Wikidata entities.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
+- `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card after context-menu or keyboard-command use.
 - `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
@@ -36,7 +37,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, and source links.
-- Local confirmation, wrong-result, missing-term, and correction storage.
+- Local confirmation, wrong-result, missing-term, correction, audio-source, and variant-note storage.
 - Opt-in community sync endpoint with queued retry behavior.
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.

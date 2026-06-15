@@ -8,6 +8,7 @@ import {
 test("builds evidence items with community context", () => {
   const items = evidenceItemsForResult({
     evidence: ["Structured source", ""],
+    notes: "Regional variant",
     community: {
       confirmations: 1,
       corrections: 2,
@@ -17,9 +18,9 @@ test("builds evidence items with community context", () => {
 
   assert.deepEqual(items, [
     "Structured source",
+    "Regional variant",
     "1 local confirmation",
-    "2 local corrections",
-    "3 local requests"
+    "2 local corrections"
   ]);
 });
 

@@ -3,6 +3,10 @@ import {
   evidenceItemsForResult,
   sourceItemsForResult
 } from "./result-view.js";
+import {
+  correctionFeedbackFromValues,
+  correctionValuesFromResult
+} from "./correction-form.js";
 
 const selectionInput = document.getElementById("selection");
 const resolveButton = document.getElementById("resolve");
@@ -29,9 +33,12 @@ const missingButton = document.getElementById("missing");
 const saveCorrectionButton = document.getElementById("save-correction");
 const correctionSource = document.getElementById("correction-source");
 const correctionLanguage = document.getElementById("correction-language");
+const correctionLanguageName = document.getElementById("correction-language-name");
 const correctionSimple = document.getElementById("correction-simple");
 const correctionIpa = document.getElementById("correction-ipa");
 const correctionOrigin = document.getElementById("correction-origin");
+const correctionAudio = document.getElementById("correction-audio");
+const correctionVariant = document.getElementById("correction-variant");
 
 let currentResult = null;
 let audioPlayer = null;
@@ -55,14 +62,16 @@ wrongButton.addEventListener("click", () => saveFeedback({ kind: "wrong" }));
 missingButton.addEventListener("click", () => saveFeedback({ kind: "missing" }));
 
 saveCorrectionButton.addEventListener("click", () => {
-  saveFeedback({
-    kind: "correction",
+  saveFeedback(correctionFeedbackFromValues({
     sourceForm: correctionSource.value,
     language: correctionLanguage.value,
+    languageName: correctionLanguageName.value,
     simple: correctionSimple.value,
     ipa: correctionIpa.value,
-    origin: correctionOrigin.value
-  });
+    origin: correctionOrigin.value,
+    audioUrl: correctionAudio.value,
+    variantNote: correctionVariant.value
+  }));
 });
 
 selectionInput.addEventListener("input", () => {
@@ -210,11 +219,15 @@ function renderResult(result) {
   ipa.textContent = result.pronunciation?.ipa || "Not available";
   simpleGuide.textContent = result.pronunciation?.simple || "Not available";
 
-  correctionSource.value = result.sourceForm || "";
-  correctionLanguage.value = result.language || "";
-  correctionSimple.value = result.pronunciation?.simple || "";
-  correctionIpa.value = result.pronunciation?.ipa || "";
-  correctionOrigin.value = result.origin || "";
+  const correctionValues = correctionValuesFromResult(result);
+  correctionSource.value = correctionValues.sourceForm;
+  correctionLanguage.value = correctionValues.language;
+  correctionLanguageName.value = correctionValues.languageName;
+  correctionSimple.value = correctionValues.simple;
+  correctionIpa.value = correctionValues.ipa;
+  correctionOrigin.value = correctionValues.origin;
+  correctionAudio.value = correctionValues.audioUrl;
+  correctionVariant.value = correctionValues.variantNote;
 
   evidence.replaceChildren();
   for (const item of evidenceItemsForResult(result)) {
