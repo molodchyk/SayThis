@@ -189,6 +189,19 @@ export function createRemoteStructuredResult(selection, source) {
   });
 }
 
+export function normalizeCommunityEntries(entries = {}) {
+  const rawEntries = Array.isArray(entries)
+    ? entries
+    : entries && typeof entries === "object"
+      ? Object.values(entries)
+      : [];
+
+  return Object.fromEntries(rawEntries
+    .map(normalizeCommunityEntry)
+    .filter((entry) => entry?.lookupKey)
+    .map((entry) => [entry.lookupKey, entry]));
+}
+
 export function updateCommunityEntries(entries, selection, feedback) {
   const query = normalizeSelection(selection);
   const lookupKey = createLookupKey(query);
@@ -242,6 +255,35 @@ export function updateCommunityEntries(entries, selection, feedback) {
   return {
     ...(entries || {}),
     [lookupKey]: next
+  };
+}
+
+function normalizeCommunityEntry(entry = {}) {
+  const term = normalizeSelection(entry.term || entry.display || entry.sourceForm);
+  const lookupKey = createLookupKey(entry.lookupKey || term);
+  if (!lookupKey) {
+    return null;
+  }
+
+  return {
+    term: term || normalizeSelection(entry.sourceForm),
+    lookupKey,
+    confirmations: normalizeCount(entry.confirmations),
+    flags: normalizeCount(entry.flags),
+    requests: normalizeCount(entry.requests),
+    corrections: normalizeCount(entry.corrections),
+    sourceForm: normalizeSelection(entry.sourceForm),
+    aliases: normalizeAliases(entry.aliases),
+    language: normalizeLanguage(entry.language),
+    languageName: normalizeSelection(entry.languageName),
+    origin: normalizeSelection(entry.origin),
+    ipa: normalizeSelection(entry.ipa),
+    simple: normalizeSelection(entry.simple),
+    audioUrl: normalizeLongValue(entry.audioUrl),
+    sourceUrl: normalizeLongValue(entry.sourceUrl),
+    variantNote: normalizeSelection(entry.variantNote),
+    createdAt: normalizeSelection(entry.createdAt),
+    updatedAt: normalizeSelection(entry.updatedAt)
   };
 }
 
@@ -610,6 +652,11 @@ function normalizeTrustSignals(value) {
     : String(value || "").split(/[;,\n]/);
 
   return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeCount(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? Math.floor(clamp(number, 0, 100000)) : 0;
 }
 
 function shouldResolveAudioUrl(url) {

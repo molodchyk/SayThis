@@ -1,4 +1,7 @@
 import {
+  normalizeCommunityEntries
+} from "./resolver-core.js";
+import {
   normalizeResultCache,
   resultCacheSummary
 } from "./result-cache.js";
@@ -168,7 +171,7 @@ async function exportData() {
     settings: normalizeSettings(stored[STORAGE_KEYS.settings]),
     approvedCommunityEntries: stored[STORAGE_KEYS.approvedCommunityEntries] || {},
     communityPullState: stored[STORAGE_KEYS.communityPullState] || {},
-    communityEntries: stored[STORAGE_KEYS.communityEntries] || {},
+    communityEntries: normalizeCommunityEntries(stored[STORAGE_KEYS.communityEntries]),
     resultCache: normalizeResultCache(stored[STORAGE_KEYS.resultCache]),
     syncQueue: stored[STORAGE_KEYS.syncQueue] || [],
     syncSummary: stored[STORAGE_KEYS.syncSummary] || {}
@@ -193,7 +196,7 @@ async function importData() {
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const settings = await settingsWithEndpointPermission(payload.settings, credentials);
   const approvedCommunityEntries = normalizeApprovedEntries({ entries: payload.approvedCommunityEntries });
-  const communityEntries = isPlainObject(payload.communityEntries) ? payload.communityEntries : {};
+  const communityEntries = normalizeCommunityEntries(payload.communityEntries);
   const resultCache = normalizeResultCache(payload.resultCache);
   const syncQueue = Array.isArray(payload.syncQueue) ? payload.syncQueue : [];
   const importedSyncSummary = summarizeQueue(syncQueue);

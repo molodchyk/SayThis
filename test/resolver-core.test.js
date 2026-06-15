@@ -9,6 +9,7 @@ import {
   getBestAudio,
   mapResultAudioUrls,
   mergeRemoteResult,
+  normalizeCommunityEntries,
   resolveTerm,
   resultToSpeechOptions,
   updateCommunityEntries
@@ -86,6 +87,37 @@ test("uses local community correction before fallback", () => {
   });
   assert.equal(aliasResult.id, "community:sampleterm");
   assert.equal(aliasResult.sourceForm, "Exampleterm");
+});
+
+test("normalizes imported local community entries", () => {
+  const entries = normalizeCommunityEntries({
+    raw: {
+      term: " Exampleterm ",
+      lookupKey: "exampleterm",
+      confirmations: "2",
+      flags: -4,
+      requests: 3.8,
+      corrections: "not a number",
+      sourceForm: " Exampleterm ",
+      aliases: "Sampleterm; Example term; Sampleterm",
+      language: " it ",
+      simple: " eg-ZAM-pluh-term ",
+      sourceUrl: " https://example.com/exampleterm ",
+      extra: "discarded"
+    },
+    empty: {
+      term: ""
+    }
+  });
+
+  assert.deepEqual(Object.keys(entries), ["exampleterm"]);
+  assert.equal(entries.exampleterm.confirmations, 2);
+  assert.equal(entries.exampleterm.flags, 0);
+  assert.equal(entries.exampleterm.requests, 3);
+  assert.equal(entries.exampleterm.corrections, 0);
+  assert.deepEqual(entries.exampleterm.aliases, ["Sampleterm", "Example term"]);
+  assert.equal(entries.exampleterm.sourceUrl, "https://example.com/exampleterm");
+  assert.equal(Object.hasOwn(entries.exampleterm, "extra"), false);
 });
 
 test("applies community summary without replacing a structured result", () => {
