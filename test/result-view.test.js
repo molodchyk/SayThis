@@ -14,7 +14,8 @@ test("builds evidence items with community context", () => {
     community: {
       confirmations: 1,
       corrections: 2,
-      requests: 3
+      requests: 3,
+      flags: 4
     }
   });
 
@@ -23,7 +24,20 @@ test("builds evidence items with community context", () => {
     "Structured source",
     "Regional variant",
     "1 local confirmation",
-    "2 local corrections"
+    "2 local corrections",
+    "3 local requests"
+  ]);
+});
+
+test("builds evidence items with wrong-result flag context", () => {
+  const items = evidenceItemsForResult({
+    community: {
+      flags: 1
+    }
+  });
+
+  assert.deepEqual(items, [
+    "1 local wrong-result flag"
   ]);
 });
 

@@ -71,6 +71,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /useOnline: true/);
   assert.match(source, /kind: "correction"/);
   assert.match(source, /community\.requests/);
+  assert.match(source, /community\.flags/);
   assert.match(source, /<dt>Aliases<\/dt>/);
   assert.match(source, /aliasesTextFromResult\(result\) \|\| "None"/);
 
@@ -100,6 +101,7 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(html, /id="clear-approved"/);
   assert.match(source, /normalizeApprovedEntries/);
   assert.match(source, /Approved shared entries cleared/);
+  assert.match(source, /wrong-result flags/);
 });
 
 test("popup quick feedback labels match their feedback kinds", async () => {

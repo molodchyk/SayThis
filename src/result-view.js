@@ -2,7 +2,7 @@ import {
   normalizeSelection
 } from "./resolver-core.js";
 
-export function evidenceItemsForResult(result, limit = 5) {
+export function evidenceItemsForResult(result, limit = 6) {
   const community = result?.community || {};
   return [
     ...trustSignalItems(result?.trustSignals),
@@ -10,7 +10,8 @@ export function evidenceItemsForResult(result, limit = 5) {
     result?.notes || "",
     community.confirmations ? `${community.confirmations} local confirmation${community.confirmations === 1 ? "" : "s"}` : "",
     community.corrections ? `${community.corrections} local correction${community.corrections === 1 ? "" : "s"}` : "",
-    community.requests ? `${community.requests} local request${community.requests === 1 ? "" : "s"}` : ""
+    community.requests ? `${community.requests} local request${community.requests === 1 ? "" : "s"}` : "",
+    community.flags ? `${community.flags} local wrong-result flag${community.flags === 1 ? "" : "s"}` : ""
   ]
     .map(normalizeSelection)
     .filter(Boolean)

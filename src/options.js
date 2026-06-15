@@ -293,9 +293,10 @@ function renderSummary(entries) {
   const confirmations = values.reduce((sum, entry) => sum + Number(entry.confirmations || 0), 0);
   const corrections = values.reduce((sum, entry) => sum + Number(entry.corrections || 0), 0);
   const requests = values.reduce((sum, entry) => sum + Number(entry.requests || 0), 0);
+  const flags = values.reduce((sum, entry) => sum + Number(entry.flags || 0), 0);
 
   memorySummary.textContent = values.length
-    ? `${values.length} local entries · ${confirmations} confirmations · ${corrections} corrections · ${requests} requests`
+    ? `${values.length} local entries · ${confirmations} confirmations · ${corrections} corrections · ${requests} requests · ${flags} wrong-result flags`
     : "No local entries.";
 }
 
