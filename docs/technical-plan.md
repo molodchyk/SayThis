@@ -12,6 +12,7 @@ Chrome Manifest V3 components:
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card after context-menu or keyboard-command use.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
+- `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
 
 Verified audio from resolver results is preferred when available. Chrome's `tts` API remains the fallback path.
@@ -29,6 +30,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
 - Verified-audio playback from resolver results, with TTS playback from resolved source form as fallback.
+- Packaged public audio path rewriting for curated entries.
 
 ## Future Lookup Pipeline
 
@@ -109,5 +111,5 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 
 - Build more resolver adapters for gazetteers, pronunciation databases, and domain-specific term sources.
 - Broaden online entity scoring with additional structured sources.
-- Add bundled-audio packaging for curated entries.
+- Add actual curated public audio files after source/license review.
 - Add broader tests around popup/background message contracts.

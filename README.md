@@ -21,6 +21,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
 - Options for default online lookup, on-page card display, and local community-memory data management.
+- Packaged public-audio support for curated entries under `assets/audio/public/`.
 - Chrome TTS as a temporary local fallback.
 - Product, research, and technical planning docs.
 - A seed resolver dataset for pronunciation entries.

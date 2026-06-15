@@ -261,6 +261,23 @@ export function getBestAudio(result) {
   return audio.find((item) => item?.url && item.quality === "verified") || audio.find((item) => item?.url) || null;
 }
 
+export function mapResultAudioUrls(result, resolveUrl) {
+  if (!result?.pronunciation?.audio?.length || typeof resolveUrl !== "function") {
+    return result;
+  }
+
+  return {
+    ...result,
+    pronunciation: {
+      ...result.pronunciation,
+      audio: result.pronunciation.audio.map((item) => ({
+        ...item,
+        url: shouldResolveAudioUrl(item.url) ? resolveUrl(item.url) : item.url
+      }))
+    }
+  };
+}
+
 export function sourceLabelForStatus(status) {
   return SOURCE_LABELS[status] || SOURCE_LABELS.unknown;
 }
@@ -477,6 +494,10 @@ function normalizeLongValue(value) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 2048);
+}
+
+function shouldResolveAudioUrl(url) {
+  return Boolean(url && !/^(?:https?:|chrome-extension:|data:|blob:)/i.test(url));
 }
 
 function normalizeOrigin(origin) {

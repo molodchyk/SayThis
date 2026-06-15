@@ -6,6 +6,7 @@ import {
   createLookupKey,
   detectScript,
   getBestAudio,
+  mapResultAudioUrls,
   mergeRemoteResult,
   resolveTerm,
   resultToSpeechOptions,
@@ -25,6 +26,7 @@ test("manifest exposes extension resolver capabilities", () => {
   assert.ok(manifest.host_permissions.includes("https://en.wiktionary.org/*"));
   assert.ok(manifest.host_permissions.includes("https://commons.wikimedia.org/*"));
   assert.ok(manifest.content_security_policy.extension_pages.includes("media-src"));
+  assert.ok(manifest.web_accessible_resources[0].resources.includes("assets/audio/public/*"));
 });
 
 test("normalizes aliases with diacritics", () => {
@@ -112,4 +114,27 @@ test("promotes remote results with verified audio", () => {
   assert.equal(result.sourceStatus, "verified-audio");
   assert.equal(result.confidence, "high");
   assert.equal(getBestAudio(result).quality, "verified");
+});
+
+test("maps packaged audio paths to extension URLs", () => {
+  const result = createRemoteStructuredResult("Packaged", {
+    id: "packaged",
+    display: "Packaged",
+    sourceForm: "Packaged",
+    language: "en",
+    pronunciation: {
+      audio: [{
+        url: "assets/audio/public/packaged.ogg",
+        label: "Curated pronunciation",
+        quality: "verified"
+      }, {
+        url: "https://example.com/audio.ogg",
+        label: "Remote pronunciation"
+      }]
+    }
+  });
+  const mapped = mapResultAudioUrls(result, (url) => `chrome-extension://id/${url}`);
+
+  assert.equal(mapped.pronunciation.audio[0].url, "chrome-extension://id/assets/audio/public/packaged.ogg");
+  assert.equal(mapped.pronunciation.audio[1].url, "https://example.com/audio.ogg");
 });

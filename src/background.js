@@ -1,5 +1,6 @@
 import {
   getBestAudio,
+  mapResultAudioUrls,
   mergeRemoteResult,
   normalizeSelection,
   resultToSpeechOptions,
@@ -147,6 +148,8 @@ async function resolveSelection(text, options = {}) {
       };
     }
   }
+
+  result = mapResultAudioUrls(result, (url) => chrome.runtime.getURL(url));
 
   await chrome.storage.local.set({
     [STORAGE_KEYS.lastSelection]: selectedText,
