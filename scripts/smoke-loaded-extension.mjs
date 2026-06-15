@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -8,6 +9,8 @@ import { pathToFileURL } from "node:url";
 import net from "node:net";
 
 const DEFAULT_TIMEOUT_MS = 20000;
+const OVERLAY_TIMEOUT_MS = 7000;
+const SMOKE_TERM = "gnocchi";
 
 export async function runLoadedExtensionSmoke(options = {}) {
   const root = resolve(options.root || process.cwd());
@@ -69,12 +72,15 @@ export async function runLoadedExtensionSmoke(options = {}) {
       selectors: ["#online-default", "#custom-source-enabled", "#forvo-enabled", "#sync-enabled"]
     });
 
+    const overlay = await inspectKeyboardOverlay(port, options);
+
     return {
       skipped: false,
       product: version.Browser || "",
       extensionId,
       serviceWorker: worker.url,
-      pages: [popup.url, optionsPage.url]
+      pages: [popup.url, optionsPage.url],
+      overlay
     };
   } finally {
     child.kill();
@@ -179,6 +185,183 @@ async function inspectExtensionPage(port, extensionId, path) {
   }
 }
 
+async function inspectKeyboardOverlay(port, options = {}) {
+  const overlayRequired = options.overlayRequired ?? process.env.SAYTHIS_SMOKE_OVERLAY_REQUIRED === "1";
+  const { server, url } = await startSmokePageServer();
+  let client;
+
+  try {
+    const target = await fetchJson(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`, {
+      method: "PUT"
+    });
+    client = await connectCdp(target.webSocketDebuggerUrl);
+    await client.call("Runtime.enable");
+    await client.call("Page.enable");
+    await client.call("Page.bringToFront");
+    await waitForPageReady(client);
+
+    const selected = await selectSmokeTerm(client);
+    if (selected !== SMOKE_TERM) {
+      throw new Error(`Expected smoke page selection ${SMOKE_TERM}, got ${selected || "empty"}.`);
+    }
+
+    await dispatchPronounceShortcut(client);
+    const found = await waitForExpression(
+      client,
+      "Boolean(document.querySelector('saythis-overlay')?.shadowRoot?.textContent.includes('Gnocchi'))",
+      OVERLAY_TIMEOUT_MS
+    ).catch(() => false);
+
+    if (!found) {
+      const reason = "Keyboard overlay path did not complete in this Chrome mode.";
+      if (overlayRequired) {
+        throw new Error(reason);
+      }
+
+      return {
+        skipped: true,
+        reason,
+        url
+      };
+    }
+
+    const text = await client.evaluate("document.querySelector('saythis-overlay')?.shadowRoot?.textContent || ''");
+    return {
+      skipped: false,
+      url,
+      term: selected,
+      text: compactText(text).slice(0, 240)
+    };
+  } finally {
+    if (client) {
+      client.close();
+    }
+    await closeServer(server);
+  }
+}
+
+function startSmokePageServer() {
+  return new Promise((resolveServer, rejectServer) => {
+    const server = createServer((request, response) => {
+      if (request.url !== "/") {
+        response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+        response.end("Not found");
+        return;
+      }
+
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      response.end(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>SayThis Smoke Page</title>
+  </head>
+  <body>
+    <main>
+      <p id="term">${SMOKE_TERM}</p>
+    </main>
+  </body>
+</html>`);
+    });
+
+    server.on("error", rejectServer);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      resolveServer({
+        server,
+        url: `http://127.0.0.1:${address.port}/`
+      });
+    });
+  });
+}
+
+function closeServer(server) {
+  return new Promise((resolveClose) => {
+    server.close(() => resolveClose());
+  });
+}
+
+async function selectSmokeTerm(client) {
+  return client.evaluate(`(() => {
+    window.focus();
+    const node = document.getElementById("term");
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection.toString();
+  })()`);
+}
+
+async function dispatchPronounceShortcut(client) {
+  await client.call("Input.dispatchKeyEvent", {
+    type: "keyDown",
+    key: "Alt",
+    code: "AltLeft",
+    windowsVirtualKeyCode: 18,
+    nativeVirtualKeyCode: 18,
+    modifiers: 1
+  });
+  await client.call("Input.dispatchKeyEvent", {
+    type: "keyDown",
+    key: "Shift",
+    code: "ShiftLeft",
+    windowsVirtualKeyCode: 16,
+    nativeVirtualKeyCode: 16,
+    modifiers: 9
+  });
+  await client.call("Input.dispatchKeyEvent", {
+    type: "keyDown",
+    key: "S",
+    code: "KeyS",
+    windowsVirtualKeyCode: 83,
+    nativeVirtualKeyCode: 83,
+    modifiers: 9
+  });
+  await client.call("Input.dispatchKeyEvent", {
+    type: "keyUp",
+    key: "S",
+    code: "KeyS",
+    windowsVirtualKeyCode: 83,
+    nativeVirtualKeyCode: 83,
+    modifiers: 9
+  });
+  await client.call("Input.dispatchKeyEvent", {
+    type: "keyUp",
+    key: "Shift",
+    code: "ShiftLeft",
+    windowsVirtualKeyCode: 16,
+    nativeVirtualKeyCode: 16,
+    modifiers: 1
+  });
+  await client.call("Input.dispatchKeyEvent", {
+    type: "keyUp",
+    key: "Alt",
+    code: "AltLeft",
+    windowsVirtualKeyCode: 18,
+    nativeVirtualKeyCode: 18,
+    modifiers: 0
+  });
+}
+
+async function waitForExpression(client, expression, timeoutMs) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await client.evaluate(expression)) {
+      return true;
+    }
+
+    await delay(100);
+  }
+
+  throw new Error(`Timed out waiting for expression: ${expression}`);
+}
+
+function compactText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
 async function waitForPageReady(client) {
   for (let index = 0; index < 100; index += 1) {
     const readyState = await client.evaluate("document.readyState");
@@ -278,6 +461,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (result.skipped) {
     console.log(`skipped: ${result.reason}`);
   } else {
-    console.log(`loaded ${result.extensionId} in ${result.product}`);
+    const overlayStatus = result.overlay?.skipped
+      ? `; overlay skipped: ${result.overlay.reason}`
+      : "; overlay ok";
+    console.log(`loaded ${result.extensionId} in ${result.product}${overlayStatus}`);
   }
 }

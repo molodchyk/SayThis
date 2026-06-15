@@ -27,7 +27,7 @@ Chrome Manifest V3 components:
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
 - `scripts/package-extension.mjs`: builds a deterministic Chrome ZIP from runtime extension files.
-- `scripts/smoke-loaded-extension.mjs`: optionally launches Chrome or Edge with the unpacked extension and checks service-worker, popup, and options startup.
+- `scripts/smoke-loaded-extension.mjs`: optionally launches Chrome or Edge with the unpacked extension and checks service-worker, popup, options startup, and keyboard-overlay flow.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
 - `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
@@ -38,7 +38,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Selection capture from popup, privacy-first context menu, explicit online context menu, and `Alt+Shift+S`.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
 - Static smoke tests for popup/options DOM bindings, manifest-linked files, extension page scripts, and runtime import resolution.
-- Optional loaded-extension smoke runner for service-worker, popup, and options startup in Chrome or Edge.
+- Optional loaded-extension smoke runner for service-worker, popup, options startup, and keyboard-overlay flow in Chrome or Edge.
 - Packaged PNG icons for toolbar and install surfaces.
 - Local resolver over bundled entries and local community memory.
 - Script-sensitive fallback for non-Latin selected text.
@@ -162,4 +162,4 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 - Broaden online entity scoring with additional structured sources.
 - Add deployment recipes and stronger production abuse controls for the community backend.
 - Add actual curated public audio files after source/license review.
-- Add loaded-extension smoke coverage for context menu and overlay flows.
+- Add loaded-extension smoke coverage for the context-menu flow.
