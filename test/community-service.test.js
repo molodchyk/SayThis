@@ -277,6 +277,11 @@ test("serves approved entries and requires auth for moderation", async () => {
   }, response.store, { adminToken: "secret" });
   assert.equal(response.status, 200);
   assert.equal(response.body.approved, true);
+  assert.deepEqual(response.body.entry.trustSignals, [
+    "moderator-reviewed",
+    "source-backed",
+    "correction-reviewed"
+  ]);
 
   response = await handleCommunityRequest({
     method: "GET",
@@ -289,6 +294,11 @@ test("serves approved entries and requires auth for moderation", async () => {
   assert.equal(response.body.entries.length, 1);
   assert.equal(response.body.entries[0].lookupKey, "gnocchi");
   assert.deepEqual(response.body.entries[0].aliases, ["gnocco"]);
+  assert.deepEqual(response.body.entries[0].trustSignals, [
+    "moderator-reviewed",
+    "source-backed",
+    "correction-reviewed"
+  ]);
   assert.equal(response.body.entries[0].simple, "NYOH-kee");
   assert.equal(response.body.entries[0].sourceUrl, "https://example.com/gnocchi");
 });

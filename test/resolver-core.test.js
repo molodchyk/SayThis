@@ -108,6 +108,23 @@ test("applies community summary without replacing a structured result", () => {
   assert.equal(updated.community.confirmations, 1);
 });
 
+test("keeps trust signals on approved community entries", () => {
+  const result = resolveTerm("Chiaroscuro", {
+    entries: [],
+    communityEntries: {
+      chiaroscuro: {
+        term: "Chiaroscuro",
+        sourceForm: "chiaroscuro",
+        simple: "kee-ah-roh-SKOO-roh",
+        trustSignals: ["moderator-reviewed", "source-backed"]
+      }
+    }
+  });
+
+  assert.deepEqual(result.trustSignals, ["moderator-reviewed", "source-backed"]);
+  assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
+});
+
 test("creates speech options from resolved source form", () => {
   const result = resolveTerm("gnocchi", { entries: seedData.entries });
   const speech = resultToSpeechOptions(result, { rate: 0.62 });

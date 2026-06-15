@@ -314,6 +314,10 @@ export function renderAdminPage() {
           <input data-input="sourceUrl" type="url">
         </label>
         <label>
+          Trust signals
+          <input data-input="trustSignals">
+        </label>
+        <label>
           Variant note
           <input data-input="variantNote">
         </label>
@@ -391,6 +395,7 @@ export function renderAdminPage() {
         simple: entry.correction?.simple || "",
         audioUrl: entry.correction?.audioUrl || "",
         sourceUrl: entry.correction?.sourceUrl || "",
+        trustSignals: trustSignalsText(entry),
         variantNote: entry.correction?.variantNote || "",
         rejectReason: ""
       };
@@ -451,7 +456,7 @@ export function renderAdminPage() {
 
     function collectFields(article) {
       const entry = {};
-      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
         const value = article.querySelector(\`[data-input="\${name}"]\`)?.value.trim();
         if (value) {
           entry[name] = value;
@@ -486,6 +491,30 @@ export function renderAdminPage() {
 
     function aliasesText(value) {
       return Array.isArray(value) ? value.filter(Boolean).join("; ") : "";
+    }
+
+    function trustSignalsText(entry) {
+      const correction = entry.correction || {};
+      const result = entry.result || {};
+      const signals = ["moderator-reviewed"];
+
+      if (correction.sourceUrl) {
+        signals.push("source-backed");
+      }
+      if (correction.audioUrl || result.sourceStatus === "verified-audio") {
+        signals.push("audio-backed");
+      }
+      if (entry.kind === "correction") {
+        signals.push("correction-reviewed");
+      }
+      if (entry.kind === "confirm") {
+        signals.push("contributor-confirmed");
+      }
+      if (result.sourceStatus && result.sourceStatus !== "unknown") {
+        signals.push(result.sourceStatus);
+      }
+
+      return [...new Set(signals.filter(Boolean))].join("; ");
     }
 
     function setStatus(message) {

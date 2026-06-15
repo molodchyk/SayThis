@@ -26,6 +26,7 @@ The endpoint may return a single entry:
     "id": "art:chiaroscuro",
     "term": "chiaroscuro",
     "aliases": ["light-dark"],
+    "trustSignals": ["source-backed", "domain-reviewed"],
     "sourceForm": "chiaroscuro",
     "language": "it",
     "languageName": "Italian",
@@ -63,6 +64,7 @@ Or multiple entries:
 
 - `term`: selected or canonical term.
 - `aliases`: alternate selected forms that should match this entry.
+- `trustSignals`: short labels that explain why this entry is reliable.
 - `sourceForm`: native, canonical, or source spelling to speak.
 - `language`: BCP-47 or short language code.
 - `languageName`: display language name.

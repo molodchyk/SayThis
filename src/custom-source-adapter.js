@@ -45,6 +45,7 @@ export function buildCustomSourceResult(query, payload = {}, options = {}) {
     id: `custom:${normalizeSelection(entry.id || createLookupKey(display || sourceForm))}`,
     display,
     aliases: Array.isArray(entry.aliases) ? entry.aliases : [],
+    trustSignals: entry.trustSignals || [],
     sourceForm,
     language: normalizeSelection(entry.language),
     languageName: normalizeSelection(entry.languageName),

@@ -24,7 +24,10 @@
     }
 
     ensureRoot();
-    const evidence = (result.evidence || []).slice(0, 2);
+    const evidence = [
+      ...trustSignalItems(result.trustSignals),
+      ...(result.evidence || [])
+    ].slice(0, 2);
     const sources = sourceItems(result).slice(0, 2);
     const alternates = alternateItems(result).slice(0, 2);
     const community = result.community || {};
@@ -566,6 +569,11 @@
     return [...new Set(aliases)].join("; ");
   }
 
+  function trustSignalItems(value) {
+    return normalizeTrustSignals(value)
+      .map((item) => `Trust: ${item}`);
+  }
+
   function alternateItems(result) {
     const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
     return alternates
@@ -599,6 +607,14 @@
   }
 
   function normalizeAliases(value) {
+    const raw = Array.isArray(value)
+      ? value
+      : String(value || "").split(/[;,\n]/);
+
+    return [...new Set(raw.map(normalizeText).filter(Boolean))].slice(0, 12);
+  }
+
+  function normalizeTrustSignals(value) {
     const raw = Array.isArray(value)
       ? value
       : String(value || "").split(/[;,\n]/);

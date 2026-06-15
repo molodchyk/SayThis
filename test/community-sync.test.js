@@ -135,6 +135,7 @@ test("normalizes approved community entries", () => {
     entries: [{
       term: "Chiaroscuro",
       aliases: ["light-dark"],
+      trustSignals: ["source-backed", "source-backed", "moderator-reviewed"],
       sourceForm: "chiaroscuro",
       language: "it",
       confirmations: 8,
@@ -149,6 +150,7 @@ test("normalizes approved community entries", () => {
   assert.equal(entries.chiaroscuro.term, "Chiaroscuro");
   assert.equal(entries.chiaroscuro.confirmations, 8);
   assert.deepEqual(entries.chiaroscuro.aliases, ["light-dark"]);
+  assert.deepEqual(entries.chiaroscuro.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(entries.chiaroscuro.language, "it");
   assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");

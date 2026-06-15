@@ -2,9 +2,10 @@ import {
   normalizeSelection
 } from "./resolver-core.js";
 
-export function evidenceItemsForResult(result, limit = 4) {
+export function evidenceItemsForResult(result, limit = 5) {
   const community = result?.community || {};
   return [
+    ...trustSignalItems(result?.trustSignals),
     ...(Array.isArray(result?.evidence) ? result.evidence : []),
     result?.notes || "",
     community.confirmations ? `${community.confirmations} local confirmation${community.confirmations === 1 ? "" : "s"}` : "",
@@ -14,6 +15,11 @@ export function evidenceItemsForResult(result, limit = 4) {
     .map(normalizeSelection)
     .filter(Boolean)
     .slice(0, limit);
+}
+
+function trustSignalItems(value) {
+  return normalizeTrustSignals(value)
+    .map((item) => `Trust: ${item}`);
 }
 
 export function sourceItemsForResult(result, limit = 4) {
@@ -81,6 +87,14 @@ function normalizeSourceItem(item = {}) {
     label: normalizeSelection(item.label || item.source || hostLabel(url) || "Source"),
     url
   };
+}
+
+function normalizeTrustSignals(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
 }
 
 function normalizeUrl(value) {

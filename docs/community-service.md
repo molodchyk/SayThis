@@ -92,6 +92,7 @@ Content-Type: application/json
   "entry": {
     "sourceForm": "chiaroscuro",
     "aliases": ["light-dark"],
+    "trustSignals": ["moderator-reviewed", "source-backed"],
     "language": "it",
     "simple": "kee-ah-roh-SKOO-roh",
     "sourceUrl": "https://example.com/terms/chiaroscuro"
@@ -111,7 +112,7 @@ Content-Type: application/json
 }
 ```
 
-The `/admin` page uses these same endpoints. It can approve submissions with edited source form, language, origin, IPA, simple guide, audio URL, and variant note fields.
+The `/admin` page uses these same endpoints. It can approve submissions with edited source form, aliases, language, origin, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields.
 
 ## Storage
 

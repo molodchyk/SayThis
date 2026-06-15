@@ -224,6 +224,7 @@ function normalizeApprovedEntry(entry = {}) {
     audioUrl: normalizeLongValue(entry.audioUrl),
     sourceUrl: normalizeLongValue(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
+    trustSignals: normalizeTrustSignals(entry.trustSignals),
     approvedAt: normalizeSelection(entry.approvedAt),
     updatedAt: normalizeSelection(entry.updatedAt || entry.approvedAt)
   };
@@ -240,6 +241,14 @@ function hasCorrectionDetail(correction = {}) {
 }
 
 function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeTrustSignals(value) {
   const raw = Array.isArray(value)
     ? value
     : String(value || "").split(/[;,\n]/);

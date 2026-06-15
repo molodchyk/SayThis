@@ -164,6 +164,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
   const term = normalizeSelection(override.term || submission.term || result.display);
   const sourceForm = normalizeSelection(override.sourceForm || correction.sourceForm || result.sourceForm || term);
   const lookupKey = createLookupKey(override.lookupKey || submission.lookupKey || term);
+  const trustSignals = normalizeTrustSignals(override.trustSignals);
 
   return normalizeApprovedEntry({
     term,
@@ -182,6 +183,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     audioUrl: override.audioUrl || correction.audioUrl,
     sourceUrl: override.sourceUrl || correction.sourceUrl,
     variantNote: override.variantNote || correction.variantNote,
+    trustSignals: trustSignals.length ? trustSignals : defaultTrustSignals(submission, correction, result, override),
     approvedAt: now,
     updatedAt: now
   });
@@ -279,6 +281,7 @@ function normalizeApprovedEntry(value = {}) {
     audioUrl: normalizeLongValue(value.audioUrl),
     sourceUrl: normalizeLongValue(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote),
+    trustSignals: normalizeTrustSignals(value.trustSignals),
     approvedAt: normalizeSelection(value.approvedAt),
     updatedAt: normalizeSelection(value.updatedAt || value.approvedAt)
   };
@@ -310,6 +313,42 @@ function hasCorrectionDetail(correction = {}) {
 }
 
 function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function defaultTrustSignals(submission = {}, correction = {}, result = {}, override = {}) {
+  const signals = ["moderator-reviewed"];
+  const sourceUrl = override.sourceUrl || correction.sourceUrl;
+  const audioUrl = override.audioUrl || correction.audioUrl;
+  const confirmations = Number(override.confirmations ?? (submission.kind === "confirm" ? 1 : 0));
+  const sourceStatus = normalizeSelection(result.sourceStatus);
+
+  if (sourceUrl) {
+    signals.push("source-backed");
+  }
+  if (audioUrl || sourceStatus === "verified-audio") {
+    signals.push("audio-backed");
+  }
+  if (submission.kind === "correction") {
+    signals.push("correction-reviewed");
+  }
+  if (confirmations >= 2) {
+    signals.push("repeated-confirmation");
+  } else if (confirmations > 0) {
+    signals.push("contributor-confirmed");
+  }
+  if (sourceStatus && sourceStatus !== "unknown") {
+    signals.push(sourceStatus);
+  }
+
+  return normalizeTrustSignals(signals);
+}
+
+function normalizeTrustSignals(value) {
   const raw = Array.isArray(value)
     ? value
     : String(value || "").split(/[;,\n]/);

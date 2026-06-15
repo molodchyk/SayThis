@@ -168,6 +168,7 @@ export function createRemoteStructuredResult(selection, source) {
     lookupKey,
     display: source.display || query,
     aliases: source.aliases || [],
+    trustSignals: source.trustSignals || [],
     sourceForm,
     speakText: sourceForm || query,
     script: detectScript(sourceForm || query).script,
@@ -355,6 +356,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     lookupKey,
     display: entry.term || query,
     aliases: normalizeAliases(entry.aliases),
+    trustSignals: normalizeTrustSignals(entry.trustSignals),
     sourceForm,
     speakText: sourceForm || query,
     script: detectScript(sourceForm || query).script,
@@ -556,6 +558,7 @@ function normalizeResult(result) {
     confidence: normalizeConfidence(result.confidence),
     sourceStatus: normalizeSourceStatus(result.sourceStatus),
     pronunciation: normalizePronunciation(result.pronunciation),
+    trustSignals: normalizeTrustSignals(result.trustSignals),
     sourceLabel: result.sourceLabel || sourceLabelForStatus(result.sourceStatus),
     evidence: result.evidence || [],
     sources: result.sources || [],
@@ -594,6 +597,14 @@ function normalizeLongValue(value) {
 }
 
 function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeTrustSignals(value) {
   const raw = Array.isArray(value)
     ? value
     : String(value || "").split(/[;,\n]/);
