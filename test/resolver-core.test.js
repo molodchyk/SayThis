@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  applyCommunitySummary,
   createRemoteStructuredResult,
   createLookupKey,
   detectScript,
@@ -72,6 +73,28 @@ test("uses local community correction before fallback", () => {
   assert.equal(result.language, "it");
   assert.equal(result.pronunciation.simple, "eg-ZAM-pluh-term");
   assert.equal(result.community.confirmations, 1);
+});
+
+test("applies community summary without replacing a structured result", () => {
+  const result = createRemoteStructuredResult("Exampleterm", {
+    id: "remote:exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "la",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/exampleterm.ogg",
+        quality: "verified"
+      }]
+    }
+  });
+  const entries = updateCommunityEntries({}, "Exampleterm", { kind: "confirm" });
+  const updated = applyCommunitySummary(result, entries.exampleterm);
+
+  assert.equal(updated.id, "remote:exampleterm");
+  assert.equal(updated.sourceStatus, "verified-audio");
+  assert.equal(updated.pronunciation.audio[0].url, "https://example.com/exampleterm.ogg");
+  assert.equal(updated.community.confirmations, 1);
 });
 
 test("creates speech options from resolved source form", () => {

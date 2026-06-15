@@ -1,4 +1,6 @@
 import {
+  applyCommunitySummary,
+  createLookupKey,
   getBestAudio,
   mapResultAudioUrls,
   mergeRemoteResult,
@@ -291,7 +293,41 @@ async function saveFeedback(text, feedback) {
     flushCommunitySync().catch(() => {});
   }
 
+  const feedbackResult = await resultAfterFeedback(selectedText, stored[STORAGE_KEYS.lastResult], communityEntries);
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.lastSelection]: selectedText,
+    [STORAGE_KEYS.lastResult]: feedbackResult
+  });
+  return feedbackResult;
+}
+
+async function resultAfterFeedback(selectedText, lastResult, communityEntries) {
+  const lookupKey = createLookupKey(selectedText);
+  const communityEntry = communityEntries?.[lookupKey];
+  if (hasCommunityPronunciationData(communityEntry)) {
+    return resolveSelection(selectedText, { useOnline: false });
+  }
+
+  if (resultMatchesSelection(lastResult, lookupKey)) {
+    return applyCommunitySummary(lastResult, communityEntry);
+  }
+
   return resolveSelection(selectedText, { useOnline: false });
+}
+
+function resultMatchesSelection(result, lookupKey) {
+  if (!result || !lookupKey) {
+    return false;
+  }
+
+  return [
+    result.query,
+    result.display
+  ].some((value) => createLookupKey(value) === lookupKey);
+}
+
+function hasCommunityPronunciationData(entry = {}) {
+  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl);
 }
 
 async function flushCommunitySync() {

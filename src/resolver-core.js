@@ -237,6 +237,14 @@ export function updateCommunityEntries(entries, selection, feedback) {
   };
 }
 
+export function applyCommunitySummary(result, communityEntry) {
+  if (!result || !communityEntry) {
+    return result;
+  }
+
+  return withCommunitySummary(result, communityEntry);
+}
+
 export function resultToSpeechOptions(result, overrides = {}) {
   const text = normalizeSelection(overrides.text || result?.speakText || result?.sourceForm || result?.display || result?.query);
   const lang = overrides.lang && overrides.lang !== "auto" ? overrides.lang : result?.ttsLang;
