@@ -53,6 +53,8 @@ Users can:
 - clear approved shared entries
 - disable community submission, approved-entry refresh, custom source lookup, Forvo lookup, and place-name lookup
 
+When optional remote features are disabled or their endpoints change, SayThis removes no-longer-used optional endpoint permissions where Chrome allows it.
+
 ## Publication Notes
 
 This policy describes the public SayThis extension in this repository. Private research notes, private audio, licensed audio, raw source data, local environment files, and credentials are excluded by `.gitignore` and the Chrome package builder.

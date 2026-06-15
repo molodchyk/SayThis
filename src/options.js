@@ -14,6 +14,9 @@ import {
   FORVO_API_ORIGIN
 } from "./forvo-adapter.js";
 import {
+  staleRemotePermissionOrigins
+} from "./permission-origins.js";
+import {
   createFlushSyncMessage,
   createPullApprovedMessage
 } from "./message-contracts.js";
@@ -132,6 +135,12 @@ async function init() {
 }
 
 async function saveSettings() {
+  const stored = await chrome.storage.local.get([
+    STORAGE_KEYS.settings,
+    STORAGE_KEYS.credentials
+  ]);
+  const previousSettings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+  const previousCredentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
   const wantedPull = pullEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
   const wantedCustomSource = customSourceEnabled.checked && Boolean(normalizeEndpoint(customSourceEndpoint.value));
@@ -139,6 +148,7 @@ async function saveSettings() {
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
   const credentials = credentialsFromControls();
   const settings = await settingsFromControls(credentials);
+  await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials);
   await chrome.storage.local.set({
     [STORAGE_KEYS.settings]: settings,
     [STORAGE_KEYS.credentials]: credentials
@@ -202,7 +212,12 @@ async function importData() {
     return;
   }
 
-  const stored = await chrome.storage.local.get([STORAGE_KEYS.credentials]);
+  const stored = await chrome.storage.local.get([
+    STORAGE_KEYS.settings,
+    STORAGE_KEYS.credentials
+  ]);
+  const previousSettings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+  const previousCredentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const settings = await settingsWithEndpointPermission(payload.settings, credentials);
   const approvedCommunityEntries = normalizeApprovedEntries({ entries: payload.approvedCommunityEntries });
@@ -211,6 +226,7 @@ async function importData() {
   const syncQueue = normalizeSubmissionQueue(payload.syncQueue);
   const importedSyncSummary = summarizeQueue(syncQueue);
   const communityPullState = isPlainObject(payload.communityPullState) ? payload.communityPullState : {};
+  await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials);
   await chrome.storage.local.set({
     [STORAGE_KEYS.settings]: settings,
     [STORAGE_KEYS.approvedCommunityEntries]: approvedCommunityEntries,
@@ -450,6 +466,20 @@ async function requestEndpointPermission(endpoint) {
   }
 
   return chrome.permissions.request({ origins: [origin] });
+}
+
+async function removeUnusedRemotePermissions(previousSettings, nextSettings, previousCredentials, nextCredentials) {
+  if (!chrome.permissions?.remove) {
+    return;
+  }
+
+  for (const origin of staleRemotePermissionOrigins(previousSettings, nextSettings, previousCredentials, nextCredentials)) {
+    try {
+      await chrome.permissions.remove({ origins: [origin] });
+    } catch {
+      // Permission cleanup is best-effort; saving settings should still finish.
+    }
+  }
 }
 
 function normalizeEndpoint(value) {

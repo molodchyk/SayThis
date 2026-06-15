@@ -44,6 +44,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Privacy-scoped community submissions can carry resolver aliases, origin, guides, audio, and source links for moderator review.
 - Sync retry queues are normalized on import and export so queued submissions stay scoped to pronunciation fields.
 - Optional host permission request for the configured community sync endpoint.
+- No-longer-used optional endpoint permissions are removed when remote features are disabled or endpoints change.
 - Approved shared-entry refresh from the configured community endpoint, with local corrections taking priority.
 - Community moderation service with body-size, rate-limit, and pending-queue abuse controls.
 - Community moderation rejected-history storage is bounded.
