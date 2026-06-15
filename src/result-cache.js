@@ -28,14 +28,15 @@ export function normalizeResultCache(value = {}, options = {}) {
   return {
     schemaVersion: RESULT_CACHE_SCHEMA_VERSION,
     updatedAt: entries[0]?.updatedAt || now,
-    entries: Object.fromEntries(entries.map((entry) => [entry.lookupKey, entry]))
+    entries: Object.fromEntries(entries.map((entry) => [entry.cacheKey, entry]))
   };
 }
 
 export function readCachedResult(cache, selection, options = {}) {
   const normalized = normalizeResultCache(cache, options);
   const lookupKey = createLookupKey(selection);
-  const entry = normalized.entries[lookupKey];
+  const cacheKey = cacheKeyForLookupKey(lookupKey, options.cacheScope);
+  const entry = normalized.entries[cacheKey];
   if (!entry) {
     return {
       hit: false,
@@ -72,11 +73,13 @@ export function upsertCachedResult(cache, selection, result, options = {}) {
     return normalized;
   }
 
+  const cacheKey = cacheKeyForLookupKey(lookupKey, options.cacheScope);
   const term = normalizeSelection(selection || result.query || result.display || result.sourceForm);
   const nextEntry = {
+    cacheKey,
     lookupKey,
     term,
-    createdAt: normalized.entries[lookupKey]?.createdAt || now,
+    createdAt: normalized.entries[cacheKey]?.createdAt || now,
     updatedAt: now,
     result: normalizeCachedResult(result, lookupKey, term)
   };
@@ -86,7 +89,7 @@ export function upsertCachedResult(cache, selection, result, options = {}) {
     updatedAt: now,
     entries: {
       ...normalized.entries,
-      [lookupKey]: nextEntry
+      [cacheKey]: nextEntry
     }
   }, { ...options, now });
 }
@@ -129,14 +132,25 @@ function normalizeCacheEntry(value, now) {
     return null;
   }
 
+  const cacheKey = normalizeCacheKey(value.cacheKey) || lookupKey;
   const term = normalizeSelection(value.term || result.query || result.display || result.sourceForm);
   return {
+    cacheKey,
     lookupKey,
     term,
     createdAt: normalizeTimestamp(value.createdAt, now),
     updatedAt: normalizeTimestamp(value.updatedAt, now),
     result: normalizeCachedResult(result, lookupKey, term)
   };
+}
+
+function cacheKeyForLookupKey(lookupKey, cacheScope) {
+  const scope = normalizeCacheKey(cacheScope);
+  return scope ? `${scope}:${lookupKey}` : lookupKey;
+}
+
+function normalizeCacheKey(value) {
+  return createLookupKey(value).slice(0, 220);
 }
 
 function normalizeCachedResult(result, lookupKey, term) {

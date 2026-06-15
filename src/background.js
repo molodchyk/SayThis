@@ -14,6 +14,10 @@ import {
   buildWiktionaryResult
 } from "./wiktionary-adapter.js";
 import {
+  buildNominatimResult,
+  buildNominatimSearchUrl
+} from "./nominatim-adapter.js";
+import {
   isCacheableResult,
   readCachedResult,
   upsertCachedResult
@@ -49,6 +53,8 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  gazetteerEnabled: false,
+  gazetteerEndpoint: "",
   ...DEFAULT_SYNC_SETTINGS
 };
 
@@ -200,13 +206,14 @@ async function resolveSelection(text, options = {}) {
   const shouldUseOnline = options.useOnline ?? settings.onlineByDefault;
   let resultCache = stored[STORAGE_KEYS.resultCache];
   if (shouldUseOnline) {
-    const cached = readCachedResult(resultCache, selectedText);
+    const cacheOptions = { cacheScope: onlineCacheScope(settings) };
+    const cached = readCachedResult(resultCache, selectedText, cacheOptions);
     resultCache = cached.cache;
 
     try {
-      const remoteResult = cached.hit ? cached.result : await resolveWithOnlineSources(selectedText);
+      const remoteResult = cached.hit ? cached.result : await resolveWithOnlineSources(selectedText, settings);
       if (!cached.hit && isCacheableResult(remoteResult)) {
-        resultCache = upsertCachedResult(resultCache, selectedText, remoteResult);
+        resultCache = upsertCachedResult(resultCache, selectedText, remoteResult, cacheOptions);
       }
       result = mergeRemoteResult(localResult, remoteResult);
     } catch {
@@ -525,18 +532,23 @@ async function resolveWithWikidata(text) {
   return selectBestWikidataResult(query, matches, entityById);
 }
 
-async function resolveWithOnlineSources(text) {
-  const [wikidataResult, wiktionaryResult] = await Promise.all([
+async function resolveWithOnlineSources(text, settings = {}) {
+  const [wikidataResult, wiktionaryResult, nominatimResult] = await Promise.all([
     resolveSafely(resolveWithWikidata, text),
-    resolveSafely(resolveWithWiktionary, text)
+    resolveSafely(resolveWithWiktionary, text),
+    settings.gazetteerEnabled
+      ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint)
+      : Promise.resolve(null)
   ]);
 
-  return mergeRemoteResult(wikidataResult, wiktionaryResult);
+  return [wikidataResult, wiktionaryResult, nominatimResult]
+    .filter(Boolean)
+    .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }
 
-async function resolveSafely(resolver, text) {
+async function resolveSafely(resolver, ...args) {
   try {
-    return await resolver(text);
+    return await resolver(...args);
   } catch {
     return null;
   }
@@ -574,6 +586,27 @@ async function resolveWithWiktionary(text) {
   return buildWiktionaryResult(query, page.title || query, wikitext);
 }
 
+async function resolveWithNominatim(text, endpoint) {
+  const query = normalizeSelection(text);
+  const url = buildNominatimSearchUrl(query, endpoint, { limit: 5 });
+  if (!query || !url) {
+    return null;
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return buildNominatimResult(query, data);
+}
+
 async function fetchWikidataEntities(matches) {
   const pairs = await Promise.all(matches.map(async (match) => {
     try {
@@ -600,11 +633,34 @@ async function getSettings() {
 
 function normalizeSettings(settings = {}) {
   const syncSettings = normalizeSyncSettings(settings);
+  const gazetteerEndpoint = normalizeHttpsEndpoint(settings.gazetteerEndpoint);
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    gazetteerEndpoint,
+    gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteerEndpoint),
     ...syncSettings
   };
+}
+
+function normalizeHttpsEndpoint(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function onlineCacheScope(settings) {
+  return settings.gazetteerEnabled && settings.gazetteerEndpoint
+    ? `gazetteer ${settings.gazetteerEndpoint}`
+    : "";
 }

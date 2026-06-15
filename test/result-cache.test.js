@@ -83,3 +83,37 @@ test("normalizes cache with ttl and entry limit", () => {
   });
   assert.equal(Object.keys(expired.entries).length, 0);
 });
+
+test("separates cached results by source scope", () => {
+  const first = createRemoteStructuredResult("Athens", {
+    id: "remote:athens",
+    display: "Athens",
+    sourceForm: "Athens",
+    language: "en",
+    pronunciation: { simple: "ATH-inz" }
+  });
+  const second = createRemoteStructuredResult("Athens", {
+    id: "gazetteer:athens",
+    display: "Athens",
+    sourceForm: "Αθήνα",
+    language: "el",
+    pronunciation: { simple: "ah-THEE-nah" }
+  });
+
+  let cache = upsertCachedResult({}, "Athens", first, { now: 1000 });
+  cache = upsertCachedResult(cache, "Athens", second, {
+    now: 2000,
+    cacheScope: "gazetteer https://example.com/search"
+  });
+
+  const defaultHit = readCachedResult(cache, "Athens", { now: 3000 });
+  const scopedHit = readCachedResult(cache, "Athens", {
+    now: 3000,
+    cacheScope: "gazetteer https://example.com/search"
+  });
+
+  assert.equal(defaultHit.result.id, "remote:athens");
+  assert.equal(scopedHit.result.id, "gazetteer:athens");
+  assert.equal(scopedHit.result.lookupKey, "athens");
+  assert.equal(Object.keys(normalizeResultCache(cache, { now: 3000 }).entries).length, 2);
+});

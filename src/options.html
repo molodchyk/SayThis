@@ -23,6 +23,14 @@
           <input id="show-overlay" type="checkbox">
           <span>Show on-page result card</span>
         </label>
+        <label class="toggle">
+          <input id="gazetteer-enabled" type="checkbox">
+          <span>Use a Nominatim-compatible place-name endpoint</span>
+        </label>
+        <label class="field">
+          <span>Place-name endpoint</span>
+          <input id="gazetteer-endpoint" type="url" placeholder="https://example.com/search" spellcheck="false">
+        </label>
         <p id="cache-summary" class="summary">No cached lookups.</p>
         <div class="actions">
           <button id="clear-cache" type="button" class="secondary">Clear Lookup Cache</button>

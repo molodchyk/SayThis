@@ -18,6 +18,8 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  gazetteerEnabled: false,
+  gazetteerEndpoint: "",
   communitySyncEnabled: false,
   communityEndpoint: ""
 };
@@ -25,6 +27,8 @@ const DEFAULT_SETTINGS = {
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
+const gazetteerEnabled = document.getElementById("gazetteer-enabled");
+const gazetteerEndpoint = document.getElementById("gazetteer-endpoint");
 const cacheSummaryText = document.getElementById("cache-summary");
 const clearCacheButton = document.getElementById("clear-cache");
 const memorySummary = document.getElementById("memory-summary");
@@ -44,6 +48,8 @@ init();
 
 onlineDefault.addEventListener("change", saveSettings);
 showOverlay.addEventListener("change", saveSettings);
+gazetteerEnabled.addEventListener("change", saveSettings);
+gazetteerEndpoint.addEventListener("change", saveSettings);
 clearCacheButton.addEventListener("click", clearLookupCache);
 syncEnabled.addEventListener("change", saveSettings);
 syncEndpoint.addEventListener("change", saveSettings);
@@ -67,6 +73,8 @@ async function init() {
   const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  gazetteerEnabled.checked = settings.gazetteerEnabled;
+  gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   renderCacheSummary(stored[STORAGE_KEYS.resultCache]);
@@ -78,15 +86,18 @@ async function init() {
 
 async function saveSettings() {
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
+  const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
   const settings = await settingsFromControls();
   await chrome.storage.local.set({
     [STORAGE_KEYS.settings]: settings
   });
+  gazetteerEnabled.checked = settings.gazetteerEnabled;
+  gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
   syncEndpoint.value = settings.communityEndpoint;
-  setStatus(settings.communitySyncEnabled || !wantedSync
+  setStatus((settings.communitySyncEnabled || !wantedSync) && (settings.gazetteerEnabled || !wantedGazetteer)
     ? "Settings saved."
-    : "Settings saved. Community sync permission was not granted.");
+    : "Settings saved. Endpoint permission was not granted.");
 }
 
 async function exportData() {
@@ -145,6 +156,8 @@ async function importData() {
 
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  gazetteerEnabled.checked = settings.gazetteerEnabled;
+  gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   renderCacheSummary(resultCache);
@@ -249,11 +262,14 @@ function summarizeQueue(queue) {
 
 function normalizeSettings(settings = {}) {
   const endpoint = normalizeEndpoint(settings.communityEndpoint);
+  const gazetteer = normalizeEndpoint(settings.gazetteerEndpoint);
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    gazetteerEndpoint: gazetteer,
+    gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteer),
     communityEndpoint: endpoint,
     communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint)
   };
@@ -263,22 +279,33 @@ async function settingsFromControls() {
   return settingsWithEndpointPermission({
     onlineByDefault: onlineDefault.checked,
     showOverlay: showOverlay.checked,
+    gazetteerEnabled: gazetteerEnabled.checked,
+    gazetteerEndpoint: normalizeEndpoint(gazetteerEndpoint.value),
     communitySyncEnabled: syncEnabled.checked,
     communityEndpoint: normalizeEndpoint(syncEndpoint.value)
   });
 }
 
 async function settingsWithEndpointPermission(value = {}) {
-  const settings = normalizeSettings(value);
-  if (!settings.communitySyncEnabled) {
-    return settings;
+  let settings = normalizeSettings(value);
+
+  if (settings.gazetteerEnabled) {
+    const granted = await requestEndpointPermission(settings.gazetteerEndpoint);
+    settings = {
+      ...settings,
+      gazetteerEnabled: Boolean(granted)
+    };
   }
 
-  const granted = await requestEndpointPermission(settings.communityEndpoint);
-  return {
-    ...settings,
-    communitySyncEnabled: Boolean(granted)
-  };
+  if (settings.communitySyncEnabled) {
+    const granted = await requestEndpointPermission(settings.communityEndpoint);
+    settings = {
+      ...settings,
+      communitySyncEnabled: Boolean(granted)
+    };
+  }
+
+  return settings;
 }
 
 async function requestEndpointPermission(endpoint) {

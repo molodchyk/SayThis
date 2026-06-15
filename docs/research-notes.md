@@ -15,6 +15,8 @@ These notes capture early public signals and adjacent solutions found before the
 - Generic TTS extensions already support selected text, but they are optimized for reading, not proper-noun correctness. Examples: Speechify, Voice Out, and Highlighted Text-to-Speech.
 - NameShouts offers name-pronunciation workflows and a Chrome extension, but the use case is personal names and workplace/social tools rather than news/geopolitical pronunciation: https://chromewebstore.google.com/detail/nameshouts-name-pronuncia/cfjmdoknapjfodjomjdldohemeiggmgo
 - A Firefox `Search on Forvo` extension can open selected text on Forvo, but it does not provide immediate in-place audio: https://addons.mozilla.org/en-US/firefox/addon/search-forvo/
+- Nominatim search can return place records with `namedetails`, `addressdetails`, and `extratags`, which makes it useful as a configurable place-name source: https://nominatim.org/release-docs/latest/api/Search/
+- The OSMF-hosted Nominatim service has strict capacity, attribution, caching, and identification requirements, so SayThis treats gazetteer lookup as a configurable endpoint rather than a silent always-on public source: https://operations.osmfoundation.org/policies/nominatim/
 
 ## Product Implication
 

@@ -21,6 +21,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, audio sources, and variant notes.
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
+- Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
 - Local cache for successful online lookup results.
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
 - Options for default online lookup, on-page card display, and local community-memory data management.
@@ -75,7 +76,7 @@ The first useful version should be narrow and trusted:
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 
-Community sync is disabled by default. When enabled, SayThis asks Chrome for access to the configured HTTPS endpoint. It submits only the selected term, feedback type, correction fields, and resolver metadata. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history.
+Community sync is disabled by default. Place-name lookup through a Nominatim-compatible endpoint is also disabled until an HTTPS endpoint is configured. When either feature is enabled, SayThis asks Chrome for access to the configured endpoint origin. Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history.
 
 ## Development
 
