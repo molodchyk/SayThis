@@ -55,6 +55,8 @@ const CONFIDENCE_RANK = {
   unknown: 0
 };
 
+let languageDisplayNames;
+
 export function normalizeSelection(value) {
   return String(value || "")
     .replace(/\s+/g, " ")
@@ -727,6 +729,8 @@ function ttsLangFromLanguage(language) {
 }
 
 function languageNameFromCode(language) {
+  const code = String(language || "").trim().replace(/_/g, "-").toLowerCase();
+  const baseCode = code.split("-")[0];
   const names = {
     ar: "Arabic",
     de: "German",
@@ -748,7 +752,28 @@ function languageNameFromCode(language) {
     zh: "Chinese"
   };
 
-  return names[language] || "";
+  return names[code] ||
+    (code.includes("-") ? displayLanguageName(code) : "") ||
+    names[baseCode] ||
+    displayLanguageName(code);
+}
+
+function displayLanguageName(language) {
+  if (!language || typeof Intl === "undefined" || typeof Intl.DisplayNames !== "function") {
+    return "";
+  }
+
+  try {
+    const [canonical] = Intl.getCanonicalLocales(language);
+    if (!canonical) {
+      return "";
+    }
+
+    languageDisplayNames ||= new Intl.DisplayNames(["en"], { type: "language" });
+    return languageDisplayNames.of(canonical) || "";
+  } catch {
+    return "";
+  }
 }
 
 function entryKeys(entry) {

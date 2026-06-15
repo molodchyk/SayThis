@@ -195,6 +195,28 @@ test("creates speech options from resolved source form", () => {
   assert.equal(speech.options.rate, 0.62);
 });
 
+test("uses browser language display names for valid source codes", () => {
+  const result = createRemoteStructuredResult("Exampleterm", {
+    id: "remote:language",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "tr"
+  });
+
+  assert.equal(result.languageName, "Turkish");
+  assert.equal(result.ttsLang, "tr");
+
+  const regional = createRemoteStructuredResult("Exampleterm", {
+    id: "remote:regional-language",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "pt-BR"
+  });
+
+  assert.match(regional.languageName, /Portuguese/);
+  assert.equal(regional.ttsLang, "pt-BR");
+});
+
 test("prefers remote structured result over best-effort fallback", () => {
   const local = resolveTerm("Unlistedterm", { entries: [] });
   const remote = createRemoteStructuredResult("Unlistedterm", {
