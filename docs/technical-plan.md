@@ -13,6 +13,7 @@ Chrome Manifest V3 components:
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
 - `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
 - `custom-source-adapter.js`: extracts domain-specific pronunciation entries from a configured structured JSON endpoint.
+- `pronunciation-source-plan.js`: orders pronunciation-audio lookup candidates from resolved source forms, alternates, and raw selected text.
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
@@ -45,6 +46,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
+- Source-form-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, and alternate candidate summaries.

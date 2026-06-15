@@ -22,6 +22,9 @@ import {
   buildForvoWordPronunciationsUrl
 } from "./forvo-adapter.js";
 import {
+  pronunciationLookupCandidates
+} from "./pronunciation-source-plan.js";
+import {
   buildCustomSourceResult,
   buildCustomSourceUrl
 } from "./custom-source-adapter.js";
@@ -557,7 +560,7 @@ async function resolveWithWikidata(text) {
 }
 
 async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {
-  const [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult, forvoResult] = await Promise.all([
+  const [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult] = await Promise.all([
     settings.customSourceEnabled
       ? resolveSafely(resolveWithCustomSource, text, settings.customSourceEndpoint, settings.customSourceLabel)
       : Promise.resolve(null),
@@ -565,13 +568,17 @@ async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {
     resolveSafely(resolveWithWiktionary, text),
     settings.gazetteerEnabled
       ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint)
-      : Promise.resolve(null),
-    settings.forvoEnabled
-      ? resolveSafely(resolveWithForvo, text, credentials.forvoApiKey, settings.forvoLanguage)
       : Promise.resolve(null)
   ]);
 
-  return [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult, forvoResult]
+  const structuredResult = [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult]
+    .filter(Boolean)
+    .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
+  const forvoResult = settings.forvoEnabled
+    ? await resolveWithForvoCandidates(text, structuredResult, credentials.forvoApiKey, settings)
+    : null;
+
+  return [structuredResult, forvoResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }
@@ -680,6 +687,25 @@ async function resolveWithForvo(text, apiKey, language) {
 
   const data = await response.json();
   return buildForvoResult(query, data);
+}
+
+async function resolveWithForvoCandidates(text, structuredResult, apiKey, settings = {}) {
+  let result = null;
+  for (const candidate of pronunciationLookupCandidates(text, structuredResult, {
+    language: settings.forvoLanguage
+  })) {
+    const forvoResult = await resolveSafely(resolveWithForvo, candidate.word, apiKey, candidate.language);
+    if (!forvoResult) {
+      continue;
+    }
+
+    result = mergeRemoteResult(result, forvoResult);
+    if (result?.sourceStatus === "verified-audio") {
+      return result;
+    }
+  }
+
+  return result;
 }
 
 async function fetchWikidataEntities(matches) {

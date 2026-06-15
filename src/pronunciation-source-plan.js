@@ -1,0 +1,61 @@
+import {
+  createLookupKey,
+  normalizeSelection
+} from "./resolver-core.js";
+
+export function pronunciationLookupCandidates(selection, result, options = {}) {
+  const selectedText = normalizeSelection(selection);
+  const configuredLanguage = normalizeLanguageHint(options.language || options.forvoLanguage);
+  const primaryLanguage = normalizeLanguageHint(result?.language);
+  const candidates = [];
+
+  addCandidate(candidates, result?.sourceForm, configuredLanguage || primaryLanguage);
+  addCandidate(candidates, result?.display, configuredLanguage || primaryLanguage);
+
+  for (const alternate of Array.isArray(result?.alternateResults) ? result.alternateResults : []) {
+    const language = configuredLanguage || normalizeLanguageHint(alternate.language) || primaryLanguage;
+    addCandidate(candidates, alternate.sourceForm, language);
+    addCandidate(candidates, alternate.display, language);
+  }
+
+  addCandidate(candidates, selectedText, configuredLanguage || primaryLanguage);
+
+  return uniqueCandidates(candidates).slice(0, 5);
+}
+
+function addCandidate(candidates, word, language) {
+  const normalizedWord = normalizeSelection(word);
+  if (!normalizedWord) {
+    return;
+  }
+
+  candidates.push({
+    word: normalizedWord,
+    language: normalizeLanguageHint(language)
+  });
+}
+
+function uniqueCandidates(candidates) {
+  const seen = new Set();
+  const unique = [];
+
+  for (const candidate of candidates) {
+    const key = `${createLookupKey(candidate.word)}|${candidate.language}`;
+    if (!createLookupKey(candidate.word) || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    unique.push(candidate);
+  }
+
+  return unique;
+}
+
+function normalizeLanguageHint(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
+}

@@ -26,6 +26,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
+- Source-form-guided pronunciation-audio lookup that tries resolved spellings before raw selected text.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
 - Local cache for successful online lookup results.
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
