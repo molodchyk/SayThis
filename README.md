@@ -46,6 +46,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry refresh from the configured community endpoint, with local corrections taking priority.
 - Community moderation service with body-size, rate-limit, and pending-queue abuse controls.
+- Community moderation rejected-history storage is bounded.
 - Non-browser CI for unit tests, syntax checks, and Chrome package creation.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.

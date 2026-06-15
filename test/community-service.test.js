@@ -428,3 +428,35 @@ test("rejects pending submissions with admin token", async () => {
   assert.equal(response.store.pending.length, 0);
   assert.equal(response.store.rejected.length, 1);
 });
+
+test("caps rejected submission history", async () => {
+  let store = createEmptyStore();
+  for (const id of ["sub_reject_1", "sub_reject_2", "sub_reject_3"]) {
+    let response = await handleCommunityRequest({
+      method: "POST",
+      url: "/community",
+      headers: {},
+      body: JSON.stringify({
+        id,
+        term: id,
+        lookupKey: id,
+        kind: "missing"
+      })
+    }, store);
+    store = response.store;
+
+    response = await handleCommunityRequest({
+      method: "POST",
+      url: "/admin/reject",
+      headers: { authorization: "Bearer secret" },
+      body: JSON.stringify({ id, reason: "not pronunciation data" })
+    }, store, {
+      adminToken: "secret",
+      maxRejectedSubmissions: 2
+    });
+    store = response.store;
+  }
+
+  assert.equal(store.rejected.length, 2);
+  assert.deepEqual(store.rejected.map((item) => item.id), ["sub_reject_2", "sub_reject_3"]);
+});

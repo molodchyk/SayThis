@@ -109,7 +109,7 @@ export function approveSubmission(store, submissionId, review = {}, now = new Da
   };
 }
 
-export function rejectSubmission(store, submissionId, reason = "", now = new Date().toISOString()) {
+export function rejectSubmission(store, submissionId, reason = "", now = new Date().toISOString(), options = {}) {
   const normalizedStore = normalizeStore(store, now);
   const id = normalizeSelection(submissionId);
   const submission = normalizedStore.pending.find((item) => item.id === id);
@@ -134,7 +134,7 @@ export function rejectSubmission(store, submissionId, reason = "", now = new Dat
       ...normalizedStore,
       updatedAt: now,
       pending: normalizedStore.pending.filter((item) => item.id !== id),
-      rejected: [...normalizedStore.rejected, rejection]
+      rejected: limitItems([...normalizedStore.rejected, rejection], normalizeOptionalPositiveInteger(options.maxRejectedSubmissions))
     },
     rejected: true,
     rejection
@@ -409,6 +409,10 @@ function normalizeOptionalPositiveInteger(value) {
   }
 
   return Math.floor(number);
+}
+
+function limitItems(items, limit) {
+  return limit ? items.slice(Math.max(0, items.length - limit)) : items;
 }
 
 function normalizeLongValue(value) {

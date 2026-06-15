@@ -19,6 +19,7 @@ const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
 const DEFAULT_RATE_LIMIT = 20;
 const DEFAULT_RATE_WINDOW_MS = 60 * 1000;
 const DEFAULT_MAX_PENDING_SUBMISSIONS = 1000;
+const DEFAULT_MAX_REJECTED_SUBMISSIONS = 1000;
 const DEFAULT_ALLOWED_ORIGINS = ["*"];
 
 export async function handleCommunityRequest(request, store, options = {}) {
@@ -101,7 +102,12 @@ export async function handleCommunityRequest(request, store, options = {}) {
     }
 
     const body = parseJsonBody(request.body);
-    const result = rejectSubmission(state, body.id, body.reason);
+    const result = rejectSubmission(state, body.id, body.reason, new Date().toISOString(), {
+      maxRejectedSubmissions: normalizePositiveInteger(
+        options.maxRejectedSubmissions,
+        DEFAULT_MAX_REJECTED_SUBMISSIONS
+      )
+    });
     return jsonResponse(result.rejected ? 200 : 404, result.store, {
       rejected: result.rejected,
       reason: result.reason || "",
@@ -122,6 +128,10 @@ export async function createCommunityServer(options = {}) {
   const maxPendingSubmissions = normalizePositiveInteger(
     options.maxPendingSubmissions ?? process.env.SAYTHIS_MAX_PENDING_SUBMISSIONS,
     DEFAULT_MAX_PENDING_SUBMISSIONS
+  );
+  const maxRejectedSubmissions = normalizePositiveInteger(
+    options.maxRejectedSubmissions ?? process.env.SAYTHIS_MAX_REJECTED_SUBMISSIONS,
+    DEFAULT_MAX_REJECTED_SUBMISSIONS
   );
   const rateLimiter = options.rateLimiter || createMemoryRateLimiter({
     limit: normalizePositiveInteger(
@@ -162,6 +172,7 @@ export async function createCommunityServer(options = {}) {
       adminToken,
       maxBodyBytes,
       maxPendingSubmissions,
+      maxRejectedSubmissions,
       rateLimiter
     });
 

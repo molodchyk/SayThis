@@ -13,6 +13,7 @@ $env:SAYTHIS_MAX_BODY_BYTES = "16384"
 $env:SAYTHIS_RATE_LIMIT = "20"
 $env:SAYTHIS_RATE_WINDOW_MS = "60000"
 $env:SAYTHIS_MAX_PENDING_SUBMISSIONS = "1000"
+$env:SAYTHIS_MAX_REJECTED_SUBMISSIONS = "1000"
 $env:SAYTHIS_ALLOWED_ORIGINS = "*"
 npm run community:serve
 ```
@@ -50,9 +51,12 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_RATE_LIMIT`: `20`
 - `SAYTHIS_RATE_WINDOW_MS`: `60000`
 - `SAYTHIS_MAX_PENDING_SUBMISSIONS`: `1000`
+- `SAYTHIS_MAX_REJECTED_SUBMISSIONS`: `1000`
 - `SAYTHIS_ALLOWED_ORIGINS`: `*`
 
 When the pending moderation queue reaches `SAYTHIS_MAX_PENDING_SUBMISSIONS`, new public submissions are rejected with `pending-limit-reached`. Duplicate retries of an already pending submission id are still accepted without adding another entry.
+
+Rejected submission summaries are capped by `SAYTHIS_MAX_REJECTED_SUBMISSIONS`; the newest summaries are kept.
 
 Correction submissions must include at least one structured pronunciation field, such as source form, aliases, language, origin, IPA, simple guide, audio URL, source URL, or variant note. Empty correction submissions are rejected as invalid.
 
