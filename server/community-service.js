@@ -11,6 +11,7 @@ import {
   pendingPayload,
   rejectSubmission
 } from "./community-store.js";
+import { renderAdminPage } from "./admin-page.js";
 
 const DEFAULT_PORT = 8787;
 const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
@@ -28,6 +29,10 @@ export async function handleCommunityRequest(request, store, options = {}) {
 
   if (method === "GET" && url.pathname === "/health") {
     return jsonResponse(200, state, { ok: true });
+  }
+
+  if (method === "GET" && url.pathname === "/admin") {
+    return htmlResponse(200, state, renderAdminPage());
   }
 
   if (method === "GET" && url.searchParams.get("action") === "approved") {
@@ -145,7 +150,7 @@ export async function createCommunityServer(options = {}) {
 
     store = result.store;
     await writeStore(storePath, store);
-    sendJsonResponse(response, result.status, result.body);
+    sendCommunityResponse(response, result);
   });
 
   return server;
@@ -199,7 +204,17 @@ function jsonResponse(status, store, body) {
   return {
     status,
     store,
-    body
+    body,
+    contentType: "application/json; charset=utf-8"
+  };
+}
+
+function htmlResponse(status, store, body) {
+  return {
+    status,
+    store,
+    body,
+    contentType: "text/html; charset=utf-8"
   };
 }
 
@@ -277,15 +292,26 @@ async function writeStore(storePath, store) {
   await writeFile(storePath, `${JSON.stringify(normalizeStore(store), null, 2)}\n`, "utf8");
 }
 
-function sendJsonResponse(response, status, body) {
-  response.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
+function sendCommunityResponse(response, result) {
+  const contentType = result.contentType || "application/json; charset=utf-8";
+  response.writeHead(result.status, {
+    "Content-Type": contentType,
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "content-type, authorization",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
   });
-  response.end(JSON.stringify(body));
+
+  if (contentType.startsWith("text/html")) {
+    response.end(String(result.body || ""));
+    return;
+  }
+
+  response.end(JSON.stringify(result.body));
+}
+
+function sendJsonResponse(response, status, body) {
+  sendCommunityResponse(response, jsonResponse(status, createEmptyStore(), body));
 }
 
 function bodyByteLength(body) {

@@ -20,6 +20,34 @@ test("accepts browser preflight requests", async () => {
   assert.equal(result.body.ok, true);
 });
 
+test("serves a static moderator page without pending data", async () => {
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_static_page",
+      term: "Chiaroscuro",
+      lookupKey: "chiaroscuro",
+      kind: "missing"
+    })
+  }, createEmptyStore());
+
+  response = await handleCommunityRequest({
+    method: "GET",
+    url: "/admin",
+    headers: {},
+    body: ""
+  }, response.store);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.contentType, "text/html; charset=utf-8");
+  assert.match(response.body, /SayThis Moderator/);
+  assert.match(response.body, /Load Pending/);
+  assert.equal(response.body.includes("Chiaroscuro"), false);
+  assert.equal(response.store.pending.length, 1);
+});
+
 test("accepts submissions without storing request metadata", async () => {
   const submission = {
     id: "sub_1",

@@ -17,6 +17,14 @@ npm run community:serve
 
 The service listens on `http://127.0.0.1:8787` by default. For real extension sync, deploy it behind HTTPS and configure the extension endpoint to the public `/community` URL.
 
+Open the moderator page locally at:
+
+```http
+GET /admin
+```
+
+The page is a static shell. It loads pending submissions only after a moderator enters the service URL and admin token.
+
 ## Public Endpoint
 
 Submit a correction:
@@ -90,6 +98,8 @@ Content-Type: application/json
   "reason": "not pronunciation data"
 }
 ```
+
+The `/admin` page uses these same endpoints. It can approve submissions with edited source form, language, origin, IPA, simple guide, audio URL, and variant note fields.
 
 ## Storage
 

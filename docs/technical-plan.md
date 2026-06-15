@@ -17,6 +17,7 @@ Chrome Manifest V3 components:
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
+- `server/admin-page.js`: static moderator UI for reviewing pending community submissions.
 - `assets/icons/`: generated PNG icons referenced by the manifest and toolbar action.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
@@ -42,6 +43,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
+- Static moderator page for loading pending submissions and approving or rejecting structured pronunciation entries.
 - Community service request-size limits and in-memory public submission rate limiting.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
@@ -140,6 +142,6 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 
 - Build more resolver adapters for gazetteers, pronunciation databases, and domain-specific term sources.
 - Broaden online entity scoring with additional structured sources.
-- Add durable abuse controls, admin UI, and deployment recipes for the community backend.
+- Add durable abuse controls and deployment recipes for the community backend.
 - Add actual curated public audio files after source/license review.
 - Add broader tests around popup/background message contracts.
