@@ -38,6 +38,7 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 - SWOT analysis: `docs/swot-analysis.md`
 - Research notes: `docs/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
+- Community service: `docs/community-service.md`
 - Seed glossary: `data/pronunciation-seed.json`
 
 ## Load Locally
@@ -75,6 +76,13 @@ Run the resolver tests:
 
 ```powershell
 npm test
+```
+
+Run the community moderation service locally:
+
+```powershell
+$env:SAYTHIS_ADMIN_TOKEN = "change-me"
+npm run community:serve
 ```
 
 ## License

@@ -12,6 +12,8 @@ Chrome Manifest V3 components:
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card after context-menu or keyboard-command use.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
+- `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
+- `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
@@ -31,6 +33,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Opt-in community sync endpoint with queued retry behavior.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
+- Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
 - Verified-audio playback from resolver results, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
@@ -114,12 +117,12 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 - Community data can introduce spam, regional disputes, or confident incorrect corrections.
 - Etymology and origin notes can expand scope unless kept pronunciation-relevant.
 - Online lookup currently uses two structured sources and needs broader source coverage before it can be treated as universal.
-- Community sync needs a real moderated backend before it can create shared trust across users.
+- The included moderation service still needs production deployment hardening before public operation.
 
 ## Near-Term Tasks
 
 - Build more resolver adapters for gazetteers, pronunciation databases, and domain-specific term sources.
 - Broaden online entity scoring with additional structured sources.
-- Design and implement the moderated community backend.
+- Add deployment guidance, rate limiting, and abuse controls for the community backend.
 - Add actual curated public audio files after source/license review.
 - Add broader tests around popup/background message contracts.
