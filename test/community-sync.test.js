@@ -171,6 +171,22 @@ test("normalizes approved community entries", () => {
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");
 });
 
+test("keeps object-map keys for sparse approved entries", () => {
+  const entries = normalizeApprovedEntries({
+    entries: {
+      sparseapproved: {
+        confirmations: 5,
+        sourceForm: "Sparse Approved"
+      }
+    }
+  });
+
+  assert.deepEqual(Object.keys(entries), ["sparseapproved"]);
+  assert.equal(entries.sparseapproved.term, "Sparse Approved");
+  assert.equal(entries.sparseapproved.lookupKey, "sparseapproved");
+  assert.equal(entries.sparseapproved.confirmations, 5);
+});
+
 test("merges approved entries by lookup key", () => {
   const merged = mergeApprovedEntries({
     gnocchi: {

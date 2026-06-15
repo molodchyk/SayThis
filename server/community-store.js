@@ -271,18 +271,24 @@ function normalizeApprovedMap(value = {}) {
     return {};
   }
 
-  const entries = Array.isArray(value) ? value : Object.values(value);
+  const entries = Array.isArray(value)
+    ? value.map((entry) => ["", entry])
+    : Object.entries(value);
   return Object.fromEntries(entries
-    .map(normalizeApprovedEntry)
+    .map(([key, entry]) => normalizeApprovedEntry(entry, key))
     .filter((entry) => entry.lookupKey)
     .map((entry) => [entry.lookupKey, entry]));
 }
 
-function normalizeApprovedEntry(value = {}) {
+function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
   const term = normalizeSelection(value.term || value.display || value.sourceForm);
-  const lookupKey = createLookupKey(value.lookupKey || term);
+  const lookupKey = createLookupKey(value.lookupKey || fallbackLookupKey || term);
+  if (!lookupKey || !hasApprovedEntryContent(value)) {
+    return {};
+  }
+
   return {
-    term,
+    term: term || normalizeSelection(fallbackLookupKey),
     lookupKey,
     confirmations: clampNumber(value.confirmations, 0, 100000),
     corrections: clampNumber(value.corrections, 0, 100000),
@@ -302,6 +308,19 @@ function normalizeApprovedEntry(value = {}) {
     approvedAt: normalizeSelection(value.approvedAt),
     updatedAt: normalizeSelection(value.updatedAt || value.approvedAt)
   };
+}
+
+function hasApprovedEntryContent(value = {}) {
+  return Boolean(
+    normalizeSelection(value.lookupKey || value.term || value.display || value.sourceForm) ||
+    normalizeAliases(value.aliases).length ||
+    normalizeSelection(value.language || value.languageName || value.origin || value.ipa || value.simple || value.audioUrl || value.sourceUrl || value.variantNote) ||
+    normalizeTrustSignals(value.trustSignals).length ||
+    clampNumber(value.confirmations, 0, 100000) ||
+    clampNumber(value.corrections, 0, 100000) ||
+    clampNumber(value.flags, 0, 100000) ||
+    clampNumber(value.requests, 0, 100000)
+  );
 }
 
 function normalizeRejection(value = {}) {

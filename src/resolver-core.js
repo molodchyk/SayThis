@@ -191,13 +191,13 @@ export function createRemoteStructuredResult(selection, source) {
 
 export function normalizeCommunityEntries(entries = {}) {
   const rawEntries = Array.isArray(entries)
-    ? entries
+    ? entries.map((entry) => ["", entry])
     : entries && typeof entries === "object"
-      ? Object.values(entries)
+      ? Object.entries(entries)
       : [];
 
   return Object.fromEntries(rawEntries
-    .map(normalizeCommunityEntry)
+    .map(([key, entry]) => normalizeCommunityEntry(entry, key))
     .filter((entry) => entry?.lookupKey)
     .map((entry) => [entry.lookupKey, entry]));
 }
@@ -258,15 +258,15 @@ export function updateCommunityEntries(entries, selection, feedback) {
   };
 }
 
-function normalizeCommunityEntry(entry = {}) {
+function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
   const term = normalizeSelection(entry.term || entry.display || entry.sourceForm);
-  const lookupKey = createLookupKey(entry.lookupKey || term);
-  if (!lookupKey) {
+  const lookupKey = createLookupKey(entry.lookupKey || fallbackLookupKey || term);
+  if (!lookupKey || !hasCommunityEntryContent(entry)) {
     return null;
   }
 
   return {
-    term: term || normalizeSelection(entry.sourceForm),
+    term: term || normalizeSelection(entry.sourceForm) || normalizeSelection(fallbackLookupKey),
     lookupKey,
     confirmations: normalizeCount(entry.confirmations),
     flags: normalizeCount(entry.flags),
@@ -285,6 +285,18 @@ function normalizeCommunityEntry(entry = {}) {
     createdAt: normalizeSelection(entry.createdAt),
     updatedAt: normalizeSelection(entry.updatedAt)
   };
+}
+
+function hasCommunityEntryContent(entry = {}) {
+  return Boolean(
+    normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
+    normalizeAliases(entry.aliases).length ||
+    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    normalizeCount(entry.confirmations) ||
+    normalizeCount(entry.flags) ||
+    normalizeCount(entry.requests) ||
+    normalizeCount(entry.corrections)
+  );
 }
 
 export function applyCommunitySummary(result, communityEntry) {

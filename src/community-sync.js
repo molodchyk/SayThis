@@ -146,15 +146,15 @@ export function syncSummary(queue = []) {
 
 export function normalizeApprovedEntries(payload = {}) {
   const rawEntries = Array.isArray(payload)
-    ? payload
+    ? payload.map((entry) => ["", entry])
     : Array.isArray(payload.entries)
-      ? payload.entries
+      ? payload.entries.map((entry) => ["", entry])
       : isPlainObject(payload.entries)
-        ? Object.values(payload.entries)
+        ? Object.entries(payload.entries)
         : [];
 
   return Object.fromEntries(rawEntries
-    .map(normalizeApprovedEntry)
+    .map(([key, entry]) => normalizeApprovedEntry(entry, key))
     .filter((entry) => entry.lookupKey)
     .map((entry) => [entry.lookupKey, entry]));
 }
@@ -213,16 +213,19 @@ function normalizeResultMetadata(result = null) {
   };
 }
 
-function normalizeApprovedEntry(entry = {}) {
+function normalizeApprovedEntry(entry = {}, fallbackLookupKey = "") {
   const term = normalizeSelection(entry.term || entry.display || entry.sourceForm);
-  const lookupKey = createLookupKey(entry.lookupKey || term);
+  const lookupKey = createLookupKey(entry.lookupKey || fallbackLookupKey || term);
   const confirmations = clampNumber(entry.confirmations, 0, 100000);
   const corrections = clampNumber(entry.corrections, 0, 100000);
   const flags = clampNumber(entry.flags, 0, 100000);
   const requests = clampNumber(entry.requests, 0, 100000);
+  if (!lookupKey || !hasApprovedEntryContent(entry)) {
+    return {};
+  }
 
   return {
-    term,
+    term: term || normalizeSelection(fallbackLookupKey),
     lookupKey,
     confirmations,
     corrections,
@@ -242,6 +245,19 @@ function normalizeApprovedEntry(entry = {}) {
     approvedAt: normalizeSelection(entry.approvedAt),
     updatedAt: normalizeSelection(entry.updatedAt || entry.approvedAt)
   };
+}
+
+function hasApprovedEntryContent(entry = {}) {
+  return Boolean(
+    normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
+    normalizeAliases(entry.aliases).length ||
+    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    normalizeTrustSignals(entry.trustSignals).length ||
+    clampNumber(entry.confirmations, 0, 100000) ||
+    clampNumber(entry.corrections, 0, 100000) ||
+    clampNumber(entry.flags, 0, 100000) ||
+    clampNumber(entry.requests, 0, 100000)
+  );
 }
 
 function firstResultAudioUrl(result = {}) {

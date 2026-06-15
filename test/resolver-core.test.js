@@ -120,6 +120,20 @@ test("normalizes imported local community entries", () => {
   assert.equal(Object.hasOwn(entries.exampleterm, "extra"), false);
 });
 
+test("keeps object-map keys for sparse imported local community entries", () => {
+  const entries = normalizeCommunityEntries({
+    sparsekey: {
+      confirmations: 4,
+      sourceForm: "Sparse Source"
+    }
+  });
+
+  assert.deepEqual(Object.keys(entries), ["sparsekey"]);
+  assert.equal(entries.sparsekey.term, "Sparse Source");
+  assert.equal(entries.sparsekey.lookupKey, "sparsekey");
+  assert.equal(entries.sparsekey.confirmations, 4);
+});
+
 test("applies community summary without replacing a structured result", () => {
   const result = createRemoteStructuredResult("Exampleterm", {
     id: "remote:exampleterm",

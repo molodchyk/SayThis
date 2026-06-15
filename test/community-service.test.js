@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  createEmptyStore
+  createEmptyStore,
+  normalizeStore
 } from "../server/community-store.js";
 import {
   adminTokenMatches,
@@ -32,6 +33,22 @@ test("normalizes allowed CORS origins", () => {
   assert.equal(corsAllowOrigin("https://example.com/page", ["https://example.com"]), "https://example.com");
   assert.equal(corsAllowOrigin("https://other.example/page", ["https://example.com"]), "");
   assert.equal(corsAllowOrigin("chrome-extension://abcdefghijklmnop/popup.html", ["chrome-extension://abcdefghijklmnop"]), "chrome-extension://abcdefghijklmnop");
+});
+
+test("normalizes keyed approved store entries without embedded lookup fields", () => {
+  const store = normalizeStore({
+    approved: {
+      sparseapproved: {
+        confirmations: 3,
+        sourceForm: "Sparse Approved"
+      }
+    }
+  }, "2026-01-01T00:00:00.000Z");
+
+  assert.deepEqual(Object.keys(store.approved), ["sparseapproved"]);
+  assert.equal(store.approved.sparseapproved.term, "Sparse Approved");
+  assert.equal(store.approved.sparseapproved.lookupKey, "sparseapproved");
+  assert.equal(store.approved.sparseapproved.confirmations, 3);
 });
 
 test("accepts only matching moderator bearer tokens", () => {
