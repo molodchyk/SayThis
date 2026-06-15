@@ -7,6 +7,7 @@ Chrome Manifest V3 components:
 - `background.js`: creates the context menu and handles text-to-speech messages.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
 - `wikidata-adapter.js`: extracts source forms, native/official names, IPA, and pronunciation audio from Wikidata entities.
+- `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card after context-menu or keyboard-command use.
@@ -23,6 +24,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Optional Wikidata lookup from the popup `Online` action.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Wikidata native/official source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
+- Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, and evidence.
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
@@ -101,11 +103,11 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 - Some pages block extension selection capture.
 - Community data can introduce spam, regional disputes, or confident incorrect corrections.
 - Etymology and origin notes can expand scope unless kept pronunciation-relevant.
-- Online lookup currently uses a single structured source and needs broader source coverage before it can be treated as universal.
+- Online lookup currently uses two structured sources and needs broader source coverage before it can be treated as universal.
 
 ## Near-Term Tasks
 
-- Build more resolver adapters for structured sources and pronunciation databases.
+- Build more resolver adapters for gazetteers, pronunciation databases, and domain-specific term sources.
 - Broaden online entity scoring with additional structured sources.
 - Add bundled-audio packaging for curated entries.
 - Add broader tests around popup/background message contracts.

@@ -9,6 +9,9 @@ import {
 import {
   selectBestWikidataResult
 } from "./wikidata-adapter.js";
+import {
+  buildWiktionaryResult
+} from "./wiktionary-adapter.js";
 
 const MENU_ID = "saythis-pronounce-selection";
 const STORAGE_KEYS = {
@@ -135,7 +138,7 @@ async function resolveSelection(text, options = {}) {
   const shouldUseOnline = options.useOnline ?? settings.onlineByDefault;
   if (shouldUseOnline) {
     try {
-      const remoteResult = await resolveWithWikidata(selectedText);
+      const remoteResult = await resolveWithOnlineSources(selectedText);
       result = mergeRemoteResult(localResult, remoteResult);
     } catch {
       result = {
@@ -287,6 +290,55 @@ async function resolveWithWikidata(text) {
 
   const entityById = await fetchWikidataEntities(matches.slice(0, 5));
   return selectBestWikidataResult(query, matches, entityById);
+}
+
+async function resolveWithOnlineSources(text) {
+  const [wikidataResult, wiktionaryResult] = await Promise.all([
+    resolveSafely(resolveWithWikidata, text),
+    resolveSafely(resolveWithWiktionary, text)
+  ]);
+
+  return mergeRemoteResult(wikidataResult, wiktionaryResult);
+}
+
+async function resolveSafely(resolver, text) {
+  try {
+    return await resolver(text);
+  } catch {
+    return null;
+  }
+}
+
+async function resolveWithWiktionary(text) {
+  const query = normalizeSelection(text);
+  if (!query) {
+    return null;
+  }
+
+  const params = new URLSearchParams({
+    action: "query",
+    prop: "revisions",
+    titles: query,
+    rvslots: "main",
+    rvprop: "content",
+    format: "json",
+    formatversion: "2",
+    origin: "*"
+  });
+
+  const response = await fetch(`https://en.wiktionary.org/w/api.php?${params.toString()}`);
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  const page = data.query?.pages?.find((candidate) => !candidate.missing);
+  const wikitext = page?.revisions?.[0]?.slots?.main?.content;
+  if (!wikitext) {
+    return null;
+  }
+
+  return buildWiktionaryResult(query, page.title || query, wikitext);
 }
 
 async function fetchWikidataEntities(matches) {
