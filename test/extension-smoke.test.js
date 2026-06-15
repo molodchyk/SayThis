@@ -60,6 +60,18 @@ test("static extension module imports resolve inside the runtime package", async
   assert.deepEqual(missing.sort(), []);
 });
 
+test("overlay exposes playback and feedback actions", async () => {
+  const source = await readText("src/content-overlay.js");
+
+  for (const action of ["speak", "slow", "confirm", "missing", "wrong"]) {
+    assert.match(source, new RegExp(`data-action="${action}"`));
+  }
+
+  for (const kind of ["confirm", "missing", "wrong"]) {
+    assert.match(source, new RegExp(`sendFeedback\\(result, ["']${kind}["']\\)`));
+  }
+});
+
 function idsInHtml(html) {
   return matches(html, /\bid="([^"]+)"/g);
 }

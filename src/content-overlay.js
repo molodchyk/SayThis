@@ -179,7 +179,7 @@
 
         .actions {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 8px;
         }
 
@@ -198,6 +198,13 @@
         button.secondary {
           color: #0f6b58;
           background: transparent;
+        }
+
+        .status {
+          min-height: 16px;
+          margin: 8px 0 0;
+          color: #65726d;
+          font-size: 11px;
         }
       </style>
       <article class="card" role="dialog" aria-label="SayThis pronunciation result">
@@ -239,8 +246,11 @@
         <div class="actions">
           <button class="action" type="button" data-action="speak">Speak</button>
           <button class="action secondary" type="button" data-action="slow">Slow</button>
+          <button class="action secondary" type="button" data-action="confirm">Confirm</button>
+          <button class="action secondary" type="button" data-action="missing">Missing</button>
           <button class="action secondary" type="button" data-action="wrong">Wrong</button>
         </div>
+        <p class="status" aria-live="polite"></p>
       </article>
     `;
 
@@ -253,17 +263,39 @@
 
     root.querySelector('[data-action="speak"]').addEventListener("click", () => speak(result, 0.82));
     root.querySelector('[data-action="slow"]').addEventListener("click", () => speak(result, 0.62));
-    root.querySelector('[data-action="wrong"]').addEventListener("click", () => {
-      chrome.runtime.sendMessage({
-        type: "SAYTHIS_FEEDBACK",
-        text: result.query || result.display,
-        feedback: { kind: "wrong" }
-      });
-    });
+    root.querySelector('[data-action="confirm"]').addEventListener("click", () => sendFeedback(result, "confirm"));
+    root.querySelector('[data-action="missing"]').addEventListener("click", () => sendFeedback(result, "missing"));
+    root.querySelector('[data-action="wrong"]').addEventListener("click", () => sendFeedback(result, "wrong"));
 
     if (options.autoPlay) {
       speak(result, 0.82);
     }
+  }
+
+  function sendFeedback(result, kind) {
+    const status = root?.querySelector(".status");
+    if (status) {
+      status.textContent = "Saving.";
+    }
+
+    chrome.runtime.sendMessage({
+      type: "SAYTHIS_FEEDBACK",
+      text: result.query || result.display,
+      feedback: { kind }
+    }, (response) => {
+      if (chrome.runtime.lastError || !response?.ok) {
+        if (status) {
+          status.textContent = response?.error || chrome.runtime.lastError?.message || "Could not save.";
+        }
+        return;
+      }
+
+      renderOverlay(response.result || result);
+      const nextStatus = root?.querySelector(".status");
+      if (nextStatus) {
+        nextStatus.textContent = "Saved.";
+      }
+    });
   }
 
   function ensureRoot() {
