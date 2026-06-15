@@ -80,6 +80,7 @@ The first useful version should be narrow and trusted:
 
 - Resolve unfamiliar terms through structured sources before falling back to generated speech.
 - Store native-script forms, romanized variants, source confidence, and native audio.
+- Treat each useful lookup as a reusable pronunciation-graph entry, not a chat response or a closed-list item.
 - Treat community submissions as structured pronunciation knowledge: source form, root, audio, guide, variant, source, and trust signal.
 - Prefer curated or native-speaker audio over generated voices.
 - Show confidence and source labels in the UI.

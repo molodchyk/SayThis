@@ -10,6 +10,8 @@ The problem: creators and professionals often run into unfamiliar names and term
 
 The later product insight is broader: SayThis should not be just a text-to-speech button, a chatbot, or a static word list. It should become a community-driven pronunciation memory layer for unfamiliar terms on the web. The extension should resolve selected text into the most likely pronounceable source form, play audio, show why the result is trustworthy, and learn from corrections.
 
+The deeper product insight is that unfamiliar-term pronunciation is reusable knowledge. A user is not only asking for sound; they are asking what this term is, what form should be spoken, what root or origin explains it, which variants are valid, and which source makes the answer trustworthy. SayThis should turn that into a compact pronunciation unit that can help the next person.
+
 ## Naming Decision
 
 The product name is `SayThis`.
@@ -36,6 +38,8 @@ The product should avoid two weak extremes:
 - It should not depend on a manually maintained list of pre-curated words.
 
 Instead, SayThis should combine structured sources, pronunciation services, language rules, and community corrections.
+
+The key asset should be a pronunciation graph, not a chat transcript and not a fixed glossary.
 
 ## Initial Wedge
 

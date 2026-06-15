@@ -74,6 +74,18 @@ Users should be able to:
 
 The system should turn those signals into shared entries with confidence levels. One correction for a rare term can help many future users because rare research terms often recur within the same communities.
 
+## Knowledge Capture Principle
+
+Each accepted correction should become structured pronunciation knowledge:
+
+- what the user selected
+- what source form should be spoken
+- what language, origin, root, or domain explains the sound
+- which audio, IPA, simple guide, and variant are supported
+- which source or trust signal backs the entry
+
+This keeps SayThis narrow at the interaction layer and deep at the data layer. The user gets one-button help, while the system builds reusable pronunciation memory across research, education, scripts, and domain work.
+
 ## Confidence Ladder
 
 SayThis should show confidence rather than hide uncertainty:

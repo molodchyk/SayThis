@@ -69,6 +69,18 @@ A useful community entry is not a comment thread. It is a structured pronunciati
 
 This structure keeps community input useful even if the community starts small.
 
+## Knowledge Capture Rule
+
+Treat every useful lookup as a chance to capture the pronunciation root of an unfamiliar term:
+
+- the selected spelling as seen by the user
+- the source or native form that should be spoken
+- the reason that form is preferred
+- the audio or guide that makes it usable
+- the evidence and confidence that make it trustworthy
+
+If a lookup is missing or low confidence, that is still useful signal. The product should capture a missing-entry request, candidate alias, suggested source form, or correction in the same structured shape so it can later become an approved entry.
+
 ## Why Community Can Work
 
 The product does not need a huge public wiki on day one. Rare terms cluster inside communities and workflows. A researcher, creator, teacher, editor, or domain expert may fix one term, then many later users benefit from that same structured entry.

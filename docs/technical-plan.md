@@ -128,6 +128,8 @@ Approved shared entries are stored separately from local feedback. During lookup
 
 Community memory should produce a structured pronunciation graph, not a discussion feed. Accepted entries should capture source form, aliases, language, origin or root, IPA, simple guide, audio source, source links, variants, and trust signals.
 
+Missing or low-confidence lookups should use the same shape. A request for an unfamiliar term can record the selected spelling, candidate aliases, suggested source form, domain hint, requested guide, and optional source link so later moderation can promote it without inventing a second data model.
+
 ## Privacy
 
 The MVP should avoid sending every highlighted word to a server by default. A conservative sequence:

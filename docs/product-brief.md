@@ -8,6 +8,8 @@ The long-term product is a community-driven pronunciation memory layer for the w
 
 The durable product asset is a pronunciation graph, not a static glossary. Each useful lookup can connect selected forms, aliases, source forms, languages, origins, roots, audio sources, phonetic guides, variants, and trust signals.
 
+The product should capture pronunciation knowledge in a reusable shape: selected spelling, source form, origin or root, pronunciation evidence, audio, variants, and trust. This is what lets SayThis stay one-button simple without becoming either a chatbot or a closed list.
+
 ## Target Users
 
 - Journalists, podcasters, streamers, and editors preparing scripts.
@@ -20,6 +22,7 @@ The durable product asset is a pronunciation graph, not a static glossary. Each 
 - When I see an unfamiliar name in a script, article, map, or source post, I want to hear it immediately so I can say it correctly.
 - When I find an unfamiliar research term, I want to know its source form, origin, and pronunciation without opening a chatbot or several search tabs.
 - When I correct a rare term, I want that fix to help me and future users without turning the product into a wiki editor.
+- When a term has a root, source language, or domain context that affects pronunciation, I want that context captured only as far as it helps me say the term.
 - When I am preparing a video, I want a fast pronunciation check without opening several tabs.
 - When the extension is unsure, I want to know that instead of being given false confidence.
 
