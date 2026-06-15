@@ -25,7 +25,7 @@ Remote lookup is user-triggered or opt-in. SayThis can send the selected term to
 - Forvo lookup, only after the user enables Forvo and stores an API key
 - a user-configured custom source endpoint
 - a user-configured Nominatim-compatible place-name endpoint
-- a user-configured community endpoint, only after community sync is enabled
+- a user-configured community endpoint, only after community submission or approved-entry refresh is enabled
 
 Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. It does not submit page URLs or browsing history.
 
@@ -51,7 +51,7 @@ Users can:
 - clear cached lookup results
 - clear the community sync queue
 - clear approved shared entries
-- disable community sync, custom source lookup, Forvo lookup, and place-name lookup
+- disable community submission, approved-entry refresh, custom source lookup, Forvo lookup, and place-name lookup
 
 ## Publication Notes
 

@@ -39,6 +39,7 @@ const DEFAULT_SETTINGS = {
   gazetteerEnabled: false,
   gazetteerEndpoint: "",
   communitySyncEnabled: false,
+  communityPullEnabled: false,
   communityEndpoint: ""
 };
 const DEFAULT_CREDENTIALS = {
@@ -64,6 +65,7 @@ const importButton = document.getElementById("import-data");
 const clearButton = document.getElementById("clear-memory");
 const dataBox = document.getElementById("data-box");
 const syncEnabled = document.getElementById("sync-enabled");
+const pullEnabled = document.getElementById("pull-enabled");
 const syncEndpoint = document.getElementById("sync-endpoint");
 const syncSummaryText = document.getElementById("sync-summary");
 const flushSyncButton = document.getElementById("flush-sync");
@@ -86,6 +88,7 @@ gazetteerEnabled.addEventListener("change", saveSettings);
 gazetteerEndpoint.addEventListener("change", saveSettings);
 clearCacheButton.addEventListener("click", clearLookupCache);
 syncEnabled.addEventListener("change", saveSettings);
+pullEnabled.addEventListener("change", saveSettings);
 syncEndpoint.addEventListener("change", saveSettings);
 exportButton.addEventListener("click", exportData);
 importButton.addEventListener("click", importData);
@@ -119,6 +122,7 @@ async function init() {
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
+  pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   renderCacheSummary(stored[STORAGE_KEYS.resultCache]);
   renderSummary(stored[STORAGE_KEYS.communityEntries] || {});
@@ -129,6 +133,7 @@ async function init() {
 
 async function saveSettings() {
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
+  const wantedPull = pullEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
   const wantedCustomSource = customSourceEnabled.checked && Boolean(normalizeEndpoint(customSourceEndpoint.value));
   const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
@@ -147,8 +152,10 @@ async function saveSettings() {
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
+  pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   setStatus((settings.communitySyncEnabled || !wantedSync) &&
+      (settings.communityPullEnabled || !wantedPull) &&
       (settings.customSourceEnabled || !wantedCustomSource) &&
       (settings.gazetteerEnabled || !wantedGazetteer) &&
       (settings.forvoEnabled || !wantedForvo)
@@ -225,6 +232,7 @@ async function importData() {
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
+  pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   renderCacheSummary(resultCache);
   renderSummary(communityEntries);
@@ -273,7 +281,7 @@ async function pullApproved() {
     STORAGE_KEYS.communityPullState
   ]);
   renderApprovedSummary(stored[STORAGE_KEYS.approvedCommunityEntries], stored[STORAGE_KEYS.communityPullState]);
-  setStatus(`Refreshed ${response.summary.received || 0}.`);
+  setStatus(response.summary.skipped ? "Approved refresh is disabled." : `Refreshed ${response.summary.received || 0}.`);
 }
 
 async function clearSyncQueue() {
@@ -354,7 +362,8 @@ function normalizeSettings(settings = {}) {
     gazetteerEndpoint: gazetteer,
     gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteer),
     communityEndpoint: endpoint,
-    communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint)
+    communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint),
+    communityPullEnabled: Boolean(settings.communityPullEnabled && endpoint)
   };
 }
 
@@ -383,6 +392,7 @@ async function settingsFromControls(credentials) {
     gazetteerEnabled: gazetteerEnabled.checked,
     gazetteerEndpoint: normalizeEndpoint(gazetteerEndpoint.value),
     communitySyncEnabled: syncEnabled.checked,
+    communityPullEnabled: pullEnabled.checked,
     communityEndpoint: normalizeEndpoint(syncEndpoint.value)
   }, credentials);
 }
@@ -417,11 +427,12 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
     };
   }
 
-  if (settings.communitySyncEnabled) {
+  if (settings.communitySyncEnabled || settings.communityPullEnabled) {
     const granted = await requestEndpointPermission(settings.communityEndpoint);
     settings = {
       ...settings,
-      communitySyncEnabled: Boolean(granted)
+      communitySyncEnabled: Boolean(settings.communitySyncEnabled && granted),
+      communityPullEnabled: Boolean(settings.communityPullEnabled && granted)
     };
   }
 

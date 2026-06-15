@@ -17,17 +17,21 @@ import {
 test("normalizes sync settings conservatively", () => {
   assert.deepEqual(normalizeSyncSettings({
     communitySyncEnabled: true,
+    communityPullEnabled: true,
     communityEndpoint: "http://example.com/submit"
   }), {
     communitySyncEnabled: false,
+    communityPullEnabled: false,
     communityEndpoint: ""
   });
 
   assert.deepEqual(normalizeSyncSettings({
     communitySyncEnabled: true,
+    communityPullEnabled: true,
     communityEndpoint: "https://example.com/submit"
   }), {
     communitySyncEnabled: true,
+    communityPullEnabled: true,
     communityEndpoint: "https://example.com/submit"
   });
 });
@@ -277,16 +281,18 @@ test("merges approved entries by lookup key", () => {
   assert.equal(merged.gnocchi.language, "it");
 });
 
-test("pulls approved entries only when sync is enabled", async () => {
+test("pulls approved entries when refresh is enabled", async () => {
   const skipped = await pullApprovedEntries({
-    communitySyncEnabled: false,
+    communitySyncEnabled: true,
+    communityPullEnabled: false,
     communityEndpoint: "https://example.com/community"
   }, async () => ({ entries: [] }));
 
   assert.equal(skipped.skipped, true);
 
   const pulled = await pullApprovedEntries({
-    communitySyncEnabled: true,
+    communitySyncEnabled: false,
+    communityPullEnabled: true,
     communityEndpoint: "https://example.com/community"
   }, async (endpoint) => {
     assert.equal(endpoint, "https://example.com/community");

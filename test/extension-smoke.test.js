@@ -97,8 +97,11 @@ test("options page exposes shared-entry data controls", async () => {
   const html = await readText("src/options.html");
   const source = await readText("src/options.js");
 
+  assert.match(html, /id="pull-enabled"/);
   assert.match(html, /id="pull-approved"/);
   assert.match(html, /id="clear-approved"/);
+  assert.match(source, /communityPullEnabled/);
+  assert.match(source, /pullEnabled/);
   assert.match(source, /normalizeApprovedEntries/);
   assert.match(source, /approvedCommunityEntries:\s*normalizeApprovedEntries/);
   assert.match(source, /normalizeCommunityEntries/);

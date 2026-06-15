@@ -5,6 +5,7 @@ import {
 
 export const DEFAULT_SYNC_SETTINGS = {
   communitySyncEnabled: false,
+  communityPullEnabled: false,
   communityEndpoint: ""
 };
 
@@ -16,6 +17,7 @@ export function normalizeSyncSettings(settings = {}) {
   const endpoint = normalizeEndpoint(settings.communityEndpoint);
   return {
     communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint),
+    communityPullEnabled: Boolean(settings.communityPullEnabled && endpoint),
     communityEndpoint: endpoint
   };
 }
@@ -172,7 +174,7 @@ export function mergeApprovedEntries(existing = {}, incoming = {}) {
 
 export async function pullApprovedEntries(settings = {}, fetchApproved) {
   const syncSettings = normalizeSyncSettings(settings);
-  if (!syncSettings.communitySyncEnabled || typeof fetchApproved !== "function") {
+  if (!syncSettings.communityPullEnabled || typeof fetchApproved !== "function") {
     return {
       entries: {},
       received: 0,
