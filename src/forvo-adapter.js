@@ -41,7 +41,7 @@ export function buildForvoResult(query, payload = {}) {
     return null;
   }
 
-  const audioUrl = normalizeSelection(item.pathogg || item.pathmp3);
+  const audioUrl = normalizeLongValue(item.pathogg || item.pathmp3);
   if (!audioUrl) {
     return null;
   }
@@ -115,7 +115,7 @@ function normalizeForvoItems(payload = {}) {
 }
 
 function scoreForvoItem(item = {}, index) {
-  const audioUrl = normalizeSelection(item.pathogg || item.pathmp3);
+  const audioUrl = normalizeLongValue(item.pathogg || item.pathmp3);
   if (!audioUrl) {
     return 0;
   }
@@ -166,6 +166,13 @@ function normalizeLanguageCode(value) {
 function normalizeNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : NaN;
+}
+
+function normalizeLongValue(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 2048);
 }
 
 function clampInteger(value, min, max, fallback) {

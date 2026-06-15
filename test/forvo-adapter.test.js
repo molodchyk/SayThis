@@ -46,6 +46,23 @@ test("selects the best rated Forvo item with audio", () => {
   assert.equal(best.id, 3);
 });
 
+test("keeps long Forvo audio URLs intact", () => {
+  const longAudioUrl = `https://audio.example/${"a".repeat(180)}/term.ogg`;
+  const best = selectBestForvoItem({
+    items: [{
+      id: 4,
+      word: "term",
+      pathogg: longAudioUrl,
+      rate: 5,
+      code: "en"
+    }]
+  });
+  const result = buildForvoResult("term", { items: [best] });
+
+  assert.equal(best.pathogg, longAudioUrl);
+  assert.equal(result.pronunciation.audio[0].url, longAudioUrl);
+});
+
 test("builds a verified-audio result from Forvo payload", () => {
   const result = buildForvoResult("chiaroscuro", {
     items: [{
