@@ -37,6 +37,21 @@ test("selects the matching custom source entry", () => {
   assert.equal(entry.term, "chiaroscuro");
 });
 
+test("matches custom source string aliases from keyed entry maps", () => {
+  const entry = selectBestCustomEntry("light-dark", {
+    entries: {
+      art_chiaroscuro: {
+        term: "chiaroscuro",
+        aliases: "light-dark; bright-dark",
+        sourceForm: "chiaroscuro",
+        simple: "kee-ah-roh-SKOO-roh"
+      }
+    }
+  });
+
+  assert.equal(entry.term, "chiaroscuro");
+});
+
 test("builds a structured custom source result", () => {
   const result = buildCustomSourceResult("chiaroscuro", {
     sourceName: "Art terms",
@@ -73,4 +88,22 @@ test("builds a structured custom source result", () => {
   assert.ok(result.evidence.includes("Structured result from Art terms"));
   assert.ok(result.evidence.includes("Root: chiaro + scuro"));
   assert.ok(result.sources.some((source) => source.url === "https://example.com/terms/chiaroscuro"));
+});
+
+test("preserves custom source string aliases on results", () => {
+  const result = buildCustomSourceResult("light-dark", {
+    entries: {
+      art_chiaroscuro: {
+        term: "chiaroscuro",
+        aliases: "light-dark; bright-dark; light-dark",
+        sourceForm: "chiaroscuro",
+        language: "it",
+        simple: "kee-ah-roh-SKOO-roh"
+      }
+    }
+  });
+
+  assert.deepEqual(result.aliases, ["light-dark", "bright-dark"]);
+  assert.equal(result.sourceForm, "chiaroscuro");
+  assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
 });

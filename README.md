@@ -30,6 +30,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Sparse keyed memory imports preserve selected-term lookup keys while keeping source-form pronunciation data.
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
+- Custom sources can provide array or text aliases and keyed entry maps.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
 - Source-form and alias-guided pronunciation-audio lookup that tries resolved spellings before raw selected text.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.

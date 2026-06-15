@@ -44,7 +44,7 @@ export function buildCustomSourceResult(query, payload = {}, options = {}) {
   return createRemoteStructuredResult(selectedText, {
     id: `custom:${normalizeSelection(entry.id || createLookupKey(display || sourceForm))}`,
     display,
-    aliases: Array.isArray(entry.aliases) ? entry.aliases : [],
+    aliases: normalizeAliases(entry.aliases),
     trustSignals: entry.trustSignals || [],
     sourceForm,
     language: normalizeSelection(entry.language),
@@ -90,6 +90,10 @@ function normalizeEntries(payload = {}) {
 
   if (Array.isArray(payload.entries)) {
     return payload.entries.filter(isPlainObject);
+  }
+
+  if (isPlainObject(payload.entries)) {
+    return Object.values(payload.entries).filter(isPlainObject);
   }
 
   if (isPlainObject(payload.entry)) {
@@ -158,10 +162,18 @@ function entryKeys(entry = {}) {
     entry.display,
     entry.sourceForm,
     entry.native,
-    ...(Array.isArray(entry.aliases) ? entry.aliases : [])
+    ...normalizeAliases(entry.aliases)
   ]
     .map(createLookupKey)
     .filter(Boolean);
+}
+
+function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
 }
 
 function normalizeAudio(entry = {}) {
