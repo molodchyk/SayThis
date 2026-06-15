@@ -15,6 +15,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Context-menu actions for selected text, including an explicit online lookup action.
 - Shared runtime message builders for popup, options, offscreen-audio, and background commands.
 - Static Chrome-surface smoke tests for HTML bindings, packaged files, and module imports.
+- Optional loaded-extension Chrome smoke runner for popup/options/service-worker startup checks.
 - Packaged extension icons for toolbar and install surfaces.
 - A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.
@@ -105,6 +106,14 @@ Create a Chrome ZIP package:
 ```powershell
 npm run package:chrome
 ```
+
+Run the optional loaded-extension smoke check:
+
+```powershell
+npm run smoke:chrome
+```
+
+Set `SAYTHIS_CHROME_PATH` if Chrome or Edge is not found automatically. Set `SAYTHIS_SMOKE_HEADLESS=0` for a visible local run, or `SAYTHIS_SMOKE_REQUIRED=1` when the check must fail instead of skipping.
 
 Run the community moderation service locally:
 
