@@ -83,7 +83,7 @@ export async function runLoadedExtensionSmoke(options = {}) {
     });
     assertPage(optionsPage, {
       title: "SayThis Options",
-      selectors: ["#online-default", "#custom-source-enabled", "#forvo-enabled", "#sync-enabled"]
+      selectors: ["#online-default", "#custom-source-enabled", "#forvo-enabled", "#sync-enabled", "#pull-enabled"]
     });
 
     const overlay = await inspectKeyboardOverlay(port, options);
