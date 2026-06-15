@@ -85,6 +85,15 @@ export function enqueueSubmission(queue = [], submission) {
   return next.slice(Math.max(0, next.length - MAX_QUEUE_SIZE));
 }
 
+export function enqueueSubmissionWhenEnabled(queue = [], submission, settings = {}) {
+  const syncSettings = normalizeSyncSettings(settings);
+  if (!syncSettings.communitySyncEnabled) {
+    return normalizeQueue(queue);
+  }
+
+  return enqueueSubmission(queue, submission);
+}
+
 export async function flushSubmissionQueue(queue = [], settings = {}, postSubmission) {
   const syncSettings = normalizeSyncSettings(settings);
   const normalized = normalizeQueue(queue);

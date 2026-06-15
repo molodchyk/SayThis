@@ -48,7 +48,7 @@ import {
 import {
   createCommunitySubmission,
   DEFAULT_SYNC_SETTINGS,
-  enqueueSubmission,
+  enqueueSubmissionWhenEnabled,
   flushSubmissionQueue,
   mergeApprovedEntries,
   normalizeSyncSettings,
@@ -279,16 +279,16 @@ async function saveFeedback(text, feedback) {
     STORAGE_KEYS.syncQueue,
     STORAGE_KEYS.lastResult
   ]);
+  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const communityEntries = updateCommunityEntries(stored[STORAGE_KEYS.communityEntries], selectedText, feedback);
   const submission = createCommunitySubmission(selectedText, feedback, stored[STORAGE_KEYS.lastResult]);
-  const syncQueue = enqueueSubmission(stored[STORAGE_KEYS.syncQueue], submission);
+  const syncQueue = enqueueSubmissionWhenEnabled(stored[STORAGE_KEYS.syncQueue], submission, settings);
   await chrome.storage.local.set({
     [STORAGE_KEYS.communityEntries]: communityEntries,
     [STORAGE_KEYS.syncQueue]: syncQueue,
     [STORAGE_KEYS.syncSummary]: syncSummary(syncQueue)
   });
 
-  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   if (settings.communitySyncEnabled) {
     flushCommunitySync().catch(() => {});
   }

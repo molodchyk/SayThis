@@ -139,7 +139,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 3. Cache only lookup data, not page URLs or browsing history.
 4. Do not collect selected text analytics unless explicitly opted in.
 5. Keep community submissions scoped to the selected term and pronunciation metadata.
-6. Community sync is disabled by default, accepts only HTTPS endpoints, and requests endpoint-origin access only after the user enables sync.
+6. Community sync is disabled by default, accepts only HTTPS endpoints, queues feedback only when enabled, and requests endpoint-origin access only after the user enables sync.
 7. Approved-entry refresh stores only approved pronunciation metadata.
 8. Gazetteer lookup accepts only HTTPS endpoints and is disabled until a user configures one.
 9. Forvo lookup is disabled until a user enables it and stores a local API key; the key is not included in exports.

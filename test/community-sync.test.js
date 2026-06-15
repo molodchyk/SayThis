@@ -4,6 +4,7 @@ import {
   createCommunitySubmission,
   endpointOriginPattern,
   enqueueSubmission,
+  enqueueSubmissionWhenEnabled,
   flushSubmissionQueue,
   mergeApprovedEntries,
   normalizeSyncSettings,
@@ -78,6 +79,26 @@ test("queues submissions and flushes them through a poster", async () => {
   assert.equal(posted.length, 1);
   assert.equal(result.sent, 1);
   assert.equal(result.queue.length, 0);
+});
+
+test("does not queue submissions until sync is enabled", () => {
+  const submission = createCommunitySubmission("gnocchi", { kind: "confirm" });
+
+  assert.deepEqual(enqueueSubmissionWhenEnabled([], submission, {
+    communitySyncEnabled: false,
+    communityEndpoint: "https://example.com/submit"
+  }), []);
+  assert.deepEqual(enqueueSubmissionWhenEnabled([], submission, {
+    communitySyncEnabled: true,
+    communityEndpoint: "http://example.com/submit"
+  }), []);
+
+  const queue = enqueueSubmissionWhenEnabled([], submission, {
+    communitySyncEnabled: true,
+    communityEndpoint: "https://example.com/submit"
+  });
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0].lookupKey, "gnocchi");
 });
 
 test("keeps failed submissions in the queue", async () => {

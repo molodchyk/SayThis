@@ -86,7 +86,7 @@ The first useful version should be narrow and trusted:
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 
-Community sync, custom source lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history. Forvo API keys are stored locally and are not included in data exports.
+Community sync, custom source lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. Feedback is not queued for sync until community sync is enabled. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history. Forvo API keys are stored locally and are not included in data exports.
 
 ## Development
 
