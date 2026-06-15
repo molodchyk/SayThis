@@ -1,7 +1,13 @@
+import {
+  normalizeResultCache,
+  resultCacheSummary
+} from "./result-cache.js";
+
 const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
   communityEntries: "communityEntries",
   communityPullState: "communityPullState",
+  resultCache: "resultCache",
   syncQueue: "syncQueue",
   syncSummary: "syncSummary",
   settings: "settings"
@@ -16,6 +22,8 @@ const DEFAULT_SETTINGS = {
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
+const cacheSummaryText = document.getElementById("cache-summary");
+const clearCacheButton = document.getElementById("clear-cache");
 const memorySummary = document.getElementById("memory-summary");
 const exportButton = document.getElementById("export-data");
 const importButton = document.getElementById("import-data");
@@ -33,6 +41,7 @@ init();
 
 onlineDefault.addEventListener("change", saveSettings);
 showOverlay.addEventListener("change", saveSettings);
+clearCacheButton.addEventListener("click", clearLookupCache);
 syncEnabled.addEventListener("change", saveSettings);
 syncEndpoint.addEventListener("change", saveSettings);
 exportButton.addEventListener("click", exportData);
@@ -48,6 +57,7 @@ async function init() {
     STORAGE_KEYS.approvedCommunityEntries,
     STORAGE_KEYS.communityPullState,
     STORAGE_KEYS.communityEntries,
+    STORAGE_KEYS.resultCache,
     STORAGE_KEYS.syncQueue,
     STORAGE_KEYS.syncSummary
   ]);
@@ -56,6 +66,7 @@ async function init() {
   showOverlay.checked = settings.showOverlay;
   syncEnabled.checked = settings.communitySyncEnabled;
   syncEndpoint.value = settings.communityEndpoint;
+  renderCacheSummary(stored[STORAGE_KEYS.resultCache]);
   renderSummary(stored[STORAGE_KEYS.communityEntries] || {});
   renderSyncSummary(stored[STORAGE_KEYS.syncSummary], stored[STORAGE_KEYS.syncQueue]);
   renderApprovedSummary(stored[STORAGE_KEYS.approvedCommunityEntries], stored[STORAGE_KEYS.communityPullState]);
@@ -80,6 +91,7 @@ async function exportData() {
     STORAGE_KEYS.approvedCommunityEntries,
     STORAGE_KEYS.communityPullState,
     STORAGE_KEYS.communityEntries,
+    STORAGE_KEYS.resultCache,
     STORAGE_KEYS.syncQueue,
     STORAGE_KEYS.syncSummary
   ]);
@@ -90,11 +102,13 @@ async function exportData() {
     approvedCommunityEntries: stored[STORAGE_KEYS.approvedCommunityEntries] || {},
     communityPullState: stored[STORAGE_KEYS.communityPullState] || {},
     communityEntries: stored[STORAGE_KEYS.communityEntries] || {},
+    resultCache: normalizeResultCache(stored[STORAGE_KEYS.resultCache]),
     syncQueue: stored[STORAGE_KEYS.syncQueue] || [],
     syncSummary: stored[STORAGE_KEYS.syncSummary] || {}
   };
 
   dataBox.value = JSON.stringify(payload, null, 2);
+  renderCacheSummary(payload.resultCache);
   renderSummary(payload.communityEntries);
   setStatus("Export ready.");
 }
@@ -111,6 +125,7 @@ async function importData() {
   const settings = normalizeSettings(payload.settings);
   const approvedCommunityEntries = isPlainObject(payload.approvedCommunityEntries) ? payload.approvedCommunityEntries : {};
   const communityEntries = isPlainObject(payload.communityEntries) ? payload.communityEntries : {};
+  const resultCache = normalizeResultCache(payload.resultCache);
   const syncQueue = Array.isArray(payload.syncQueue) ? payload.syncQueue : [];
   const importedSyncSummary = summarizeQueue(syncQueue);
   const communityPullState = isPlainObject(payload.communityPullState) ? payload.communityPullState : {};
@@ -119,6 +134,7 @@ async function importData() {
     [STORAGE_KEYS.approvedCommunityEntries]: approvedCommunityEntries,
     [STORAGE_KEYS.communityPullState]: communityPullState,
     [STORAGE_KEYS.communityEntries]: communityEntries,
+    [STORAGE_KEYS.resultCache]: resultCache,
     [STORAGE_KEYS.syncQueue]: syncQueue,
     [STORAGE_KEYS.syncSummary]: importedSyncSummary
   });
@@ -127,6 +143,7 @@ async function importData() {
   showOverlay.checked = settings.showOverlay;
   syncEnabled.checked = settings.communitySyncEnabled;
   syncEndpoint.value = settings.communityEndpoint;
+  renderCacheSummary(resultCache);
   renderSummary(communityEntries);
   renderSyncSummary(importedSyncSummary);
   renderApprovedSummary(approvedCommunityEntries, communityPullState);
@@ -140,6 +157,14 @@ async function clearMemory() {
   dataBox.value = "";
   renderSummary({});
   setStatus("Community memory cleared.");
+}
+
+async function clearLookupCache() {
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.resultCache]: normalizeResultCache({})
+  });
+  renderCacheSummary({});
+  setStatus("Lookup cache cleared.");
 }
 
 async function flushSync() {
@@ -186,6 +211,13 @@ function renderSummary(entries) {
   memorySummary.textContent = values.length
     ? `${values.length} local entries · ${confirmations} confirmations · ${corrections} corrections · ${requests} requests`
     : "No local entries.";
+}
+
+function renderCacheSummary(cache) {
+  const summary = resultCacheSummary(cache);
+  cacheSummaryText.textContent = summary.count
+    ? `${summary.count} cached lookup${summary.count === 1 ? "" : "s"}${summary.newestAt ? ` · updated ${new Date(summary.newestAt).toLocaleString()}` : ""}`
+    : "No cached lookups.";
 }
 
 function renderSyncSummary(summary, queue) {

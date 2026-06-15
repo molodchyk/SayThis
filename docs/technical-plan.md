@@ -29,6 +29,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Wikidata native/official source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
+- Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, and evidence.
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Opt-in community sync endpoint with queued retry behavior.
@@ -75,6 +76,7 @@ Core fields:
 - `confidence`: high, medium, low, unknown.
 - `community`: correction and confirmation summary.
 - `approvedCommunityEntries`: remote approved entries pulled from the configured community endpoint.
+- `resultCache`: local successful online lookup results keyed by normalized selected term.
 - `sources`: source URLs or source IDs.
 - `notes`: curator notes.
 

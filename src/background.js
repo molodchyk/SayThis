@@ -14,6 +14,11 @@ import {
   buildWiktionaryResult
 } from "./wiktionary-adapter.js";
 import {
+  isCacheableResult,
+  readCachedResult,
+  upsertCachedResult
+} from "./result-cache.js";
+import {
   createCommunitySubmission,
   DEFAULT_SYNC_SETTINGS,
   enqueueSubmission,
@@ -32,6 +37,7 @@ const STORAGE_KEYS = {
   lastResult: "lastResult",
   lastSelection: "lastSelection",
   lastSource: "lastSource",
+  resultCache: "resultCache",
   syncQueue: "syncQueue",
   syncSummary: "syncSummary",
   settings: "settings"
@@ -167,6 +173,7 @@ async function resolveSelection(text, options = {}) {
   const stored = await chrome.storage.local.get([
     STORAGE_KEYS.approvedCommunityEntries,
     STORAGE_KEYS.communityEntries,
+    STORAGE_KEYS.resultCache,
     STORAGE_KEYS.settings
   ]);
   const communityEntries = {
@@ -181,9 +188,16 @@ async function resolveSelection(text, options = {}) {
 
   let result = localResult;
   const shouldUseOnline = options.useOnline ?? settings.onlineByDefault;
+  let resultCache = stored[STORAGE_KEYS.resultCache];
   if (shouldUseOnline) {
+    const cached = readCachedResult(resultCache, selectedText);
+    resultCache = cached.cache;
+
     try {
-      const remoteResult = await resolveWithOnlineSources(selectedText);
+      const remoteResult = cached.hit ? cached.result : await resolveWithOnlineSources(selectedText);
+      if (!cached.hit && isCacheableResult(remoteResult)) {
+        resultCache = upsertCachedResult(resultCache, selectedText, remoteResult);
+      }
       result = mergeRemoteResult(localResult, remoteResult);
     } catch {
       result = {
@@ -195,10 +209,15 @@ async function resolveSelection(text, options = {}) {
 
   result = mapResultAudioUrls(result, (url) => chrome.runtime.getURL(url));
 
-  await chrome.storage.local.set({
+  const updates = {
     [STORAGE_KEYS.lastSelection]: selectedText,
     [STORAGE_KEYS.lastResult]: result
-  });
+  };
+  if (shouldUseOnline) {
+    updates[STORAGE_KEYS.resultCache] = resultCache;
+  }
+
+  await chrome.storage.local.set(updates);
 
   return result;
 }

@@ -1,0 +1,170 @@
+import {
+  createLookupKey,
+  normalizeSelection
+} from "./resolver-core.js";
+
+export const RESULT_CACHE_SCHEMA_VERSION = 1;
+export const DEFAULT_RESULT_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+export const DEFAULT_RESULT_CACHE_LIMIT = 200;
+
+const CACHEABLE_STATUSES = new Set([
+  "verified-audio",
+  "community-confirmed",
+  "structured-source",
+  "generated-from-source"
+]);
+
+export function normalizeResultCache(value = {}, options = {}) {
+  const now = normalizeTimestamp(options.now, Date.now());
+  const ttlMs = normalizePositiveInteger(options.ttlMs, DEFAULT_RESULT_CACHE_TTL_MS);
+  const limit = normalizePositiveInteger(options.limit, DEFAULT_RESULT_CACHE_LIMIT);
+  const rawEntries = value?.entries && typeof value.entries === "object" ? value.entries : value;
+  const entries = Object.values(rawEntries || {})
+    .map((entry) => normalizeCacheEntry(entry, now))
+    .filter((entry) => entry && !isExpired(entry, now, ttlMs))
+    .sort((left, right) => right.updatedAt - left.updatedAt)
+    .slice(0, limit);
+
+  return {
+    schemaVersion: RESULT_CACHE_SCHEMA_VERSION,
+    updatedAt: entries[0]?.updatedAt || now,
+    entries: Object.fromEntries(entries.map((entry) => [entry.lookupKey, entry]))
+  };
+}
+
+export function readCachedResult(cache, selection, options = {}) {
+  const normalized = normalizeResultCache(cache, options);
+  const lookupKey = createLookupKey(selection);
+  const entry = normalized.entries[lookupKey];
+  if (!entry) {
+    return {
+      hit: false,
+      cache: normalized,
+      result: null
+    };
+  }
+
+  return {
+    hit: true,
+    cache: normalized,
+    entry,
+    result: {
+      ...entry.result,
+      query: normalizeSelection(selection) || entry.result.query,
+      lookupKey,
+      evidence: [
+        "Local lookup cache",
+        ...(entry.result.evidence || [])
+      ]
+    }
+  };
+}
+
+export function upsertCachedResult(cache, selection, result, options = {}) {
+  const now = normalizeTimestamp(options.now, Date.now());
+  const normalized = normalizeResultCache(cache, { ...options, now });
+  if (!isCacheableResult(result)) {
+    return normalized;
+  }
+
+  const lookupKey = createLookupKey(selection || result.query || result.display || result.sourceForm);
+  if (!lookupKey) {
+    return normalized;
+  }
+
+  const term = normalizeSelection(selection || result.query || result.display || result.sourceForm);
+  const nextEntry = {
+    lookupKey,
+    term,
+    createdAt: normalized.entries[lookupKey]?.createdAt || now,
+    updatedAt: now,
+    result: normalizeCachedResult(result, lookupKey, term)
+  };
+
+  return normalizeResultCache({
+    ...normalized,
+    updatedAt: now,
+    entries: {
+      ...normalized.entries,
+      [lookupKey]: nextEntry
+    }
+  }, { ...options, now });
+}
+
+export function resultCacheSummary(cache, options = {}) {
+  const normalized = normalizeResultCache(cache, options);
+  const entries = Object.values(normalized.entries);
+  const newest = entries.reduce((latest, entry) => Math.max(latest, entry.updatedAt), 0);
+  return {
+    count: entries.length,
+    newestAt: newest ? new Date(newest).toISOString() : ""
+  };
+}
+
+export function isCacheableResult(result) {
+  if (!result || typeof result !== "object") {
+    return false;
+  }
+
+  return CACHEABLE_STATUSES.has(result.sourceStatus) && Boolean(
+    result.sourceForm ||
+    result.pronunciation?.ipa ||
+    result.pronunciation?.simple ||
+    result.pronunciation?.audio?.length
+  );
+}
+
+function normalizeCacheEntry(value, now) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const result = value.result && typeof value.result === "object" ? value.result : null;
+  if (!result) {
+    return null;
+  }
+
+  const lookupKey = createLookupKey(value.lookupKey || result.lookupKey || value.term || result.query || result.display);
+  if (!lookupKey) {
+    return null;
+  }
+
+  const term = normalizeSelection(value.term || result.query || result.display || result.sourceForm);
+  return {
+    lookupKey,
+    term,
+    createdAt: normalizeTimestamp(value.createdAt, now),
+    updatedAt: normalizeTimestamp(value.updatedAt, now),
+    result: normalizeCachedResult(result, lookupKey, term)
+  };
+}
+
+function normalizeCachedResult(result, lookupKey, term) {
+  return {
+    ...result,
+    lookupKey,
+    query: normalizeSelection(result.query || term),
+    display: normalizeSelection(result.display || term),
+    evidence: Array.isArray(result.evidence) ? result.evidence.slice(0, 8).map(normalizeSelection).filter(Boolean) : [],
+    sources: Array.isArray(result.sources) ? result.sources.slice(0, 8) : [],
+    alternateResults: Array.isArray(result.alternateResults) ? result.alternateResults.slice(0, 3) : []
+  };
+}
+
+function isExpired(entry, now, ttlMs) {
+  return ttlMs > 0 && now - entry.updatedAt > ttlMs;
+}
+
+function normalizeTimestamp(value, fallback) {
+  const number = typeof value === "number" ? value : Date.parse(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function normalizePositiveInteger(value, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    return fallback;
+  }
+
+  return Math.floor(number);
+}
