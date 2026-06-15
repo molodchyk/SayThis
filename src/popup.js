@@ -41,6 +41,7 @@ const wrongButton = document.getElementById("wrong");
 const missingButton = document.getElementById("missing");
 const saveCorrectionButton = document.getElementById("save-correction");
 const correctionSource = document.getElementById("correction-source");
+const correctionAliases = document.getElementById("correction-aliases");
 const correctionLanguage = document.getElementById("correction-language");
 const correctionLanguageName = document.getElementById("correction-language-name");
 const correctionSimple = document.getElementById("correction-simple");
@@ -74,6 +75,7 @@ missingButton.addEventListener("click", () => saveFeedback({ kind: "missing" }))
 saveCorrectionButton.addEventListener("click", () => {
   const feedback = correctionFeedbackFromValues({
     sourceForm: correctionSource.value,
+    aliases: correctionAliases.value,
     language: correctionLanguage.value,
     languageName: correctionLanguageName.value,
     simple: correctionSimple.value,
@@ -231,6 +233,7 @@ function renderResult(result) {
 
   const correctionValues = correctionValuesFromResult(result);
   correctionSource.value = correctionValues.sourceForm;
+  correctionAliases.value = correctionValues.aliases;
   correctionLanguage.value = correctionValues.language;
   correctionLanguageName.value = correctionValues.languageName;
   correctionSimple.value = correctionValues.simple;

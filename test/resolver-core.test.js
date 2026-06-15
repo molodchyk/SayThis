@@ -60,6 +60,7 @@ test("uses local community correction before fallback", () => {
   const firstPass = updateCommunityEntries({}, "Exampleterm", {
     kind: "correction",
     sourceForm: "Exampleterm",
+    aliases: "Sampleterm; Example term",
     language: "it",
     simple: "eg-ZAM-pluh-term",
     sourceUrl: "https://example.com/exampleterm"
@@ -71,10 +72,18 @@ test("uses local community correction before fallback", () => {
   });
 
   assert.equal(result.id, "community:exampleterm");
+  assert.deepEqual(result.aliases, ["Sampleterm", "Example term"]);
   assert.equal(result.language, "it");
   assert.equal(result.pronunciation.simple, "eg-ZAM-pluh-term");
   assert.ok(result.sources.some((source) => source.url === "https://example.com/exampleterm"));
   assert.equal(result.community.confirmations, 1);
+
+  const aliasResult = resolveTerm("Sampleterm", {
+    entries: [],
+    communityEntries: entries
+  });
+  assert.equal(aliasResult.id, "community:sampleterm");
+  assert.equal(aliasResult.sourceForm, "Exampleterm");
 });
 
 test("applies community summary without replacing a structured result", () => {

@@ -69,6 +69,7 @@ test("accepts submissions without storing request metadata", async () => {
     kind: "correction",
     correction: {
       sourceForm: "chiaroscuro",
+      aliases: ["light-dark"],
       language: "it",
       simple: "kee-ah-roh-SKOO-roh",
       sourceUrl: "https://example.com/chiaroscuro"
@@ -88,6 +89,7 @@ test("accepts submissions without storing request metadata", async () => {
   assert.equal(result.store.pending.length, 1);
   assert.equal(Object.hasOwn(result.store.pending[0], "ip"), false);
   assert.equal(Object.hasOwn(result.store.pending[0], "headers"), false);
+  assert.deepEqual(result.store.pending[0].correction.aliases, ["light-dark"]);
   assert.equal(result.store.pending[0].correction.sourceUrl, "https://example.com/chiaroscuro");
 });
 
@@ -251,6 +253,7 @@ test("serves approved entries and requires auth for moderation", async () => {
       kind: "correction",
       correction: {
         sourceForm: "gnocchi",
+        aliases: ["gnocco"],
         language: "it",
         simple: "NYOH-kee",
         sourceUrl: "https://example.com/gnocchi"
@@ -285,6 +288,7 @@ test("serves approved entries and requires auth for moderation", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.body.entries.length, 1);
   assert.equal(response.body.entries[0].lookupKey, "gnocchi");
+  assert.deepEqual(response.body.entries[0].aliases, ["gnocco"]);
   assert.equal(response.body.entries[0].simple, "NYOH-kee");
   assert.equal(response.body.entries[0].sourceUrl, "https://example.com/gnocchi");
 });

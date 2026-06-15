@@ -44,6 +44,7 @@ test("creates privacy-scoped community submissions", () => {
   const submission = createCommunitySubmission("Chiaroscuro", {
     kind: "correction",
     sourceForm: "chiaroscuro",
+    aliases: ["light-dark", "chiaro scuro"],
     language: "it",
     simple: "kee-ah-roh-SKOO-roh",
     audioUrl: "https://example.com/audio.ogg",
@@ -61,6 +62,7 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(submission.lookupKey, "chiaroscuro");
   assert.equal(submission.kind, "correction");
   assert.equal(submission.correction.language, "it");
+  assert.deepEqual(submission.correction.aliases, ["light-dark", "chiaro scuro"]);
   assert.equal(submission.correction.sourceUrl, "https://example.com/source");
   assert.equal(submission.result.id, "wiktionary:chiaroscuro");
   assert.equal(Object.hasOwn(submission, "url"), false);
@@ -132,6 +134,7 @@ test("normalizes approved community entries", () => {
   const entries = normalizeApprovedEntries({
     entries: [{
       term: "Chiaroscuro",
+      aliases: ["light-dark"],
       sourceForm: "chiaroscuro",
       language: "it",
       confirmations: 8,
@@ -145,6 +148,7 @@ test("normalizes approved community entries", () => {
 
   assert.equal(entries.chiaroscuro.term, "Chiaroscuro");
   assert.equal(entries.chiaroscuro.confirmations, 8);
+  assert.deepEqual(entries.chiaroscuro.aliases, ["light-dark"]);
   assert.equal(entries.chiaroscuro.language, "it");
   assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");

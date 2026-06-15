@@ -72,6 +72,7 @@ test("builds correction feedback payloads", () => {
   assert.deepEqual(createFeedbackMessage(" term ", {
     kind: "correction",
     sourceForm: " term ",
+    aliases: "alias one; alias two",
     language: "en-US",
     simple: "TERM",
     audioUrl: " https://example.com/audio.ogg ",
@@ -83,6 +84,7 @@ test("builds correction feedback payloads", () => {
     feedback: {
       kind: "correction",
       sourceForm: "term",
+      aliases: ["alias one", "alias two"],
       language: "en-US",
       simple: "TERM",
       audioUrl: "https://example.com/audio.ogg",

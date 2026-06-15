@@ -9,6 +9,7 @@ import {
 test("prefills correction values from resolver result", () => {
   const values = correctionValuesFromResult({
     sourceForm: "chiaroscuro",
+    aliases: ["light-dark", "chiaro scuro"],
     language: "it",
     languageName: "Italian",
     origin: "Italian",
@@ -30,6 +31,7 @@ test("prefills correction values from resolver result", () => {
 
   assert.deepEqual(values, {
     sourceForm: "chiaroscuro",
+    aliases: "light-dark; chiaro scuro",
     language: "it",
     languageName: "Italian",
     simple: "kee-ah-roh-SKOO-roh",
@@ -44,6 +46,7 @@ test("prefills correction values from resolver result", () => {
 test("builds correction feedback with audio source and variant note", () => {
   const feedback = correctionFeedbackFromValues({
     sourceForm: "  gnocchi ",
+    aliases: "gnocco; gnocchi",
     language: "it",
     languageName: "Italian",
     simple: " NYOH-kee ",
@@ -57,6 +60,7 @@ test("builds correction feedback with audio source and variant note", () => {
   assert.deepEqual(feedback, {
     kind: "correction",
     sourceForm: "gnocchi",
+    aliases: ["gnocco", "gnocchi"],
     language: "it",
     languageName: "Italian",
     simple: "NYOH-kee",
@@ -70,5 +74,5 @@ test("builds correction feedback with audio source and variant note", () => {
 
 test("detects whether a correction carries pronunciation data", () => {
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({})), false);
-  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ sourceUrl: "https://example.com/source" })), true);
+  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ aliases: "alternate" })), true);
 });

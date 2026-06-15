@@ -54,7 +54,7 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 
 When the pending moderation queue reaches `SAYTHIS_MAX_PENDING_SUBMISSIONS`, new public submissions are rejected with `pending-limit-reached`. Duplicate retries of an already pending submission id are still accepted without adding another entry.
 
-Correction submissions must include at least one structured pronunciation field, such as source form, language, origin, IPA, simple guide, audio URL, source URL, or variant note. Empty correction submissions are rejected as invalid.
+Correction submissions must include at least one structured pronunciation field, such as source form, aliases, language, origin, IPA, simple guide, audio URL, source URL, or variant note. Empty correction submissions are rejected as invalid.
 
 For a production deployment, set `SAYTHIS_ALLOWED_ORIGINS` to a comma-separated list of trusted origins, such as `https://example.com,chrome-extension://<extension-id>`. The default `*` keeps local and early public testing simple.
 
@@ -91,6 +91,7 @@ Content-Type: application/json
   "id": "sub_...",
   "entry": {
     "sourceForm": "chiaroscuro",
+    "aliases": ["light-dark"],
     "language": "it",
     "simple": "kee-ah-roh-SKOO-roh",
     "sourceUrl": "https://example.com/terms/chiaroscuro"

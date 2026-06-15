@@ -54,6 +54,7 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
   if (kind === "correction") {
     payload.correction = {
       sourceForm: normalizeSelection(feedback.sourceForm),
+      aliases: normalizeAliases(feedback.aliases),
       language: normalizeSelection(feedback.language),
       languageName: normalizeSelection(feedback.languageName),
       origin: normalizeSelection(feedback.origin),
@@ -214,6 +215,7 @@ function normalizeApprovedEntry(entry = {}) {
     flags,
     requests,
     sourceForm: normalizeSelection(entry.sourceForm),
+    aliases: normalizeAliases(entry.aliases),
     language: normalizeSelection(entry.language),
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
@@ -233,7 +235,16 @@ function normalizeFeedbackKind(kind) {
 
 function hasCorrectionDetail(correction = {}) {
   return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
-    .some((field) => Boolean(correction[field]));
+    .some((field) => Boolean(correction[field])) ||
+    Boolean(normalizeAliases(correction.aliases).length);
+}
+
+function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
 }
 
 function normalizeEndpoint(value) {

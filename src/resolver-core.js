@@ -204,6 +204,7 @@ export function updateCommunityEntries(entries, selection, feedback) {
     requests: Number(existing.requests || 0),
     corrections: Number(existing.corrections || 0),
     sourceForm: existing.sourceForm || "",
+    aliases: normalizeAliases(existing.aliases),
     language: existing.language || "",
     languageName: existing.languageName || "",
     origin: existing.origin || "",
@@ -224,9 +225,13 @@ export function updateCommunityEntries(entries, selection, feedback) {
     next.requests += 1;
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
-    for (const field of ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
-      const value = field === "audioUrl" || field === "sourceUrl" ? normalizeLongValue(feedback[field]) : normalizeSelection(feedback[field]);
-      if (value) {
+    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+      const value = field === "aliases"
+        ? normalizeAliases(feedback[field])
+        : field === "audioUrl" || field === "sourceUrl"
+          ? normalizeLongValue(feedback[field])
+          : normalizeSelection(feedback[field]);
+      if (Array.isArray(value) ? value.length : Boolean(value)) {
         next[field] = value;
       }
     }
@@ -298,10 +303,10 @@ function findSeedEntry(lookupKey, entries = []) {
 
 function findCommunityEntry(lookupKey, entries = {}) {
   if (Array.isArray(entries)) {
-    return entries.find((entry) => entry.lookupKey === lookupKey || createLookupKey(entry.term) === lookupKey);
+    return entries.find((entry) => communityEntryKeys(entry).includes(lookupKey));
   }
 
-  return entries[lookupKey] || null;
+  return entries[lookupKey] || Object.values(entries).find((entry) => communityEntryKeys(entry).includes(lookupKey)) || null;
 }
 
 function createEntryResult(query, lookupKey, scriptInfo, entry) {
@@ -348,6 +353,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     query,
     lookupKey,
     display: entry.term || query,
+    aliases: normalizeAliases(entry.aliases),
     sourceForm,
     speakText: sourceForm || query,
     script: detectScript(sourceForm || query).script,
@@ -545,6 +551,7 @@ function isUsefulAlternate(result = {}) {
 function normalizeResult(result) {
   return {
     ...result,
+    aliases: normalizeAliases(result.aliases),
     confidence: normalizeConfidence(result.confidence),
     sourceStatus: normalizeSourceStatus(result.sourceStatus),
     pronunciation: normalizePronunciation(result.pronunciation),
@@ -583,6 +590,14 @@ function normalizeLongValue(value) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 2048);
+}
+
+function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
 }
 
 function shouldResolveAudioUrl(url) {
@@ -656,7 +671,18 @@ function entryKeys(entry) {
     entry.display,
     entry.native,
     entry.sourceForm,
-    ...(entry.aliases || [])
+    ...normalizeAliases(entry.aliases)
+  ]
+    .map(createLookupKey)
+    .filter(Boolean);
+}
+
+function communityEntryKeys(entry = {}) {
+  return [
+    entry.lookupKey,
+    entry.term,
+    entry.sourceForm,
+    ...normalizeAliases(entry.aliases)
   ]
     .map(createLookupKey)
     .filter(Boolean);

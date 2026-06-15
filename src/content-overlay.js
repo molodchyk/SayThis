@@ -308,6 +308,7 @@
         <form class="correction-panel" data-correction hidden>
           <div class="correction-grid">
             ${correctionInput("Source", "sourceForm", result.sourceForm, 160)}
+            ${correctionInput("Aliases", "aliases", aliasesTextFromResult(result), 240)}
             ${correctionInput("Language", "language", result.language, 24)}
             ${correctionInput("Language name", "languageName", result.languageName, 80)}
             ${correctionInput("Guide", "simple", result.pronunciation?.simple, 120)}
@@ -434,16 +435,21 @@
     const feedback = { kind: "correction" };
     for (const input of root?.querySelectorAll("[data-correction-field]") || []) {
       const field = input.dataset.correctionField;
-      feedback[field] = field === "audioUrl" || field === "sourceUrl"
-        ? normalizeLongText(input.value)
-        : normalizeText(input.value);
+      if (field === "aliases") {
+        feedback[field] = normalizeAliases(input.value);
+      } else if (field === "audioUrl" || field === "sourceUrl") {
+        feedback[field] = normalizeLongText(input.value);
+      } else {
+        feedback[field] = normalizeText(input.value);
+      }
     }
     return feedback;
   }
 
   function hasCorrectionDetail(feedback) {
     return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
-      .some((field) => Boolean(feedback[field]));
+      .some((field) => Boolean(feedback[field])) ||
+      Boolean(normalizeAliases(feedback.aliases).length);
   }
 
   function setStatus(value) {
@@ -545,6 +551,17 @@
     return normalizeUrl(source?.url);
   }
 
+  function aliasesTextFromResult(result = {}) {
+    const aliases = normalizeAliases(result.aliases);
+    const query = normalizeText(result.query);
+    const sourceForm = normalizeText(result.sourceForm || result.display);
+    if (query && sourceForm && query.toLocaleLowerCase() !== sourceForm.toLocaleLowerCase()) {
+      aliases.unshift(query);
+    }
+
+    return [...new Set(aliases)].join("; ");
+  }
+
   function alternateItems(result) {
     const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
     return alternates
@@ -575,6 +592,14 @@
 
   function normalizeLongText(value) {
     return String(value || "").replace(/\s+/g, " ").trim().slice(0, 2048);
+  }
+
+  function normalizeAliases(value) {
+    const raw = Array.isArray(value)
+      ? value
+      : String(value || "").split(/[;,\n]/);
+
+    return [...new Set(raw.map(normalizeText).filter(Boolean))].slice(0, 12);
   }
 
   function normalizeUrl(value) {

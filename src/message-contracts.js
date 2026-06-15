@@ -89,6 +89,7 @@ function normalizeFeedback(feedback = {}) {
   return compactMessage({
     kind,
     sourceForm: normalizeSelection(feedback.sourceForm),
+    aliases: normalizeAliases(feedback.aliases),
     language: normalizeLanguageOption(feedback.language),
     languageName: normalizeSelection(feedback.languageName),
     simple: normalizeSelection(feedback.simple),
@@ -112,6 +113,14 @@ function normalizeRate(value) {
   return Number.isFinite(rate) ? Math.min(1.4, Math.max(0.45, rate)) : undefined;
 }
 
+function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
 function normalizeOptionalBoolean(options, key) {
   if (!Object.prototype.hasOwnProperty.call(options, key) || options[key] === undefined) {
     return undefined;
@@ -128,6 +137,10 @@ function compactMessage(message) {
   return Object.fromEntries(
     Object.entries(message).filter(([, value]) => {
       if (value === undefined || value === null || value === "") {
+        return false;
+      }
+
+      if (Array.isArray(value) && !value.length) {
         return false;
       }
 

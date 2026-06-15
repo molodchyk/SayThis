@@ -173,6 +173,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     flags: 0,
     requests: Number(override.requests ?? (submission.kind === "missing" ? 1 : 0)),
     sourceForm,
+    aliases: normalizeAliases(override.aliases || correction.aliases),
     language: override.language || correction.language || result.language,
     languageName: override.languageName || correction.languageName || result.languageName,
     origin: override.origin || correction.origin,
@@ -218,6 +219,7 @@ function normalizeSubmission(value, now = new Date().toISOString()) {
 function normalizeCorrection(value = {}) {
   return {
     sourceForm: normalizeSelection(value.sourceForm),
+    aliases: normalizeAliases(value.aliases),
     language: normalizeSelection(value.language),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
@@ -268,6 +270,7 @@ function normalizeApprovedEntry(value = {}) {
     flags: clampNumber(value.flags, 0, 100000),
     requests: clampNumber(value.requests, 0, 100000),
     sourceForm: normalizeSelection(value.sourceForm),
+    aliases: normalizeAliases(value.aliases),
     language: normalizeSelection(value.language),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
@@ -302,7 +305,16 @@ function normalizeKind(kind) {
 
 function hasCorrectionDetail(correction = {}) {
   return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
-    .some((field) => Boolean(correction[field]));
+    .some((field) => Boolean(correction[field])) ||
+    Boolean(normalizeAliases(correction.aliases).length);
+}
+
+function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
 }
 
 function clampNumber(value, min, max) {

@@ -282,6 +282,10 @@ export function renderAdminPage() {
           <input data-input="sourceForm">
         </label>
         <label>
+          Aliases
+          <input data-input="aliases">
+        </label>
+        <label>
           Language code
           <input data-input="language">
         </label>
@@ -379,6 +383,7 @@ export function renderAdminPage() {
 
       const fields = {
         sourceForm: entry.correction?.sourceForm || entry.result?.sourceForm || entry.term || "",
+        aliases: aliasesText(entry.correction?.aliases),
         language: entry.correction?.language || entry.result?.language || "",
         languageName: entry.correction?.languageName || entry.result?.languageName || "",
         origin: entry.correction?.origin || "",
@@ -446,7 +451,7 @@ export function renderAdminPage() {
 
     function collectFields(article) {
       const entry = {};
-      for (const name of ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
         const value = article.querySelector(\`[data-input="\${name}"]\`)?.value.trim();
         if (value) {
           entry[name] = value;
@@ -477,6 +482,10 @@ export function renderAdminPage() {
       if (node) {
         node.textContent = value || "-";
       }
+    }
+
+    function aliasesText(value) {
+      return Array.isArray(value) ? value.filter(Boolean).join("; ") : "";
     }
 
     function setStatus(message) {
