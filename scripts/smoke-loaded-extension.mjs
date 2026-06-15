@@ -14,6 +14,14 @@ const SMOKE_TERM = "gnocchi";
 
 export async function runLoadedExtensionSmoke(options = {}) {
   const root = resolve(options.root || process.cwd());
+  const allowLaunch = options.allowLaunch ?? process.env.SAYTHIS_SMOKE_LAUNCH === "1";
+  if (!allowLaunch) {
+    return {
+      skipped: true,
+      reason: "Set SAYTHIS_SMOKE_LAUNCH=1 to launch a separate Chrome/Edge smoke profile."
+    };
+  }
+
   const executable = options.executable || findChromiumExecutable();
   if (!executable) {
     return {
@@ -33,8 +41,13 @@ export async function runLoadedExtensionSmoke(options = {}) {
   const profileDir = await mkdtemp(join(tmpdir(), "saythis-chrome-"));
   const timeoutMs = Number(options.timeoutMs || DEFAULT_TIMEOUT_MS);
   const required = options.required ?? process.env.SAYTHIS_SMOKE_REQUIRED === "1";
+  const closeLaunchedBrowser = options.closeLaunchedBrowser ?? process.env.SAYTHIS_SMOKE_CLOSE === "1";
   const child = spawn(executable, chromeArgs(root, profileDir, port, options), {
     stdio: "ignore"
+  });
+  let processExited = false;
+  child.on("exit", () => {
+    processExited = true;
   });
 
   try {
@@ -50,7 +63,8 @@ export async function runLoadedExtensionSmoke(options = {}) {
       return {
         skipped: true,
         product: version.Browser || "",
-        reason: "Extension target did not appear. Try SAYTHIS_SMOKE_HEADLESS=0 for a local visible run."
+        reason: "Extension target did not appear. Try SAYTHIS_SMOKE_HEADLESS=0 for a local visible run.",
+        profileDir: closeLaunchedBrowser ? "" : profileDir
       };
     }
 
@@ -80,12 +94,19 @@ export async function runLoadedExtensionSmoke(options = {}) {
       extensionId,
       serviceWorker: worker.url,
       pages: [popup.url, optionsPage.url],
-      overlay
+      overlay,
+      profileDir: closeLaunchedBrowser ? "" : profileDir
     };
   } finally {
-    child.kill();
-    await delay(150);
-    await rm(profileDir, { recursive: true, force: true });
+    if (closeLaunchedBrowser) {
+      child.kill();
+      await delay(150);
+      await rm(profileDir, { recursive: true, force: true });
+    } else if (processExited || child.exitCode !== null) {
+      await rm(profileDir, { recursive: true, force: true });
+    } else {
+      child.unref();
+    }
   }
 }
 
@@ -459,11 +480,17 @@ function connectCdp(url) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = await runLoadedExtensionSmoke();
   if (result.skipped) {
-    console.log(`skipped: ${result.reason}`);
+    const profileStatus = result.profileDir
+      ? `; close the smoke profile manually: ${result.profileDir}`
+      : "";
+    console.log(`skipped: ${result.reason}${profileStatus}`);
   } else {
     const overlayStatus = result.overlay?.skipped
       ? `; overlay skipped: ${result.overlay.reason}`
       : "; overlay ok";
-    console.log(`loaded ${result.extensionId} in ${result.product}${overlayStatus}`);
+    const profileStatus = result.profileDir
+      ? `; close the smoke profile manually: ${result.profileDir}`
+      : "";
+    console.log(`loaded ${result.extensionId} in ${result.product}${overlayStatus}${profileStatus}`);
   }
 }
