@@ -17,7 +17,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Static Chrome-surface smoke tests for HTML bindings, packaged files, and module imports.
 - Optional loaded-extension Chrome smoke runner for popup/options/service-worker startup and keyboard-overlay checks.
 - Packaged extension icons for toolbar and install surfaces.
-- A keyboard command for selected text: `Alt+Shift+S`.
+- Keyboard commands for selected text: `Alt+Shift+S` and online lookup with `Alt+Shift+O`.
 - A popup with selected-text capture and speak/stop controls.
 - A resolver result card with source form, aliases, language, origin, IPA/simple guide, confidence, evidence, and source links.
 - Alternate candidate display when structured sources disagree or a stronger source displaces another useful match.
@@ -74,6 +74,7 @@ Then highlight text on a web page and either:
 - Right-click and choose `SayThis: pronounce...`.
 - Right-click and choose `SayThis: online lookup and pronounce...` for a one-off remote lookup.
 - Press `Alt+Shift+S`.
+- Press `Alt+Shift+O` for a one-off remote lookup.
 - Click the extension icon to open the popup and press Speak.
 
 ## Product Direction

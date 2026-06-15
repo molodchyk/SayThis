@@ -24,6 +24,8 @@ test("manifest exposes extension resolver capabilities", () => {
   assert.ok(manifest.permissions.includes("offscreen"));
   assert.ok(manifest.permissions.includes("storage"));
   assert.ok(manifest.permissions.includes("tts"));
+  assert.equal(manifest.commands["pronounce-selection"].suggested_key.default, "Alt+Shift+S");
+  assert.equal(manifest.commands["pronounce-selection-online"].suggested_key.default, "Alt+Shift+O");
   assert.ok(manifest.host_permissions.includes("https://www.wikidata.org/*"));
   assert.ok(manifest.host_permissions.includes("https://en.wiktionary.org/*"));
   assert.equal(manifest.host_permissions.includes("https://*/*"), false);

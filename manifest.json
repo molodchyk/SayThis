@@ -33,6 +33,12 @@
         "default": "Alt+Shift+S"
       },
       "description": "Resolve and pronounce selected text"
+    },
+    "pronounce-selection-online": {
+      "suggested_key": {
+        "default": "Alt+Shift+O"
+      },
+      "description": "Resolve selected text online and pronounce it"
     }
   },
   "permissions": [

@@ -122,11 +122,18 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 chrome.commands.onCommand.addListener((command) => {
-  if (command !== "pronounce-selection") {
-    return;
+  if (command === "pronounce-selection") {
+    pronounceActiveSelection({
+      source: "keyboard"
+    });
   }
 
-  pronounceActiveSelection();
+  if (command === "pronounce-selection-online") {
+    pronounceActiveSelection({
+      source: "keyboard-online",
+      useOnline: true
+    });
+  }
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -430,7 +437,7 @@ function speakFallback(text) {
   });
 }
 
-async function pronounceActiveSelection() {
+async function pronounceActiveSelection(options = {}) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
     return;
@@ -441,7 +448,14 @@ async function pronounceActiveSelection() {
     return;
   }
 
-  const result = await resolveSelection(selectedText);
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.lastSelection]: selectedText,
+    [STORAGE_KEYS.lastSource]: options.source || "keyboard"
+  });
+
+  const result = await resolveSelection(selectedText, {
+    useOnline: options.useOnline
+  });
   await playResolvedResult(result, tab.id);
 }
 

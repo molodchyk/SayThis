@@ -82,6 +82,15 @@ test("overlay exposes playback and feedback actions", async () => {
   }
 });
 
+test("background routes local and online keyboard commands", async () => {
+  const source = await readText("src/background.js");
+
+  assert.match(source, /command === "pronounce-selection"/);
+  assert.match(source, /command === "pronounce-selection-online"/);
+  assert.match(source, /source: "keyboard-online"/);
+  assert.match(source, /useOnline: true/);
+});
+
 function idsInHtml(html) {
   return matches(html, /\bid="([^"]+)"/g);
 }

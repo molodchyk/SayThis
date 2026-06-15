@@ -35,7 +35,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 
 ## Implemented MVP
 
-- Selection capture from popup, privacy-first context menu, explicit online context menu, and `Alt+Shift+S`.
+- Selection capture from popup, privacy-first context menu, explicit online context menu, `Alt+Shift+S`, and online lookup with `Alt+Shift+O`.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
 - Static smoke tests for popup/options DOM bindings, manifest-linked files, extension page scripts, and runtime import resolution.
 - Optional loaded-extension smoke runner for service-worker, popup, options startup, and keyboard-overlay flow in a separate opt-in Chrome or Edge profile.
