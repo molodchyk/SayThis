@@ -5,6 +5,7 @@
 Chrome Manifest V3 components:
 
 - `background.js`: creates the context menu and handles text-to-speech messages.
+- `extension-actions.js`: defines context-menu actions and maps them to resolver options.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
 - `wikidata-adapter.js`: extracts source forms, native/official names, IPA, and pronunciation audio from Wikidata entities.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
@@ -23,7 +24,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 
 ## Implemented MVP
 
-- Selection capture from popup, context menu, and `Alt+Shift+S`.
+- Selection capture from popup, privacy-first context menu, explicit online context menu, and `Alt+Shift+S`.
 - Local resolver over bundled entries and local community memory.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.

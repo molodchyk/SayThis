@@ -12,7 +12,7 @@ The initial audience is creators, journalists, educators, and professionals who 
 
 This repository is an early Manifest V3 Chrome extension implementation. It includes:
 
-- A context-menu action for selected text.
+- Context-menu actions for selected text, including an explicit online lookup action.
 - A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.
 - A resolver result card with source form, language, origin, IPA/simple guide, confidence, and evidence.
@@ -57,6 +57,7 @@ C:\Users\molod\Documents\Personal\settings\SayThis
 Then highlight text on a web page and either:
 
 - Right-click and choose `SayThis: pronounce...`.
+- Right-click and choose `SayThis: online lookup and pronounce...` for a one-off remote lookup.
 - Press `Alt+Shift+S`.
 - Click the extension icon to open the popup and press Speak.
 

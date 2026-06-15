@@ -19,6 +19,10 @@ import {
   upsertCachedResult
 } from "./result-cache.js";
 import {
+  contextMenuDefinitions,
+  resolveOptionsForMenuId
+} from "./extension-actions.js";
+import {
   createCommunitySubmission,
   DEFAULT_SYNC_SETTINGS,
   enqueueSubmission,
@@ -29,7 +33,6 @@ import {
   syncSummary
 } from "./community-sync.js";
 
-const MENU_ID = "saythis-pronounce-selection";
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
@@ -53,15 +56,14 @@ let seedPromise;
 let offscreenCreatePromise;
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: MENU_ID,
-    title: "SayThis: pronounce \"%s\"",
-    contexts: ["selection"]
-  });
+  for (const item of contextMenuDefinitions()) {
+    chrome.contextMenus.create(item);
+  }
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId !== MENU_ID) {
+  const action = resolveOptionsForMenuId(info.menuItemId);
+  if (!action.ok) {
     return;
   }
 
@@ -72,10 +74,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
   chrome.storage.local.set({
     lastSelection: selectedText,
-    lastSource: "context-menu"
+    lastSource: action.source
   });
 
-  resolveSelection(selectedText)
+  resolveSelection(selectedText, action.options)
     .then(async (result) => {
       await chrome.storage.local.set({
         [STORAGE_KEYS.lastResult]: result
