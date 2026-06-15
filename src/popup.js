@@ -1,4 +1,8 @@
 import { getBestAudio, normalizeSelection } from "./resolver-core.js";
+import {
+  evidenceItemsForResult,
+  sourceItemsForResult
+} from "./result-view.js";
 
 const selectionInput = document.getElementById("selection");
 const resolveButton = document.getElementById("resolve");
@@ -18,6 +22,7 @@ const origin = document.getElementById("origin");
 const ipa = document.getElementById("ipa");
 const simpleGuide = document.getElementById("simple-guide");
 const evidence = document.getElementById("evidence");
+const sources = document.getElementById("sources");
 const confirmButton = document.getElementById("confirm");
 const wrongButton = document.getElementById("wrong");
 const missingButton = document.getElementById("missing");
@@ -212,17 +217,22 @@ function renderResult(result) {
   correctionOrigin.value = result.origin || "";
 
   evidence.replaceChildren();
-  const items = [
-    ...(result.evidence || []),
-    result.community?.confirmations ? `${result.community.confirmations} local confirmation${result.community.confirmations === 1 ? "" : "s"}` : "",
-    result.community?.corrections ? `${result.community.corrections} local correction${result.community.corrections === 1 ? "" : "s"}` : "",
-    result.community?.requests ? `${result.community.requests} local request${result.community.requests === 1 ? "" : "s"}` : ""
-  ].filter(Boolean);
-
-  for (const item of items.slice(0, 4)) {
+  for (const item of evidenceItemsForResult(result)) {
     const li = document.createElement("li");
     li.textContent = item;
     evidence.append(li);
+  }
+
+  sources.replaceChildren();
+  for (const item of sourceItemsForResult(result)) {
+    const li = document.createElement("li");
+    const anchor = document.createElement("a");
+    anchor.href = item.url;
+    anchor.target = "_blank";
+    anchor.rel = "noreferrer";
+    anchor.textContent = item.label;
+    li.append(anchor);
+    sources.append(li);
   }
 }
 

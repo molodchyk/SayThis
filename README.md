@@ -16,7 +16,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Packaged extension icons for toolbar and install surfaces.
 - A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.
-- A resolver result card with source form, language, origin, IPA/simple guide, confidence, and evidence.
+- A resolver result card with source form, language, origin, IPA/simple guide, confidence, evidence, and source links.
 - A compact on-page result card after context-menu or keyboard use.
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, and corrections.

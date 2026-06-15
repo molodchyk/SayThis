@@ -189,13 +189,25 @@ dd {
   overflow-wrap: anywhere;
 }
 
-.evidence {
+.evidence,
+.sources {
   display: grid;
   gap: 4px;
   margin: 0;
   padding-left: 18px;
   color: #4d5a56;
   font-size: 12px;
+}
+
+.sources {
+  list-style: none;
+  padding-left: 0;
+}
+
+.sources a {
+  color: #0f6b58;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .feedback-actions {
@@ -268,8 +280,13 @@ input {
   }
 
   .evidence,
+  .sources,
   .eyebrow,
   dt {
     color: #aab8b3;
+  }
+
+  .sources a {
+    color: #8ee0ca;
   }
 }

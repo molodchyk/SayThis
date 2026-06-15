@@ -25,6 +25,7 @@
 
     ensureRoot();
     const evidence = (result.evidence || []).slice(0, 2);
+    const sources = sourceItems(result).slice(0, 2);
     const community = result.community || {};
     const communityText = [
       community.confirmations ? `${community.confirmations} confirmation${community.confirmations === 1 ? "" : "s"}` : "",
@@ -138,6 +139,22 @@
           font-size: 12px;
         }
 
+        .sources {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 0 0 12px;
+          padding: 0;
+          list-style: none;
+          font-size: 12px;
+        }
+
+        .sources a {
+          color: #0f6b58;
+          font-weight: 750;
+          overflow-wrap: anywhere;
+        }
+
         .actions {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
@@ -195,6 +212,7 @@
           ${evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
+        ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <div class="actions">
           <button class="action" type="button" data-action="speak">Speak</button>
           <button class="action secondary" type="button" data-action="slow">Slow</button>
@@ -287,6 +305,64 @@
     return audio.find((item) => item?.url && item.quality === "verified") || audio.find((item) => item?.url) || null;
   }
 
+  function sourceItems(result) {
+    const sources = Array.isArray(result?.sources) ? result.sources : [];
+    const audio = Array.isArray(result?.pronunciation?.audio)
+      ? result.pronunciation.audio.map((item) => ({
+        label: item.label || item.source || "Pronunciation audio",
+        url: item.url
+      }))
+      : [];
+    const seen = new Set();
+    const items = [];
+
+    for (const item of [...sources, ...audio]) {
+      const source = normalizeSourceItem(item);
+      if (!source.url || seen.has(source.url)) {
+        continue;
+      }
+
+      seen.add(source.url);
+      items.push(source);
+    }
+
+    return items;
+  }
+
+  function normalizeSourceItem(item) {
+    const url = normalizeUrl(item?.url);
+    return {
+      label: String(item?.label || item?.source || hostLabel(url) || "Source").trim().slice(0, 160),
+      url
+    };
+  }
+
+  function normalizeUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw) {
+      return "";
+    }
+
+    try {
+      const url = new URL(raw);
+      if (["https:", "chrome-extension:"].includes(url.protocol)) {
+        return url.toString();
+      }
+    } catch {
+      return "";
+    }
+
+    return "";
+  }
+
+  function hostLabel(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  }
+
   function escapeHtml(value) {
     return String(value || "")
       .replaceAll("&", "&amp;")
@@ -294,5 +370,9 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  function escapeAttribute(value) {
+    return escapeHtml(value).replaceAll("`", "&#096;");
   }
 })();
