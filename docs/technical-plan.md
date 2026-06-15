@@ -27,6 +27,7 @@ Chrome Manifest V3 components:
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
 - `scripts/package-extension.mjs`: builds a deterministic Chrome ZIP from runtime extension files.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
+- `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
 Verified audio from resolver results is preferred when available. Chrome's `tts` API remains the fallback path.
 
@@ -34,6 +35,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 
 - Selection capture from popup, privacy-first context menu, explicit online context menu, and `Alt+Shift+S`.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
+- Static smoke tests for popup/options DOM bindings, manifest-linked files, extension page scripts, and runtime import resolution.
 - Packaged PNG icons for toolbar and install surfaces.
 - Local resolver over bundled entries and local community memory.
 - Script-sensitive fallback for non-Latin selected text.
@@ -154,4 +156,4 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 - Broaden online entity scoring with additional structured sources.
 - Add durable abuse controls and deployment recipes for the community backend.
 - Add actual curated public audio files after source/license review.
-- Add end-to-end browser smoke tests for popup, context menu, overlay, and options flows.
+- Add loaded-extension browser smoke tests for popup, context menu, overlay, and options flows.

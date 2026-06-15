@@ -14,6 +14,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 
 - Context-menu actions for selected text, including an explicit online lookup action.
 - Shared runtime message builders for popup, options, offscreen-audio, and background commands.
+- Static Chrome-surface smoke tests for HTML bindings, packaged files, and module imports.
 - Packaged extension icons for toolbar and install surfaces.
 - A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.
