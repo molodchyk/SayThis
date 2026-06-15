@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "assets:icons": "node scripts/generate-icons.mjs",
     "test": "node --test",
-    "check": "node --check src/background.js && node --check src/popup.js && node --check src/options.js && node --check src/offscreen-audio.js && node --check src/extension-actions.js && node --check src/community-sync.js && node --check src/resolver-core.js && node --check src/result-cache.js && node --check server/community-store.js && node --check server/community-service.js",
+    "check": "node --check src/background.js && node --check src/popup.js && node --check src/options.js && node --check src/offscreen-audio.js && node --check src/extension-actions.js && node --check src/community-sync.js && node --check src/resolver-core.js && node --check src/result-cache.js && node --check scripts/generate-icons.mjs && node --check server/community-store.js && node --check server/community-service.js",
     "community:serve": "node server/community-service.js"
   }
 }

@@ -13,6 +13,7 @@ The initial audience is creators, journalists, educators, and professionals who 
 This repository is an early Manifest V3 Chrome extension implementation. It includes:
 
 - Context-menu actions for selected text, including an explicit online lookup action.
+- Packaged extension icons for toolbar and install surfaces.
 - A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.
 - A resolver result card with source form, language, origin, IPA/simple guide, confidence, and evidence.
@@ -80,6 +81,12 @@ Run the resolver tests:
 
 ```powershell
 npm test
+```
+
+Regenerate extension icons:
+
+```powershell
+npm run assets:icons
 ```
 
 Run the community moderation service locally:

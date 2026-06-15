@@ -16,6 +16,7 @@ Chrome Manifest V3 components:
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
+- `assets/icons/`: generated PNG icons referenced by the manifest and toolbar action.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
@@ -25,6 +26,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 ## Implemented MVP
 
 - Selection capture from popup, privacy-first context menu, explicit online context menu, and `Alt+Shift+S`.
+- Packaged PNG icons for toolbar and install surfaces.
 - Local resolver over bundled entries and local community memory.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
