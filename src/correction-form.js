@@ -31,6 +31,11 @@ export function correctionFeedbackFromValues(values = {}) {
   };
 }
 
+export function hasCorrectionDetail(feedback = {}) {
+  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]
+    .some((field) => Boolean(feedback[field]));
+}
+
 function normalizeLongValue(value) {
   return String(value || "")
     .replace(/\s+/g, " ")

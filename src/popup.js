@@ -6,7 +6,8 @@ import {
 } from "./result-view.js";
 import {
   correctionFeedbackFromValues,
-  correctionValuesFromResult
+  correctionValuesFromResult,
+  hasCorrectionDetail
 } from "./correction-form.js";
 import {
   createFeedbackMessage,
@@ -70,7 +71,7 @@ wrongButton.addEventListener("click", () => saveFeedback({ kind: "wrong" }));
 missingButton.addEventListener("click", () => saveFeedback({ kind: "missing" }));
 
 saveCorrectionButton.addEventListener("click", () => {
-  saveFeedback(correctionFeedbackFromValues({
+  const feedback = correctionFeedbackFromValues({
     sourceForm: correctionSource.value,
     language: correctionLanguage.value,
     languageName: correctionLanguageName.value,
@@ -79,7 +80,14 @@ saveCorrectionButton.addEventListener("click", () => {
     origin: correctionOrigin.value,
     audioUrl: correctionAudio.value,
     variantNote: correctionVariant.value
-  }));
+  });
+
+  if (!hasCorrectionDetail(feedback)) {
+    setStatus("Add correction details.");
+    return;
+  }
+
+  saveFeedback(feedback);
 });
 
 selectionInput.addEventListener("input", () => {

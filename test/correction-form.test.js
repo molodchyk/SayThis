@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   correctionFeedbackFromValues,
-  correctionValuesFromResult
+  correctionValuesFromResult,
+  hasCorrectionDetail
 } from "../src/correction-form.js";
 
 test("prefills correction values from resolver result", () => {
@@ -58,4 +59,9 @@ test("builds correction feedback with audio source and variant note", () => {
     audioUrl: "https://example.com/audio.ogg",
     variantNote: "Northern Italian variant"
   });
+});
+
+test("detects whether a correction carries pronunciation data", () => {
+  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({})), false);
+  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ simple: "NYOH-kee" })), true);
 });

@@ -196,6 +196,10 @@ function normalizeSubmission(value, now = new Date().toISOString()) {
   if (!term || !lookupKey || !kind) {
     return null;
   }
+  const correction = normalizeCorrection(value.correction);
+  if (kind === "correction" && !hasCorrectionDetail(correction)) {
+    return null;
+  }
 
   return {
     schemaVersion: 1,
@@ -205,7 +209,7 @@ function normalizeSubmission(value, now = new Date().toISOString()) {
     term,
     lookupKey,
     kind,
-    correction: normalizeCorrection(value.correction),
+    correction,
     result: normalizeResultMetadata(value.result)
   };
 }
@@ -291,6 +295,11 @@ function normalizeRejection(value = {}) {
 
 function normalizeKind(kind) {
   return ["confirm", "wrong", "missing", "correction"].includes(kind) ? kind : "";
+}
+
+function hasCorrectionDetail(correction = {}) {
+  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]
+    .some((field) => Boolean(correction[field]));
 }
 
 function clampNumber(value, min, max) {

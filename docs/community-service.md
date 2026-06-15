@@ -52,6 +52,8 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 
 When the pending moderation queue reaches `SAYTHIS_MAX_PENDING_SUBMISSIONS`, new public submissions are rejected with `pending-limit-reached`. Duplicate retries of an already pending submission id are still accepted without adding another entry.
 
+Correction submissions must include at least one structured pronunciation field, such as source form, language, origin, IPA, simple guide, audio URL, or variant note. Empty correction submissions are rejected as invalid.
+
 ## Moderator Endpoints
 
 All moderator endpoints require:

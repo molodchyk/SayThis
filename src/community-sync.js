@@ -62,6 +62,9 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
       audioUrl: normalizeLongValue(feedback.audioUrl),
       variantNote: normalizeSelection(feedback.variantNote)
     };
+    if (!hasCorrectionDetail(payload.correction)) {
+      return null;
+    }
   }
 
   return payload;
@@ -224,6 +227,11 @@ function normalizeApprovedEntry(entry = {}) {
 
 function normalizeFeedbackKind(kind) {
   return ["confirm", "wrong", "missing", "correction"].includes(kind) ? kind : "missing";
+}
+
+function hasCorrectionDetail(correction = {}) {
+  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]
+    .some((field) => Boolean(correction[field]));
 }
 
 function normalizeEndpoint(value) {

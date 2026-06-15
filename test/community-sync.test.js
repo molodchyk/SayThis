@@ -65,6 +65,14 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(Object.hasOwn(submission, "pageUrl"), false);
 });
 
+test("drops empty correction submissions before sync queueing", () => {
+  const submission = createCommunitySubmission("gnocchi", { kind: "correction" });
+  const queued = enqueueSubmission([], submission);
+
+  assert.equal(submission, null);
+  assert.deepEqual(queued, []);
+});
+
 test("queues submissions and flushes them through a poster", async () => {
   const submission = createCommunitySubmission("gnocchi", { kind: "confirm" });
   const queue = enqueueSubmission([], submission);
