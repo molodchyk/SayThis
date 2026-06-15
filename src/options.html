@@ -38,9 +38,25 @@
           <textarea id="data-box" rows="12" spellcheck="false"></textarea>
         </label>
       </section>
+
+      <section class="panel">
+        <h2>Community Sync</h2>
+        <p id="sync-summary" class="summary">No queued submissions.</p>
+        <label class="toggle">
+          <input id="sync-enabled" type="checkbox">
+          <span>Submit corrections to a community endpoint</span>
+        </label>
+        <label class="field">
+          <span>Endpoint</span>
+          <input id="sync-endpoint" type="url" placeholder="https://example.com/saythis/submit" spellcheck="false">
+        </label>
+        <div class="actions">
+          <button id="flush-sync" type="button">Sync Now</button>
+          <button id="clear-sync" type="button" class="secondary">Clear Queue</button>
+        </div>
+      </section>
     </main>
 
     <script type="module" src="options.js"></script>
   </body>
 </html>
-

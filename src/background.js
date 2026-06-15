@@ -13,6 +13,14 @@ import {
 import {
   buildWiktionaryResult
 } from "./wiktionary-adapter.js";
+import {
+  createCommunitySubmission,
+  DEFAULT_SYNC_SETTINGS,
+  enqueueSubmission,
+  flushSubmissionQueue,
+  normalizeSyncSettings,
+  syncSummary
+} from "./community-sync.js";
 
 const MENU_ID = "saythis-pronounce-selection";
 const STORAGE_KEYS = {
@@ -20,11 +28,14 @@ const STORAGE_KEYS = {
   lastResult: "lastResult",
   lastSelection: "lastSelection",
   lastSource: "lastSource",
+  syncQueue: "syncQueue",
+  syncSummary: "syncSummary",
   settings: "settings"
 };
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
-  showOverlay: true
+  showOverlay: true,
+  ...DEFAULT_SYNC_SETTINGS
 };
 
 let seedPromise;
@@ -121,6 +132,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === "SAYTHIS_FLUSH_SYNC") {
+    flushCommunitySync()
+      .then((summary) => {
+        sendResponse({ ok: true, summary });
+      })
+      .catch((error) => {
+        sendResponse({ ok: false, error: error.message || "Sync failed." });
+      });
+    return true;
+  }
+
   return false;
 });
 
@@ -161,13 +183,58 @@ async function resolveSelection(text, options = {}) {
 
 async function saveFeedback(text, feedback) {
   const selectedText = normalizeSelection(text);
-  const stored = await chrome.storage.local.get([STORAGE_KEYS.communityEntries]);
+  const stored = await chrome.storage.local.get([
+    STORAGE_KEYS.communityEntries,
+    STORAGE_KEYS.settings,
+    STORAGE_KEYS.syncQueue,
+    STORAGE_KEYS.lastResult
+  ]);
   const communityEntries = updateCommunityEntries(stored[STORAGE_KEYS.communityEntries], selectedText, feedback);
+  const submission = createCommunitySubmission(selectedText, feedback, stored[STORAGE_KEYS.lastResult]);
+  const syncQueue = enqueueSubmission(stored[STORAGE_KEYS.syncQueue], submission);
   await chrome.storage.local.set({
-    [STORAGE_KEYS.communityEntries]: communityEntries
+    [STORAGE_KEYS.communityEntries]: communityEntries,
+    [STORAGE_KEYS.syncQueue]: syncQueue,
+    [STORAGE_KEYS.syncSummary]: syncSummary(syncQueue)
   });
 
+  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+  if (settings.communitySyncEnabled) {
+    flushCommunitySync().catch(() => {});
+  }
+
   return resolveSelection(selectedText, { useOnline: false });
+}
+
+async function flushCommunitySync() {
+  const stored = await chrome.storage.local.get([STORAGE_KEYS.settings, STORAGE_KEYS.syncQueue]);
+  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+  const result = await flushSubmissionQueue(stored[STORAGE_KEYS.syncQueue], settings, postCommunitySubmission);
+  const summary = syncSummary(result.queue);
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.syncQueue]: result.queue,
+    [STORAGE_KEYS.syncSummary]: summary
+  });
+
+  return {
+    ...summary,
+    sent: result.sent,
+    failedThisRun: result.failed
+  };
+}
+
+async function postCommunitySubmission(endpoint, submission) {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(submission)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Community sync failed with ${response.status}`);
+  }
 }
 
 async function loadSeedData() {
@@ -369,10 +436,12 @@ async function getSettings() {
 }
 
 function normalizeSettings(settings = {}) {
+  const syncSettings = normalizeSyncSettings(settings);
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
-    showOverlay: settings.showOverlay !== false
+    showOverlay: settings.showOverlay !== false,
+    ...syncSettings
   };
 }

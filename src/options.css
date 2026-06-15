@@ -114,6 +114,17 @@ textarea {
   resize: vertical;
 }
 
+input[type="url"] {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd3cf;
+  border-radius: 6px;
+  padding: 10px;
+  color: inherit;
+  background: #ffffff;
+  font: inherit;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     color: #edf4f1;
@@ -131,9 +142,9 @@ textarea {
     background: #141f1c;
   }
 
-  textarea {
+  textarea,
+  input[type="url"] {
     border-color: #34443f;
     background: #17221f;
   }
 }
-
