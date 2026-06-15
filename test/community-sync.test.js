@@ -4,7 +4,10 @@ import {
   createCommunitySubmission,
   enqueueSubmission,
   flushSubmissionQueue,
+  mergeApprovedEntries,
   normalizeSyncSettings,
+  normalizeApprovedEntries,
+  pullApprovedEntries,
   syncSummary
 } from "../src/community-sync.js";
 
@@ -84,3 +87,72 @@ test("keeps failed submissions in the queue", async () => {
   assert.equal(syncSummary(result.queue).failed, 1);
 });
 
+test("normalizes approved community entries", () => {
+  const entries = normalizeApprovedEntries({
+    entries: [{
+      term: "Chiaroscuro",
+      sourceForm: "chiaroscuro",
+      language: "it",
+      confirmations: 8,
+      corrections: 2,
+      ipa: "kjaroˈskuːro",
+      simple: "kee-ah-roh-SKOO-roh",
+      audioUrl: "https://example.com/chiaroscuro.ogg"
+    }]
+  });
+
+  assert.equal(entries.chiaroscuro.term, "Chiaroscuro");
+  assert.equal(entries.chiaroscuro.confirmations, 8);
+  assert.equal(entries.chiaroscuro.language, "it");
+  assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
+});
+
+test("merges approved entries by lookup key", () => {
+  const merged = mergeApprovedEntries({
+    gnocchi: {
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      confirmations: 3,
+      sourceForm: "gnocchi"
+    }
+  }, {
+    gnocchi: {
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      confirmations: 9,
+      sourceForm: "gnocchi",
+      language: "it"
+    }
+  });
+
+  assert.equal(merged.gnocchi.confirmations, 9);
+  assert.equal(merged.gnocchi.language, "it");
+});
+
+test("pulls approved entries only when sync is enabled", async () => {
+  const skipped = await pullApprovedEntries({
+    communitySyncEnabled: false,
+    communityEndpoint: "https://example.com/community"
+  }, async () => ({ entries: [] }));
+
+  assert.equal(skipped.skipped, true);
+
+  const pulled = await pullApprovedEntries({
+    communitySyncEnabled: true,
+    communityEndpoint: "https://example.com/community"
+  }, async (endpoint) => {
+    assert.equal(endpoint, "https://example.com/community");
+    return {
+      entries: [{
+        term: "Saoirse",
+        sourceForm: "Saoirse",
+        language: "ga",
+        confirmations: 12
+      }]
+    };
+  });
+
+  assert.equal(pulled.skipped, false);
+  assert.equal(pulled.received, 1);
+  assert.equal(pulled.entries.saoirse.language, "ga");
+});

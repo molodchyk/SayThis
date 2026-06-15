@@ -128,8 +128,79 @@ export function syncSummary(queue = []) {
   };
 }
 
+export function normalizeApprovedEntries(payload = {}) {
+  const rawEntries = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload.entries)
+      ? payload.entries
+      : isPlainObject(payload.entries)
+        ? Object.values(payload.entries)
+        : [];
+
+  return Object.fromEntries(rawEntries
+    .map(normalizeApprovedEntry)
+    .filter((entry) => entry.lookupKey)
+    .map((entry) => [entry.lookupKey, entry]));
+}
+
+export function mergeApprovedEntries(existing = {}, incoming = {}) {
+  return {
+    ...normalizeApprovedEntries({ entries: existing }),
+    ...normalizeApprovedEntries({ entries: incoming })
+  };
+}
+
+export async function pullApprovedEntries(settings = {}, fetchApproved) {
+  const syncSettings = normalizeSyncSettings(settings);
+  if (!syncSettings.communitySyncEnabled || typeof fetchApproved !== "function") {
+    return {
+      entries: {},
+      received: 0,
+      pulledAt: "",
+      skipped: true
+    };
+  }
+
+  const payload = await fetchApproved(syncSettings.communityEndpoint);
+  const entries = normalizeApprovedEntries(payload);
+  return {
+    entries,
+    received: Object.keys(entries).length,
+    pulledAt: new Date().toISOString(),
+    skipped: false
+  };
+}
+
 function normalizeQueue(queue) {
   return Array.isArray(queue) ? queue.filter((item) => item?.lookupKey && item?.kind) : [];
+}
+
+function normalizeApprovedEntry(entry = {}) {
+  const term = normalizeSelection(entry.term || entry.display || entry.sourceForm);
+  const lookupKey = createLookupKey(entry.lookupKey || term);
+  const confirmations = clampNumber(entry.confirmations, 0, 100000);
+  const corrections = clampNumber(entry.corrections, 0, 100000);
+  const flags = clampNumber(entry.flags, 0, 100000);
+  const requests = clampNumber(entry.requests, 0, 100000);
+
+  return {
+    term,
+    lookupKey,
+    confirmations,
+    corrections,
+    flags,
+    requests,
+    sourceForm: normalizeSelection(entry.sourceForm),
+    language: normalizeSelection(entry.language),
+    languageName: normalizeSelection(entry.languageName),
+    origin: normalizeSelection(entry.origin),
+    ipa: normalizeSelection(entry.ipa),
+    simple: normalizeSelection(entry.simple),
+    audioUrl: normalizeLongValue(entry.audioUrl),
+    variantNote: normalizeSelection(entry.variantNote),
+    approvedAt: normalizeSelection(entry.approvedAt),
+    updatedAt: normalizeSelection(entry.updatedAt || entry.approvedAt)
+  };
 }
 
 function normalizeFeedbackKind(kind) {
@@ -148,6 +219,19 @@ function normalizeEndpoint(value) {
   } catch {
     return "";
   }
+}
+
+function isPlainObject(value) {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function clampNumber(value, min, max) {
+  const number = Number(value || 0);
+  if (!Number.isFinite(number)) {
+    return min;
+  }
+
+  return Math.min(max, Math.max(min, number));
 }
 
 function createSubmissionId(term, feedback) {
@@ -170,4 +254,3 @@ function normalizeLongValue(value) {
     .trim()
     .slice(0, 2048);
 }
-

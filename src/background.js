@@ -18,13 +18,17 @@ import {
   DEFAULT_SYNC_SETTINGS,
   enqueueSubmission,
   flushSubmissionQueue,
+  mergeApprovedEntries,
   normalizeSyncSettings,
+  pullApprovedEntries,
   syncSummary
 } from "./community-sync.js";
 
 const MENU_ID = "saythis-pronounce-selection";
 const STORAGE_KEYS = {
+  approvedCommunityEntries: "approvedCommunityEntries",
   communityEntries: "communityEntries",
+  communityPullState: "communityPullState",
   lastResult: "lastResult",
   lastSelection: "lastSelection",
   lastSource: "lastSource",
@@ -143,14 +147,32 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === "SAYTHIS_PULL_APPROVED") {
+    pullApprovedCommunityEntries()
+      .then((summary) => {
+        sendResponse({ ok: true, summary });
+      })
+      .catch((error) => {
+        sendResponse({ ok: false, error: error.message || "Refresh failed." });
+      });
+    return true;
+  }
+
   return false;
 });
 
 async function resolveSelection(text, options = {}) {
   const selectedText = normalizeSelection(text);
   const data = await loadSeedData();
-  const stored = await chrome.storage.local.get([STORAGE_KEYS.communityEntries, STORAGE_KEYS.settings]);
-  const communityEntries = stored[STORAGE_KEYS.communityEntries] || {};
+  const stored = await chrome.storage.local.get([
+    STORAGE_KEYS.approvedCommunityEntries,
+    STORAGE_KEYS.communityEntries,
+    STORAGE_KEYS.settings
+  ]);
+  const communityEntries = {
+    ...(stored[STORAGE_KEYS.approvedCommunityEntries] || {}),
+    ...(stored[STORAGE_KEYS.communityEntries] || {})
+  };
   const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const localResult = resolveTerm(selectedText, {
     entries: data.entries,
@@ -223,6 +245,32 @@ async function flushCommunitySync() {
   };
 }
 
+async function pullApprovedCommunityEntries() {
+  const stored = await chrome.storage.local.get([
+    STORAGE_KEYS.approvedCommunityEntries,
+    STORAGE_KEYS.settings
+  ]);
+  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+  const result = await pullApprovedEntries(settings, fetchApprovedCommunityEntries);
+  const approvedCommunityEntries = mergeApprovedEntries(
+    stored[STORAGE_KEYS.approvedCommunityEntries],
+    result.entries
+  );
+  const summary = {
+    received: result.received,
+    total: Object.keys(approvedCommunityEntries).length,
+    pulledAt: result.pulledAt,
+    skipped: result.skipped
+  };
+
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.approvedCommunityEntries]: approvedCommunityEntries,
+    [STORAGE_KEYS.communityPullState]: summary
+  });
+
+  return summary;
+}
+
 async function postCommunitySubmission(endpoint, submission) {
   const response = await fetch(endpoint, {
     method: "POST",
@@ -235,6 +283,23 @@ async function postCommunitySubmission(endpoint, submission) {
   if (!response.ok) {
     throw new Error(`Community sync failed with ${response.status}`);
   }
+}
+
+async function fetchApprovedCommunityEntries(endpoint) {
+  const url = new URL(endpoint);
+  url.searchParams.set("action", "approved");
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Community refresh failed with ${response.status}`);
+  }
+
+  return response.json();
 }
 
 async function loadSeedData() {

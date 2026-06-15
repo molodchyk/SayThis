@@ -1,5 +1,7 @@
 const STORAGE_KEYS = {
+  approvedCommunityEntries: "approvedCommunityEntries",
   communityEntries: "communityEntries",
+  communityPullState: "communityPullState",
   syncQueue: "syncQueue",
   syncSummary: "syncSummary",
   settings: "settings"
@@ -23,7 +25,9 @@ const syncEnabled = document.getElementById("sync-enabled");
 const syncEndpoint = document.getElementById("sync-endpoint");
 const syncSummaryText = document.getElementById("sync-summary");
 const flushSyncButton = document.getElementById("flush-sync");
+const pullApprovedButton = document.getElementById("pull-approved");
 const clearSyncButton = document.getElementById("clear-sync");
+const approvedSummary = document.getElementById("approved-summary");
 
 init();
 
@@ -35,11 +39,14 @@ exportButton.addEventListener("click", exportData);
 importButton.addEventListener("click", importData);
 clearButton.addEventListener("click", clearMemory);
 flushSyncButton.addEventListener("click", flushSync);
+pullApprovedButton.addEventListener("click", pullApproved);
 clearSyncButton.addEventListener("click", clearSyncQueue);
 
 async function init() {
   const stored = await chrome.storage.local.get([
     STORAGE_KEYS.settings,
+    STORAGE_KEYS.approvedCommunityEntries,
+    STORAGE_KEYS.communityPullState,
     STORAGE_KEYS.communityEntries,
     STORAGE_KEYS.syncQueue,
     STORAGE_KEYS.syncSummary
@@ -51,6 +58,7 @@ async function init() {
   syncEndpoint.value = settings.communityEndpoint;
   renderSummary(stored[STORAGE_KEYS.communityEntries] || {});
   renderSyncSummary(stored[STORAGE_KEYS.syncSummary], stored[STORAGE_KEYS.syncQueue]);
+  renderApprovedSummary(stored[STORAGE_KEYS.approvedCommunityEntries], stored[STORAGE_KEYS.communityPullState]);
   setStatus("Settings loaded.");
 }
 
@@ -69,6 +77,8 @@ async function saveSettings() {
 async function exportData() {
   const stored = await chrome.storage.local.get([
     STORAGE_KEYS.settings,
+    STORAGE_KEYS.approvedCommunityEntries,
+    STORAGE_KEYS.communityPullState,
     STORAGE_KEYS.communityEntries,
     STORAGE_KEYS.syncQueue,
     STORAGE_KEYS.syncSummary
@@ -77,6 +87,8 @@ async function exportData() {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
     settings: normalizeSettings(stored[STORAGE_KEYS.settings]),
+    approvedCommunityEntries: stored[STORAGE_KEYS.approvedCommunityEntries] || {},
+    communityPullState: stored[STORAGE_KEYS.communityPullState] || {},
     communityEntries: stored[STORAGE_KEYS.communityEntries] || {},
     syncQueue: stored[STORAGE_KEYS.syncQueue] || [],
     syncSummary: stored[STORAGE_KEYS.syncSummary] || {}
@@ -97,11 +109,15 @@ async function importData() {
   }
 
   const settings = normalizeSettings(payload.settings);
+  const approvedCommunityEntries = isPlainObject(payload.approvedCommunityEntries) ? payload.approvedCommunityEntries : {};
   const communityEntries = isPlainObject(payload.communityEntries) ? payload.communityEntries : {};
   const syncQueue = Array.isArray(payload.syncQueue) ? payload.syncQueue : [];
   const importedSyncSummary = summarizeQueue(syncQueue);
+  const communityPullState = isPlainObject(payload.communityPullState) ? payload.communityPullState : {};
   await chrome.storage.local.set({
     [STORAGE_KEYS.settings]: settings,
+    [STORAGE_KEYS.approvedCommunityEntries]: approvedCommunityEntries,
+    [STORAGE_KEYS.communityPullState]: communityPullState,
     [STORAGE_KEYS.communityEntries]: communityEntries,
     [STORAGE_KEYS.syncQueue]: syncQueue,
     [STORAGE_KEYS.syncSummary]: importedSyncSummary
@@ -113,6 +129,7 @@ async function importData() {
   syncEndpoint.value = settings.communityEndpoint;
   renderSummary(communityEntries);
   renderSyncSummary(importedSyncSummary);
+  renderApprovedSummary(approvedCommunityEntries, communityPullState);
   setStatus("Import saved.");
 }
 
@@ -134,6 +151,21 @@ async function flushSync() {
 
   renderSyncSummary(response.summary);
   setStatus(`Sync sent ${response.summary.sent || 0}.`);
+}
+
+async function pullApproved() {
+  const response = await sendMessage({ type: "SAYTHIS_PULL_APPROVED" });
+  if (!response.ok) {
+    setStatus(response.error || "Refresh failed.");
+    return;
+  }
+
+  const stored = await chrome.storage.local.get([
+    STORAGE_KEYS.approvedCommunityEntries,
+    STORAGE_KEYS.communityPullState
+  ]);
+  renderApprovedSummary(stored[STORAGE_KEYS.approvedCommunityEntries], stored[STORAGE_KEYS.communityPullState]);
+  setStatus(`Refreshed ${response.summary.received || 0}.`);
 }
 
 async function clearSyncQueue() {
@@ -162,6 +194,13 @@ function renderSyncSummary(summary, queue) {
   syncSummaryText.textContent = safe.queued
     ? `${safe.queued} queued · ${safe.failed || 0} failed · ${safe.exhausted || 0} exhausted`
     : "No queued submissions.";
+}
+
+function renderApprovedSummary(entries = {}, state = {}) {
+  const count = Object.keys(entries || {}).length;
+  approvedSummary.textContent = count
+    ? `${count} approved shared entries${state?.pulledAt ? ` · updated ${new Date(state.pulledAt).toLocaleString()}` : ""}`
+    : "No approved shared entries.";
 }
 
 function summarizeQueue(queue) {

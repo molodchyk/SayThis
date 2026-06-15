@@ -30,6 +30,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, and evidence.
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Opt-in community sync endpoint with queued retry behavior.
+- Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
 - Verified-audio playback from resolver results, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
@@ -69,6 +70,7 @@ Core fields:
 - `sourceStatus`: verified-audio, community-confirmed, structured-source, generated-fallback, unknown.
 - `confidence`: high, medium, low, unknown.
 - `community`: correction and confirmation summary.
+- `approvedCommunityEntries`: remote approved entries pulled from the configured community endpoint.
 - `sources`: source URLs or source IDs.
 - `notes`: curator notes.
 
@@ -88,6 +90,8 @@ Supported feedback:
 
 Community entries should be promoted only when they are source-backed, repeated, or manually verified. The system should preserve variants rather than forcing one global pronunciation when multiple are valid.
 
+Approved shared entries are stored separately from local feedback. During lookup, approved entries are merged under local entries, so a user's correction keeps priority on that user's machine.
+
 ## Privacy
 
 The MVP should avoid sending every highlighted word to a server by default. A conservative sequence:
@@ -98,6 +102,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 4. Do not collect selected text analytics unless explicitly opted in.
 5. Keep community submissions scoped to the selected term and pronunciation metadata.
 6. Community sync is disabled by default and accepts only HTTPS endpoints.
+7. Approved-entry refresh stores only approved pronunciation metadata.
 
 ## Technical Risks
 
