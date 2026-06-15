@@ -19,10 +19,10 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Packaged extension icons for toolbar and install surfaces.
 - A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.
-- A resolver result card with source form, language, origin, IPA/simple guide, confidence, evidence, and source links.
+- A resolver result card with source form, aliases, language, origin, IPA/simple guide, confidence, evidence, and source links.
 - Alternate candidate display when structured sources disagree or a stronger source displaces another useful match.
 - Alias capture from structured sources and community corrections.
-- A compact on-page result card with speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
+- A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, audio sources, and variant notes.
 - Optional Wikidata lookup from the popup when the user chooses `Online`.

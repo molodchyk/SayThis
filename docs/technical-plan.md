@@ -52,7 +52,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Source-form-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
-- Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
+- Result card with source form, aliases, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - Local confirmation, wrong-result, missing-term, correction, aliases, audio-source, source-link, and variant-note storage.
 - Opt-in community sync endpoint with queued retry behavior.
 - Optional host permission request for the configured community sync endpoint.

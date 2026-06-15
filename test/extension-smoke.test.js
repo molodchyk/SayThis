@@ -70,6 +70,8 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /type: "SAYTHIS_RESOLVE"/);
   assert.match(source, /useOnline: true/);
   assert.match(source, /kind: "correction"/);
+  assert.match(source, /<dt>Aliases<\/dt>/);
+  assert.match(source, /aliasesTextFromResult\(result\) \|\| "None"/);
 
   for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "audioUrl", "sourceUrl", "variantNote"]) {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));

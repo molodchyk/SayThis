@@ -278,6 +278,10 @@
             <dd>${escapeHtml(result.sourceForm || "Unknown")}</dd>
           </div>
           <div>
+            <dt>Aliases</dt>
+            <dd>${escapeHtml(aliasesTextFromResult(result) || "None")}</dd>
+          </div>
+          <div>
             <dt>Language</dt>
             <dd>${escapeHtml(result.languageName || result.language || "Unknown")}</dd>
           </div>

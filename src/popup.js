@@ -28,6 +28,7 @@ const resultDisplay = document.getElementById("result-display");
 const confidenceBadge = document.getElementById("confidence-badge");
 const sourceBadge = document.getElementById("source-badge");
 const sourceForm = document.getElementById("source-form");
+const aliasesDisplay = document.getElementById("aliases");
 const language = document.getElementById("language");
 const category = document.getElementById("category");
 const origin = document.getElementById("origin");
@@ -224,14 +225,16 @@ function renderResult(result) {
   resultDisplay.textContent = result.display || result.query || "Unknown";
   confidenceBadge.textContent = result.confidence || "unknown";
   sourceBadge.textContent = result.sourceLabel || result.sourceStatus || "Unknown";
+
+  const correctionValues = correctionValuesFromResult(result);
   sourceForm.textContent = result.sourceForm || "No source form";
+  aliasesDisplay.textContent = correctionValues.aliases || "None";
   language.textContent = result.languageName || result.language || "Unknown";
   category.textContent = result.category || "Unknown";
   origin.textContent = result.origin || "Unknown";
   ipa.textContent = result.pronunciation?.ipa || "Not available";
   simpleGuide.textContent = result.pronunciation?.simple || "Not available";
 
-  const correctionValues = correctionValuesFromResult(result);
   correctionSource.value = correctionValues.sourceForm;
   correctionAliases.value = correctionValues.aliases;
   correctionLanguage.value = correctionValues.language;
