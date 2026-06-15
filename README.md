@@ -38,6 +38,7 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 
 - Original idea: `docs/original-idea.md`
 - Product thesis: `docs/product-thesis.md`
+- Pronunciation graph: `docs/pronunciation-graph.md`
 - Product brief: `docs/product-brief.md`
 - SWOT analysis: `docs/swot-analysis.md`
 - Research notes: `docs/research-notes.md`
@@ -69,6 +70,7 @@ The first useful version should be narrow and trusted:
 
 - Resolve unfamiliar terms through structured sources before falling back to generated speech.
 - Store native-script forms, romanized variants, source confidence, and native audio.
+- Treat community submissions as structured pronunciation knowledge: source form, root, audio, guide, variant, source, and trust signal.
 - Prefer curated or native-speaker audio over generated voices.
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.

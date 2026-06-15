@@ -67,6 +67,8 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 
 For Latin-script input, entity or term resolution should happen before generic language detection. A romanized term can look like many languages, but a matched entity can provide a reliable native/source form.
 
+The resolver should keep multiple candidates alive until it has enough source evidence to rank them. A single early language guess should not decide the result for rare terms.
+
 ## Data Model
 
 Core fields:
@@ -86,6 +88,8 @@ Core fields:
 - `approvedCommunityEntries`: remote approved entries pulled from the configured community endpoint.
 - `resultCache`: local successful online lookup results keyed by normalized selected term.
 - `sources`: source URLs or source IDs.
+- `variants`: regional, professional, historical, or source-specific pronunciation variants.
+- `trustSignals`: source-backed, repeated, moderator-reviewed, or local-only status.
 - `notes`: curator notes.
 
 ## Community Memory Layer
@@ -105,6 +109,8 @@ Supported feedback:
 Community entries should be promoted only when they are source-backed, repeated, or manually verified. The system should preserve variants rather than forcing one global pronunciation when multiple are valid.
 
 Approved shared entries are stored separately from local feedback. During lookup, approved entries are merged under local entries, so a user's correction keeps priority on that user's machine.
+
+Community memory should produce a structured pronunciation graph, not a discussion feed. Accepted entries should capture source form, aliases, language, origin or root, IPA, simple guide, audio source, source links, variants, and trust signals.
 
 ## Privacy
 

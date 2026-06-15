@@ -100,3 +100,4 @@ The long-term asset is not a list of words. It is a pronunciation graph:
 
 This gives SayThis a defensible shape: it remains simple at the UI layer while becoming smarter through structured sources and community memory.
 
+The detailed doctrine for this graph is captured in `docs/pronunciation-graph.md`.
