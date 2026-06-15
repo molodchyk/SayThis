@@ -155,14 +155,110 @@ function normalizeCacheKey(value) {
 
 function normalizeCachedResult(result, lookupKey, term) {
   return {
-    ...result,
+    id: normalizeSelection(result.id),
     lookupKey,
     query: normalizeSelection(result.query || term),
     display: normalizeSelection(result.display || term),
+    aliases: normalizeAliases(result.aliases),
+    trustSignals: normalizeAliases(result.trustSignals),
+    sourceForm: normalizeSelection(result.sourceForm),
+    speakText: normalizeSelection(result.speakText || result.sourceForm || result.display || term),
+    script: normalizeSelection(result.script),
+    queryScript: normalizeSelection(result.queryScript),
+    language: normalizeSelection(result.language),
+    languageName: normalizeSelection(result.languageName),
+    ttsLang: normalizeSelection(result.ttsLang),
+    category: normalizeSelection(result.category),
+    origin: normalizeSelection(result.origin),
+    pronunciation: normalizePronunciation(result.pronunciation),
+    confidence: normalizeSelection(result.confidence),
+    sourceStatus: normalizeSelection(result.sourceStatus),
+    sourceLabel: normalizeSelection(result.sourceLabel),
     evidence: Array.isArray(result.evidence) ? result.evidence.slice(0, 8).map(normalizeSelection).filter(Boolean) : [],
-    sources: Array.isArray(result.sources) ? result.sources.slice(0, 8) : [],
-    alternateResults: Array.isArray(result.alternateResults) ? result.alternateResults.slice(0, 3) : []
+    sources: normalizeSourceItems(result.sources).slice(0, 8),
+    notes: normalizeSelection(result.notes),
+    community: normalizeCommunity(result.community),
+    alternateResults: normalizeAlternateResults(result.alternateResults).slice(0, 3)
   };
+}
+
+function normalizePronunciation(pronunciation = {}) {
+  return {
+    ipa: normalizeSelection(pronunciation.ipa),
+    simple: normalizeSelection(pronunciation.simple),
+    audio: normalizeAudioItems(pronunciation.audio)
+  };
+}
+
+function normalizeAudioItems(audio = []) {
+  return Array.isArray(audio)
+    ? audio.map((item) => ({
+      url: normalizeSafeUrl(item?.url),
+      label: normalizeSelection(item?.label),
+      source: normalizeSelection(item?.source),
+      quality: normalizeSelection(item?.quality)
+    })).filter((item) => item.url).slice(0, 8)
+    : [];
+}
+
+function normalizeSourceItems(sources = []) {
+  return Array.isArray(sources)
+    ? sources.map((item) => ({
+      label: normalizeSelection(item?.label || item?.source || "Source"),
+      url: normalizeSafeUrl(item?.url)
+    })).filter((item) => item.url)
+    : [];
+}
+
+function normalizeAlternateResults(items = []) {
+  return Array.isArray(items)
+    ? items.map((item) => ({
+      id: normalizeSelection(item?.id),
+      display: normalizeSelection(item?.display),
+      sourceForm: normalizeSelection(item?.sourceForm),
+      language: normalizeSelection(item?.language),
+      languageName: normalizeSelection(item?.languageName),
+      category: normalizeSelection(item?.category),
+      confidence: normalizeSelection(item?.confidence),
+      sourceStatus: normalizeSelection(item?.sourceStatus),
+      sourceLabel: normalizeSelection(item?.sourceLabel),
+      pronunciation: normalizePronunciation(item?.pronunciation),
+      evidence: Array.isArray(item?.evidence) ? item.evidence.slice(0, 2).map(normalizeSelection).filter(Boolean) : [],
+      sources: normalizeSourceItems(item?.sources).slice(0, 2)
+    })).filter((item) => item.display || item.sourceForm || item.pronunciation.ipa || item.pronunciation.simple)
+    : [];
+}
+
+function normalizeCommunity(value = {}) {
+  return {
+    confirmations: normalizeCount(value.confirmations),
+    flags: normalizeCount(value.flags),
+    requests: normalizeCount(value.requests),
+    corrections: normalizeCount(value.corrections),
+    updatedAt: normalizeSelection(value.updatedAt)
+  };
+}
+
+function normalizeAliases(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
+
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeSafeUrl(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return ["https:", "chrome-extension:"].includes(url.protocol) ? url.toString() : "";
+  } catch {
+    return "";
+  }
 }
 
 function isExpired(entry, now, ttlMs) {
@@ -172,6 +268,22 @@ function isExpired(entry, now, ttlMs) {
 function normalizeTimestamp(value, fallback) {
   const number = typeof value === "number" ? value : Date.parse(value);
   return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function normalizeLongValue(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 2048);
+}
+
+function normalizeCount(value) {
+  const number = Number(value || 0);
+  if (!Number.isFinite(number) || number < 0) {
+    return 0;
+  }
+
+  return Math.floor(Math.min(100000, number));
 }
 
 function normalizePositiveInteger(value, fallback) {

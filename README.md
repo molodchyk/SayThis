@@ -36,6 +36,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Source-form and alias-guided pronunciation-audio lookup that tries resolved spellings before raw selected text.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
 - Local cache for successful online lookup results.
+- Imported lookup-cache results are allowlisted to pronunciation result fields.
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
 - Options for default online lookup, on-page card display, and local/shared community-memory data management.
 - Opt-in community sync endpoint with a local retry queue for correction submissions.

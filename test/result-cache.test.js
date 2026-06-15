@@ -117,3 +117,59 @@ test("separates cached results by source scope", () => {
   assert.equal(scopedHit.result.lookupKey, "athens");
   assert.equal(Object.keys(normalizeResultCache(cache, { now: 3000 }).entries).length, 2);
 });
+
+test("sanitizes imported cached result payloads", () => {
+  const cache = normalizeResultCache({
+    entries: {
+      dirty: {
+        cacheKey: "dirty",
+        lookupKey: "dirty",
+        term: "Dirty",
+        updatedAt: 1000,
+        result: {
+          id: "remote:dirty",
+          query: "Dirty",
+          display: "Dirty",
+          sourceForm: "Dirty",
+          sourceStatus: "verified-audio",
+          confidence: "high",
+          pageUrl: "https://private.example/page",
+          headers: { cookie: "secret" },
+          pronunciation: {
+            simple: "DIR-tee",
+            audio: [{
+              label: "Audio",
+              url: "https://audio.example/dirty.ogg",
+              extra: "discard"
+            }, {
+              label: "Unsafe",
+              url: "javascript:alert(1)"
+            }]
+          },
+          sources: [{
+            label: "Source",
+            url: "https://example.com/dirty"
+          }, {
+            label: "Unsafe",
+            url: "http://example.com/dirty"
+          }],
+          alternateResults: [{
+            display: "Alternate",
+            sourceForm: "Alternate",
+            pronunciation: { simple: "ALL-ter-nate" },
+            pageUrl: "https://private.example/alternate"
+          }]
+        }
+      }
+    }
+  }, { now: 2000 });
+  const result = cache.entries.dirty.result;
+
+  assert.equal(result.pronunciation.audio.length, 1);
+  assert.equal(result.sources.length, 1);
+  assert.equal(result.alternateResults.length, 1);
+  assert.equal(Object.hasOwn(result, "pageUrl"), false);
+  assert.equal(Object.hasOwn(result, "headers"), false);
+  assert.equal(Object.hasOwn(result.pronunciation.audio[0], "extra"), false);
+  assert.equal(Object.hasOwn(result.alternateResults[0], "pageUrl"), false);
+});
