@@ -59,6 +59,7 @@ saveCorrectionButton.addEventListener("click", () => {
 });
 
 selectionInput.addEventListener("input", () => {
+  currentResult = null;
   updateButtonState();
   resultCard.hidden = true;
 });
@@ -74,6 +75,7 @@ async function speakSelection(rate) {
   const response = await sendMessage({
     type: "SAYTHIS_SPEAK",
     text,
+    result: currentResult,
     rate
   });
 

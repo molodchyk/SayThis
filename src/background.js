@@ -12,7 +12,12 @@ const STORAGE_KEYS = {
   communityEntries: "communityEntries",
   lastResult: "lastResult",
   lastSelection: "lastSelection",
-  lastSource: "lastSource"
+  lastSource: "lastSource",
+  settings: "settings"
+};
+const DEFAULT_SETTINGS = {
+  onlineByDefault: false,
+  showOverlay: true
 };
 
 let seedPromise;
@@ -40,7 +45,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     lastSource: "context-menu"
   });
 
-  resolveSelection(selectedText, { useOnline: false })
+  resolveSelection(selectedText)
     .then(async (result) => {
       await chrome.storage.local.set({
         [STORAGE_KEYS.lastResult]: result
@@ -116,15 +121,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 async function resolveSelection(text, options = {}) {
   const selectedText = normalizeSelection(text);
   const data = await loadSeedData();
-  const stored = await chrome.storage.local.get([STORAGE_KEYS.communityEntries]);
+  const stored = await chrome.storage.local.get([STORAGE_KEYS.communityEntries, STORAGE_KEYS.settings]);
   const communityEntries = stored[STORAGE_KEYS.communityEntries] || {};
+  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const localResult = resolveTerm(selectedText, {
     entries: data.entries,
     communityEntries
   });
 
   let result = localResult;
-  if (options.useOnline) {
+  const shouldUseOnline = options.useOnline ?? settings.onlineByDefault;
+  if (shouldUseOnline) {
     try {
       const remoteResult = await resolveWithWikidata(selectedText);
       result = mergeRemoteResult(localResult, remoteResult);
@@ -192,7 +199,7 @@ async function pronounceActiveSelection() {
     return;
   }
 
-  const result = await resolveSelection(selectedText, { useOnline: false });
+  const result = await resolveSelection(selectedText);
   speakResult(result);
   showResultOnTab(tab.id, result);
 }
@@ -216,6 +223,11 @@ async function showResultOnTab(tabId, result) {
   }
 
   try {
+    const settings = await getSettings();
+    if (!settings.showOverlay) {
+      return;
+    }
+
     await chrome.scripting.executeScript({
       target: { tabId },
       files: ["src/content-overlay.js"]
@@ -325,4 +337,18 @@ function chooseSourceLabel(labels, selectedScript) {
 
 function detectScriptName(value) {
   return resolveTerm(value, { entries: [] }).script;
+}
+
+async function getSettings() {
+  const stored = await chrome.storage.local.get([STORAGE_KEYS.settings]);
+  return normalizeSettings(stored[STORAGE_KEYS.settings]);
+}
+
+function normalizeSettings(settings = {}) {
+  return {
+    ...DEFAULT_SETTINGS,
+    ...settings,
+    onlineByDefault: Boolean(settings.onlineByDefault),
+    showOverlay: settings.showOverlay !== false
+  };
 }

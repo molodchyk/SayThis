@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SayThis Options</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <h1>SayThis Options</h1>
+        <p id="status">Settings loaded.</p>
+      </header>
+
+      <section class="panel">
+        <h2>Resolver</h2>
+        <label class="toggle">
+          <input id="online-default" type="checkbox">
+          <span>Use online lookup by default</span>
+        </label>
+        <label class="toggle">
+          <input id="show-overlay" type="checkbox">
+          <span>Show on-page result card</span>
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Community Memory</h2>
+        <p id="memory-summary" class="summary">No local entries.</p>
+        <div class="actions">
+          <button id="export-data" type="button">Export</button>
+          <button id="import-data" type="button" class="secondary">Import</button>
+          <button id="clear-memory" type="button" class="danger">Clear</button>
+        </div>
+        <label class="field">
+          <span>Data</span>
+          <textarea id="data-box" rows="12" spellcheck="false"></textarea>
+        </label>
+      </section>
+    </main>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
+
