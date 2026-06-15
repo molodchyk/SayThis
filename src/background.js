@@ -7,8 +7,7 @@ import {
   updateCommunityEntries
 } from "./resolver-core.js";
 import {
-  buildWikidataResult,
-  createWikidataSearchOnlyResult
+  selectBestWikidataResult
 } from "./wikidata-adapter.js";
 
 const MENU_ID = "saythis-pronounce-selection";
@@ -272,7 +271,7 @@ async function resolveWithWikidata(text) {
     uselang: "en",
     format: "json",
     origin: "*",
-    limit: "1"
+    limit: "8"
   });
 
   const searchResponse = await fetch(`https://www.wikidata.org/w/api.php?${params.toString()}`);
@@ -281,23 +280,32 @@ async function resolveWithWikidata(text) {
   }
 
   const searchData = await searchResponse.json();
-  const match = searchData.search?.[0];
-  if (!match?.id) {
+  const matches = (searchData.search || []).filter((match) => match?.id).slice(0, 8);
+  if (!matches.length) {
     return null;
   }
 
-  const entityResponse = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${encodeURIComponent(match.id)}.json`);
-  if (!entityResponse.ok) {
-    return createWikidataSearchOnlyResult(query, match);
-  }
+  const entityById = await fetchWikidataEntities(matches.slice(0, 5));
+  return selectBestWikidataResult(query, matches, entityById);
+}
 
-  const entityData = await entityResponse.json();
-  const entity = entityData.entities?.[match.id];
-  if (!entity) {
-    return null;
-  }
+async function fetchWikidataEntities(matches) {
+  const pairs = await Promise.all(matches.map(async (match) => {
+    try {
+      const response = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${encodeURIComponent(match.id)}.json`);
+      if (!response.ok) {
+        return null;
+      }
 
-  return buildWikidataResult(query, match, entity);
+      const data = await response.json();
+      const entity = data.entities?.[match.id];
+      return entity ? [match.id, entity] : null;
+    } catch {
+      return null;
+    }
+  }));
+
+  return Object.fromEntries(pairs.filter(Boolean));
 }
 
 async function getSettings() {

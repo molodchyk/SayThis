@@ -1,5 +1,6 @@
 import {
   createRemoteStructuredResult,
+  createLookupKey,
   detectScript,
   normalizeSelection
 } from "./resolver-core.js";
@@ -56,6 +57,39 @@ export function buildWikidataResult(query, match, entity) {
   });
 }
 
+export function selectBestWikidataResult(query, matches = [], entityById = {}) {
+  const results = matches
+    .filter((match) => match?.id)
+    .map((match, index) => {
+      const entity = entityById[match.id];
+      const result = entity ? buildWikidataResult(query, match, entity) : createWikidataSearchOnlyResult(query, match);
+      if (!result) {
+        return null;
+      }
+
+      return {
+        result,
+        score: scoreWikidataResult(query, match, entity, result, index)
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.score - left.score);
+
+  const best = results[0]?.result || null;
+  if (!best) {
+    return null;
+  }
+
+  if (results.length <= 1) {
+    return best;
+  }
+
+  return {
+    ...best,
+    evidence: [...(best.evidence || []), `Selected from ${results.length} Wikidata candidates`]
+  };
+}
+
 export function createWikidataSearchOnlyResult(query, match) {
   return createRemoteStructuredResult(query, {
     id: `wikidata:${match.id}`,
@@ -97,6 +131,58 @@ function chooseSourceCandidate(query, match, entity) {
       score: scoreCandidate(candidate, selectedScript)
     }))
     .sort((left, right) => right.score - left.score)[0];
+}
+
+function scoreWikidataResult(query, match, entity, result, index) {
+  const queryKey = createLookupKey(query);
+  const labelKey = createLookupKey(match.label);
+  const matchTextKey = createLookupKey(match.match?.text);
+  const aliasKeys = wikidataAliases(entity || {}).map(createLookupKey);
+  const sourceKey = createLookupKey(result.sourceForm);
+  const description = String(match.description || entity?.descriptions?.en?.value || "").toLowerCase();
+  let score = Math.max(0, 24 - index * 2);
+
+  if (labelKey === queryKey) {
+    score += 45;
+  } else if (labelKey.includes(queryKey) || queryKey.includes(labelKey)) {
+    score += 12;
+  }
+
+  if (matchTextKey === queryKey) {
+    score += 24;
+  }
+
+  if (aliasKeys.includes(queryKey)) {
+    score += 36;
+  }
+
+  if (sourceKey && sourceKey !== queryKey) {
+    score += 8;
+  }
+
+  if (result.sourceStatus === "verified-audio") {
+    score += 35;
+  }
+
+  if (result.pronunciation?.ipa) {
+    score += 10;
+  }
+
+  if (result.confidence === "high") {
+    score += 18;
+  } else if (result.confidence === "medium") {
+    score += 8;
+  }
+
+  if (description.includes("disambiguation")) {
+    score -= 50;
+  }
+
+  if (description.includes("family name") || description.includes("given name") || description.includes("place") || description.includes("city")) {
+    score += 4;
+  }
+
+  return score;
 }
 
 function scoreCandidate(candidate, selectedScript) {
@@ -176,4 +262,3 @@ function wikidataAliases(entity) {
     .map((alias) => alias.value)
     .filter(Boolean);
 }
-

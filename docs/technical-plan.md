@@ -21,6 +21,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local resolver over bundled entries and local community memory.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
+- Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Wikidata native/official source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, and evidence.
 - Local confirmation, wrong-result, missing-term, and correction storage.
@@ -100,11 +101,11 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 - Some pages block extension selection capture.
 - Community data can introduce spam, regional disputes, or confident incorrect corrections.
 - Etymology and origin notes can expand scope unless kept pronunciation-relevant.
-- Online lookup currently uses a single structured source and needs better scoring before it can be treated as high confidence.
+- Online lookup currently uses a single structured source and needs broader source coverage before it can be treated as universal.
 
 ## Near-Term Tasks
 
 - Build more resolver adapters for structured sources and pronunciation databases.
-- Improve online entity match scoring before entity-detail extraction.
+- Broaden online entity scoring with additional structured sources.
 - Add bundled-audio packaging for curated entries.
 - Add broader tests around popup/background message contracts.
