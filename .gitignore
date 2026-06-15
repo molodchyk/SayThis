@@ -35,6 +35,7 @@ assets/audio/licensed/
 assets/audio/raw/
 data/private/
 data/licensed/
+data/raw/
 
 # Local scratch files and diagnostics
 tmp/

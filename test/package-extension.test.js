@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
@@ -33,6 +35,25 @@ test("collects only extension runtime package files", async () => {
   assert.equal(files.some((path) => path.startsWith("docs/")), false);
   assert.equal(files.some((path) => path.startsWith("scripts/")), false);
   assert.equal(files.some((path) => path.endsWith("README.md")), false);
+});
+
+test("excludes private and licensed package data even when present locally", async () => {
+  const root = await mkdtemp(join(tmpdir(), "saythis-package-"));
+  await writeFixture(root, "manifest.json", "{}");
+  await writeFixture(root, "src/background.js", "");
+  await writeFixture(root, "data/pronunciation-seed.json", "{\"entries\":[]}");
+  await writeFixture(root, "data/private/secret.json", "{\"secret\":true}");
+  await writeFixture(root, "data/licensed/source.json", "{\"license\":\"restricted\"}");
+  await writeFixture(root, "data/raw/source.json", "{\"raw\":true}");
+  await writeFixture(root, "assets/icons/icon16.png", "");
+  await writeFixture(root, "assets/audio/public/example.ogg", "");
+
+  const files = await collectPackageFiles(root);
+
+  assert.ok(files.includes("data/pronunciation-seed.json"));
+  assert.equal(files.some((path) => path.startsWith("data/private/")), false);
+  assert.equal(files.some((path) => path.startsWith("data/licensed/")), false);
+  assert.equal(files.some((path) => path.startsWith("data/raw/")), false);
 });
 
 test("creates deterministic package name and zip envelope", () => {
@@ -78,4 +99,10 @@ function addIfString(files, path) {
   if (typeof path === "string" && path) {
     files.add(path);
   }
+}
+
+async function writeFixture(root, relativePath, contents) {
+  const target = join(root, ...relativePath.split("/"));
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, contents);
 }

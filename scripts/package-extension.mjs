@@ -10,6 +10,14 @@ const PACKAGE_ROOTS = [
   "assets/icons",
   "assets/audio/public"
 ];
+const EXCLUDED_PACKAGE_PREFIXES = [
+  "assets/audio/licensed/",
+  "assets/audio/private/",
+  "assets/audio/raw/",
+  "data/licensed/",
+  "data/private/",
+  "data/raw/"
+];
 const DEFAULT_OUTPUT_DIR = "dist";
 
 export async function collectPackageFiles(root = process.cwd()) {
@@ -104,6 +112,11 @@ async function walkDirectory(rootPath, packagePath, files, readdir, stat) {
 }
 
 function isPackageFile(path) {
+  const normalized = normalizeZipPath(path);
+  if (EXCLUDED_PACKAGE_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return false;
+  }
+
   if (path.includes("/README.md")) {
     return false;
   }
