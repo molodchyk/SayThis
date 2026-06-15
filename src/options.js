@@ -2,6 +2,9 @@ import {
   normalizeResultCache,
   resultCacheSummary
 } from "./result-cache.js";
+import {
+  endpointOriginPattern
+} from "./community-sync.js";
 
 const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
@@ -74,15 +77,16 @@ async function init() {
 }
 
 async function saveSettings() {
+  const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
+  const settings = await settingsFromControls();
   await chrome.storage.local.set({
-    [STORAGE_KEYS.settings]: {
-      onlineByDefault: onlineDefault.checked,
-      showOverlay: showOverlay.checked,
-      communitySyncEnabled: syncEnabled.checked,
-      communityEndpoint: normalizeEndpoint(syncEndpoint.value)
-    }
+    [STORAGE_KEYS.settings]: settings
   });
-  setStatus("Settings saved.");
+  syncEnabled.checked = settings.communitySyncEnabled;
+  syncEndpoint.value = settings.communityEndpoint;
+  setStatus(settings.communitySyncEnabled || !wantedSync
+    ? "Settings saved."
+    : "Settings saved. Community sync permission was not granted.");
 }
 
 async function exportData() {
@@ -122,7 +126,7 @@ async function importData() {
     return;
   }
 
-  const settings = normalizeSettings(payload.settings);
+  const settings = await settingsWithEndpointPermission(payload.settings);
   const approvedCommunityEntries = isPlainObject(payload.approvedCommunityEntries) ? payload.approvedCommunityEntries : {};
   const communityEntries = isPlainObject(payload.communityEntries) ? payload.communityEntries : {};
   const resultCache = normalizeResultCache(payload.resultCache);
@@ -253,6 +257,41 @@ function normalizeSettings(settings = {}) {
     communityEndpoint: endpoint,
     communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint)
   };
+}
+
+async function settingsFromControls() {
+  return settingsWithEndpointPermission({
+    onlineByDefault: onlineDefault.checked,
+    showOverlay: showOverlay.checked,
+    communitySyncEnabled: syncEnabled.checked,
+    communityEndpoint: normalizeEndpoint(syncEndpoint.value)
+  });
+}
+
+async function settingsWithEndpointPermission(value = {}) {
+  const settings = normalizeSettings(value);
+  if (!settings.communitySyncEnabled) {
+    return settings;
+  }
+
+  const granted = await requestEndpointPermission(settings.communityEndpoint);
+  return {
+    ...settings,
+    communitySyncEnabled: Boolean(granted)
+  };
+}
+
+async function requestEndpointPermission(endpoint) {
+  const origin = endpointOriginPattern(endpoint);
+  if (!origin || !chrome.permissions) {
+    return Boolean(origin);
+  }
+
+  if (await chrome.permissions.contains({ origins: [origin] })) {
+    return true;
+  }
+
+  return chrome.permissions.request({ origins: [origin] });
 }
 
 function normalizeEndpoint(value) {

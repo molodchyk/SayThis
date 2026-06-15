@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createCommunitySubmission,
+  endpointOriginPattern,
   enqueueSubmission,
   flushSubmissionQueue,
   mergeApprovedEntries,
@@ -27,6 +28,15 @@ test("normalizes sync settings conservatively", () => {
     communitySyncEnabled: true,
     communityEndpoint: "https://example.com/submit"
   });
+});
+
+test("creates optional permission pattern for sync endpoint origin", () => {
+  assert.equal(
+    endpointOriginPattern("https://example.com/saythis/submit?token=abc"),
+    "https://example.com/*"
+  );
+  assert.equal(endpointOriginPattern("http://example.com/submit"), "");
+  assert.equal(endpointOriginPattern("not a url"), "");
 });
 
 test("creates privacy-scoped community submissions", () => {

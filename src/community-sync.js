@@ -19,6 +19,16 @@ export function normalizeSyncSettings(settings = {}) {
   };
 }
 
+export function endpointOriginPattern(value) {
+  const endpoint = normalizeEndpoint(value);
+  if (!endpoint) {
+    return "";
+  }
+
+  const url = new URL(endpoint);
+  return `${url.origin}/*`;
+}
+
 export function createCommunitySubmission(selection, feedback = {}, result = null) {
   const term = normalizeSelection(selection);
   const kind = normalizeFeedbackKind(feedback.kind);

@@ -34,9 +34,11 @@
   "host_permissions": [
     "https://www.wikidata.org/*",
     "https://en.wiktionary.org/*",
-    "https://*/*",
     "https://commons.wikimedia.org/*",
     "https://upload.wikimedia.org/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https:; media-src 'self' https:"

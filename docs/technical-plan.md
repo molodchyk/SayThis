@@ -35,6 +35,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, and evidence.
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Opt-in community sync endpoint with queued retry behavior.
+- Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
 - Community service request-size limits and in-memory public submission rate limiting.
@@ -109,7 +110,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 3. Cache only lookup data, not page URLs or browsing history.
 4. Do not collect selected text analytics unless explicitly opted in.
 5. Keep community submissions scoped to the selected term and pronunciation metadata.
-6. Community sync is disabled by default and accepts only HTTPS endpoints.
+6. Community sync is disabled by default, accepts only HTTPS endpoints, and requests endpoint-origin access only after the user enables sync.
 7. Approved-entry refresh stores only approved pronunciation metadata.
 
 ## Technical Risks

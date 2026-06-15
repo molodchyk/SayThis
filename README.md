@@ -24,6 +24,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
 - Options for default online lookup, on-page card display, and local community-memory data management.
 - Opt-in community sync endpoint with a local retry queue for correction submissions.
+- Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry refresh from the configured community endpoint, with local corrections taking priority.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.
 - Chrome TTS as a temporary local fallback.
@@ -71,7 +72,7 @@ The first useful version should be narrow and trusted:
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 
-Community sync is disabled by default. When enabled, SayThis submits only the selected term, feedback type, correction fields, and resolver metadata to the configured HTTPS endpoint. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history.
+Community sync is disabled by default. When enabled, SayThis asks Chrome for access to the configured HTTPS endpoint. It submits only the selected term, feedback type, correction fields, and resolver metadata. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history.
 
 ## Development
 
