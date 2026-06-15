@@ -101,6 +101,14 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(source, /Approved shared entries cleared/);
 });
 
+test("popup quick feedback labels match their feedback kinds", async () => {
+  const html = await readText("src/popup.html");
+  const source = await readText("src/popup.js");
+
+  assert.match(html, /id="confirm"[^>]*>Confirm<\/button>/);
+  assert.match(source, /confirmButton\.addEventListener\("click", \(\) => saveFeedback\(\{ kind: "confirm" \}\)\)/);
+});
+
 function idsInHtml(html) {
   return matches(html, /\bid="([^"]+)"/g);
 }
