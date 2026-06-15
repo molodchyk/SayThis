@@ -60,6 +60,7 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
       ipa: normalizeSelection(feedback.ipa),
       simple: normalizeSelection(feedback.simple),
       audioUrl: normalizeLongValue(feedback.audioUrl),
+      sourceUrl: normalizeLongValue(feedback.sourceUrl),
       variantNote: normalizeSelection(feedback.variantNote)
     };
     if (!hasCorrectionDetail(payload.correction)) {
@@ -219,6 +220,7 @@ function normalizeApprovedEntry(entry = {}) {
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
     audioUrl: normalizeLongValue(entry.audioUrl),
+    sourceUrl: normalizeLongValue(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
     approvedAt: normalizeSelection(entry.approvedAt),
     updatedAt: normalizeSelection(entry.updatedAt || entry.approvedAt)
@@ -230,7 +232,7 @@ function normalizeFeedbackKind(kind) {
 }
 
 function hasCorrectionDetail(correction = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]
+  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field]));
 }
 

@@ -46,7 +46,8 @@ test("creates privacy-scoped community submissions", () => {
     sourceForm: "chiaroscuro",
     language: "it",
     simple: "kee-ah-roh-SKOO-roh",
-    audioUrl: "https://example.com/audio.ogg"
+    audioUrl: "https://example.com/audio.ogg",
+    sourceUrl: "https://example.com/source"
   }, {
     id: "wiktionary:chiaroscuro",
     display: "chiaroscuro",
@@ -60,6 +61,7 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(submission.lookupKey, "chiaroscuro");
   assert.equal(submission.kind, "correction");
   assert.equal(submission.correction.language, "it");
+  assert.equal(submission.correction.sourceUrl, "https://example.com/source");
   assert.equal(submission.result.id, "wiktionary:chiaroscuro");
   assert.equal(Object.hasOwn(submission, "url"), false);
   assert.equal(Object.hasOwn(submission, "pageUrl"), false);
@@ -136,7 +138,8 @@ test("normalizes approved community entries", () => {
       corrections: 2,
       ipa: "kjaroˈskuːro",
       simple: "kee-ah-roh-SKOO-roh",
-      audioUrl: "https://example.com/chiaroscuro.ogg"
+      audioUrl: "https://example.com/chiaroscuro.ogg",
+      sourceUrl: "https://example.com/chiaroscuro"
     }]
   });
 
@@ -144,6 +147,7 @@ test("normalizes approved community entries", () => {
   assert.equal(entries.chiaroscuro.confirmations, 8);
   assert.equal(entries.chiaroscuro.language, "it");
   assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
+  assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");
 });
 
 test("merges approved entries by lookup key", () => {

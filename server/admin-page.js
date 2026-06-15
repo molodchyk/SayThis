@@ -306,6 +306,10 @@ export function renderAdminPage() {
           <input data-input="audioUrl" type="url">
         </label>
         <label>
+          Source URL
+          <input data-input="sourceUrl" type="url">
+        </label>
+        <label>
           Variant note
           <input data-input="variantNote">
         </label>
@@ -381,6 +385,7 @@ export function renderAdminPage() {
         ipa: entry.correction?.ipa || "",
         simple: entry.correction?.simple || "",
         audioUrl: entry.correction?.audioUrl || "",
+        sourceUrl: entry.correction?.sourceUrl || "",
         variantNote: entry.correction?.variantNote || "",
         rejectReason: ""
       };
@@ -441,7 +446,7 @@ export function renderAdminPage() {
 
     function collectFields(article) {
       const entry = {};
-      for (const name of ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]) {
+      for (const name of ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
         const value = article.querySelector(\`[data-input="\${name}"]\`)?.value.trim();
         if (value) {
           entry[name] = value;

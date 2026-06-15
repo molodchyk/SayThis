@@ -21,7 +21,11 @@ test("prefills correction values from resolver result", () => {
         label: "Pronunciation audio",
         quality: "verified"
       }]
-    }
+    },
+    sources: [{
+      label: "Wiktionary",
+      url: "https://en.wiktionary.org/wiki/chiaroscuro"
+    }]
   });
 
   assert.deepEqual(values, {
@@ -32,6 +36,7 @@ test("prefills correction values from resolver result", () => {
     ipa: "kjaroˈskuːro",
     origin: "Italian",
     audioUrl: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.ogg",
+    sourceUrl: "https://en.wiktionary.org/wiki/chiaroscuro",
     variantNote: "regional studio pronunciation"
   });
 });
@@ -45,6 +50,7 @@ test("builds correction feedback with audio source and variant note", () => {
     ipa: "ˈɲɔkki",
     origin: "Italian",
     audioUrl: " https://example.com/audio.ogg ",
+    sourceUrl: " https://example.com/source ",
     variantNote: "Northern Italian variant"
   });
 
@@ -57,11 +63,12 @@ test("builds correction feedback with audio source and variant note", () => {
     ipa: "ˈɲɔkki",
     origin: "Italian",
     audioUrl: "https://example.com/audio.ogg",
+    sourceUrl: "https://example.com/source",
     variantNote: "Northern Italian variant"
   });
 });
 
 test("detects whether a correction carries pronunciation data", () => {
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({})), false);
-  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ simple: "NYOH-kee" })), true);
+  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ sourceUrl: "https://example.com/source" })), true);
 });

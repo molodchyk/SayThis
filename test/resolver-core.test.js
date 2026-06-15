@@ -61,7 +61,8 @@ test("uses local community correction before fallback", () => {
     kind: "correction",
     sourceForm: "Exampleterm",
     language: "it",
-    simple: "eg-ZAM-pluh-term"
+    simple: "eg-ZAM-pluh-term",
+    sourceUrl: "https://example.com/exampleterm"
   });
   const entries = updateCommunityEntries(firstPass, "Exampleterm", { kind: "confirm" });
   const result = resolveTerm("Exampleterm", {
@@ -72,6 +73,7 @@ test("uses local community correction before fallback", () => {
   assert.equal(result.id, "community:exampleterm");
   assert.equal(result.language, "it");
   assert.equal(result.pronunciation.simple, "eg-ZAM-pluh-term");
+  assert.ok(result.sources.some((source) => source.url === "https://example.com/exampleterm"));
   assert.equal(result.community.confirmations, 1);
 });
 

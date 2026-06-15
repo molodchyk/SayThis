@@ -70,7 +70,8 @@ test("accepts submissions without storing request metadata", async () => {
     correction: {
       sourceForm: "chiaroscuro",
       language: "it",
-      simple: "kee-ah-roh-SKOO-roh"
+      simple: "kee-ah-roh-SKOO-roh",
+      sourceUrl: "https://example.com/chiaroscuro"
     }
   };
   const result = await handleCommunityRequest({
@@ -87,6 +88,7 @@ test("accepts submissions without storing request metadata", async () => {
   assert.equal(result.store.pending.length, 1);
   assert.equal(Object.hasOwn(result.store.pending[0], "ip"), false);
   assert.equal(Object.hasOwn(result.store.pending[0], "headers"), false);
+  assert.equal(result.store.pending[0].correction.sourceUrl, "https://example.com/chiaroscuro");
 });
 
 test("rejects oversized public submissions without mutating store", async () => {
@@ -250,7 +252,8 @@ test("serves approved entries and requires auth for moderation", async () => {
       correction: {
         sourceForm: "gnocchi",
         language: "it",
-        simple: "NYOH-kee"
+        simple: "NYOH-kee",
+        sourceUrl: "https://example.com/gnocchi"
       }
     })
   }, createEmptyStore());
@@ -283,6 +286,7 @@ test("serves approved entries and requires auth for moderation", async () => {
   assert.equal(response.body.entries.length, 1);
   assert.equal(response.body.entries[0].lookupKey, "gnocchi");
   assert.equal(response.body.entries[0].simple, "NYOH-kee");
+  assert.equal(response.body.entries[0].sourceUrl, "https://example.com/gnocchi");
 });
 
 test("rejects pending submissions with admin token", async () => {

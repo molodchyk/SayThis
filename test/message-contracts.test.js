@@ -75,6 +75,7 @@ test("builds correction feedback payloads", () => {
     language: "en-US",
     simple: "TERM",
     audioUrl: " https://example.com/audio.ogg ",
+    sourceUrl: " https://example.com/source ",
     variantNote: "studio variant"
   }), {
     type: MESSAGE_TYPES.feedback,
@@ -85,6 +86,7 @@ test("builds correction feedback payloads", () => {
       language: "en-US",
       simple: "TERM",
       audioUrl: "https://example.com/audio.ogg",
+      sourceUrl: "https://example.com/source",
       variantNote: "studio variant"
     }
   });

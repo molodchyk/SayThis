@@ -210,6 +210,7 @@ export function updateCommunityEntries(entries, selection, feedback) {
     ipa: existing.ipa || "",
     simple: existing.simple || "",
     audioUrl: existing.audioUrl || "",
+    sourceUrl: existing.sourceUrl || "",
     variantNote: existing.variantNote || "",
     createdAt: existing.createdAt || now,
     updatedAt: now
@@ -223,8 +224,8 @@ export function updateCommunityEntries(entries, selection, feedback) {
     next.requests += 1;
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
-    for (const field of ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]) {
-      const value = field === "audioUrl" ? normalizeLongValue(feedback[field]) : normalizeSelection(feedback[field]);
+    for (const field of ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+      const value = field === "audioUrl" || field === "sourceUrl" ? normalizeLongValue(feedback[field]) : normalizeSelection(feedback[field]);
       if (value) {
         next[field] = value;
       }
@@ -365,7 +366,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     sourceStatus,
     sourceLabel: sourceLabelForStatus(sourceStatus),
     evidence: [`${corrections} correction${corrections === 1 ? "" : "s"}`, `${confirmations} confirmation${confirmations === 1 ? "" : "s"}`],
-    sources: entry.audioUrl ? [{ label: "Community audio source", url: entry.audioUrl }] : [],
+    sources: communitySourceLinks(entry),
     notes: entry.variantNote || "",
     community: communitySummary(entry)
   });
@@ -439,7 +440,7 @@ function withCommunitySummary(result, communityEntry) {
 }
 
 function hasCommunityPronunciationData(entry) {
-  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl);
+  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl);
 }
 
 function communitySummary(entry) {
@@ -460,6 +461,13 @@ function emptyCommunity() {
     corrections: 0,
     updatedAt: ""
   };
+}
+
+function communitySourceLinks(entry = {}) {
+  return [
+    entry.sourceUrl ? { label: "Community source", url: entry.sourceUrl } : null,
+    entry.audioUrl ? { label: "Community audio source", url: entry.audioUrl } : null
+  ].filter(Boolean);
 }
 
 function withAlternateResults(primary, candidates = []) {

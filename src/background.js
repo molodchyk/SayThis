@@ -327,7 +327,7 @@ function resultMatchesSelection(result, lookupKey) {
 }
 
 function hasCommunityPronunciationData(entry = {}) {
-  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl);
+  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl);
 }
 
 async function flushCommunitySync() {

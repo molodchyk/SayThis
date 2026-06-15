@@ -47,6 +47,7 @@ const correctionSimple = document.getElementById("correction-simple");
 const correctionIpa = document.getElementById("correction-ipa");
 const correctionOrigin = document.getElementById("correction-origin");
 const correctionAudio = document.getElementById("correction-audio");
+const correctionSourceUrl = document.getElementById("correction-source-url");
 const correctionVariant = document.getElementById("correction-variant");
 
 let currentResult = null;
@@ -79,6 +80,7 @@ saveCorrectionButton.addEventListener("click", () => {
     ipa: correctionIpa.value,
     origin: correctionOrigin.value,
     audioUrl: correctionAudio.value,
+    sourceUrl: correctionSourceUrl.value,
     variantNote: correctionVariant.value
   });
 
@@ -235,6 +237,7 @@ function renderResult(result) {
   correctionIpa.value = correctionValues.ipa;
   correctionOrigin.value = correctionValues.origin;
   correctionAudio.value = correctionValues.audioUrl;
+  correctionSourceUrl.value = correctionValues.sourceUrl;
   correctionVariant.value = correctionValues.variantNote;
 
   alternates.replaceChildren();

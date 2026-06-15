@@ -314,6 +314,7 @@
             ${correctionInput("IPA", "ipa", result.pronunciation?.ipa, 120)}
             ${correctionInput("Origin", "origin", result.origin, 160, "full")}
             ${correctionInput("Audio source", "audioUrl", getBestAudio(result)?.url, 2048, "full", "url")}
+            ${correctionInput("Source link", "sourceUrl", firstSourceUrl(result), 2048, "full", "url")}
             ${correctionInput("Variant note", "variantNote", result.notes, 160, "full")}
           </div>
           <div class="form-actions">
@@ -433,7 +434,7 @@
     const feedback = { kind: "correction" };
     for (const input of root?.querySelectorAll("[data-correction-field]") || []) {
       const field = input.dataset.correctionField;
-      feedback[field] = field === "audioUrl"
+      feedback[field] = field === "audioUrl" || field === "sourceUrl"
         ? normalizeLongText(input.value)
         : normalizeText(input.value);
     }
@@ -441,7 +442,7 @@
   }
 
   function hasCorrectionDetail(feedback) {
-    return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]
+    return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
       .some((field) => Boolean(feedback[field]));
   }
 
@@ -536,6 +537,12 @@
     }
 
     return items;
+  }
+
+  function firstSourceUrl(result) {
+    const source = (Array.isArray(result?.sources) ? result.sources : [])
+      .find((item) => normalizeUrl(item?.url));
+    return normalizeUrl(source?.url);
   }
 
   function alternateItems(result) {

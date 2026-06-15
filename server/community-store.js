@@ -179,6 +179,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     ipa: override.ipa || correction.ipa,
     simple: override.simple || correction.simple,
     audioUrl: override.audioUrl || correction.audioUrl,
+    sourceUrl: override.sourceUrl || correction.sourceUrl,
     variantNote: override.variantNote || correction.variantNote,
     approvedAt: now,
     updatedAt: now
@@ -223,6 +224,7 @@ function normalizeCorrection(value = {}) {
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeLongValue(value.audioUrl),
+    sourceUrl: normalizeLongValue(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote)
   };
 }
@@ -272,6 +274,7 @@ function normalizeApprovedEntry(value = {}) {
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeLongValue(value.audioUrl),
+    sourceUrl: normalizeLongValue(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote),
     approvedAt: normalizeSelection(value.approvedAt),
     updatedAt: normalizeSelection(value.updatedAt || value.approvedAt)
@@ -298,7 +301,7 @@ function normalizeKind(kind) {
 }
 
 function hasCorrectionDetail(correction = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]
+  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field]));
 }
 

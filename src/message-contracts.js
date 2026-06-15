@@ -95,6 +95,7 @@ function normalizeFeedback(feedback = {}) {
     ipa: normalizeSelection(feedback.ipa),
     origin: normalizeSelection(feedback.origin),
     audioUrl: normalizeLongText(feedback.audioUrl),
+    sourceUrl: normalizeLongText(feedback.sourceUrl),
     variantNote: normalizeSelection(feedback.variantNote)
   });
 }
