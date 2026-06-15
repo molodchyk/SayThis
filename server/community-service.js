@@ -92,7 +92,7 @@ export async function handleCommunityRequest(request, store, options = {}) {
 
     const body = parseJsonBody(request.body);
     const result = approveSubmission(state, body.id, body);
-    return jsonResponse(result.approved ? 200 : 404, result.store, {
+    return jsonResponse(result.approved ? 200 : result.reason === "not-found" ? 404 : 400, result.store, {
       approved: result.approved,
       reason: result.reason || "",
       entry: result.entry || null

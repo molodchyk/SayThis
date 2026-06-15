@@ -93,6 +93,13 @@ export function approveSubmission(store, submissionId, review = {}, now = new Da
       reason: "invalid-entry"
     };
   }
+  if (!hasApprovedPronunciationData(entry)) {
+    return {
+      store: normalizedStore,
+      approved: false,
+      reason: "insufficient-entry-data"
+    };
+  }
 
   return {
     store: {
@@ -321,6 +328,17 @@ function hasApprovedEntryContent(value = {}) {
     clampNumber(value.corrections, 0, 100000) ||
     clampNumber(value.flags, 0, 100000) ||
     clampNumber(value.requests, 0, 100000)
+  );
+}
+
+function hasApprovedPronunciationData(entry = {}) {
+  const termKey = createLookupKey(entry.term);
+  const sourceFormKey = createLookupKey(entry.sourceForm);
+  return Boolean(
+    (sourceFormKey && sourceFormKey !== termKey) ||
+    normalizeAliases(entry.aliases).length ||
+    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.variantNote) ||
+    normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl)
   );
 }
 

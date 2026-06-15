@@ -444,6 +444,52 @@ test("approves confirmed resolver metadata into shared entries", async () => {
   ]);
 });
 
+test("does not publish approved entries without pronunciation data", async () => {
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_missing_only",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  }, createEmptyStore());
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/admin/approve",
+    headers: { authorization: "Bearer secret" },
+    body: JSON.stringify({ id: "sub_missing_only" })
+  }, response.store, { adminToken: "secret" });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.approved, false);
+  assert.equal(response.body.reason, "insufficient-entry-data");
+  assert.equal(response.store.pending.length, 1);
+  assert.equal(Object.keys(response.store.approved).length, 0);
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/admin/approve",
+    headers: { authorization: "Bearer secret" },
+    body: JSON.stringify({
+      id: "sub_missing_only",
+      entry: {
+        language: "it",
+        simple: "NYOH-kee"
+      }
+    })
+  }, response.store, { adminToken: "secret" });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.approved, true);
+  assert.equal(response.body.entry.simple, "NYOH-kee");
+  assert.equal(response.body.entry.language, "it");
+  assert.equal(response.store.pending.length, 0);
+});
+
 test("rejects pending submissions with admin token", async () => {
   let response = await handleCommunityRequest({
     method: "POST",

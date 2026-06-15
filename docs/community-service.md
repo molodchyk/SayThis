@@ -60,6 +60,8 @@ Rejected submission summaries are capped by `SAYTHIS_MAX_REJECTED_SUBMISSIONS`; 
 
 Correction submissions must include at least one structured pronunciation field, such as source form, aliases, language, origin, IPA, simple guide, audio URL, source URL, or variant note. Empty correction submissions are rejected as invalid.
 
+Approving a pending submission publishes it only when the final entry includes pronunciation data such as a distinct source form, aliases, language, origin, IPA, simple guide, audio URL, source URL, or variant note. Bare missing requests can remain pending until a moderator adds that data or rejects them.
+
 For a production deployment, set `SAYTHIS_ALLOWED_ORIGINS` to a comma-separated list of trusted origins, such as `https://example.com,chrome-extension://<extension-id>`. The default `*` keeps local and early public testing simple.
 
 Requests with an `Origin` header outside `SAYTHIS_ALLOWED_ORIGINS` are rejected with `origin-not-allowed`. Requests without an `Origin` header are accepted for server-to-server use.
