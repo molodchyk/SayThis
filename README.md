@@ -38,6 +38,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Options for default online lookup, on-page card display, and local/shared community-memory data management.
 - Opt-in community sync endpoint with a local retry queue for correction submissions.
 - Privacy-scoped community submissions can carry resolver aliases, origin, guides, audio, and source links for moderator review.
+- Sync retry queues are normalized on import and export so queued submissions stay scoped to pronunciation fields.
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry refresh from the configured community endpoint, with local corrections taking priority.
 - Community moderation service with body-size, rate-limit, and pending-queue abuse controls.

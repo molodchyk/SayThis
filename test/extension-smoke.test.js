@@ -102,6 +102,7 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(source, /normalizeApprovedEntries/);
   assert.match(source, /approvedCommunityEntries:\s*normalizeApprovedEntries/);
   assert.match(source, /normalizeCommunityEntries/);
+  assert.match(source, /normalizeSubmissionQueue/);
   assert.match(source, /Approved shared entries cleared/);
   assert.match(source, /wrong-result flags/);
 });

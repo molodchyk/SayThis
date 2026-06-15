@@ -9,6 +9,7 @@ import {
   mergeApprovedEntries,
   normalizeSyncSettings,
   normalizeApprovedEntries,
+  normalizeSubmissionQueue,
   pullApprovedEntries,
   syncSummary
 } from "../src/community-sync.js";
@@ -143,6 +144,54 @@ test("keeps failed submissions in the queue", async () => {
   assert.equal(result.queue.length, 1);
   assert.equal(result.queue[0].attempts, 1);
   assert.equal(syncSummary(result.queue).failed, 1);
+});
+
+test("normalizes queued submissions without request metadata", () => {
+  const queue = normalizeSubmissionQueue([{
+    schemaVersion: 9,
+    id: " sub_dirty ",
+    createdAt: " 2026-01-01T00:00:00.000Z ",
+    term: " Chiaroscuro ",
+    lookupKey: "chiaroscuro",
+    kind: "correction",
+    correction: {
+      sourceForm: " chiaroscuro ",
+      aliases: "light-dark; light-dark",
+      simple: "kee-ah-roh-SKOO-roh",
+      sourceUrl: " https://example.com/source "
+    },
+    result: {
+      id: "wiktionary:chiaroscuro",
+      display: "chiaroscuro",
+      sourceForm: "chiaroscuro",
+      language: "it",
+      sourceStatus: "verified-audio",
+      confidence: "high",
+      pageUrl: "https://private.example/page"
+    },
+    attempts: "2.8",
+    lastAttemptAt: " 2026-01-02T00:00:00.000Z ",
+    lastError: " offline ",
+    pageUrl: "https://private.example/page",
+    headers: { cookie: "secret" }
+  }, {
+    id: "bad",
+    lookupKey: "bad",
+    kind: "chat",
+    pageUrl: "https://private.example/bad"
+  }]);
+
+  assert.equal(queue.length, 1);
+  assert.equal(queue[0].schemaVersion, 1);
+  assert.equal(queue[0].id, "sub_dirty");
+  assert.equal(queue[0].term, "Chiaroscuro");
+  assert.equal(queue[0].attempts, 2);
+  assert.deepEqual(queue[0].correction.aliases, ["light-dark"]);
+  assert.equal(queue[0].correction.sourceUrl, "https://example.com/source");
+  assert.equal(queue[0].result.id, "wiktionary:chiaroscuro");
+  assert.equal(Object.hasOwn(queue[0], "pageUrl"), false);
+  assert.equal(Object.hasOwn(queue[0], "headers"), false);
+  assert.equal(Object.hasOwn(queue[0].result, "pageUrl"), false);
 });
 
 test("normalizes approved community entries", () => {

@@ -10,6 +10,7 @@ export const DEFAULT_SYNC_SETTINGS = {
 
 const MAX_QUEUE_SIZE = 250;
 const MAX_ATTEMPTS = 5;
+const FEEDBACK_KINDS = new Set(["confirm", "wrong", "missing", "correction"]);
 
 export function normalizeSyncSettings(settings = {}) {
   const endpoint = normalizeEndpoint(settings.communityEndpoint);
@@ -65,18 +66,15 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
 }
 
 export function enqueueSubmission(queue = [], submission) {
-  if (!submission?.lookupKey || !submission?.kind) {
-    return normalizeQueue(queue);
+  const normalized = normalizeSubmissionQueue(queue);
+  const normalizedSubmission = normalizeQueueItem(submission);
+  if (!normalizedSubmission) {
+    return normalized;
   }
 
   const next = [
-    ...normalizeQueue(queue),
-    {
-      ...submission,
-      attempts: Number(submission.attempts || 0),
-      lastAttemptAt: submission.lastAttemptAt || "",
-      lastError: submission.lastError || ""
-    }
+    ...normalized,
+    normalizedSubmission
   ];
 
   return next.slice(Math.max(0, next.length - MAX_QUEUE_SIZE));
@@ -85,7 +83,7 @@ export function enqueueSubmission(queue = [], submission) {
 export function enqueueSubmissionWhenEnabled(queue = [], submission, settings = {}) {
   const syncSettings = normalizeSyncSettings(settings);
   if (!syncSettings.communitySyncEnabled) {
-    return normalizeQueue(queue);
+    return normalizeSubmissionQueue(queue);
   }
 
   return enqueueSubmission(queue, submission);
@@ -93,7 +91,7 @@ export function enqueueSubmissionWhenEnabled(queue = [], submission, settings = 
 
 export async function flushSubmissionQueue(queue = [], settings = {}, postSubmission) {
   const syncSettings = normalizeSyncSettings(settings);
-  const normalized = normalizeQueue(queue);
+  const normalized = normalizeSubmissionQueue(queue);
   if (!syncSettings.communitySyncEnabled || typeof postSubmission !== "function") {
     return {
       queue: normalized,
@@ -136,12 +134,18 @@ export async function flushSubmissionQueue(queue = [], settings = {}, postSubmis
 }
 
 export function syncSummary(queue = []) {
-  const normalized = normalizeQueue(queue);
+  const normalized = normalizeSubmissionQueue(queue);
   return {
     queued: normalized.length,
     failed: normalized.filter((item) => item.lastError).length,
     exhausted: normalized.filter((item) => item.attempts >= MAX_ATTEMPTS).length
   };
+}
+
+export function normalizeSubmissionQueue(queue = []) {
+  return Array.isArray(queue)
+    ? queue.map(normalizeQueueItem).filter(Boolean).slice(-MAX_QUEUE_SIZE)
+    : [];
 }
 
 export function normalizeApprovedEntries(payload = {}) {
@@ -187,10 +191,6 @@ export async function pullApprovedEntries(settings = {}, fetchApproved) {
   };
 }
 
-function normalizeQueue(queue) {
-  return Array.isArray(queue) ? queue.filter((item) => item?.lookupKey && item?.kind) : [];
-}
-
 function normalizeResultMetadata(result = null) {
   if (!result || typeof result !== "object") {
     return null;
@@ -210,6 +210,53 @@ function normalizeResultMetadata(result = null) {
     sourceUrl: firstResultSourceUrl(result),
     sourceStatus: normalizeSelection(result.sourceStatus),
     confidence: normalizeSelection(result.confidence)
+  };
+}
+
+function normalizeQueueItem(item = {}) {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const term = normalizeSelection(item.term || item.lookupKey);
+  const lookupKey = createLookupKey(item.lookupKey || term);
+  const kind = normalizeStoredFeedbackKind(item.kind);
+  if (!lookupKey || !kind) {
+    return null;
+  }
+
+  const correction = normalizeCorrection(item.correction);
+  if (kind === "correction" && !hasCorrectionDetail(correction)) {
+    return null;
+  }
+
+  return {
+    schemaVersion: 1,
+    id: normalizeSelection(item.id) || `sub_${lookupKey}`,
+    createdAt: normalizeSelection(item.createdAt),
+    term,
+    lookupKey,
+    kind,
+    correction: kind === "correction" ? correction : {},
+    result: normalizeResultMetadata(item.result),
+    attempts: normalizeAttemptCount(item.attempts),
+    lastAttemptAt: normalizeSelection(item.lastAttemptAt),
+    lastError: normalizeSelection(item.lastError)
+  };
+}
+
+function normalizeCorrection(value = {}) {
+  return {
+    sourceForm: normalizeSelection(value.sourceForm),
+    aliases: normalizeAliases(value.aliases),
+    language: normalizeSelection(value.language),
+    languageName: normalizeSelection(value.languageName),
+    origin: normalizeSelection(value.origin),
+    ipa: normalizeSelection(value.ipa),
+    simple: normalizeSelection(value.simple),
+    audioUrl: normalizeLongValue(value.audioUrl),
+    sourceUrl: normalizeLongValue(value.sourceUrl),
+    variantNote: normalizeSelection(value.variantNote)
   };
 }
 
@@ -273,7 +320,11 @@ function firstResultSourceUrl(result = {}) {
 }
 
 function normalizeFeedbackKind(kind) {
-  return ["confirm", "wrong", "missing", "correction"].includes(kind) ? kind : "missing";
+  return FEEDBACK_KINDS.has(kind) ? kind : "missing";
+}
+
+function normalizeStoredFeedbackKind(kind) {
+  return FEEDBACK_KINDS.has(kind) ? kind : "";
 }
 
 function hasCorrectionDetail(correction = {}) {
@@ -337,6 +388,15 @@ function hashString(value) {
     hash |= 0;
   }
   return Math.abs(hash).toString(36);
+}
+
+function normalizeAttemptCount(value) {
+  const number = Number(value || 0);
+  if (!Number.isFinite(number) || number < 0) {
+    return 0;
+  }
+
+  return Math.min(MAX_ATTEMPTS, Math.floor(number));
 }
 
 function normalizeLongValue(value) {

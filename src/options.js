@@ -7,7 +7,8 @@ import {
 } from "./result-cache.js";
 import {
   endpointOriginPattern,
-  normalizeApprovedEntries
+  normalizeApprovedEntries,
+  normalizeSubmissionQueue
 } from "./community-sync.js";
 import {
   FORVO_API_ORIGIN
@@ -175,7 +176,7 @@ async function exportData() {
     communityPullState: stored[STORAGE_KEYS.communityPullState] || {},
     communityEntries: normalizeCommunityEntries(stored[STORAGE_KEYS.communityEntries]),
     resultCache: normalizeResultCache(stored[STORAGE_KEYS.resultCache]),
-    syncQueue: stored[STORAGE_KEYS.syncQueue] || [],
+    syncQueue: normalizeSubmissionQueue(stored[STORAGE_KEYS.syncQueue]),
     syncSummary: stored[STORAGE_KEYS.syncSummary] || {}
   };
 
@@ -200,7 +201,7 @@ async function importData() {
   const approvedCommunityEntries = normalizeApprovedEntries({ entries: payload.approvedCommunityEntries });
   const communityEntries = normalizeCommunityEntries(payload.communityEntries);
   const resultCache = normalizeResultCache(payload.resultCache);
-  const syncQueue = Array.isArray(payload.syncQueue) ? payload.syncQueue : [];
+  const syncQueue = normalizeSubmissionQueue(payload.syncQueue);
   const importedSyncSummary = summarizeQueue(syncQueue);
   const communityPullState = isPlainObject(payload.communityPullState) ? payload.communityPullState : {};
   await chrome.storage.local.set({
