@@ -10,7 +10,7 @@
     <main class="app">
       <header class="header">
         <h1>SayThis</h1>
-        <p id="status">Select text, then speak it.</p>
+        <p id="status">Select text, then resolve it.</p>
       </header>
 
       <label class="field">
@@ -18,27 +18,90 @@
         <textarea id="selection" rows="3" maxlength="160" spellcheck="false"></textarea>
       </label>
 
-      <label class="field">
-        <span>Voice hint</span>
-        <select id="language">
-          <option value="auto">Auto</option>
-          <option value="ru-RU">Russian</option>
-          <option value="pl-PL">Polish</option>
-          <option value="es-ES">Spanish</option>
-          <option value="fr-FR">French</option>
-          <option value="de-DE">German</option>
-          <option value="it-IT">Italian</option>
-          <option value="en-US">English (US)</option>
-          <option value="en-GB">English (UK)</option>
-        </select>
-      </label>
-
       <div class="actions">
+        <button id="resolve" type="button">Resolve</button>
+        <button id="resolve-online" type="button" class="secondary">Online</button>
         <button id="speak" type="button">Speak</button>
+        <button id="slow" type="button" class="secondary">Slow</button>
         <button id="stop" type="button" class="secondary">Stop</button>
       </div>
+
+      <section id="result-card" class="result-card" hidden>
+        <div class="result-head">
+          <div>
+            <span class="eyebrow">Resolved</span>
+            <h2 id="result-display"></h2>
+          </div>
+          <div class="badges">
+            <span id="confidence-badge" class="badge"></span>
+            <span id="source-badge" class="badge subtle"></span>
+          </div>
+        </div>
+
+        <dl class="facts">
+          <div>
+            <dt>Source form</dt>
+            <dd id="source-form"></dd>
+          </div>
+          <div>
+            <dt>Language</dt>
+            <dd id="language"></dd>
+          </div>
+          <div>
+            <dt>Category</dt>
+            <dd id="category"></dd>
+          </div>
+          <div>
+            <dt>Origin</dt>
+            <dd id="origin"></dd>
+          </div>
+          <div>
+            <dt>IPA</dt>
+            <dd id="ipa"></dd>
+          </div>
+          <div>
+            <dt>Guide</dt>
+            <dd id="simple-guide"></dd>
+          </div>
+        </dl>
+
+        <ul id="evidence" class="evidence"></ul>
+
+        <div class="feedback-actions" aria-label="Community feedback">
+          <button id="confirm" type="button" class="small">Correct</button>
+          <button id="wrong" type="button" class="small secondary">Wrong</button>
+          <button id="missing" type="button" class="small secondary">Missing</button>
+        </div>
+      </section>
+
+      <details class="correction">
+        <summary>Correction</summary>
+        <div class="correction-grid">
+          <label class="field compact">
+            <span>Source form</span>
+            <input id="correction-source" type="text" maxlength="160" spellcheck="false">
+          </label>
+          <label class="field compact">
+            <span>Language</span>
+            <input id="correction-language" type="text" maxlength="24" spellcheck="false">
+          </label>
+          <label class="field compact">
+            <span>Simple guide</span>
+            <input id="correction-simple" type="text" maxlength="120" spellcheck="false">
+          </label>
+          <label class="field compact">
+            <span>IPA</span>
+            <input id="correction-ipa" type="text" maxlength="120" spellcheck="false">
+          </label>
+          <label class="field compact full">
+            <span>Origin</span>
+            <input id="correction-origin" type="text" maxlength="160" spellcheck="false">
+          </label>
+        </div>
+        <button id="save-correction" type="button" class="small">Save</button>
+      </details>
     </main>
 
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

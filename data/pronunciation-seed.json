@@ -1,51 +1,153 @@
 {
-  "schemaVersion": 1,
-  "description": "Early seed list for SayThis pronunciation entries. These entries define lookup shape, not final pronunciation authority.",
+  "schemaVersion": 2,
+  "description": "Early resolver seed list for SayThis. Entries define lookup shape and sample pronunciation metadata, not final authority.",
   "entries": [
     {
       "id": "nguyen",
       "language": "vi",
+      "languageName": "Vietnamese",
       "display": "Nguyen",
-      "native": "Nguyen",
+      "sourceForm": "Nguyễn",
+      "native": "Nguyễn",
       "aliases": ["Nguyen", "Nguyễn"],
       "category": "surname",
+      "origin": "Vietnamese surname",
+      "pronunciation": {
+        "ipa": "",
+        "simple": "ngwee-en; often shortened in English contexts",
+        "audio": []
+      },
       "priority": "high",
-      "sourceStatus": "needs-curated-native-audio",
+      "sourceStatus": "structured-source",
+      "confidence": "medium",
+      "evidence": ["Bundled sample entry"],
       "notes": "Common name with frequent pronunciation uncertainty for English speakers."
     },
     {
       "id": "qatar",
       "language": "ar",
+      "languageName": "Arabic",
       "display": "Qatar",
-      "native": "Qatar",
+      "sourceForm": "قطر",
+      "native": "قطر",
       "aliases": ["Qatar"],
       "category": "place",
+      "origin": "Arabic place name",
+      "pronunciation": {
+        "ipa": "",
+        "simple": "English pronunciations vary; source form should use Arabic voice",
+        "audio": []
+      },
       "priority": "high",
-      "sourceStatus": "needs-curated-native-audio",
+      "sourceStatus": "structured-source",
+      "confidence": "medium",
+      "evidence": ["Bundled sample entry"],
       "notes": "Common public-speech example with multiple English approximations."
     },
     {
       "id": "saoirse",
       "language": "ga",
+      "languageName": "Irish",
       "display": "Saoirse",
+      "sourceForm": "Saoirse",
       "native": "Saoirse",
       "aliases": ["Saoirse"],
       "category": "given-name",
+      "origin": "Irish given name and word meaning freedom",
+      "pronunciation": {
+        "ipa": "",
+        "simple": "SEER-sha or SUR-sha, depending on speaker",
+        "audio": []
+      },
       "priority": "medium",
-      "sourceStatus": "needs-curated-native-audio",
+      "sourceStatus": "structured-source",
+      "confidence": "medium",
+      "evidence": ["Bundled sample entry"],
       "notes": "Useful example for name-focused lookup and audio source confidence."
     },
     {
       "id": "gnocchi",
       "language": "it",
+      "languageName": "Italian",
       "display": "Gnocchi",
-      "native": "Gnocchi",
+      "sourceForm": "gnocchi",
+      "native": "gnocchi",
       "aliases": ["Gnocchi"],
       "category": "term",
+      "origin": "Italian food term",
+      "pronunciation": {
+        "ipa": "ˈɲɔkki",
+        "simple": "NYOH-kee",
+        "audio": []
+      },
       "priority": "medium",
-      "sourceStatus": "needs-curated-native-audio",
+      "sourceStatus": "structured-source",
+      "confidence": "medium",
+      "evidence": ["Bundled sample entry"],
       "notes": "Common imported term where spelling is a weak guide for English speakers."
+    },
+    {
+      "id": "chiaroscuro",
+      "language": "it",
+      "languageName": "Italian",
+      "display": "Chiaroscuro",
+      "sourceForm": "chiaroscuro",
+      "native": "chiaroscuro",
+      "aliases": ["Chiaroscuro"],
+      "category": "art term",
+      "origin": "Italian roots: chiaro, clear or light; oscuro, dark",
+      "pronunciation": {
+        "ipa": "kjaroˈskuːro",
+        "simple": "kee-ah-roh-SKOO-roh",
+        "audio": []
+      },
+      "priority": "medium",
+      "sourceStatus": "structured-source",
+      "confidence": "medium",
+      "evidence": ["Bundled sample entry"],
+      "notes": "Example of pronunciation-relevant etymology."
+    },
+    {
+      "id": "quixote",
+      "language": "es",
+      "languageName": "Spanish",
+      "display": "Quixote",
+      "sourceForm": "Quijote",
+      "native": "Quijote",
+      "aliases": ["Quixote", "Quijote"],
+      "category": "literary name",
+      "origin": "Spanish literary name",
+      "pronunciation": {
+        "ipa": "kiˈxote",
+        "simple": "kee-HOH-teh",
+        "audio": []
+      },
+      "priority": "medium",
+      "sourceStatus": "structured-source",
+      "confidence": "medium",
+      "evidence": ["Bundled sample entry"],
+      "notes": "Example where older English spelling differs from the source form."
+    },
+    {
+      "id": "fibonacci",
+      "language": "it",
+      "languageName": "Italian",
+      "display": "Fibonacci",
+      "sourceForm": "Fibonacci",
+      "native": "Fibonacci",
+      "aliases": ["Fibonacci"],
+      "category": "surname",
+      "origin": "Italian surname",
+      "pronunciation": {
+        "ipa": "",
+        "simple": "fee-boh-NAH-chee",
+        "audio": []
+      },
+      "priority": "medium",
+      "sourceStatus": "structured-source",
+      "confidence": "medium",
+      "evidence": ["Bundled sample entry"],
+      "notes": "Research and education workflow example."
     }
   ]
 }
-

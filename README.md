@@ -10,13 +10,18 @@ The initial audience is creators, journalists, educators, and professionals who 
 
 ## Current Status
 
-This repository is an early Manifest V3 Chrome extension scaffold. It includes:
+This repository is an early Manifest V3 Chrome extension implementation. It includes:
 
 - A context-menu action for selected text.
+- A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.
+- A resolver result card with source form, language, origin, IPA/simple guide, confidence, and evidence.
+- A compact on-page result card after context-menu or keyboard use.
+- Local community-memory controls for confirmations, wrong results, missing terms, and corrections.
+- Optional Wikidata lookup from the popup when the user chooses `Online`.
 - Chrome TTS as a temporary local fallback.
 - Product, research, and technical planning docs.
-- A seed glossary shape for pronunciation entries.
+- A seed resolver dataset for pronunciation entries.
 
 Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use synthetic TTS only as a clearly labeled fallback.
 
@@ -44,6 +49,7 @@ C:\Users\molod\Documents\Personal\settings\SayThis
 Then highlight text on a web page and either:
 
 - Right-click and choose `SayThis: pronounce...`.
+- Press `Alt+Shift+S`.
 - Click the extension icon to open the popup and press Speak.
 
 ## Product Direction
@@ -55,6 +61,14 @@ The first useful version should be narrow and trusted:
 - Prefer curated or native-speaker audio over generated voices.
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
+
+## Development
+
+Run the resolver tests:
+
+```powershell
+npm test
+```
 
 ## License
 

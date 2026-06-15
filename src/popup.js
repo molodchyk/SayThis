@@ -1,12 +1,69 @@
+import { normalizeSelection } from "./resolver-core.js";
+
 const selectionInput = document.getElementById("selection");
-const languageSelect = document.getElementById("language");
+const resolveButton = document.getElementById("resolve");
+const onlineButton = document.getElementById("resolve-online");
 const speakButton = document.getElementById("speak");
+const slowButton = document.getElementById("slow");
 const stopButton = document.getElementById("stop");
 const statusText = document.getElementById("status");
+const resultCard = document.getElementById("result-card");
+const resultDisplay = document.getElementById("result-display");
+const confidenceBadge = document.getElementById("confidence-badge");
+const sourceBadge = document.getElementById("source-badge");
+const sourceForm = document.getElementById("source-form");
+const language = document.getElementById("language");
+const category = document.getElementById("category");
+const origin = document.getElementById("origin");
+const ipa = document.getElementById("ipa");
+const simpleGuide = document.getElementById("simple-guide");
+const evidence = document.getElementById("evidence");
+const confirmButton = document.getElementById("confirm");
+const wrongButton = document.getElementById("wrong");
+const missingButton = document.getElementById("missing");
+const saveCorrectionButton = document.getElementById("save-correction");
+const correctionSource = document.getElementById("correction-source");
+const correctionLanguage = document.getElementById("correction-language");
+const correctionSimple = document.getElementById("correction-simple");
+const correctionIpa = document.getElementById("correction-ipa");
+const correctionOrigin = document.getElementById("correction-origin");
+
+let currentResult = null;
 
 init();
 
-speakButton.addEventListener("click", async () => {
+resolveButton.addEventListener("click", () => resolveSelection(false));
+onlineButton.addEventListener("click", () => resolveSelection(true));
+
+speakButton.addEventListener("click", () => speakSelection(0.82));
+slowButton.addEventListener("click", () => speakSelection(0.62));
+
+stopButton.addEventListener("click", async () => {
+  await sendMessage({ type: "SAYTHIS_STOP" });
+  setStatus("Stopped.");
+});
+
+confirmButton.addEventListener("click", () => saveFeedback({ kind: "confirm" }));
+wrongButton.addEventListener("click", () => saveFeedback({ kind: "wrong" }));
+missingButton.addEventListener("click", () => saveFeedback({ kind: "missing" }));
+
+saveCorrectionButton.addEventListener("click", () => {
+  saveFeedback({
+    kind: "correction",
+    sourceForm: correctionSource.value,
+    language: correctionLanguage.value,
+    simple: correctionSimple.value,
+    ipa: correctionIpa.value,
+    origin: correctionOrigin.value
+  });
+});
+
+selectionInput.addEventListener("input", () => {
+  updateButtonState();
+  resultCard.hidden = true;
+});
+
+async function speakSelection(rate) {
   const text = normalizeSelection(selectionInput.value);
   if (!text) {
     setStatus("No selected text.");
@@ -14,26 +71,20 @@ speakButton.addEventListener("click", async () => {
     return;
   }
 
-  await chrome.storage.local.set({
-    lastSelection: text,
-    lastSource: "popup"
-  });
-
-  chrome.runtime.sendMessage({
+  const response = await sendMessage({
     type: "SAYTHIS_SPEAK",
     text,
-    lang: languageSelect.value
+    rate
   });
 
-  setStatus("Speaking.");
-});
-
-stopButton.addEventListener("click", () => {
-  chrome.runtime.sendMessage({ type: "SAYTHIS_STOP" });
-  setStatus("Stopped.");
-});
-
-selectionInput.addEventListener("input", updateButtonState);
+  if (response.ok) {
+    currentResult = response.result;
+    renderResult(currentResult);
+    setStatus(rate < 0.7 ? "Speaking slowly." : "Speaking.");
+  } else {
+    setStatus(response.error || "Speech failed.");
+  }
+}
 
 async function init() {
   const activeSelection = await readActiveTabSelection();
@@ -44,14 +95,43 @@ async function init() {
       lastSelection: activeSelection,
       lastSource: "active-tab"
     });
-    setStatus("Ready.");
+    await resolveSelection(false);
   } else {
-    const stored = await chrome.storage.local.get(["lastSelection"]);
+    const stored = await chrome.storage.local.get(["lastSelection", "lastResult"]);
     selectionInput.value = stored.lastSelection || "";
-    setStatus(selectionInput.value ? "Using last selection." : "Select text, then speak it.");
+    if (stored.lastResult) {
+      currentResult = stored.lastResult;
+      renderResult(currentResult);
+    }
+    setStatus(selectionInput.value ? "Using last selection." : "Select text, then resolve it.");
   }
 
   updateButtonState();
+}
+
+async function resolveSelection(useOnline) {
+  const text = normalizeSelection(selectionInput.value);
+  if (!text) {
+    setStatus("No selected text.");
+    updateButtonState();
+    return;
+  }
+
+  setStatus(useOnline ? "Checking online sources." : "Resolving.");
+  const response = await sendMessage({
+    type: "SAYTHIS_RESOLVE",
+    text,
+    useOnline
+  });
+
+  if (!response.ok) {
+    setStatus(response.error || "Resolve failed.");
+    return;
+  }
+
+  currentResult = response.result;
+  renderResult(currentResult);
+  setStatus("Ready.");
 }
 
 async function readActiveTabSelection() {
@@ -72,11 +152,77 @@ async function readActiveTabSelection() {
   }
 }
 
-function normalizeSelection(value) {
-  return String(value || "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 160);
+async function saveFeedback(feedback) {
+  const text = normalizeSelection(selectionInput.value);
+  if (!text) {
+    setStatus("No selected text.");
+    return;
+  }
+
+  const response = await sendMessage({
+    type: "SAYTHIS_FEEDBACK",
+    text,
+    feedback
+  });
+
+  if (response.ok) {
+    currentResult = response.result;
+    renderResult(currentResult);
+    setStatus("Saved.");
+  } else {
+    setStatus(response.error || "Could not save.");
+  }
+}
+
+function renderResult(result) {
+  if (!result) {
+    resultCard.hidden = true;
+    return;
+  }
+
+  resultCard.hidden = false;
+  resultDisplay.textContent = result.display || result.query || "Unknown";
+  confidenceBadge.textContent = result.confidence || "unknown";
+  sourceBadge.textContent = result.sourceLabel || result.sourceStatus || "Unknown";
+  sourceForm.textContent = result.sourceForm || "No source form";
+  language.textContent = result.languageName || result.language || "Unknown";
+  category.textContent = result.category || "Unknown";
+  origin.textContent = result.origin || "Unknown";
+  ipa.textContent = result.pronunciation?.ipa || "Not available";
+  simpleGuide.textContent = result.pronunciation?.simple || "Not available";
+
+  correctionSource.value = result.sourceForm || "";
+  correctionLanguage.value = result.language || "";
+  correctionSimple.value = result.pronunciation?.simple || "";
+  correctionIpa.value = result.pronunciation?.ipa || "";
+  correctionOrigin.value = result.origin || "";
+
+  evidence.replaceChildren();
+  const items = [
+    ...(result.evidence || []),
+    result.community?.confirmations ? `${result.community.confirmations} local confirmation${result.community.confirmations === 1 ? "" : "s"}` : "",
+    result.community?.corrections ? `${result.community.corrections} local correction${result.community.corrections === 1 ? "" : "s"}` : "",
+    result.community?.requests ? `${result.community.requests} local request${result.community.requests === 1 ? "" : "s"}` : ""
+  ].filter(Boolean);
+
+  for (const item of items.slice(0, 4)) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    evidence.append(li);
+  }
+}
+
+function sendMessage(message) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(message, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ ok: false, error: chrome.runtime.lastError.message });
+        return;
+      }
+
+      resolve(response || { ok: false, error: "No response." });
+    });
+  });
 }
 
 function setStatus(value) {
@@ -84,6 +230,9 @@ function setStatus(value) {
 }
 
 function updateButtonState() {
-  speakButton.disabled = !normalizeSelection(selectionInput.value);
+  const hasText = Boolean(normalizeSelection(selectionInput.value));
+  resolveButton.disabled = !hasText;
+  onlineButton.disabled = !hasText;
+  speakButton.disabled = !hasText;
+  slowButton.disabled = !hasText;
 }
-

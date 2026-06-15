@@ -11,12 +11,22 @@
     "service_worker": "src/background.js",
     "type": "module"
   },
+  "commands": {
+    "pronounce-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Resolve and pronounce selected text"
+    }
+  },
   "permissions": [
     "activeTab",
     "contextMenus",
     "scripting",
     "storage",
     "tts"
+  ],
+  "host_permissions": [
+    "https://www.wikidata.org/*"
   ]
 }
-
