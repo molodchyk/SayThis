@@ -174,14 +174,14 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     flags: 0,
     requests: Number(override.requests ?? (submission.kind === "missing" ? 1 : 0)),
     sourceForm,
-    aliases: normalizeAliases(override.aliases || correction.aliases),
+    aliases: firstAliasSet(override.aliases, correction.aliases, result.aliases),
     language: override.language || correction.language || result.language,
     languageName: override.languageName || correction.languageName || result.languageName,
-    origin: override.origin || correction.origin,
-    ipa: override.ipa || correction.ipa,
-    simple: override.simple || correction.simple,
-    audioUrl: override.audioUrl || correction.audioUrl,
-    sourceUrl: override.sourceUrl || correction.sourceUrl,
+    origin: override.origin || correction.origin || result.origin,
+    ipa: override.ipa || correction.ipa || result.ipa,
+    simple: override.simple || correction.simple || result.simple,
+    audioUrl: override.audioUrl || correction.audioUrl || result.audioUrl,
+    sourceUrl: override.sourceUrl || correction.sourceUrl || result.sourceUrl,
     variantNote: override.variantNote || correction.variantNote,
     trustSignals: trustSignals.length ? trustSignals : defaultTrustSignals(submission, correction, result, override),
     approvedAt: now,
@@ -218,6 +218,17 @@ function normalizeSubmission(value, now = new Date().toISOString()) {
   };
 }
 
+function firstAliasSet(...values) {
+  for (const value of values) {
+    const aliases = normalizeAliases(value);
+    if (aliases.length) {
+      return aliases;
+    }
+  }
+
+  return [];
+}
+
 function normalizeCorrection(value = {}) {
   return {
     sourceForm: normalizeSelection(value.sourceForm),
@@ -242,8 +253,14 @@ function normalizeResultMetadata(value = {}) {
     id: normalizeSelection(value.id),
     display: normalizeSelection(value.display),
     sourceForm: normalizeSelection(value.sourceForm),
+    aliases: normalizeAliases(value.aliases),
     language: normalizeSelection(value.language),
     languageName: normalizeSelection(value.languageName),
+    origin: normalizeSelection(value.origin),
+    ipa: normalizeSelection(value.ipa),
+    simple: normalizeSelection(value.simple),
+    audioUrl: normalizeLongValue(value.audioUrl),
+    sourceUrl: normalizeLongValue(value.sourceUrl),
     sourceStatus: normalizeSelection(value.sourceStatus),
     confidence: normalizeSelection(value.confidence)
   };
@@ -322,8 +339,8 @@ function normalizeAliases(value) {
 
 function defaultTrustSignals(submission = {}, correction = {}, result = {}, override = {}) {
   const signals = ["moderator-reviewed"];
-  const sourceUrl = override.sourceUrl || correction.sourceUrl;
-  const audioUrl = override.audioUrl || correction.audioUrl;
+  const sourceUrl = override.sourceUrl || correction.sourceUrl || result.sourceUrl;
+  const audioUrl = override.audioUrl || correction.audioUrl || result.audioUrl;
   const confirmations = Number(override.confirmations ?? (submission.kind === "confirm" ? 1 : 0));
   const sourceStatus = normalizeSelection(result.sourceStatus);
 

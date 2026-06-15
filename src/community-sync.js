@@ -40,15 +40,7 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
     lookupKey: createLookupKey(term),
     kind,
     correction: {},
-    result: result ? {
-      id: normalizeSelection(result.id),
-      display: normalizeSelection(result.display),
-      sourceForm: normalizeSelection(result.sourceForm),
-      language: normalizeSelection(result.language),
-      languageName: normalizeSelection(result.languageName),
-      sourceStatus: normalizeSelection(result.sourceStatus),
-      confidence: normalizeSelection(result.confidence)
-    } : null
+    result: normalizeResultMetadata(result)
   };
 
   if (kind === "correction") {
@@ -199,6 +191,28 @@ function normalizeQueue(queue) {
   return Array.isArray(queue) ? queue.filter((item) => item?.lookupKey && item?.kind) : [];
 }
 
+function normalizeResultMetadata(result = null) {
+  if (!result || typeof result !== "object") {
+    return null;
+  }
+
+  return {
+    id: normalizeSelection(result.id),
+    display: normalizeSelection(result.display),
+    sourceForm: normalizeSelection(result.sourceForm),
+    aliases: normalizeAliases(result.aliases),
+    language: normalizeSelection(result.language),
+    languageName: normalizeSelection(result.languageName),
+    origin: normalizeSelection(result.origin),
+    ipa: normalizeSelection(result.pronunciation?.ipa),
+    simple: normalizeSelection(result.pronunciation?.simple),
+    audioUrl: firstResultAudioUrl(result),
+    sourceUrl: firstResultSourceUrl(result),
+    sourceStatus: normalizeSelection(result.sourceStatus),
+    confidence: normalizeSelection(result.confidence)
+  };
+}
+
 function normalizeApprovedEntry(entry = {}) {
   const term = normalizeSelection(entry.term || entry.display || entry.sourceForm);
   const lookupKey = createLookupKey(entry.lookupKey || term);
@@ -228,6 +242,18 @@ function normalizeApprovedEntry(entry = {}) {
     approvedAt: normalizeSelection(entry.approvedAt),
     updatedAt: normalizeSelection(entry.updatedAt || entry.approvedAt)
   };
+}
+
+function firstResultAudioUrl(result = {}) {
+  const audio = Array.isArray(result.pronunciation?.audio) ? result.pronunciation.audio : [];
+  const item = audio.find((candidate) => candidate?.url);
+  return normalizeLongValue(item?.url);
+}
+
+function firstResultSourceUrl(result = {}) {
+  const sources = Array.isArray(result.sources) ? result.sources : [];
+  const item = sources.find((candidate) => candidate?.url);
+  return normalizeLongValue(item?.url);
 }
 
 function normalizeFeedbackKind(kind) {

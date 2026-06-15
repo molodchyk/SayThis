@@ -53,7 +53,16 @@ test("creates privacy-scoped community submissions", () => {
     id: "wiktionary:chiaroscuro",
     display: "chiaroscuro",
     sourceForm: "chiaroscuro",
+    aliases: ["chiaro scuro"],
     language: "it",
+    languageName: "Italian",
+    origin: "Italian art term",
+    pronunciation: {
+      ipa: "kjaroˈskuːro",
+      simple: "kee-ah-roh-SKOO-roh",
+      audio: [{ url: "https://example.com/audio.ogg" }]
+    },
+    sources: [{ label: "Source", url: "https://example.com/source" }],
     sourceStatus: "verified-audio",
     confidence: "high"
   });
@@ -65,6 +74,12 @@ test("creates privacy-scoped community submissions", () => {
   assert.deepEqual(submission.correction.aliases, ["light-dark", "chiaro scuro"]);
   assert.equal(submission.correction.sourceUrl, "https://example.com/source");
   assert.equal(submission.result.id, "wiktionary:chiaroscuro");
+  assert.deepEqual(submission.result.aliases, ["chiaro scuro"]);
+  assert.equal(submission.result.origin, "Italian art term");
+  assert.equal(submission.result.ipa, "kjaroˈskuːro");
+  assert.equal(submission.result.simple, "kee-ah-roh-SKOO-roh");
+  assert.equal(submission.result.audioUrl, "https://example.com/audio.ogg");
+  assert.equal(submission.result.sourceUrl, "https://example.com/source");
   assert.equal(Object.hasOwn(submission, "url"), false);
   assert.equal(Object.hasOwn(submission, "pageUrl"), false);
 });

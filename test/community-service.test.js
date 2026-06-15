@@ -312,6 +312,59 @@ test("serves approved entries and requires auth for moderation", async () => {
   assert.equal(response.body.entries[0].sourceUrl, "https://example.com/gnocchi");
 });
 
+test("approves confirmed resolver metadata into shared entries", async () => {
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_confirm_metadata",
+      term: "Saoirse",
+      lookupKey: "saoirse",
+      kind: "confirm",
+      result: {
+        id: "wikidata:saoirse",
+        display: "Saoirse",
+        sourceForm: "Saoirse",
+        aliases: ["Sersha"],
+        language: "ga",
+        languageName: "Irish",
+        origin: "given name",
+        ipa: "ˈsˠiːɾʲʃə",
+        simple: "SEER-sha",
+        audioUrl: "https://example.com/saoirse.ogg",
+        sourceUrl: "https://example.com/saoirse",
+        sourceStatus: "verified-audio",
+        confidence: "high"
+      }
+    })
+  }, createEmptyStore());
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/admin/approve",
+    headers: { authorization: "Bearer secret" },
+    body: JSON.stringify({ id: "sub_confirm_metadata" })
+  }, response.store, { adminToken: "secret" });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.entry.lookupKey, "saoirse");
+  assert.deepEqual(response.body.entry.aliases, ["Sersha"]);
+  assert.equal(response.body.entry.language, "ga");
+  assert.equal(response.body.entry.origin, "given name");
+  assert.equal(response.body.entry.ipa, "ˈsˠiːɾʲʃə");
+  assert.equal(response.body.entry.simple, "SEER-sha");
+  assert.equal(response.body.entry.audioUrl, "https://example.com/saoirse.ogg");
+  assert.equal(response.body.entry.sourceUrl, "https://example.com/saoirse");
+  assert.deepEqual(response.body.entry.trustSignals, [
+    "moderator-reviewed",
+    "source-backed",
+    "audio-backed",
+    "contributor-confirmed",
+    "verified-audio"
+  ]);
+});
+
 test("rejects pending submissions with admin token", async () => {
   let response = await handleCommunityRequest({
     method: "POST",
