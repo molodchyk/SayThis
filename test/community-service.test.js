@@ -4,8 +4,10 @@ import {
   createEmptyStore
 } from "../server/community-store.js";
 import {
+  corsAllowOrigin,
   createMemoryRateLimiter,
-  handleCommunityRequest
+  handleCommunityRequest,
+  normalizeAllowedOrigins
 } from "../server/community-service.js";
 
 test("accepts browser preflight requests", async () => {
@@ -18,6 +20,17 @@ test("accepts browser preflight requests", async () => {
 
   assert.equal(result.status, 200);
   assert.equal(result.body.ok, true);
+});
+
+test("normalizes allowed CORS origins", () => {
+  assert.deepEqual(normalizeAllowedOrigins(""), ["*"]);
+  assert.deepEqual(normalizeAllowedOrigins("https://example.com/path, chrome-extension://abcdefghijklmnop/options.html"), [
+    "https://example.com",
+    "chrome-extension://abcdefghijklmnop"
+  ]);
+  assert.equal(corsAllowOrigin("https://example.com/page", ["https://example.com"]), "https://example.com");
+  assert.equal(corsAllowOrigin("https://other.example/page", ["https://example.com"]), "");
+  assert.equal(corsAllowOrigin("chrome-extension://abcdefghijklmnop/popup.html", ["chrome-extension://abcdefghijklmnop"]), "chrome-extension://abcdefghijklmnop");
 });
 
 test("serves a static moderator page without pending data", async () => {

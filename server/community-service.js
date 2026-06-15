@@ -18,6 +18,7 @@ const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
 const DEFAULT_RATE_LIMIT = 20;
 const DEFAULT_RATE_WINDOW_MS = 60 * 1000;
 const DEFAULT_MAX_PENDING_SUBMISSIONS = 1000;
+const DEFAULT_ALLOWED_ORIGINS = ["*"];
 
 export async function handleCommunityRequest(request, store, options = {}) {
   const url = new URL(request.url, "http://localhost");
@@ -131,6 +132,9 @@ export async function createCommunityServer(options = {}) {
       DEFAULT_RATE_WINDOW_MS
     )
   });
+  const allowedOrigins = normalizeAllowedOrigins(
+    options.allowedOrigins ?? process.env.SAYTHIS_ALLOWED_ORIGINS
+  );
   let store = await readStore(storePath);
 
   const server = createServer(async (request, response) => {
@@ -162,7 +166,10 @@ export async function createCommunityServer(options = {}) {
 
     store = result.store;
     await writeStore(storePath, store);
-    sendCommunityResponse(response, result);
+    sendCommunityResponse(response, result, {
+      allowedOrigins,
+      requestOrigin: request.headers.origin
+    });
   });
 
   return server;
@@ -210,6 +217,27 @@ export function createMemoryRateLimiter(options = {}) {
       };
     }
   };
+}
+
+export function normalizeAllowedOrigins(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(",");
+  const origins = raw
+    .map((item) => normalizeOrigin(item))
+    .filter(Boolean);
+
+  return origins.length ? [...new Set(origins)] : DEFAULT_ALLOWED_ORIGINS;
+}
+
+export function corsAllowOrigin(requestOrigin, allowedOrigins = DEFAULT_ALLOWED_ORIGINS) {
+  const origins = normalizeAllowedOrigins(allowedOrigins);
+  if (origins.includes("*")) {
+    return "*";
+  }
+
+  const origin = normalizeOrigin(requestOrigin);
+  return origin && origins.includes(origin) ? origin : "";
 }
 
 function jsonResponse(status, store, body) {
@@ -304,15 +332,23 @@ async function writeStore(storePath, store) {
   await writeFile(storePath, `${JSON.stringify(normalizeStore(store), null, 2)}\n`, "utf8");
 }
 
-function sendCommunityResponse(response, result) {
+function sendCommunityResponse(response, result, options = {}) {
   const contentType = result.contentType || "application/json; charset=utf-8";
-  response.writeHead(result.status, {
+  const allowOrigin = corsAllowOrigin(options.requestOrigin, options.allowedOrigins);
+  const headers = {
     "Content-Type": contentType,
     "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "content-type, authorization",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
-  });
+  };
+  if (allowOrigin) {
+    headers["Access-Control-Allow-Origin"] = allowOrigin;
+    if (allowOrigin !== "*") {
+      headers.Vary = "Origin";
+    }
+  }
+
+  response.writeHead(result.status, headers);
 
   if (contentType.startsWith("text/html")) {
     response.end(String(result.body || ""));
@@ -337,6 +373,28 @@ function normalizePositiveInteger(value, fallback) {
   }
 
   return Math.floor(number);
+}
+
+function normalizeOrigin(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  if (raw === "*") {
+    return "*";
+  }
+
+  try {
+    const url = new URL(raw);
+    if (["chrome-extension:", "moz-extension:"].includes(url.protocol) && url.host) {
+      return `${url.protocol}//${url.host}`;
+    }
+
+    return url.origin === "null" ? "" : url.origin;
+  } catch {
+    return "";
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
