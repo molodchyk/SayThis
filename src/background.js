@@ -129,7 +129,7 @@ chrome.commands.onCommand.addListener((command) => {
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === MESSAGE_TYPES.resolve) {
-    resolveSelection(message.text, { useOnline: Boolean(message.useOnline) })
+    resolveSelection(message.text, useOnlineMessageOptions(message))
       .then((result) => {
         sendResponse({ ok: true, result });
       })
@@ -148,7 +148,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     const resultPromise = message.result
       ? Promise.resolve(message.result)
-      : resolveSelection(selectedText, { useOnline: Boolean(message.useOnline) });
+      : resolveSelection(selectedText, useOnlineMessageOptions(message));
 
     resultPromise
       .then((result) => {
@@ -786,6 +786,14 @@ function onlineCacheScope(settings, credentials = {}) {
     settings.gazetteerEnabled && settings.gazetteerEndpoint ? `gazetteer ${settings.gazetteerEndpoint}` : "",
     settings.forvoEnabled && credentials.forvoApiKey ? `forvo ${settings.forvoLanguage || "all"}` : ""
   ].filter(Boolean).join(" ");
+}
+
+function useOnlineMessageOptions(message = {}) {
+  if (!Object.prototype.hasOwnProperty.call(message, "useOnline")) {
+    return {};
+  }
+
+  return { useOnline: Boolean(message.useOnline) };
 }
 
 function normalizeLanguageCode(value) {

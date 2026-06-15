@@ -25,7 +25,7 @@ export function createResolveMessage(text, options = {}) {
   return compactMessage({
     type: MESSAGE_TYPES.resolve,
     text: normalizeSelection(text),
-    useOnline: Boolean(options.useOnline)
+    useOnline: normalizeOptionalBoolean(options, "useOnline")
   });
 }
 
@@ -36,7 +36,7 @@ export function createSpeakMessage(text, options = {}) {
     result: options.result && typeof options.result === "object" ? options.result : undefined,
     rate: normalizeRate(options.rate),
     lang: normalizeLanguageOption(options.lang),
-    useOnline: Boolean(options.useOnline)
+    useOnline: normalizeOptionalBoolean(options, "useOnline")
   });
 }
 
@@ -109,6 +109,14 @@ function normalizeLanguageOption(value) {
 function normalizeRate(value) {
   const rate = Number(value);
   return Number.isFinite(rate) ? Math.min(1.4, Math.max(0.45, rate)) : undefined;
+}
+
+function normalizeOptionalBoolean(options, key) {
+  if (!Object.prototype.hasOwnProperty.call(options, key) || options[key] === undefined) {
+    return undefined;
+  }
+
+  return Boolean(options[key]);
 }
 
 function normalizeLongText(value) {

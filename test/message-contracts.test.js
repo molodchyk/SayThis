@@ -21,10 +21,19 @@ test("defines unique runtime message types", () => {
 });
 
 test("builds a normalized resolve message", () => {
+  assert.deepEqual(createResolveMessage("  chiaroscuro  "), {
+    type: MESSAGE_TYPES.resolve,
+    text: "chiaroscuro"
+  });
   assert.deepEqual(createResolveMessage("  chiaroscuro  ", { useOnline: true }), {
     type: MESSAGE_TYPES.resolve,
     text: "chiaroscuro",
     useOnline: true
+  });
+  assert.deepEqual(createResolveMessage("  chiaroscuro  ", { useOnline: false }), {
+    type: MESSAGE_TYPES.resolve,
+    text: "chiaroscuro",
+    useOnline: false
   });
 });
 
@@ -43,7 +52,12 @@ test("builds a speak message with clamped rate and resolved result", () => {
     text: "gnocchi",
     result,
     rate: 1.4,
-    lang: "it-IT",
+    lang: "it-IT"
+  });
+
+  assert.deepEqual(createSpeakMessage(" gnocchi ", { useOnline: false }), {
+    type: MESSAGE_TYPES.speak,
+    text: "gnocchi",
     useOnline: false
   });
 });

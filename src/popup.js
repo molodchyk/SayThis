@@ -53,7 +53,7 @@ let audioPlayer = null;
 
 init();
 
-resolveButton.addEventListener("click", () => resolveSelection(false));
+resolveButton.addEventListener("click", () => resolveSelection());
 onlineButton.addEventListener("click", () => resolveSelection(true));
 
 speakButton.addEventListener("click", () => speakSelection(0.82));
@@ -97,7 +97,7 @@ async function speakSelection(rate) {
   }
 
   if (!currentResult) {
-    await resolveSelection(false);
+    await resolveSelection();
   }
 
   if (playAudio(currentResult, rate)) {
@@ -128,7 +128,7 @@ async function init() {
       lastSelection: activeSelection,
       lastSource: "active-tab"
     });
-    await resolveSelection(false);
+    await resolveSelection();
   } else {
     const stored = await chrome.storage.local.get(["lastSelection", "lastResult"]);
     selectionInput.value = stored.lastSelection || "";
