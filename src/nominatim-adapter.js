@@ -55,6 +55,7 @@ export function buildNominatimResult(query, places = []) {
 
   const sourceCandidate = chooseSourceCandidate(selectedText, place);
   const sourceForm = sourceCandidate?.value || normalizeSelection(place.name || selectedText);
+  const aliases = aliasCandidatesFromPlace(place, [selectedText, sourceForm]);
   const osmUrl = osmUrlFromPlace(place);
   const placeType = placeTypeLabel(place);
   const country = normalizeSelection(place.address?.country);
@@ -63,6 +64,7 @@ export function buildNominatimResult(query, places = []) {
   return createRemoteStructuredResult(selectedText, {
     id: `nominatim:${osmId || createLookupKey(place.display_name || sourceForm)}`,
     display: normalizeSelection(place.name || selectedText),
+    aliases,
     sourceForm,
     language: sourceCandidate?.language || "",
     languageName: "",
@@ -140,6 +142,24 @@ function nameCandidates(place = {}) {
     seen.add(key);
     return true;
   });
+}
+
+function aliasCandidatesFromPlace(place, excludedValues = []) {
+  const excluded = new Set(excludedValues.map(createLookupKey).filter(Boolean));
+  const aliases = [];
+  const seen = new Set();
+
+  for (const candidate of nameCandidates(place)) {
+    const key = createLookupKey(candidate.value);
+    if (!key || excluded.has(key) || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    aliases.push(candidate.value);
+  }
+
+  return aliases.slice(0, 12);
 }
 
 function addCandidate(candidates, key, value, source) {

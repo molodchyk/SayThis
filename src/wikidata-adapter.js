@@ -26,6 +26,7 @@ export function buildWikidataResult(query, match, entity) {
   return createRemoteStructuredResult(query, {
     id: `wikidata:${entity.id || match.id}`,
     display: match.label || query,
+    aliases,
     sourceForm,
     language: sourceCandidate?.language || match.language || "en",
     languageName: "",
@@ -94,6 +95,7 @@ export function createWikidataSearchOnlyResult(query, match) {
   return createRemoteStructuredResult(query, {
     id: `wikidata:${match.id}`,
     display: match.label || query,
+    aliases: searchOnlyAliases(query, match),
     sourceForm: match.label || query,
     language: match.language || "en",
     languageName: "English",
@@ -106,6 +108,20 @@ export function createWikidataSearchOnlyResult(query, match) {
 
 export function commonsRedirectUrl(fileName) {
   return `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(fileName)}`;
+}
+
+function searchOnlyAliases(query, match = {}) {
+  const excluded = new Set([
+    createLookupKey(query),
+    createLookupKey(match.label)
+  ].filter(Boolean));
+
+  return [match.match?.text]
+    .map(normalizeSelection)
+    .filter((value) => {
+      const key = createLookupKey(value);
+      return key && !excluded.has(key);
+    });
 }
 
 function chooseSourceCandidate(query, match, entity) {

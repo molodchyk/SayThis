@@ -34,6 +34,7 @@ test("prefers native label claims over English labels", () => {
   });
 
   assert.equal(result.sourceForm, "Αθήνα");
+  assert.deepEqual(result.aliases, []);
   assert.equal(result.language, "el");
   assert.equal(result.confidence, "medium");
   assert.ok(result.evidence.some((item) => item.includes("native label")));
@@ -65,10 +66,13 @@ test("extracts pronunciation audio and IPA claims", () => {
         }
       }]
     },
-    aliases: {}
+    aliases: {
+      en: [{ language: "en", value: "Sample entry" }]
+    }
   });
 
   assert.equal(result.sourceStatus, "verified-audio");
+  assert.deepEqual(result.aliases, ["Sample entry"]);
   assert.equal(result.confidence, "high");
   assert.equal(result.pronunciation.ipa, "ɪɡˈzɑːmpəl");
   assert.equal(result.pronunciation.audio[0].url, commonsRedirectUrl("Example pronunciation.ogg"));

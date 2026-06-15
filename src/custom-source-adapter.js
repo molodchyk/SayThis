@@ -44,6 +44,7 @@ export function buildCustomSourceResult(query, payload = {}, options = {}) {
   return createRemoteStructuredResult(selectedText, {
     id: `custom:${normalizeSelection(entry.id || createLookupKey(display || sourceForm))}`,
     display,
+    aliases: Array.isArray(entry.aliases) ? entry.aliases : [],
     sourceForm,
     language: normalizeSelection(entry.language),
     languageName: normalizeSelection(entry.languageName),

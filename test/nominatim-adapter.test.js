@@ -71,6 +71,7 @@ test("builds a structured place result with local source form", () => {
 
   assert.equal(result.id, "nominatim:relation/1370736");
   assert.equal(result.sourceForm, "Αθήνα");
+  assert.deepEqual(result.aliases, ["Δήμος Αθηναίων"]);
   assert.equal(result.language, "el");
   assert.equal(result.sourceStatus, "structured-source");
   assert.equal(result.category, "place");

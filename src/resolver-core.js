@@ -167,6 +167,7 @@ export function createRemoteStructuredResult(selection, source) {
     query,
     lookupKey,
     display: source.display || query,
+    aliases: source.aliases || [],
     sourceForm,
     speakText: sourceForm || query,
     script: detectScript(sourceForm || query).script,
