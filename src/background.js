@@ -1,5 +1,4 @@
 import {
-  createRemoteStructuredResult,
   getBestAudio,
   mergeRemoteResult,
   normalizeSelection,
@@ -7,6 +6,10 @@ import {
   resolveTerm,
   updateCommunityEntries
 } from "./resolver-core.js";
+import {
+  buildWikidataResult,
+  createWikidataSearchOnlyResult
+} from "./wikidata-adapter.js";
 
 const MENU_ID = "saythis-pronounce-selection";
 const STORAGE_KEYS = {
@@ -285,17 +288,7 @@ async function resolveWithWikidata(text) {
 
   const entityResponse = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${encodeURIComponent(match.id)}.json`);
   if (!entityResponse.ok) {
-    return createRemoteStructuredResult(query, {
-      id: `wikidata:${match.id}`,
-      display: match.label || query,
-      sourceForm: match.label || query,
-      language: "en",
-      languageName: "English",
-      category: match.description || "structured source match",
-      confidence: "low",
-      evidence: [`Wikidata search match ${match.id}`],
-      sources: [{ label: "Wikidata", url: match.concepturi || `https://www.wikidata.org/wiki/${match.id}` }]
-    });
+    return createWikidataSearchOnlyResult(query, match);
   }
 
   const entityData = await entityResponse.json();
@@ -304,89 +297,7 @@ async function resolveWithWikidata(text) {
     return null;
   }
 
-  const source = extractWikidataSource(query, match, entity);
-  return createRemoteStructuredResult(query, source);
-}
-
-function extractWikidataSource(query, match, entity) {
-  const labels = Object.values(entity.labels || {}).map((label) => ({
-    language: label.language,
-    value: label.value
-  }));
-  const selectedScript = detectScriptName(query);
-  const sourceLabel = chooseSourceLabel(labels, selectedScript) || {
-    language: match.language || "en",
-    value: match.label || query
-  };
-  const description = entity.descriptions?.en?.value || match.description || "";
-  const audioFile = firstClaimValue(entity, "P443");
-  const ipa = firstClaimValue(entity, "P898");
-  const pronunciation = {
-    ipa,
-    simple: "",
-    audio: audioFile ? [{
-      url: commonsRedirectUrl(audioFile),
-      label: "Pronunciation audio",
-      source: "Wikimedia Commons",
-      quality: "verified"
-    }] : []
-  };
-  const aliases = Object.values(entity.aliases || {})
-    .flat()
-    .map((alias) => alias.value)
-    .slice(0, 8);
-
-  return {
-    id: `wikidata:${entity.id}`,
-    display: match.label || query,
-    sourceForm: sourceLabel.value,
-    language: sourceLabel.language,
-    languageName: "",
-    category: description || "structured source match",
-    origin: description,
-    pronunciation,
-    sourceStatus: audioFile ? "verified-audio" : "structured-source",
-    confidence: audioFile ? "high" : sourceLabel.value === query ? "low" : "medium",
-    evidence: [
-      `Wikidata entity ${entity.id}`,
-      audioFile ? "Pronunciation audio from Wikidata" : "",
-      ipa ? "IPA from Wikidata" : "",
-      aliases.length ? `Aliases: ${aliases.join(", ")}` : ""
-    ].filter(Boolean),
-    sources: [
-      { label: "Wikidata", url: `https://www.wikidata.org/wiki/${entity.id}` },
-      audioFile ? { label: "Pronunciation audio", url: commonsRedirectUrl(audioFile) } : null
-    ].filter(Boolean)
-  };
-}
-
-function firstClaimValue(entity, propertyId) {
-  const claims = entity.claims?.[propertyId] || [];
-  for (const claim of claims) {
-    const value = claim?.mainsnak?.datavalue?.value;
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
-  }
-
-  return "";
-}
-
-function commonsRedirectUrl(fileName) {
-  return `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(fileName)}`;
-}
-
-function chooseSourceLabel(labels, selectedScript) {
-  const nonMatchingScript = labels.find((label) => label.value && detectScriptName(label.value) !== selectedScript);
-  if (nonMatchingScript) {
-    return nonMatchingScript;
-  }
-
-  return labels.find((label) => label.language !== "en") || labels.find((label) => label.language === "en") || null;
-}
-
-function detectScriptName(value) {
-  return resolveTerm(value, { entries: [] }).script;
+  return buildWikidataResult(query, match, entity);
 }
 
 async function getSettings() {

@@ -6,6 +6,7 @@ Chrome Manifest V3 components:
 
 - `background.js`: creates the context menu and handles text-to-speech messages.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
+- `wikidata-adapter.js`: extracts source forms, native/official names, IPA, and pronunciation audio from Wikidata entities.
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card after context-menu or keyboard-command use.
@@ -20,7 +21,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local resolver over bundled entries and local community memory.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
-- Wikidata IPA and pronunciation-audio claim extraction where available.
+- Wikidata native/official source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, and evidence.
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
@@ -104,6 +105,6 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 ## Near-Term Tasks
 
 - Build more resolver adapters for structured sources and pronunciation databases.
-- Improve online entity scoring and source-form selection.
+- Improve online entity match scoring before entity-detail extraction.
 - Add bundled-audio packaging for curated entries.
 - Add broader tests around popup/background message contracts.
