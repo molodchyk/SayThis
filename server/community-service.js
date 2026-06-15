@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -240,6 +241,16 @@ export function corsAllowOrigin(requestOrigin, allowedOrigins = DEFAULT_ALLOWED_
   return origin && origins.includes(origin) ? origin : "";
 }
 
+export function adminTokenMatches(authorizationHeader, adminToken) {
+  const expectedToken = String(adminToken || "");
+  const providedToken = bearerTokenFromAuthorization(authorizationHeader);
+  if (!expectedToken || !providedToken) {
+    return false;
+  }
+
+  return timingSafeEqual(sha256(providedToken), sha256(expectedToken));
+}
+
 function jsonResponse(status, store, body) {
   return {
     status,
@@ -265,7 +276,7 @@ function authorize(request, options) {
   }
 
   const header = request.headers?.authorization || request.headers?.Authorization || "";
-  if (header !== `Bearer ${token}`) {
+  if (!adminTokenMatches(header, token)) {
     return { ok: false, status: 401, error: "unauthorized" };
   }
 
@@ -395,6 +406,15 @@ function normalizeOrigin(value) {
   } catch {
     return "";
   }
+}
+
+function bearerTokenFromAuthorization(value) {
+  const match = String(value || "").match(/^Bearer\s+(.+)$/);
+  return match ? match[1] : "";
+}
+
+function sha256(value) {
+  return createHash("sha256").update(String(value)).digest();
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

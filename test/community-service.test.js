@@ -4,6 +4,7 @@ import {
   createEmptyStore
 } from "../server/community-store.js";
 import {
+  adminTokenMatches,
   corsAllowOrigin,
   createMemoryRateLimiter,
   handleCommunityRequest,
@@ -31,6 +32,14 @@ test("normalizes allowed CORS origins", () => {
   assert.equal(corsAllowOrigin("https://example.com/page", ["https://example.com"]), "https://example.com");
   assert.equal(corsAllowOrigin("https://other.example/page", ["https://example.com"]), "");
   assert.equal(corsAllowOrigin("chrome-extension://abcdefghijklmnop/popup.html", ["chrome-extension://abcdefghijklmnop"]), "chrome-extension://abcdefghijklmnop");
+});
+
+test("accepts only matching moderator bearer tokens", () => {
+  assert.equal(adminTokenMatches("Bearer secret", "secret"), true);
+  assert.equal(adminTokenMatches("Bearer wrong", "secret"), false);
+  assert.equal(adminTokenMatches("Token secret", "secret"), false);
+  assert.equal(adminTokenMatches("", "secret"), false);
+  assert.equal(adminTokenMatches("Bearer secret", ""), false);
 });
 
 test("serves a static moderator page without pending data", async () => {
