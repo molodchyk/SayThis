@@ -14,7 +14,7 @@ export function correctionValuesFromResult(result = {}) {
     simple: normalizeSelection(result.pronunciation?.simple),
     ipa: normalizeSelection(result.pronunciation?.ipa),
     origin: normalizeSelection(result.origin),
-    audioUrl: normalizeLongValue(bestAudio?.url),
+    audioUrl: normalizeUrl(bestAudio?.url),
     sourceUrl,
     variantNote: normalizeSelection(result.notes)
   };
@@ -30,8 +30,8 @@ export function correctionFeedbackFromValues(values = {}) {
     simple: normalizeSelection(values.simple),
     ipa: normalizeSelection(values.ipa),
     origin: normalizeSelection(values.origin),
-    audioUrl: normalizeLongValue(values.audioUrl),
-    sourceUrl: normalizeLongValue(values.sourceUrl),
+    audioUrl: normalizeUrl(values.audioUrl),
+    sourceUrl: normalizeUrl(values.sourceUrl),
     variantNote: normalizeSelection(values.variantNote)
   };
 }
@@ -44,8 +44,8 @@ export function hasCorrectionDetail(feedback = {}) {
 
 function firstSourceUrl(result = {}) {
   const sources = Array.isArray(result.sources) ? result.sources : [];
-  const source = sources.find((item) => normalizeLongValue(item?.url));
-  return normalizeLongValue(source?.url);
+  const source = sources.find((item) => normalizeUrl(item?.url));
+  return normalizeUrl(source?.url);
 }
 
 function aliasesTextFromResult(result = {}) {
@@ -72,4 +72,18 @@ function normalizeLongValue(value) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 2048);
+}
+
+function normalizeUrl(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return ["https:", "chrome-extension:"].includes(url.protocol) ? url.toString() : "";
+  } catch {
+    return "";
+  }
 }

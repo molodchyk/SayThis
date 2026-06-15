@@ -53,8 +53,8 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
       origin: normalizeSelection(feedback.origin),
       ipa: normalizeSelection(feedback.ipa),
       simple: normalizeSelection(feedback.simple),
-      audioUrl: normalizeLongValue(feedback.audioUrl),
-      sourceUrl: normalizeLongValue(feedback.sourceUrl),
+      audioUrl: normalizeHttpsUrl(feedback.audioUrl),
+      sourceUrl: normalizeHttpsUrl(feedback.sourceUrl),
       variantNote: normalizeSelection(feedback.variantNote)
     };
     if (!hasCorrectionDetail(payload.correction)) {
@@ -254,8 +254,8 @@ function normalizeCorrection(value = {}) {
     origin: normalizeSelection(value.origin),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeLongValue(value.audioUrl),
-    sourceUrl: normalizeLongValue(value.sourceUrl),
+    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote)
   };
 }
@@ -285,8 +285,8 @@ function normalizeApprovedEntry(entry = {}, fallbackLookupKey = "") {
     origin: normalizeSelection(entry.origin),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
-    audioUrl: normalizeLongValue(entry.audioUrl),
-    sourceUrl: normalizeLongValue(entry.sourceUrl),
+    audioUrl: normalizeHttpsUrl(entry.audioUrl),
+    sourceUrl: normalizeHttpsUrl(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
     trustSignals: normalizeTrustSignals(entry.trustSignals),
     approvedAt: normalizeSelection(entry.approvedAt),
@@ -298,7 +298,8 @@ function hasApprovedEntryContent(entry = {}) {
   return Boolean(
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
-    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.variantNote) ||
+    normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     clampNumber(entry.confirmations, 0, 100000) ||
     clampNumber(entry.corrections, 0, 100000) ||
@@ -310,13 +311,13 @@ function hasApprovedEntryContent(entry = {}) {
 function firstResultAudioUrl(result = {}) {
   const audio = Array.isArray(result.pronunciation?.audio) ? result.pronunciation.audio : [];
   const item = audio.find((candidate) => candidate?.url);
-  return normalizeLongValue(item?.url);
+  return normalizeHttpsUrl(item?.url);
 }
 
 function firstResultSourceUrl(result = {}) {
   const sources = Array.isArray(result.sources) ? result.sources : [];
   const item = sources.find((candidate) => candidate?.url);
-  return normalizeLongValue(item?.url);
+  return normalizeHttpsUrl(item?.url);
 }
 
 function normalizeFeedbackKind(kind) {
@@ -350,6 +351,20 @@ function normalizeTrustSignals(value) {
 }
 
 function normalizeEndpoint(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function normalizeHttpsUrl(value) {
   const raw = normalizeLongValue(value);
   if (!raw) {
     return "";

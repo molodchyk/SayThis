@@ -93,6 +93,25 @@ test("drops empty correction submissions before sync queueing", () => {
   assert.deepEqual(queued, []);
 });
 
+test("drops unsafe links from shared correction submissions", () => {
+  const submission = createCommunitySubmission("gnocchi", {
+    kind: "correction",
+    simple: "NYOH-kee",
+    audioUrl: "chrome-extension://extension-id/audio.ogg",
+    sourceUrl: "http://example.com/source"
+  }, {
+    pronunciation: {
+      audio: [{ url: "chrome-extension://extension-id/result.ogg" }]
+    },
+    sources: [{ url: "http://example.com/result" }]
+  });
+
+  assert.equal(submission.correction.audioUrl, "");
+  assert.equal(submission.correction.sourceUrl, "");
+  assert.equal(submission.result.audioUrl, "");
+  assert.equal(submission.result.sourceUrl, "");
+});
+
 test("queues submissions and flushes them through a poster", async () => {
   const submission = createCommunitySubmission("gnocchi", { kind: "confirm" });
   const queue = enqueueSubmission([], submission);

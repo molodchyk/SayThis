@@ -244,7 +244,7 @@ export function updateCommunityEntries(entries, selection, feedback) {
       const value = field === "aliases"
         ? normalizeAliases(feedback[field])
         : field === "audioUrl" || field === "sourceUrl"
-          ? normalizeLongValue(feedback[field])
+          ? normalizeUrl(feedback[field])
           : normalizeSelection(feedback[field]);
       if (Array.isArray(value) ? value.length : Boolean(value)) {
         next[field] = value;
@@ -279,8 +279,8 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     origin: normalizeSelection(entry.origin),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
-    audioUrl: normalizeLongValue(entry.audioUrl),
-    sourceUrl: normalizeLongValue(entry.sourceUrl),
+    audioUrl: normalizeUrl(entry.audioUrl),
+    sourceUrl: normalizeUrl(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
     createdAt: normalizeSelection(entry.createdAt),
     updatedAt: normalizeSelection(entry.updatedAt)
@@ -648,6 +648,20 @@ function normalizeLongValue(value) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 2048);
+}
+
+function normalizeUrl(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return ["https:", "chrome-extension:"].includes(url.protocol) ? url.toString() : "";
+  } catch {
+    return "";
+  }
 }
 
 function normalizeAliases(value) {

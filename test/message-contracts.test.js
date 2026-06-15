@@ -101,6 +101,22 @@ test("drops invalid feedback kinds", () => {
   });
 });
 
+test("drops unsafe correction links from runtime messages", () => {
+  assert.deepEqual(createFeedbackMessage("term", {
+    kind: "correction",
+    simple: "TERM",
+    audioUrl: "javascript:alert(1)",
+    sourceUrl: "http://example.com/source"
+  }), {
+    type: MESSAGE_TYPES.feedback,
+    text: "term",
+    feedback: {
+      kind: "correction",
+      simple: "TERM"
+    }
+  });
+});
+
 test("builds overlay and offscreen audio messages", () => {
   const result = { query: "term" };
   const audio = { url: "https://example.com/audio.ogg" };

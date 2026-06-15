@@ -238,8 +238,8 @@ function normalizeCorrection(value = {}) {
     origin: normalizeSelection(value.origin),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeLongValue(value.audioUrl),
-    sourceUrl: normalizeLongValue(value.sourceUrl),
+    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote)
   };
 }
@@ -259,8 +259,8 @@ function normalizeResultMetadata(value = {}) {
     origin: normalizeSelection(value.origin),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeLongValue(value.audioUrl),
-    sourceUrl: normalizeLongValue(value.sourceUrl),
+    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     sourceStatus: normalizeSelection(value.sourceStatus),
     confidence: normalizeSelection(value.confidence)
   };
@@ -301,8 +301,8 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     origin: normalizeSelection(value.origin),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeLongValue(value.audioUrl),
-    sourceUrl: normalizeLongValue(value.sourceUrl),
+    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote),
     trustSignals: normalizeTrustSignals(value.trustSignals),
     approvedAt: normalizeSelection(value.approvedAt),
@@ -314,7 +314,8 @@ function hasApprovedEntryContent(value = {}) {
   return Boolean(
     normalizeSelection(value.lookupKey || value.term || value.display || value.sourceForm) ||
     normalizeAliases(value.aliases).length ||
-    normalizeSelection(value.language || value.languageName || value.origin || value.ipa || value.simple || value.audioUrl || value.sourceUrl || value.variantNote) ||
+    normalizeSelection(value.language || value.languageName || value.origin || value.ipa || value.simple || value.variantNote) ||
+    normalizeHttpsUrl(value.audioUrl || value.sourceUrl) ||
     normalizeTrustSignals(value.trustSignals).length ||
     clampNumber(value.confirmations, 0, 100000) ||
     clampNumber(value.corrections, 0, 100000) ||
@@ -415,4 +416,18 @@ function normalizeLongValue(value) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 2048);
+}
+
+function normalizeHttpsUrl(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
 }

@@ -95,8 +95,8 @@ function normalizeFeedback(feedback = {}) {
     simple: normalizeSelection(feedback.simple),
     ipa: normalizeSelection(feedback.ipa),
     origin: normalizeSelection(feedback.origin),
-    audioUrl: normalizeLongText(feedback.audioUrl),
-    sourceUrl: normalizeLongText(feedback.sourceUrl),
+    audioUrl: normalizeUrl(feedback.audioUrl),
+    sourceUrl: normalizeUrl(feedback.sourceUrl),
     variantNote: normalizeSelection(feedback.variantNote)
   });
 }
@@ -131,6 +131,20 @@ function normalizeOptionalBoolean(options, key) {
 
 function normalizeLongText(value) {
   return String(value || "").trim().slice(0, 2048);
+}
+
+function normalizeUrl(value) {
+  const raw = normalizeLongText(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return ["https:", "chrome-extension:"].includes(url.protocol) ? url.toString() : "";
+  } catch {
+    return "";
+  }
 }
 
 function compactMessage(message) {

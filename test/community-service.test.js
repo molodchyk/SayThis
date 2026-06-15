@@ -157,6 +157,27 @@ test("rejects empty correction submissions", async () => {
   assert.equal(result.store.pending.length, 0);
 });
 
+test("rejects correction submissions with only unsafe links", async () => {
+  const result = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_unsafe_link_correction",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "correction",
+      correction: {
+        sourceUrl: "http://example.com/source"
+      }
+    })
+  }, createEmptyStore());
+
+  assert.equal(result.status, 400);
+  assert.equal(result.body.reason, "invalid-submission");
+  assert.equal(result.store.pending.length, 0);
+});
+
 test("limits repeated public submissions by client", async () => {
   let timestamp = 1000;
   const rateLimiter = createMemoryRateLimiter({

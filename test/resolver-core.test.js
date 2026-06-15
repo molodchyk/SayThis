@@ -134,6 +134,19 @@ test("keeps object-map keys for sparse imported local community entries", () => 
   assert.equal(entries.sparsekey.confirmations, 4);
 });
 
+test("drops unsafe correction links from local community memory", () => {
+  const entries = updateCommunityEntries({}, "Exampleterm", {
+    kind: "correction",
+    sourceForm: "Exampleterm",
+    audioUrl: "javascript:alert(1)",
+    sourceUrl: "http://example.com/source"
+  });
+
+  assert.equal(entries.exampleterm.audioUrl, "");
+  assert.equal(entries.exampleterm.sourceUrl, "");
+  assert.equal(entries.exampleterm.sourceForm, "Exampleterm");
+});
+
 test("applies community summary without replacing a structured result", () => {
   const result = createRemoteStructuredResult("Exampleterm", {
     id: "remote:exampleterm",

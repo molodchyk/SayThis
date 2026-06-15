@@ -72,6 +72,18 @@ test("builds correction feedback with audio source and variant note", () => {
   });
 });
 
+test("drops unsafe correction URLs", () => {
+  const feedback = correctionFeedbackFromValues({
+    audioUrl: "javascript:alert(1)",
+    sourceUrl: "http://example.com/source",
+    simple: "SAFE-guide"
+  });
+
+  assert.equal(feedback.audioUrl, "");
+  assert.equal(feedback.sourceUrl, "");
+  assert.equal(feedback.simple, "SAFE-guide");
+});
+
 test("detects whether a correction carries pronunciation data", () => {
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({})), false);
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ aliases: "alternate" })), true);
