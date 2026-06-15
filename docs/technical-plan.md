@@ -19,6 +19,7 @@ Chrome Manifest V3 components:
 - `assets/icons/`: generated PNG icons referenced by the manifest and toolbar action.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
+- `scripts/package-extension.mjs`: builds a deterministic Chrome ZIP from runtime extension files.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
 
 Verified audio from resolver results is preferred when available. Chrome's `tts` API remains the fallback path.
@@ -44,6 +45,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
+- Chrome ZIP packaging from an explicit runtime-file allowlist.
 
 ## Future Lookup Pipeline
 

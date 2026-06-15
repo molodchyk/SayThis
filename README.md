@@ -89,6 +89,12 @@ Regenerate extension icons:
 npm run assets:icons
 ```
 
+Create a Chrome ZIP package:
+
+```powershell
+npm run package:chrome
+```
+
 Run the community moderation service locally:
 
 ```powershell
