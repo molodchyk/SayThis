@@ -33,7 +33,8 @@
     const community = result.community || {};
     const communityText = [
       community.confirmations ? `${community.confirmations} confirmation${community.confirmations === 1 ? "" : "s"}` : "",
-      community.corrections ? `${community.corrections} correction${community.corrections === 1 ? "" : "s"}` : ""
+      community.corrections ? `${community.corrections} correction${community.corrections === 1 ? "" : "s"}` : "",
+      community.requests ? `${community.requests} request${community.requests === 1 ? "" : "s"}` : ""
     ].filter(Boolean).join(" · ");
 
     root.innerHTML = `

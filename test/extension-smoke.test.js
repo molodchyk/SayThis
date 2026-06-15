@@ -70,6 +70,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /type: "SAYTHIS_RESOLVE"/);
   assert.match(source, /useOnline: true/);
   assert.match(source, /kind: "correction"/);
+  assert.match(source, /community\.requests/);
   assert.match(source, /<dt>Aliases<\/dt>/);
   assert.match(source, /aliasesTextFromResult\(result\) \|\| "None"/);
 
