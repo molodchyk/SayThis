@@ -17,6 +17,7 @@ const DEFAULT_PORT = 8787;
 const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
 const DEFAULT_RATE_LIMIT = 20;
 const DEFAULT_RATE_WINDOW_MS = 60 * 1000;
+const DEFAULT_MAX_PENDING_SUBMISSIONS = 1000;
 
 export async function handleCommunityRequest(request, store, options = {}) {
   const url = new URL(request.url, "http://localhost");
@@ -53,8 +54,14 @@ export async function handleCommunityRequest(request, store, options = {}) {
       });
     }
 
-    const result = acceptSubmission(state, parseJsonBody(request.body));
-    return jsonResponse(result.accepted ? 202 : 400, result.store, {
+    const result = acceptSubmission(state, parseJsonBody(request.body), new Date().toISOString(), {
+      maxPendingSubmissions: normalizePositiveInteger(
+        options.maxPendingSubmissions,
+        DEFAULT_MAX_PENDING_SUBMISSIONS
+      )
+    });
+    const status = result.accepted ? 202 : result.reason === "pending-limit-reached" ? 429 : 400;
+    return jsonResponse(status, result.store, {
       accepted: result.accepted,
       duplicate: Boolean(result.duplicate),
       reason: result.reason || ""
@@ -110,6 +117,10 @@ export async function createCommunityServer(options = {}) {
     options.maxBodyBytes ?? process.env.SAYTHIS_MAX_BODY_BYTES,
     DEFAULT_MAX_BODY_BYTES
   );
+  const maxPendingSubmissions = normalizePositiveInteger(
+    options.maxPendingSubmissions ?? process.env.SAYTHIS_MAX_PENDING_SUBMISSIONS,
+    DEFAULT_MAX_PENDING_SUBMISSIONS
+  );
   const rateLimiter = options.rateLimiter || createMemoryRateLimiter({
     limit: normalizePositiveInteger(
       options.rateLimit ?? process.env.SAYTHIS_RATE_LIMIT,
@@ -145,6 +156,7 @@ export async function createCommunityServer(options = {}) {
     }, store, {
       adminToken,
       maxBodyBytes,
+      maxPendingSubmissions,
       rateLimiter
     });
 

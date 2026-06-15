@@ -31,7 +31,7 @@ export function normalizeStore(value, now = new Date().toISOString()) {
   };
 }
 
-export function acceptSubmission(store, submission, now = new Date().toISOString()) {
+export function acceptSubmission(store, submission, now = new Date().toISOString(), options = {}) {
   const normalizedStore = normalizeStore(store, now);
   const normalizedSubmission = normalizeSubmission(submission, now);
   if (!normalizedSubmission) {
@@ -47,6 +47,16 @@ export function acceptSubmission(store, submission, now = new Date().toISOString
       store: normalizedStore,
       accepted: true,
       duplicate: true,
+      submission: normalizedSubmission
+    };
+  }
+
+  const maxPendingSubmissions = normalizeOptionalPositiveInteger(options.maxPendingSubmissions);
+  if (maxPendingSubmissions && normalizedStore.pending.length >= maxPendingSubmissions) {
+    return {
+      store: normalizedStore,
+      accepted: false,
+      reason: "pending-limit-reached",
       submission: normalizedSubmission
     };
   }
@@ -292,10 +302,18 @@ function clampNumber(value, min, max) {
   return Math.min(max, Math.max(min, number));
 }
 
+function normalizeOptionalPositiveInteger(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 1) {
+    return 0;
+  }
+
+  return Math.floor(number);
+}
+
 function normalizeLongValue(value) {
   return String(value || "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 2048);
 }
-

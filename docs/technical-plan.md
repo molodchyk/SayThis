@@ -54,7 +54,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
 - Static moderator page for loading pending submissions and approving or rejecting structured pronunciation entries.
-- Community service request-size limits and in-memory public submission rate limiting.
+- Community service request-size limits, in-memory public submission rate limiting, and configurable pending-queue caps.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
@@ -154,6 +154,6 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 ## Near-Term Tasks
 
 - Broaden online entity scoring with additional structured sources.
-- Add durable abuse controls and deployment recipes for the community backend.
+- Add deployment recipes and stronger production abuse controls for the community backend.
 - Add actual curated public audio files after source/license review.
 - Add loaded-extension browser smoke tests for popup, context menu, overlay, and options flows.

@@ -155,6 +155,56 @@ test("limits repeated public submissions by client", async () => {
   assert.equal(response.store.pending.length, 2);
 });
 
+test("caps pending submissions without rejecting duplicate retries", async () => {
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_pending_1",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  }, createEmptyStore(), { maxPendingSubmissions: 1 });
+
+  assert.equal(response.status, 202);
+  assert.equal(response.store.pending.length, 1);
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_pending_1",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  }, response.store, { maxPendingSubmissions: 1 });
+
+  assert.equal(response.status, 202);
+  assert.equal(response.body.duplicate, true);
+  assert.equal(response.store.pending.length, 1);
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_pending_2",
+      term: "bruschetta",
+      lookupKey: "bruschetta",
+      kind: "missing"
+    })
+  }, response.store, { maxPendingSubmissions: 1 });
+
+  assert.equal(response.status, 429);
+  assert.equal(response.body.accepted, false);
+  assert.equal(response.body.reason, "pending-limit-reached");
+  assert.equal(response.store.pending.length, 1);
+});
+
 test("serves approved entries and requires auth for moderation", async () => {
   let response = await handleCommunityRequest({
     method: "POST",

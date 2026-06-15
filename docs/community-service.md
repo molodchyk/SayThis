@@ -12,6 +12,7 @@ $env:SAYTHIS_STORE = "data/community-store.json"
 $env:SAYTHIS_MAX_BODY_BYTES = "16384"
 $env:SAYTHIS_RATE_LIMIT = "20"
 $env:SAYTHIS_RATE_WINDOW_MS = "60000"
+$env:SAYTHIS_MAX_PENDING_SUBMISSIONS = "1000"
 npm run community:serve
 ```
 
@@ -47,6 +48,9 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_MAX_BODY_BYTES`: `16384`
 - `SAYTHIS_RATE_LIMIT`: `20`
 - `SAYTHIS_RATE_WINDOW_MS`: `60000`
+- `SAYTHIS_MAX_PENDING_SUBMISSIONS`: `1000`
+
+When the pending moderation queue reaches `SAYTHIS_MAX_PENDING_SUBMISSIONS`, new public submissions are rejected with `pending-limit-reached`. Duplicate retries of an already pending submission id are still accepted without adding another entry.
 
 ## Moderator Endpoints
 
