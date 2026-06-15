@@ -44,6 +44,57 @@ test("includes useful alternate source forms with their languages", () => {
   }]);
 });
 
+test("uses aliases as pronunciation-audio candidates", () => {
+  const candidates = pronunciationLookupCandidates("Exampleterm", {
+    display: "Exampleterm",
+    sourceForm: "Sourceform",
+    aliases: ["Alias one", "Alias two"],
+    language: "la",
+    alternateResults: [{
+      display: "Other form",
+      sourceForm: "Other source",
+      aliases: ["Other alias"],
+      language: "en"
+    }]
+  });
+
+  assert.deepEqual(candidates, [{
+    word: "Sourceform",
+    language: "la"
+  }, {
+    word: "Exampleterm",
+    language: "la"
+  }, {
+    word: "Alias one",
+    language: "la"
+  }, {
+    word: "Alias two",
+    language: "la"
+  }, {
+    word: "Other source",
+    language: "en"
+  }]);
+});
+
+test("splits string aliases for pronunciation-audio candidates", () => {
+  const candidates = pronunciationLookupCandidates("Exampleterm", {
+    display: "Exampleterm",
+    aliases: "First alias; Second alias",
+    language: "en"
+  });
+
+  assert.deepEqual(candidates, [{
+    word: "Exampleterm",
+    language: "en"
+  }, {
+    word: "First alias",
+    language: "en"
+  }, {
+    word: "Second alias",
+    language: "en"
+  }]);
+});
+
 test("uses configured pronunciation language over resolved hints", () => {
   const candidates = pronunciationLookupCandidates("gnocchi", {
     display: "Gnocchi",

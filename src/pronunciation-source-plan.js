@@ -11,11 +11,13 @@ export function pronunciationLookupCandidates(selection, result, options = {}) {
 
   addCandidate(candidates, result?.sourceForm, configuredLanguage || primaryLanguage);
   addCandidate(candidates, result?.display, configuredLanguage || primaryLanguage);
+  addAliasCandidates(candidates, result?.aliases, configuredLanguage || primaryLanguage);
 
   for (const alternate of Array.isArray(result?.alternateResults) ? result.alternateResults : []) {
     const language = configuredLanguage || normalizeLanguageHint(alternate.language) || primaryLanguage;
     addCandidate(candidates, alternate.sourceForm, language);
     addCandidate(candidates, alternate.display, language);
+    addAliasCandidates(candidates, alternate.aliases, language);
   }
 
   addCandidate(candidates, selectedText, configuredLanguage || primaryLanguage);
@@ -33,6 +35,16 @@ function addCandidate(candidates, word, language) {
     word: normalizedWord,
     language: normalizeLanguageHint(language)
   });
+}
+
+function addAliasCandidates(candidates, aliases, language) {
+  const values = Array.isArray(aliases)
+    ? aliases
+    : String(aliases || "").split(/[;,\n]/);
+
+  for (const alias of values) {
+    addCandidate(candidates, alias, language);
+  }
 }
 
 function uniqueCandidates(candidates) {
