@@ -13,6 +13,7 @@ The initial audience is creators, journalists, educators, and professionals who 
 This repository is an early Manifest V3 Chrome extension implementation. It includes:
 
 - Context-menu actions for selected text, including an explicit online lookup action.
+- Shared runtime message builders for popup, options, offscreen-audio, and background commands.
 - Packaged extension icons for toolbar and install surfaces.
 - A keyboard command for selected text: `Alt+Shift+S`.
 - A popup with selected-text capture and speak/stop controls.

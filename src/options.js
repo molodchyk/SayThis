@@ -8,6 +8,10 @@ import {
 import {
   FORVO_API_ORIGIN
 } from "./forvo-adapter.js";
+import {
+  createFlushSyncMessage,
+  createPullApprovedMessage
+} from "./message-contracts.js";
 
 const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
@@ -238,7 +242,7 @@ async function clearLookupCache() {
 }
 
 async function flushSync() {
-  const response = await sendMessage({ type: "SAYTHIS_FLUSH_SYNC" });
+  const response = await sendMessage(createFlushSyncMessage());
   if (!response.ok) {
     setStatus(response.error || "Sync failed.");
     return;
@@ -249,7 +253,7 @@ async function flushSync() {
 }
 
 async function pullApproved() {
-  const response = await sendMessage({ type: "SAYTHIS_PULL_APPROVED" });
+  const response = await sendMessage(createPullApprovedMessage());
   if (!response.ok) {
     setStatus(response.error || "Refresh failed.");
     return;

@@ -1,7 +1,11 @@
+import {
+  MESSAGE_TYPES
+} from "./message-contracts.js";
+
 let audioPlayer = null;
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "SAYTHIS_OFFSCREEN_PLAY_AUDIO") {
+  if (message?.type === MESSAGE_TYPES.offscreenPlayAudio) {
     playAudio(message.audio, message.playbackRate)
       .then(() => {
         sendResponse({ ok: true });
@@ -15,7 +19,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "SAYTHIS_OFFSCREEN_STOP_AUDIO") {
+  if (message?.type === MESSAGE_TYPES.offscreenStopAudio) {
     stopAudio();
     sendResponse({ ok: true });
     return true;

@@ -7,6 +7,12 @@ import {
   correctionFeedbackFromValues,
   correctionValuesFromResult
 } from "./correction-form.js";
+import {
+  createFeedbackMessage,
+  createResolveMessage,
+  createSpeakMessage,
+  createStopMessage
+} from "./message-contracts.js";
 
 const selectionInput = document.getElementById("selection");
 const resolveButton = document.getElementById("resolve");
@@ -53,7 +59,7 @@ slowButton.addEventListener("click", () => speakSelection(0.62));
 
 stopButton.addEventListener("click", async () => {
   stopAudio();
-  await sendMessage({ type: "SAYTHIS_STOP" });
+  await sendMessage(createStopMessage());
   setStatus("Stopped.");
 });
 
@@ -97,12 +103,10 @@ async function speakSelection(rate) {
     return;
   }
 
-  const response = await sendMessage({
-    type: "SAYTHIS_SPEAK",
-    text,
+  const response = await sendMessage(createSpeakMessage(text, {
     result: currentResult,
     rate
-  });
+  }));
 
   if (response.ok) {
     currentResult = response.result;
@@ -145,11 +149,9 @@ async function resolveSelection(useOnline) {
   }
 
   setStatus(useOnline ? "Checking online sources." : "Resolving.");
-  const response = await sendMessage({
-    type: "SAYTHIS_RESOLVE",
-    text,
+  const response = await sendMessage(createResolveMessage(text, {
     useOnline
-  });
+  }));
 
   if (!response.ok) {
     setStatus(response.error || "Resolve failed.");
@@ -187,11 +189,7 @@ async function saveFeedback(feedback) {
     return;
   }
 
-  const response = await sendMessage({
-    type: "SAYTHIS_FEEDBACK",
-    text,
-    feedback
-  });
+  const response = await sendMessage(createFeedbackMessage(text, feedback));
 
   if (response.ok) {
     currentResult = response.result;

@@ -35,6 +35,12 @@ import {
   resolveOptionsForMenuId
 } from "./extension-actions.js";
 import {
+  createOffscreenPlayAudioMessage,
+  createOffscreenStopAudioMessage,
+  createShowResultMessage,
+  MESSAGE_TYPES
+} from "./message-contracts.js";
+import {
   createCommunitySubmission,
   DEFAULT_SYNC_SETTINGS,
   enqueueSubmission,
@@ -119,7 +125,7 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "SAYTHIS_RESOLVE") {
+  if (message?.type === MESSAGE_TYPES.resolve) {
     resolveSelection(message.text, { useOnline: Boolean(message.useOnline) })
       .then((result) => {
         sendResponse({ ok: true, result });
@@ -130,7 +136,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "SAYTHIS_SPEAK") {
+  if (message?.type === MESSAGE_TYPES.speak) {
     const selectedText = normalizeSelection(message.text);
     if (!selectedText) {
       sendResponse({ ok: false, error: "No text selected." });
@@ -152,7 +158,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "SAYTHIS_STOP") {
+  if (message?.type === MESSAGE_TYPES.stop) {
     chrome.tts.stop();
     stopOffscreenAudio()
       .then(() => {
@@ -164,7 +170,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "SAYTHIS_FEEDBACK") {
+  if (message?.type === MESSAGE_TYPES.feedback) {
     saveFeedback(message.text, message.feedback || {})
       .then((result) => {
         sendResponse({ ok: true, result });
@@ -175,7 +181,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "SAYTHIS_FLUSH_SYNC") {
+  if (message?.type === MESSAGE_TYPES.flushSync) {
     flushCommunitySync()
       .then((summary) => {
         sendResponse({ ok: true, summary });
@@ -186,7 +192,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "SAYTHIS_PULL_APPROVED") {
+  if (message?.type === MESSAGE_TYPES.pullApproved) {
     pullApprovedCommunityEntries()
       .then((summary) => {
         sendResponse({ ok: true, summary });
@@ -440,11 +446,10 @@ async function playAudioOffscreen(result, rate = 0.82) {
 
   try {
     await ensureOffscreenAudioDocument();
-    const response = await chrome.runtime.sendMessage({
-      type: "SAYTHIS_OFFSCREEN_PLAY_AUDIO",
+    const response = await chrome.runtime.sendMessage(createOffscreenPlayAudioMessage(
       audio,
-      playbackRate: rate < 0.7 ? 0.75 : 1
-    });
+      rate < 0.7 ? 0.75 : 1
+    ));
     return Boolean(response?.ok);
   } catch {
     return false;
@@ -457,7 +462,7 @@ async function stopOffscreenAudio() {
   }
 
   try {
-    await chrome.runtime.sendMessage({ type: "SAYTHIS_OFFSCREEN_STOP_AUDIO" });
+    await chrome.runtime.sendMessage(createOffscreenStopAudioMessage());
   } catch {
     // The offscreen document may not exist yet.
   }
@@ -510,11 +515,9 @@ async function showResultOnTab(tabId, result, options = {}) {
       target: { tabId },
       files: ["src/content-overlay.js"]
     });
-    await chrome.tabs.sendMessage(tabId, {
-      type: "SAYTHIS_SHOW_RESULT",
-      result,
+    await chrome.tabs.sendMessage(tabId, createShowResultMessage(result, {
       autoPlay: Boolean(options.autoPlay)
-    });
+    }));
     return true;
   } catch {
     // Some pages do not allow extension script injection.

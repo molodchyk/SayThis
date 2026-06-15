@@ -1,0 +1,132 @@
+import {
+  normalizeSelection
+} from "./resolver-core.js";
+
+export const MESSAGE_TYPES = Object.freeze({
+  resolve: "SAYTHIS_RESOLVE",
+  speak: "SAYTHIS_SPEAK",
+  stop: "SAYTHIS_STOP",
+  feedback: "SAYTHIS_FEEDBACK",
+  flushSync: "SAYTHIS_FLUSH_SYNC",
+  pullApproved: "SAYTHIS_PULL_APPROVED",
+  showResult: "SAYTHIS_SHOW_RESULT",
+  offscreenPlayAudio: "SAYTHIS_OFFSCREEN_PLAY_AUDIO",
+  offscreenStopAudio: "SAYTHIS_OFFSCREEN_STOP_AUDIO"
+});
+
+const VALID_FEEDBACK_KINDS = new Set([
+  "confirm",
+  "wrong",
+  "missing",
+  "correction"
+]);
+
+export function createResolveMessage(text, options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.resolve,
+    text: normalizeSelection(text),
+    useOnline: Boolean(options.useOnline)
+  });
+}
+
+export function createSpeakMessage(text, options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.speak,
+    text: normalizeSelection(text),
+    result: options.result && typeof options.result === "object" ? options.result : undefined,
+    rate: normalizeRate(options.rate),
+    lang: normalizeLanguageOption(options.lang),
+    useOnline: Boolean(options.useOnline)
+  });
+}
+
+export function createStopMessage() {
+  return { type: MESSAGE_TYPES.stop };
+}
+
+export function createFeedbackMessage(text, feedback = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.feedback,
+    text: normalizeSelection(text),
+    feedback: normalizeFeedback(feedback)
+  });
+}
+
+export function createFlushSyncMessage() {
+  return { type: MESSAGE_TYPES.flushSync };
+}
+
+export function createPullApprovedMessage() {
+  return { type: MESSAGE_TYPES.pullApproved };
+}
+
+export function createShowResultMessage(result, options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.showResult,
+    result: result && typeof result === "object" ? result : undefined,
+    autoPlay: Boolean(options.autoPlay)
+  });
+}
+
+export function createOffscreenPlayAudioMessage(audio, playbackRate) {
+  return compactMessage({
+    type: MESSAGE_TYPES.offscreenPlayAudio,
+    audio: audio && typeof audio === "object" ? audio : undefined,
+    playbackRate: normalizeRate(playbackRate)
+  });
+}
+
+export function createOffscreenStopAudioMessage() {
+  return { type: MESSAGE_TYPES.offscreenStopAudio };
+}
+
+function normalizeFeedback(feedback = {}) {
+  const kind = VALID_FEEDBACK_KINDS.has(feedback.kind) ? feedback.kind : "";
+  if (!kind) {
+    return {};
+  }
+
+  return compactMessage({
+    kind,
+    sourceForm: normalizeSelection(feedback.sourceForm),
+    language: normalizeLanguageOption(feedback.language),
+    languageName: normalizeSelection(feedback.languageName),
+    simple: normalizeSelection(feedback.simple),
+    ipa: normalizeSelection(feedback.ipa),
+    origin: normalizeSelection(feedback.origin),
+    audioUrl: normalizeLongText(feedback.audioUrl),
+    variantNote: normalizeSelection(feedback.variantNote)
+  });
+}
+
+function normalizeLanguageOption(value) {
+  return String(value || "")
+    .trim()
+    .replace(/_/g, "-")
+    .slice(0, 32);
+}
+
+function normalizeRate(value) {
+  const rate = Number(value);
+  return Number.isFinite(rate) ? Math.min(1.4, Math.max(0.45, rate)) : undefined;
+}
+
+function normalizeLongText(value) {
+  return String(value || "").trim().slice(0, 2048);
+}
+
+function compactMessage(message) {
+  return Object.fromEntries(
+    Object.entries(message).filter(([, value]) => {
+      if (value === undefined || value === null || value === "") {
+        return false;
+      }
+
+      if (typeof value === "object" && !Array.isArray(value) && !Object.keys(value).length) {
+        return false;
+      }
+
+      return true;
+    })
+  );
+}
