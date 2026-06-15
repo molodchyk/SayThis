@@ -16,7 +16,8 @@ test("prefers native label claims over English labels", () => {
     id: "Q1524",
     labels: {
       en: { language: "en", value: "Athens" },
-      el: { language: "el", value: "Αθήνα" }
+      el: { language: "el", value: "Αθήνα" },
+      la: { language: "la", value: "Athenae" }
     },
     descriptions: {
       en: { language: "en", value: "capital city of Greece" }
@@ -28,13 +29,20 @@ test("prefers native label claims over English labels", () => {
             value: { language: "el", text: "Αθήνα" }
           }
         }
+      }],
+      P1448: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "en", text: "City of Athens" }
+          }
+        }
       }]
     },
     aliases: {}
   });
 
   assert.equal(result.sourceForm, "Αθήνα");
-  assert.deepEqual(result.aliases, []);
+  assert.deepEqual(result.aliases, ["City of Athens", "Athenae"]);
   assert.equal(result.language, "el");
   assert.equal(result.confidence, "medium");
   assert.ok(result.evidence.some((item) => item.includes("native label")));

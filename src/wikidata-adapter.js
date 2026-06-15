@@ -20,8 +20,8 @@ export function buildWikidataResult(query, match, entity) {
   const description = entity.descriptions?.en?.value || match.description || "";
   const audioFile = firstStringClaimValue(entity, PRONUNCIATION_AUDIO);
   const ipa = firstStringClaimValue(entity, IPA_TRANSCRIPTION);
-  const aliases = wikidataAliases(entity).slice(0, 8);
   const sourceForm = sourceCandidate?.value || match.label || query;
+  const aliases = wikidataAliases(entity, [match.label, sourceForm]).slice(0, 8);
 
   return createRemoteStructuredResult(query, {
     id: `wikidata:${entity.id || match.id}`,
@@ -272,9 +272,26 @@ function firstStringClaimValue(entity, propertyId) {
   return "";
 }
 
-function wikidataAliases(entity) {
-  return Object.values(entity.aliases || {})
-    .flat()
-    .map((alias) => alias.value)
-    .filter(Boolean);
+function wikidataAliases(entity, excludedValues = []) {
+  const excluded = new Set(excludedValues.map(createLookupKey).filter(Boolean));
+  const values = [
+    ...Object.values(entity.aliases || {}).flat().map((alias) => alias.value),
+    ...monolingualClaimCandidates(entity, NATIVE_LABEL, "native label").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, OFFICIAL_NAME, "official name").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, SHORT_NAME, "short name").map((candidate) => candidate.value),
+    ...Object.values(entity.labels || {}).map((label) => label.value)
+  ];
+  const seen = new Set();
+
+  return values
+    .map(normalizeSelection)
+    .filter((value) => {
+      const key = createLookupKey(value);
+      if (!key || excluded.has(key) || seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
 }
