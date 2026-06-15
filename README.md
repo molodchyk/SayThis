@@ -37,6 +37,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry refresh from the configured community endpoint, with local corrections taking priority.
 - Community moderation service with body-size, rate-limit, and pending-queue abuse controls.
+- Non-browser CI for unit tests, syntax checks, and Chrome package creation.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.
 - Chrome TTS as a temporary local fallback.
 - Product, research, and technical planning docs.
