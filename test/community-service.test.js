@@ -4,6 +4,7 @@ import {
   createEmptyStore
 } from "../server/community-store.js";
 import {
+  createMemoryRateLimiter,
   handleCommunityRequest
 } from "../server/community-service.js";
 
@@ -45,6 +46,85 @@ test("accepts submissions without storing request metadata", async () => {
   assert.equal(result.store.pending.length, 1);
   assert.equal(Object.hasOwn(result.store.pending[0], "ip"), false);
   assert.equal(Object.hasOwn(result.store.pending[0], "headers"), false);
+});
+
+test("rejects oversized public submissions without mutating store", async () => {
+  const store = createEmptyStore();
+  const result = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_large",
+      term: "Chiaroscuro",
+      lookupKey: "chiaroscuro",
+      kind: "missing"
+    })
+  }, store, { maxBodyBytes: 16 });
+
+  assert.equal(result.status, 413);
+  assert.equal(result.body.error, "body-too-large");
+  assert.equal(result.store.pending.length, 0);
+});
+
+test("limits repeated public submissions by client", async () => {
+  let timestamp = 1000;
+  const rateLimiter = createMemoryRateLimiter({
+    limit: 1,
+    windowMs: 1000,
+    now: () => timestamp
+  });
+  let store = createEmptyStore();
+
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    clientKey: "client-a",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_rate_1",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  }, store, { rateLimiter });
+  assert.equal(response.status, 202);
+  store = response.store;
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    clientKey: "client-a",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_rate_2",
+      term: "bruschetta",
+      lookupKey: "bruschetta",
+      kind: "missing"
+    })
+  }, store, { rateLimiter });
+
+  assert.equal(response.status, 429);
+  assert.equal(response.body.error, "rate-limited");
+  assert.equal(response.store.pending.length, 1);
+  assert.equal(Object.hasOwn(response.store.pending[0], "clientKey"), false);
+
+  timestamp += 1000;
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    clientKey: "client-a",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_rate_3",
+      term: "scherzo",
+      lookupKey: "scherzo",
+      kind: "missing"
+    })
+  }, response.store, { rateLimiter });
+
+  assert.equal(response.status, 202);
+  assert.equal(response.store.pending.length, 2);
 });
 
 test("serves approved entries and requires auth for moderation", async () => {

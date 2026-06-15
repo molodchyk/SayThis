@@ -13,6 +13,9 @@ import {
 } from "./community-store.js";
 
 const DEFAULT_PORT = 8787;
+const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
+const DEFAULT_RATE_LIMIT = 20;
+const DEFAULT_RATE_WINDOW_MS = 60 * 1000;
 
 export async function handleCommunityRequest(request, store, options = {}) {
   const url = new URL(request.url, "http://localhost");
@@ -32,6 +35,19 @@ export async function handleCommunityRequest(request, store, options = {}) {
   }
 
   if (method === "POST" && url.pathname === "/community") {
+    const maxBodyBytes = normalizePositiveInteger(options.maxBodyBytes, DEFAULT_MAX_BODY_BYTES);
+    if (bodyByteLength(request.body) > maxBodyBytes) {
+      return jsonResponse(413, state, { error: "body-too-large" });
+    }
+
+    const rate = checkSubmissionRate(request, options);
+    if (!rate.ok) {
+      return jsonResponse(429, state, {
+        error: "rate-limited",
+        retryAfterMs: rate.retryAfterMs
+      });
+    }
+
     const result = acceptSubmission(state, parseJsonBody(request.body));
     return jsonResponse(result.accepted ? 202 : 400, result.store, {
       accepted: result.accepted,
@@ -85,27 +101,51 @@ export async function handleCommunityRequest(request, store, options = {}) {
 export async function createCommunityServer(options = {}) {
   const storePath = options.storePath || "community-store.json";
   const adminToken = options.adminToken || process.env.SAYTHIS_ADMIN_TOKEN || "";
+  const maxBodyBytes = normalizePositiveInteger(
+    options.maxBodyBytes ?? process.env.SAYTHIS_MAX_BODY_BYTES,
+    DEFAULT_MAX_BODY_BYTES
+  );
+  const rateLimiter = options.rateLimiter || createMemoryRateLimiter({
+    limit: normalizePositiveInteger(
+      options.rateLimit ?? process.env.SAYTHIS_RATE_LIMIT,
+      DEFAULT_RATE_LIMIT
+    ),
+    windowMs: normalizePositiveInteger(
+      options.rateWindowMs ?? process.env.SAYTHIS_RATE_WINDOW_MS,
+      DEFAULT_RATE_WINDOW_MS
+    )
+  });
   let store = await readStore(storePath);
 
   const server = createServer(async (request, response) => {
-    const body = await readRequestBody(request);
+    let body = "";
+    try {
+      body = await readRequestBody(request, maxBodyBytes);
+    } catch (error) {
+      if (error?.code === "body-too-large") {
+        sendJsonResponse(response, 413, { error: "body-too-large" });
+        return;
+      }
+
+      sendJsonResponse(response, 400, { error: "invalid-request" });
+      return;
+    }
+
     const result = await handleCommunityRequest({
       method: request.method,
       url: request.url,
       headers: request.headers,
+      remoteAddress: request.socket?.remoteAddress,
       body
-    }, store, { adminToken });
+    }, store, {
+      adminToken,
+      maxBodyBytes,
+      rateLimiter
+    });
 
     store = result.store;
     await writeStore(storePath, store);
-    response.writeHead(result.status, {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "content-type, authorization",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
-    });
-    response.end(JSON.stringify(result.body));
+    sendJsonResponse(response, result.status, result.body);
   });
 
   return server;
@@ -118,6 +158,41 @@ export async function main() {
   server.listen(port, () => {
     console.log(`SayThis community service listening on http://127.0.0.1:${port}`);
   });
+}
+
+export function createMemoryRateLimiter(options = {}) {
+  const limit = normalizePositiveInteger(options.limit, DEFAULT_RATE_LIMIT);
+  const windowMs = normalizePositiveInteger(options.windowMs, DEFAULT_RATE_WINDOW_MS);
+  const now = typeof options.now === "function" ? options.now : Date.now;
+  const buckets = new Map();
+
+  return {
+    check(key) {
+      if (!key || limit < 1) {
+        return { ok: true, retryAfterMs: 0 };
+      }
+
+      const timestamp = now();
+      const existing = buckets.get(key);
+      if (!existing || timestamp >= existing.resetAt) {
+        buckets.set(key, {
+          count: 1,
+          resetAt: timestamp + windowMs
+        });
+        return { ok: true, retryAfterMs: 0 };
+      }
+
+      existing.count += 1;
+      if (existing.count <= limit) {
+        return { ok: true, retryAfterMs: 0 };
+      }
+
+      return {
+        ok: false,
+        retryAfterMs: Math.max(0, existing.resetAt - timestamp)
+      };
+    }
+  };
 }
 
 function jsonResponse(status, store, body) {
@@ -142,6 +217,24 @@ function authorize(request, options) {
   return { ok: true };
 }
 
+function checkSubmissionRate(request, options) {
+  if (!options.rateLimiter || typeof options.rateLimiter.check !== "function") {
+    return { ok: true, retryAfterMs: 0 };
+  }
+
+  return options.rateLimiter.check(clientKeyFromRequest(request));
+}
+
+function clientKeyFromRequest(request) {
+  return String(
+    request.clientKey ||
+    request.headers?.["cf-connecting-ip"] ||
+    request.headers?.["x-real-ip"] ||
+    request.remoteAddress ||
+    "unknown"
+  );
+}
+
 function parseJsonBody(body) {
   if (!body) {
     return {};
@@ -154,9 +247,17 @@ function parseJsonBody(body) {
   }
 }
 
-async function readRequestBody(request) {
+async function readRequestBody(request, maxBodyBytes) {
   const chunks = [];
+  let size = 0;
   for await (const chunk of request) {
+    size += chunk.length;
+    if (size > maxBodyBytes) {
+      const error = new Error("body-too-large");
+      error.code = "body-too-large";
+      throw error;
+    }
+
     chunks.push(chunk);
   }
 
@@ -174,6 +275,30 @@ async function readStore(storePath) {
 async function writeStore(storePath, store) {
   await mkdir(dirname(storePath), { recursive: true });
   await writeFile(storePath, `${JSON.stringify(normalizeStore(store), null, 2)}\n`, "utf8");
+}
+
+function sendJsonResponse(response, status, body) {
+  response.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "content-type, authorization",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+  });
+  response.end(JSON.stringify(body));
+}
+
+function bodyByteLength(body) {
+  return Buffer.byteLength(String(body || ""), "utf8");
+}
+
+function normalizePositiveInteger(value, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    return fallback;
+  }
+
+  return Math.floor(number);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

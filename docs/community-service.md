@@ -9,6 +9,9 @@ The service is dependency-free Node.js. It receives privacy-scoped correction su
 ```powershell
 $env:SAYTHIS_ADMIN_TOKEN = "change-me"
 $env:SAYTHIS_STORE = "data/community-store.json"
+$env:SAYTHIS_MAX_BODY_BYTES = "16384"
+$env:SAYTHIS_RATE_LIMIT = "20"
+$env:SAYTHIS_RATE_WINDOW_MS = "60000"
 npm run community:serve
 ```
 
@@ -30,6 +33,12 @@ GET /community?action=approved
 ```
 
 The extension submits only term-level pronunciation metadata. It does not submit page URLs or browsing history.
+
+The public submission endpoint rejects oversized bodies and limits repeated submissions per client. Defaults:
+
+- `SAYTHIS_MAX_BODY_BYTES`: `16384`
+- `SAYTHIS_RATE_LIMIT`: `20`
+- `SAYTHIS_RATE_WINDOW_MS`: `60000`
 
 ## Moderator Endpoints
 
@@ -91,4 +100,3 @@ The service writes a JSON store containing:
 - `rejected`: rejected submission summaries
 
 The store intentionally excludes request headers, IP addresses, and page URLs.
-

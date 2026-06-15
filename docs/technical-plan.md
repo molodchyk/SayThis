@@ -34,6 +34,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Opt-in community sync endpoint with queued retry behavior.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
+- Community service request-size limits and in-memory public submission rate limiting.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
 - Verified-audio playback from resolver results, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
@@ -123,6 +124,6 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 
 - Build more resolver adapters for gazetteers, pronunciation databases, and domain-specific term sources.
 - Broaden online entity scoring with additional structured sources.
-- Add deployment guidance, rate limiting, and abuse controls for the community backend.
+- Add durable abuse controls, admin UI, and deployment recipes for the community backend.
 - Add actual curated public audio files after source/license review.
 - Add broader tests around popup/background message contracts.
