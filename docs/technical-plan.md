@@ -133,6 +133,8 @@ Missing or low-confidence lookups should use the same shape. A request for an un
 
 ## Privacy
 
+Public privacy policy: `docs/privacy-policy.md`.
+
 The MVP should avoid sending every highlighted word to a server by default. A conservative sequence:
 
 1. Check local cache and bundled resolver data.

@@ -52,6 +52,7 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 - Product thesis: `docs/product-thesis.md`
 - Pronunciation graph: `docs/pronunciation-graph.md`
 - Product brief: `docs/product-brief.md`
+- Privacy policy: `docs/privacy-policy.md`
 - SWOT analysis: `docs/swot-analysis.md`
 - Research notes: `docs/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
