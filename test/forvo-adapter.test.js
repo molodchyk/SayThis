@@ -71,3 +71,21 @@ test("builds a verified-audio result from Forvo payload", () => {
   assert.ok(result.evidence.includes("Pronunciation audio from Forvo"));
   assert.ok(result.sources.some((source) => source.label === "Pronunciations by Forvo"));
 });
+
+test("keeps selected query when Forvo returns a resolved source word", () => {
+  const result = buildForvoResult("Quixote", {
+    items: [{
+      id: 43,
+      word: "Quijote",
+      code: "es",
+      langname: "Spanish",
+      pathogg: "https://audio.example/quijote.ogg",
+      rate: 5
+    }]
+  });
+
+  assert.equal(result.query, "Quixote");
+  assert.equal(result.display, "Quijote");
+  assert.equal(result.sourceForm, "Quijote");
+  assert.equal(result.language, "es");
+});

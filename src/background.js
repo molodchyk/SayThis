@@ -667,11 +667,17 @@ async function resolveWithCustomSource(text, endpoint, label) {
 
 async function resolveWithForvo(text, apiKey, language) {
   const query = normalizeSelection(text);
-  const url = buildForvoWordPronunciationsUrl(query, apiKey, {
+  return resolveWithForvoLookup(query, query, apiKey, language);
+}
+
+async function resolveWithForvoLookup(selectedText, lookupWord, apiKey, language) {
+  const query = normalizeSelection(selectedText);
+  const word = normalizeSelection(lookupWord);
+  const url = buildForvoWordPronunciationsUrl(word, apiKey, {
     language,
     limit: 5
   });
-  if (!query || !url) {
+  if (!query || !word || !url) {
     return null;
   }
 
@@ -694,7 +700,7 @@ async function resolveWithForvoCandidates(text, structuredResult, apiKey, settin
   for (const candidate of pronunciationLookupCandidates(text, structuredResult, {
     language: settings.forvoLanguage
   })) {
-    const forvoResult = await resolveSafely(resolveWithForvo, candidate.word, apiKey, candidate.language);
+    const forvoResult = await resolveSafely(resolveWithForvoLookup, text, candidate.word, apiKey, candidate.language);
     if (!forvoResult) {
       continue;
     }
