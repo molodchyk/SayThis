@@ -32,7 +32,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
 - Local cache for successful online lookup results.
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
-- Options for default online lookup, on-page card display, and local community-memory data management.
+- Options for default online lookup, on-page card display, and local/shared community-memory data management.
 - Opt-in community sync endpoint with a local retry queue for correction submissions.
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry refresh from the configured community endpoint, with local corrections taking priority.

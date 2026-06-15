@@ -60,7 +60,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
 - Static moderator page for loading pending submissions and approving or rejecting structured pronunciation entries.
 - Community service request-size limits, in-memory public submission rate limiting, and configurable pending-queue caps.
-- Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
+- Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
 - Chrome ZIP packaging from an explicit runtime-file allowlist.

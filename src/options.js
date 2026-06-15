@@ -3,7 +3,8 @@ import {
   resultCacheSummary
 } from "./result-cache.js";
 import {
-  endpointOriginPattern
+  endpointOriginPattern,
+  normalizeApprovedEntries
 } from "./community-sync.js";
 import {
   FORVO_API_ORIGIN
@@ -63,6 +64,7 @@ const syncEndpoint = document.getElementById("sync-endpoint");
 const syncSummaryText = document.getElementById("sync-summary");
 const flushSyncButton = document.getElementById("flush-sync");
 const pullApprovedButton = document.getElementById("pull-approved");
+const clearApprovedButton = document.getElementById("clear-approved");
 const clearSyncButton = document.getElementById("clear-sync");
 const approvedSummary = document.getElementById("approved-summary");
 
@@ -86,6 +88,7 @@ importButton.addEventListener("click", importData);
 clearButton.addEventListener("click", clearMemory);
 flushSyncButton.addEventListener("click", flushSync);
 pullApprovedButton.addEventListener("click", pullApproved);
+clearApprovedButton.addEventListener("click", clearApprovedEntries);
 clearSyncButton.addEventListener("click", clearSyncQueue);
 
 async function init() {
@@ -189,7 +192,7 @@ async function importData() {
   const stored = await chrome.storage.local.get([STORAGE_KEYS.credentials]);
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const settings = await settingsWithEndpointPermission(payload.settings, credentials);
-  const approvedCommunityEntries = isPlainObject(payload.approvedCommunityEntries) ? payload.approvedCommunityEntries : {};
+  const approvedCommunityEntries = normalizeApprovedEntries({ entries: payload.approvedCommunityEntries });
   const communityEntries = isPlainObject(payload.communityEntries) ? payload.communityEntries : {};
   const resultCache = normalizeResultCache(payload.resultCache);
   const syncQueue = Array.isArray(payload.syncQueue) ? payload.syncQueue : [];
@@ -274,6 +277,15 @@ async function clearSyncQueue() {
   });
   renderSyncSummary({ queued: 0, failed: 0, exhausted: 0 });
   setStatus("Sync queue cleared.");
+}
+
+async function clearApprovedEntries() {
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.approvedCommunityEntries]: {},
+    [STORAGE_KEYS.communityPullState]: {}
+  });
+  renderApprovedSummary({}, {});
+  setStatus("Approved shared entries cleared.");
 }
 
 function renderSummary(entries) {

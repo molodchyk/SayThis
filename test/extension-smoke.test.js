@@ -91,6 +91,16 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /useOnline: true/);
 });
 
+test("options page exposes shared-entry data controls", async () => {
+  const html = await readText("src/options.html");
+  const source = await readText("src/options.js");
+
+  assert.match(html, /id="pull-approved"/);
+  assert.match(html, /id="clear-approved"/);
+  assert.match(source, /normalizeApprovedEntries/);
+  assert.match(source, /Approved shared entries cleared/);
+});
+
 function idsInHtml(html) {
   return matches(html, /\bid="([^"]+)"/g);
 }
