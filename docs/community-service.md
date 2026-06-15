@@ -62,6 +62,8 @@ Correction submissions must include at least one structured pronunciation field,
 
 For a production deployment, set `SAYTHIS_ALLOWED_ORIGINS` to a comma-separated list of trusted origins, such as `https://example.com,chrome-extension://<extension-id>`. The default `*` keeps local and early public testing simple.
 
+Requests with an `Origin` header outside `SAYTHIS_ALLOWED_ORIGINS` are rejected with `origin-not-allowed`. Requests without an `Origin` header are accepted for server-to-server use.
+
 ## Moderator Endpoints
 
 All moderator endpoints require:

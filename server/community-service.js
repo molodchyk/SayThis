@@ -26,6 +26,10 @@ export async function handleCommunityRequest(request, store, options = {}) {
   const url = new URL(request.url, "http://localhost");
   const method = String(request.method || "GET").toUpperCase();
   const state = normalizeStore(store);
+  const origin = checkRequestOrigin(request, options.allowedOrigins);
+  if (!origin.ok) {
+    return jsonResponse(403, state, { error: "origin-not-allowed" });
+  }
 
   if (method === "OPTIONS") {
     return jsonResponse(200, state, { ok: true });
@@ -173,6 +177,7 @@ export async function createCommunityServer(options = {}) {
       maxBodyBytes,
       maxPendingSubmissions,
       maxRejectedSubmissions,
+      allowedOrigins,
       rateLimiter
     });
 
@@ -252,6 +257,11 @@ export function corsAllowOrigin(requestOrigin, allowedOrigins = DEFAULT_ALLOWED_
   return origin && origins.includes(origin) ? origin : "";
 }
 
+export function requestOriginAllowed(requestOrigin, allowedOrigins = DEFAULT_ALLOWED_ORIGINS) {
+  const origin = normalizeOrigin(requestOrigin);
+  return !origin || Boolean(corsAllowOrigin(origin, allowedOrigins));
+}
+
 export function adminTokenMatches(authorizationHeader, adminToken) {
   const expectedToken = String(adminToken || "");
   const providedToken = bearerTokenFromAuthorization(authorizationHeader);
@@ -292,6 +302,13 @@ function authorize(request, options) {
   }
 
   return { ok: true };
+}
+
+function checkRequestOrigin(request, allowedOrigins) {
+  const origin = request.headers?.origin || request.headers?.Origin || "";
+  return {
+    ok: requestOriginAllowed(origin, allowedOrigins)
+  };
 }
 
 function checkSubmissionRate(request, options) {

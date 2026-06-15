@@ -9,7 +9,8 @@ import {
   corsAllowOrigin,
   createMemoryRateLimiter,
   handleCommunityRequest,
-  normalizeAllowedOrigins
+  normalizeAllowedOrigins,
+  requestOriginAllowed
 } from "../server/community-service.js";
 
 test("accepts browser preflight requests", async () => {
@@ -33,6 +34,46 @@ test("normalizes allowed CORS origins", () => {
   assert.equal(corsAllowOrigin("https://example.com/page", ["https://example.com"]), "https://example.com");
   assert.equal(corsAllowOrigin("https://other.example/page", ["https://example.com"]), "");
   assert.equal(corsAllowOrigin("chrome-extension://abcdefghijklmnop/popup.html", ["chrome-extension://abcdefghijklmnop"]), "chrome-extension://abcdefghijklmnop");
+  assert.equal(requestOriginAllowed("", ["https://example.com"]), true);
+  assert.equal(requestOriginAllowed("https://example.com/page", ["https://example.com"]), true);
+  assert.equal(requestOriginAllowed("https://other.example/page", ["https://example.com"]), false);
+});
+
+test("rejects browser-originated requests from disallowed origins", async () => {
+  const blocked = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: { origin: "https://other.example" },
+    body: JSON.stringify({
+      id: "sub_blocked_origin",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  }, createEmptyStore(), {
+    allowedOrigins: ["https://example.com"]
+  });
+
+  assert.equal(blocked.status, 403);
+  assert.equal(blocked.body.error, "origin-not-allowed");
+  assert.equal(blocked.store.pending.length, 0);
+
+  const accepted = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: { origin: "https://example.com/page" },
+    body: JSON.stringify({
+      id: "sub_allowed_origin",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  }, createEmptyStore(), {
+    allowedOrigins: ["https://example.com"]
+  });
+
+  assert.equal(accepted.status, 202);
+  assert.equal(accepted.store.pending.length, 1);
 });
 
 test("normalizes keyed approved store entries without embedded lookup fields", () => {
