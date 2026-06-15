@@ -169,7 +169,9 @@ async function exportData() {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
     settings: normalizeSettings(stored[STORAGE_KEYS.settings]),
-    approvedCommunityEntries: stored[STORAGE_KEYS.approvedCommunityEntries] || {},
+    approvedCommunityEntries: normalizeApprovedEntries({
+      entries: stored[STORAGE_KEYS.approvedCommunityEntries]
+    }),
     communityPullState: stored[STORAGE_KEYS.communityPullState] || {},
     communityEntries: normalizeCommunityEntries(stored[STORAGE_KEYS.communityEntries]),
     resultCache: normalizeResultCache(stored[STORAGE_KEYS.resultCache]),
