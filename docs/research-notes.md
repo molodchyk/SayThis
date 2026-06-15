@@ -12,6 +12,8 @@ These notes capture early public signals and adjacent solutions found before the
 ## Existing Solutions
 
 - Forvo has native-speaker recordings and an API with millions of pronunciations across hundreds of languages: https://api.forvo.com/
+- Forvo's word-pronunciations API takes `key`, `action`, `format`, and `word` as required parameters, with optional language, country, user, rating, order, and limit filters: https://api.forvo.com/documentation/word-pronunciations/
+- Forvo API use requires attribution; SayThis result links use the text attribution form documented by Forvo: https://api.forvo.com/documentation/branding/
 - Generic TTS extensions already support selected text, but they are optimized for reading, not proper-noun correctness. Examples: Speechify, Voice Out, and Highlighted Text-to-Speech.
 - NameShouts offers name-pronunciation workflows and a Chrome extension, but the use case is personal names and workplace/social tools rather than news/geopolitical pronunciation: https://chromewebstore.google.com/detail/nameshouts-name-pronuncia/cfjmdoknapjfodjomjdldohemeiggmgo
 - A Firefox `Search on Forvo` extension can open selected text on Forvo, but it does not provide immediate in-place audio: https://addons.mozilla.org/en-US/firefox/addon/search-forvo/

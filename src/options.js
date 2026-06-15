@@ -5,11 +5,15 @@ import {
 import {
   endpointOriginPattern
 } from "./community-sync.js";
+import {
+  FORVO_API_ORIGIN
+} from "./forvo-adapter.js";
 
 const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
   communityEntries: "communityEntries",
   communityPullState: "communityPullState",
+  credentials: "credentials",
   resultCache: "resultCache",
   syncQueue: "syncQueue",
   syncSummary: "syncSummary",
@@ -18,15 +22,23 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  forvoEnabled: false,
+  forvoLanguage: "",
   gazetteerEnabled: false,
   gazetteerEndpoint: "",
   communitySyncEnabled: false,
   communityEndpoint: ""
 };
+const DEFAULT_CREDENTIALS = {
+  forvoApiKey: ""
+};
 
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
+const forvoEnabled = document.getElementById("forvo-enabled");
+const forvoApiKey = document.getElementById("forvo-api-key");
+const forvoLanguage = document.getElementById("forvo-language");
 const gazetteerEnabled = document.getElementById("gazetteer-enabled");
 const gazetteerEndpoint = document.getElementById("gazetteer-endpoint");
 const cacheSummaryText = document.getElementById("cache-summary");
@@ -48,6 +60,9 @@ init();
 
 onlineDefault.addEventListener("change", saveSettings);
 showOverlay.addEventListener("change", saveSettings);
+forvoEnabled.addEventListener("change", saveSettings);
+forvoApiKey.addEventListener("change", saveSettings);
+forvoLanguage.addEventListener("change", saveSettings);
 gazetteerEnabled.addEventListener("change", saveSettings);
 gazetteerEndpoint.addEventListener("change", saveSettings);
 clearCacheButton.addEventListener("click", clearLookupCache);
@@ -63,6 +78,7 @@ clearSyncButton.addEventListener("click", clearSyncQueue);
 async function init() {
   const stored = await chrome.storage.local.get([
     STORAGE_KEYS.settings,
+    STORAGE_KEYS.credentials,
     STORAGE_KEYS.approvedCommunityEntries,
     STORAGE_KEYS.communityPullState,
     STORAGE_KEYS.communityEntries,
@@ -71,8 +87,12 @@ async function init() {
     STORAGE_KEYS.syncSummary
   ]);
   const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+  const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  forvoEnabled.checked = settings.forvoEnabled;
+  forvoApiKey.value = credentials.forvoApiKey;
+  forvoLanguage.value = settings.forvoLanguage;
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
@@ -86,16 +106,24 @@ async function init() {
 
 async function saveSettings() {
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
+  const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
-  const settings = await settingsFromControls();
+  const credentials = credentialsFromControls();
+  const settings = await settingsFromControls(credentials);
   await chrome.storage.local.set({
-    [STORAGE_KEYS.settings]: settings
+    [STORAGE_KEYS.settings]: settings,
+    [STORAGE_KEYS.credentials]: credentials
   });
+  forvoEnabled.checked = settings.forvoEnabled;
+  forvoApiKey.value = credentials.forvoApiKey;
+  forvoLanguage.value = settings.forvoLanguage;
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
   syncEndpoint.value = settings.communityEndpoint;
-  setStatus((settings.communitySyncEnabled || !wantedSync) && (settings.gazetteerEnabled || !wantedGazetteer)
+  setStatus((settings.communitySyncEnabled || !wantedSync) &&
+      (settings.gazetteerEnabled || !wantedGazetteer) &&
+      (settings.forvoEnabled || !wantedForvo)
     ? "Settings saved."
     : "Settings saved. Endpoint permission was not granted.");
 }
@@ -137,7 +165,9 @@ async function importData() {
     return;
   }
 
-  const settings = await settingsWithEndpointPermission(payload.settings);
+  const stored = await chrome.storage.local.get([STORAGE_KEYS.credentials]);
+  const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
+  const settings = await settingsWithEndpointPermission(payload.settings, credentials);
   const approvedCommunityEntries = isPlainObject(payload.approvedCommunityEntries) ? payload.approvedCommunityEntries : {};
   const communityEntries = isPlainObject(payload.communityEntries) ? payload.communityEntries : {};
   const resultCache = normalizeResultCache(payload.resultCache);
@@ -156,6 +186,9 @@ async function importData() {
 
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  forvoEnabled.checked = settings.forvoEnabled;
+  forvoApiKey.value = credentials.forvoApiKey;
+  forvoLanguage.value = settings.forvoLanguage;
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
@@ -263,11 +296,14 @@ function summarizeQueue(queue) {
 function normalizeSettings(settings = {}) {
   const endpoint = normalizeEndpoint(settings.communityEndpoint);
   const gazetteer = normalizeEndpoint(settings.gazetteerEndpoint);
+  const forvoLanguageValue = normalizeLanguageCode(settings.forvoLanguage);
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    forvoLanguage: forvoLanguageValue,
+    forvoEnabled: Boolean(settings.forvoEnabled),
     gazetteerEndpoint: gazetteer,
     gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteer),
     communityEndpoint: endpoint,
@@ -275,19 +311,45 @@ function normalizeSettings(settings = {}) {
   };
 }
 
-async function settingsFromControls() {
+function normalizeCredentials(credentials = {}) {
+  return {
+    ...DEFAULT_CREDENTIALS,
+    forvoApiKey: normalizeApiKey(credentials.forvoApiKey)
+  };
+}
+
+function credentialsFromControls() {
+  return normalizeCredentials({
+    forvoApiKey: forvoApiKey.value
+  });
+}
+
+async function settingsFromControls(credentials) {
   return settingsWithEndpointPermission({
     onlineByDefault: onlineDefault.checked,
     showOverlay: showOverlay.checked,
+    forvoEnabled: forvoEnabled.checked,
+    forvoLanguage: normalizeLanguageCode(forvoLanguage.value),
     gazetteerEnabled: gazetteerEnabled.checked,
     gazetteerEndpoint: normalizeEndpoint(gazetteerEndpoint.value),
     communitySyncEnabled: syncEnabled.checked,
     communityEndpoint: normalizeEndpoint(syncEndpoint.value)
-  });
+  }, credentials);
 }
 
-async function settingsWithEndpointPermission(value = {}) {
+async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   let settings = normalizeSettings(value);
+  const normalizedCredentials = normalizeCredentials(credentials);
+
+  if (settings.forvoEnabled) {
+    const granted = normalizedCredentials.forvoApiKey
+      ? await requestEndpointPermission(FORVO_API_ORIGIN)
+      : false;
+    settings = {
+      ...settings,
+      forvoEnabled: Boolean(granted)
+    };
+  }
 
   if (settings.gazetteerEnabled) {
     const granted = await requestEndpointPermission(settings.gazetteerEndpoint);
@@ -333,6 +395,18 @@ function normalizeEndpoint(value) {
   } catch {
     return "";
   }
+}
+
+function normalizeApiKey(value) {
+  return String(value || "").trim().replace(/\s+/g, "");
+}
+
+function normalizeLanguageCode(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
 }
 
 function isPlainObject(value) {

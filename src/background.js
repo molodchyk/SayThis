@@ -18,6 +18,10 @@ import {
   buildNominatimSearchUrl
 } from "./nominatim-adapter.js";
 import {
+  buildForvoResult,
+  buildForvoWordPronunciationsUrl
+} from "./forvo-adapter.js";
+import {
   isCacheableResult,
   readCachedResult,
   upsertCachedResult
@@ -42,6 +46,7 @@ const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
   communityEntries: "communityEntries",
   communityPullState: "communityPullState",
+  credentials: "credentials",
   lastResult: "lastResult",
   lastSelection: "lastSelection",
   lastSource: "lastSource",
@@ -53,9 +58,14 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  forvoEnabled: false,
+  forvoLanguage: "",
   gazetteerEnabled: false,
   gazetteerEndpoint: "",
   ...DEFAULT_SYNC_SETTINGS
+};
+const DEFAULT_CREDENTIALS = {
+  forvoApiKey: ""
 };
 
 let seedPromise;
@@ -189,6 +199,7 @@ async function resolveSelection(text, options = {}) {
   const stored = await chrome.storage.local.get([
     STORAGE_KEYS.approvedCommunityEntries,
     STORAGE_KEYS.communityEntries,
+    STORAGE_KEYS.credentials,
     STORAGE_KEYS.resultCache,
     STORAGE_KEYS.settings
   ]);
@@ -197,6 +208,7 @@ async function resolveSelection(text, options = {}) {
     ...(stored[STORAGE_KEYS.communityEntries] || {})
   };
   const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+  const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const localResult = resolveTerm(selectedText, {
     entries: data.entries,
     communityEntries
@@ -206,12 +218,14 @@ async function resolveSelection(text, options = {}) {
   const shouldUseOnline = options.useOnline ?? settings.onlineByDefault;
   let resultCache = stored[STORAGE_KEYS.resultCache];
   if (shouldUseOnline) {
-    const cacheOptions = { cacheScope: onlineCacheScope(settings) };
+    const cacheOptions = { cacheScope: onlineCacheScope(settings, credentials) };
     const cached = readCachedResult(resultCache, selectedText, cacheOptions);
     resultCache = cached.cache;
 
     try {
-      const remoteResult = cached.hit ? cached.result : await resolveWithOnlineSources(selectedText, settings);
+      const remoteResult = cached.hit
+        ? cached.result
+        : await resolveWithOnlineSources(selectedText, settings, credentials);
       if (!cached.hit && isCacheableResult(remoteResult)) {
         resultCache = upsertCachedResult(resultCache, selectedText, remoteResult, cacheOptions);
       }
@@ -532,16 +546,19 @@ async function resolveWithWikidata(text) {
   return selectBestWikidataResult(query, matches, entityById);
 }
 
-async function resolveWithOnlineSources(text, settings = {}) {
-  const [wikidataResult, wiktionaryResult, nominatimResult] = await Promise.all([
+async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {
+  const [wikidataResult, wiktionaryResult, nominatimResult, forvoResult] = await Promise.all([
     resolveSafely(resolveWithWikidata, text),
     resolveSafely(resolveWithWiktionary, text),
     settings.gazetteerEnabled
       ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint)
+      : Promise.resolve(null),
+    settings.forvoEnabled
+      ? resolveSafely(resolveWithForvo, text, credentials.forvoApiKey, settings.forvoLanguage)
       : Promise.resolve(null)
   ]);
 
-  return [wikidataResult, wiktionaryResult, nominatimResult]
+  return [wikidataResult, wiktionaryResult, nominatimResult, forvoResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }
@@ -607,6 +624,30 @@ async function resolveWithNominatim(text, endpoint) {
   return buildNominatimResult(query, data);
 }
 
+async function resolveWithForvo(text, apiKey, language) {
+  const query = normalizeSelection(text);
+  const url = buildForvoWordPronunciationsUrl(query, apiKey, {
+    language,
+    limit: 5
+  });
+  if (!query || !url) {
+    return null;
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return buildForvoResult(query, data);
+}
+
 async function fetchWikidataEntities(matches) {
   const pairs = await Promise.all(matches.map(async (match) => {
     try {
@@ -634,14 +675,24 @@ async function getSettings() {
 function normalizeSettings(settings = {}) {
   const syncSettings = normalizeSyncSettings(settings);
   const gazetteerEndpoint = normalizeHttpsEndpoint(settings.gazetteerEndpoint);
+  const forvoLanguage = normalizeLanguageCode(settings.forvoLanguage);
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    forvoLanguage,
+    forvoEnabled: Boolean(settings.forvoEnabled),
     gazetteerEndpoint,
     gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteerEndpoint),
     ...syncSettings
+  };
+}
+
+function normalizeCredentials(credentials = {}) {
+  return {
+    ...DEFAULT_CREDENTIALS,
+    forvoApiKey: String(credentials.forvoApiKey || "").trim().replace(/\s+/g, "")
   };
 }
 
@@ -659,8 +710,17 @@ function normalizeHttpsEndpoint(value) {
   }
 }
 
-function onlineCacheScope(settings) {
-  return settings.gazetteerEnabled && settings.gazetteerEndpoint
-    ? `gazetteer ${settings.gazetteerEndpoint}`
-    : "";
+function onlineCacheScope(settings, credentials = {}) {
+  return [
+    settings.gazetteerEnabled && settings.gazetteerEndpoint ? `gazetteer ${settings.gazetteerEndpoint}` : "",
+    settings.forvoEnabled && credentials.forvoApiKey ? `forvo ${settings.forvoLanguage || "all"}` : ""
+  ].filter(Boolean).join(" ");
+}
+
+function normalizeLanguageCode(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
 }

@@ -114,6 +114,8 @@ textarea {
   resize: vertical;
 }
 
+input[type="password"],
+input[type="text"],
 input[type="url"] {
   width: 100%;
   box-sizing: border-box;
@@ -143,6 +145,8 @@ input[type="url"] {
   }
 
   textarea,
+  input[type="password"],
+  input[type="text"],
   input[type="url"] {
     border-color: #34443f;
     background: #17221f;

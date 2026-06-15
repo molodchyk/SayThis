@@ -10,6 +10,7 @@ Chrome Manifest V3 components:
 - `wikidata-adapter.js`: extracts source forms, native/official names, IPA, and pronunciation audio from Wikidata entities.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
+- `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
@@ -37,6 +38,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Wikidata native/official source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
+- Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, and source links.
@@ -128,6 +130,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 6. Community sync is disabled by default, accepts only HTTPS endpoints, and requests endpoint-origin access only after the user enables sync.
 7. Approved-entry refresh stores only approved pronunciation metadata.
 8. Gazetteer lookup accepts only HTTPS endpoints and is disabled until a user configures one.
+9. Forvo lookup is disabled until a user enables it and stores a local API key; the key is not included in exports.
 
 ## Technical Risks
 
@@ -138,12 +141,12 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 - Some pages block extension selection capture.
 - Community data can introduce spam, regional disputes, or confident incorrect corrections.
 - Etymology and origin notes can expand scope unless kept pronunciation-relevant.
-- Online lookup currently uses two structured sources and needs broader source coverage before it can be treated as universal.
+- Online lookup still needs broader source coverage before it can be treated as universal.
 - The included moderation service still needs production deployment hardening before public operation.
 
 ## Near-Term Tasks
 
-- Build more resolver adapters for pronunciation databases and domain-specific term sources.
+- Build more resolver adapters for domain-specific term sources.
 - Broaden online entity scoring with additional structured sources.
 - Add durable abuse controls and deployment recipes for the community backend.
 - Add actual curated public audio files after source/license review.
