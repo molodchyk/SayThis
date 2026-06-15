@@ -111,4 +111,4 @@ selection
 -> correction or confirmation signal
 ```
 
-The local seed data, structured adapters, cache, and community service should all speak the same entry shape. That keeps SayThis from drifting into two weak extremes: generic AI response on one side, frozen glossary on the other.
+The local seed data, structured adapters, custom sources, cache, and community service should all speak the same entry shape. That keeps SayThis from drifting into two weak extremes: generic AI response on one side, frozen glossary on the other.

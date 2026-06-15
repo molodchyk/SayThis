@@ -22,6 +22,10 @@ import {
   buildForvoWordPronunciationsUrl
 } from "./forvo-adapter.js";
 import {
+  buildCustomSourceResult,
+  buildCustomSourceUrl
+} from "./custom-source-adapter.js";
+import {
   isCacheableResult,
   readCachedResult,
   upsertCachedResult
@@ -58,6 +62,9 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  customSourceEnabled: false,
+  customSourceEndpoint: "",
+  customSourceLabel: "",
   forvoEnabled: false,
   forvoLanguage: "",
   gazetteerEnabled: false,
@@ -547,7 +554,10 @@ async function resolveWithWikidata(text) {
 }
 
 async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {
-  const [wikidataResult, wiktionaryResult, nominatimResult, forvoResult] = await Promise.all([
+  const [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult, forvoResult] = await Promise.all([
+    settings.customSourceEnabled
+      ? resolveSafely(resolveWithCustomSource, text, settings.customSourceEndpoint, settings.customSourceLabel)
+      : Promise.resolve(null),
     resolveSafely(resolveWithWikidata, text),
     resolveSafely(resolveWithWiktionary, text),
     settings.gazetteerEnabled
@@ -558,7 +568,7 @@ async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {
       : Promise.resolve(null)
   ]);
 
-  return [wikidataResult, wiktionaryResult, nominatimResult, forvoResult]
+  return [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult, forvoResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }
@@ -624,6 +634,27 @@ async function resolveWithNominatim(text, endpoint) {
   return buildNominatimResult(query, data);
 }
 
+async function resolveWithCustomSource(text, endpoint, label) {
+  const query = normalizeSelection(text);
+  const url = buildCustomSourceUrl(query, endpoint);
+  if (!query || !url) {
+    return null;
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return buildCustomSourceResult(query, data, { label });
+}
+
 async function resolveWithForvo(text, apiKey, language) {
   const query = normalizeSelection(text);
   const url = buildForvoWordPronunciationsUrl(query, apiKey, {
@@ -674,6 +705,7 @@ async function getSettings() {
 
 function normalizeSettings(settings = {}) {
   const syncSettings = normalizeSyncSettings(settings);
+  const customSourceEndpoint = normalizeHttpsEndpoint(settings.customSourceEndpoint);
   const gazetteerEndpoint = normalizeHttpsEndpoint(settings.gazetteerEndpoint);
   const forvoLanguage = normalizeLanguageCode(settings.forvoLanguage);
   return {
@@ -681,6 +713,9 @@ function normalizeSettings(settings = {}) {
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    customSourceEndpoint,
+    customSourceLabel: normalizeSelection(settings.customSourceLabel),
+    customSourceEnabled: Boolean(settings.customSourceEnabled && customSourceEndpoint),
     forvoLanguage,
     forvoEnabled: Boolean(settings.forvoEnabled),
     gazetteerEndpoint,
@@ -712,6 +747,7 @@ function normalizeHttpsEndpoint(value) {
 
 function onlineCacheScope(settings, credentials = {}) {
   return [
+    settings.customSourceEnabled && settings.customSourceEndpoint ? `custom ${settings.customSourceEndpoint}` : "",
     settings.gazetteerEnabled && settings.gazetteerEndpoint ? `gazetteer ${settings.gazetteerEndpoint}` : "",
     settings.forvoEnabled && credentials.forvoApiKey ? `forvo ${settings.forvoLanguage || "all"}` : ""
   ].filter(Boolean).join(" ");

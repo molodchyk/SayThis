@@ -21,6 +21,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, audio sources, and variant notes.
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
+- Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
 - Local cache for successful online lookup results.
@@ -46,6 +47,7 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 - Research notes: `docs/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
 - Community service: `docs/community-service.md`
+- Custom source: `docs/custom-source.md`
 - Seed glossary: `data/pronunciation-seed.json`
 
 ## Load Locally
@@ -77,7 +79,7 @@ The first useful version should be narrow and trusted:
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 
-Community sync, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history. Forvo API keys are stored locally and are not included in data exports.
+Community sync, custom source lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. It can also refresh approved shared entries from that endpoint. It does not submit page URLs or browsing history. Forvo API keys are stored locally and are not included in data exports.
 
 ## Development
 

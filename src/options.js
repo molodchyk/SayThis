@@ -22,6 +22,9 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  customSourceEnabled: false,
+  customSourceEndpoint: "",
+  customSourceLabel: "",
   forvoEnabled: false,
   forvoLanguage: "",
   gazetteerEnabled: false,
@@ -36,6 +39,9 @@ const DEFAULT_CREDENTIALS = {
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
+const customSourceEnabled = document.getElementById("custom-source-enabled");
+const customSourceEndpoint = document.getElementById("custom-source-endpoint");
+const customSourceLabel = document.getElementById("custom-source-label");
 const forvoEnabled = document.getElementById("forvo-enabled");
 const forvoApiKey = document.getElementById("forvo-api-key");
 const forvoLanguage = document.getElementById("forvo-language");
@@ -60,6 +66,9 @@ init();
 
 onlineDefault.addEventListener("change", saveSettings);
 showOverlay.addEventListener("change", saveSettings);
+customSourceEnabled.addEventListener("change", saveSettings);
+customSourceEndpoint.addEventListener("change", saveSettings);
+customSourceLabel.addEventListener("change", saveSettings);
 forvoEnabled.addEventListener("change", saveSettings);
 forvoApiKey.addEventListener("change", saveSettings);
 forvoLanguage.addEventListener("change", saveSettings);
@@ -90,6 +99,9 @@ async function init() {
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  customSourceEnabled.checked = settings.customSourceEnabled;
+  customSourceEndpoint.value = settings.customSourceEndpoint;
+  customSourceLabel.value = settings.customSourceLabel;
   forvoEnabled.checked = settings.forvoEnabled;
   forvoApiKey.value = credentials.forvoApiKey;
   forvoLanguage.value = settings.forvoLanguage;
@@ -106,6 +118,7 @@ async function init() {
 
 async function saveSettings() {
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
+  const wantedCustomSource = customSourceEnabled.checked && Boolean(normalizeEndpoint(customSourceEndpoint.value));
   const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
   const credentials = credentialsFromControls();
@@ -114,6 +127,9 @@ async function saveSettings() {
     [STORAGE_KEYS.settings]: settings,
     [STORAGE_KEYS.credentials]: credentials
   });
+  customSourceEnabled.checked = settings.customSourceEnabled;
+  customSourceEndpoint.value = settings.customSourceEndpoint;
+  customSourceLabel.value = settings.customSourceLabel;
   forvoEnabled.checked = settings.forvoEnabled;
   forvoApiKey.value = credentials.forvoApiKey;
   forvoLanguage.value = settings.forvoLanguage;
@@ -122,6 +138,7 @@ async function saveSettings() {
   syncEnabled.checked = settings.communitySyncEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   setStatus((settings.communitySyncEnabled || !wantedSync) &&
+      (settings.customSourceEnabled || !wantedCustomSource) &&
       (settings.gazetteerEnabled || !wantedGazetteer) &&
       (settings.forvoEnabled || !wantedForvo)
     ? "Settings saved."
@@ -186,6 +203,9 @@ async function importData() {
 
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  customSourceEnabled.checked = settings.customSourceEnabled;
+  customSourceEndpoint.value = settings.customSourceEndpoint;
+  customSourceLabel.value = settings.customSourceLabel;
   forvoEnabled.checked = settings.forvoEnabled;
   forvoApiKey.value = credentials.forvoApiKey;
   forvoLanguage.value = settings.forvoLanguage;
@@ -295,6 +315,7 @@ function summarizeQueue(queue) {
 
 function normalizeSettings(settings = {}) {
   const endpoint = normalizeEndpoint(settings.communityEndpoint);
+  const customSource = normalizeEndpoint(settings.customSourceEndpoint);
   const gazetteer = normalizeEndpoint(settings.gazetteerEndpoint);
   const forvoLanguageValue = normalizeLanguageCode(settings.forvoLanguage);
   return {
@@ -302,6 +323,9 @@ function normalizeSettings(settings = {}) {
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    customSourceEndpoint: customSource,
+    customSourceLabel: normalizeShortText(settings.customSourceLabel),
+    customSourceEnabled: Boolean(settings.customSourceEnabled && customSource),
     forvoLanguage: forvoLanguageValue,
     forvoEnabled: Boolean(settings.forvoEnabled),
     gazetteerEndpoint: gazetteer,
@@ -328,6 +352,9 @@ async function settingsFromControls(credentials) {
   return settingsWithEndpointPermission({
     onlineByDefault: onlineDefault.checked,
     showOverlay: showOverlay.checked,
+    customSourceEnabled: customSourceEnabled.checked,
+    customSourceEndpoint: normalizeEndpoint(customSourceEndpoint.value),
+    customSourceLabel: normalizeShortText(customSourceLabel.value),
     forvoEnabled: forvoEnabled.checked,
     forvoLanguage: normalizeLanguageCode(forvoLanguage.value),
     gazetteerEnabled: gazetteerEnabled.checked,
@@ -340,6 +367,14 @@ async function settingsFromControls(credentials) {
 async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   let settings = normalizeSettings(value);
   const normalizedCredentials = normalizeCredentials(credentials);
+
+  if (settings.customSourceEnabled) {
+    const granted = await requestEndpointPermission(settings.customSourceEndpoint);
+    settings = {
+      ...settings,
+      customSourceEnabled: Boolean(granted)
+    };
+  }
 
   if (settings.forvoEnabled) {
     const granted = normalizedCredentials.forvoApiKey
@@ -399,6 +434,10 @@ function normalizeEndpoint(value) {
 
 function normalizeApiKey(value) {
   return String(value || "").trim().replace(/\s+/g, "");
+}
+
+function normalizeShortText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, 80);
 }
 
 function normalizeLanguageCode(value) {
