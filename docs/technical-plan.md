@@ -17,7 +17,7 @@ Chrome Manifest V3 components:
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
-- `content-overlay.js`: shows a compact on-page resolver card with playback and feedback actions after context-menu or keyboard-command use.
+- `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, and feedback actions after context-menu or keyboard-command use.
 - `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.

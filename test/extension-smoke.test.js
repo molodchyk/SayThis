@@ -63,9 +63,12 @@ test("static extension module imports resolve inside the runtime package", async
 test("overlay exposes playback and feedback actions", async () => {
   const source = await readText("src/content-overlay.js");
 
-  for (const action of ["speak", "slow", "confirm", "missing", "wrong"]) {
+  for (const action of ["speak", "online", "slow", "confirm", "missing", "wrong"]) {
     assert.match(source, new RegExp(`data-action="${action}"`));
   }
+
+  assert.match(source, /type: "SAYTHIS_RESOLVE"/);
+  assert.match(source, /useOnline: true/);
 
   for (const kind of ["confirm", "missing", "wrong"]) {
     assert.match(source, new RegExp(`sendFeedback\\(result, ["']${kind}["']\\)`));
