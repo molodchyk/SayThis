@@ -5,6 +5,7 @@ import {
   createRemoteStructuredResult,
   createLookupKey,
   detectScript,
+  getBestAudio,
   mergeRemoteResult,
   resolveTerm,
   resultToSpeechOptions,
@@ -21,6 +22,8 @@ test("manifest exposes extension resolver capabilities", () => {
   assert.ok(manifest.permissions.includes("storage"));
   assert.ok(manifest.permissions.includes("tts"));
   assert.ok(manifest.host_permissions.includes("https://www.wikidata.org/*"));
+  assert.ok(manifest.host_permissions.includes("https://commons.wikimedia.org/*"));
+  assert.ok(manifest.content_security_policy.extension_pages.includes("media-src"));
 });
 
 test("normalizes aliases with diacritics", () => {
@@ -88,4 +91,24 @@ test("prefers remote structured result over best-effort fallback", () => {
 
   assert.equal(merged.id, "remote:example");
   assert.equal(merged.language, "la");
+});
+
+test("promotes remote results with verified audio", () => {
+  const result = createRemoteStructuredResult("AudioTerm", {
+    id: "remote:audio",
+    display: "AudioTerm",
+    sourceForm: "AudioTerm",
+    language: "en",
+    pronunciation: {
+      audio: [{
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.ogg",
+        label: "Pronunciation audio",
+        quality: "verified"
+      }]
+    }
+  });
+
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.confidence, "high");
+  assert.equal(getBestAudio(result).quality, "verified");
 });

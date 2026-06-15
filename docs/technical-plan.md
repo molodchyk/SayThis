@@ -12,7 +12,7 @@ Chrome Manifest V3 components:
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
 
-Chrome's `tts` API is the current audio path. It should remain a fallback path once native audio sources are added.
+Verified audio from resolver results is preferred when available. Chrome's `tts` API remains the fallback path.
 
 ## Implemented MVP
 
@@ -20,10 +20,11 @@ Chrome's `tts` API is the current audio path. It should remain a fallback path o
 - Local resolver over bundled entries and local community memory.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
+- Wikidata IPA and pronunciation-audio claim extraction where available.
 - Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, and evidence.
 - Local confirmation, wrong-result, missing-term, and correction storage.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls.
-- TTS playback from resolved source form with normal and slow rates.
+- Verified-audio playback from resolver results, with TTS playback from resolved source form as fallback.
 
 ## Future Lookup Pipeline
 
@@ -36,7 +37,7 @@ Chrome's `tts` API is the current audio path. It should remain a fallback path o
    - gazetteers and map databases
    - domain-specific term sources
 5. Resolve native/source form and candidate languages.
-6. Query pronunciation sources for native audio. Not implemented yet.
+6. Query pronunciation sources for native audio.
 7. Generate TTS from the resolved source form if native audio is unavailable.
 8. Show confidence and source labels.
 9. Collect correction, confirmation, or missing-entry feedback.
@@ -102,8 +103,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 
 ## Near-Term Tasks
 
-- Add native-audio playback when resolver entries or remote sources provide audio.
 - Build more resolver adapters for structured sources and pronunciation databases.
 - Improve online entity scoring and source-form selection.
-- Add audio playback from bundled or remote MP3 sources.
+- Add bundled-audio packaging for curated entries.
 - Add broader tests around popup/background message contracts.

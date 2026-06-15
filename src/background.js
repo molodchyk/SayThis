@@ -1,5 +1,6 @@
 import {
   createRemoteStructuredResult,
+  getBestAudio,
   mergeRemoteResult,
   normalizeSelection,
   resultToSpeechOptions,
@@ -50,8 +51,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       await chrome.storage.local.set({
         [STORAGE_KEYS.lastResult]: result
       });
-      speakResult(result);
-      showResultOnTab(tab?.id, result);
+      await playResolvedResult(result, tab?.id);
     })
     .catch(() => speakFallback(selectedText));
 });
@@ -200,8 +200,7 @@ async function pronounceActiveSelection() {
   }
 
   const result = await resolveSelection(selectedText);
-  speakResult(result);
-  showResultOnTab(tab.id, result);
+  await playResolvedResult(result, tab.id);
 }
 
 async function readSelectionFromTab(tabId) {
@@ -217,15 +216,28 @@ async function readSelectionFromTab(tabId) {
   }
 }
 
-async function showResultOnTab(tabId, result) {
+async function playResolvedResult(result, tabId) {
+  const audio = getBestAudio(result);
+  if (audio) {
+    const shown = await showResultOnTab(tabId, result, { autoPlay: true });
+    if (shown) {
+      return;
+    }
+  }
+
+  speakResult(result);
+  showResultOnTab(tabId, result);
+}
+
+async function showResultOnTab(tabId, result, options = {}) {
   if (!tabId || !result) {
-    return;
+    return false;
   }
 
   try {
     const settings = await getSettings();
     if (!settings.showOverlay) {
-      return;
+      return false;
     }
 
     await chrome.scripting.executeScript({
@@ -234,10 +246,13 @@ async function showResultOnTab(tabId, result) {
     });
     await chrome.tabs.sendMessage(tabId, {
       type: "SAYTHIS_SHOW_RESULT",
-      result
+      result,
+      autoPlay: Boolean(options.autoPlay)
     });
+    return true;
   } catch {
     // Some pages do not allow extension script injection.
+    return false;
   }
 }
 
@@ -304,6 +319,18 @@ function extractWikidataSource(query, match, entity) {
     value: match.label || query
   };
   const description = entity.descriptions?.en?.value || match.description || "";
+  const audioFile = firstClaimValue(entity, "P443");
+  const ipa = firstClaimValue(entity, "P898");
+  const pronunciation = {
+    ipa,
+    simple: "",
+    audio: audioFile ? [{
+      url: commonsRedirectUrl(audioFile),
+      label: "Pronunciation audio",
+      source: "Wikimedia Commons",
+      quality: "verified"
+    }] : []
+  };
   const aliases = Object.values(entity.aliases || {})
     .flat()
     .map((alias) => alias.value)
@@ -317,13 +344,36 @@ function extractWikidataSource(query, match, entity) {
     languageName: "",
     category: description || "structured source match",
     origin: description,
-    confidence: sourceLabel.value === query ? "low" : "medium",
+    pronunciation,
+    sourceStatus: audioFile ? "verified-audio" : "structured-source",
+    confidence: audioFile ? "high" : sourceLabel.value === query ? "low" : "medium",
     evidence: [
       `Wikidata entity ${entity.id}`,
+      audioFile ? "Pronunciation audio from Wikidata" : "",
+      ipa ? "IPA from Wikidata" : "",
       aliases.length ? `Aliases: ${aliases.join(", ")}` : ""
     ].filter(Boolean),
-    sources: [{ label: "Wikidata", url: `https://www.wikidata.org/wiki/${entity.id}` }]
+    sources: [
+      { label: "Wikidata", url: `https://www.wikidata.org/wiki/${entity.id}` },
+      audioFile ? { label: "Pronunciation audio", url: commonsRedirectUrl(audioFile) } : null
+    ].filter(Boolean)
   };
+}
+
+function firstClaimValue(entity, propertyId) {
+  const claims = entity.claims?.[propertyId] || [];
+  for (const claim of claims) {
+    const value = claim?.mainsnak?.datavalue?.value;
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function commonsRedirectUrl(fileName) {
+  return `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(fileName)}`;
 }
 
 function chooseSourceLabel(labels, selectedScript) {

@@ -1,4 +1,4 @@
-import { normalizeSelection } from "./resolver-core.js";
+import { getBestAudio, normalizeSelection } from "./resolver-core.js";
 
 const selectionInput = document.getElementById("selection");
 const resolveButton = document.getElementById("resolve");
@@ -29,6 +29,7 @@ const correctionIpa = document.getElementById("correction-ipa");
 const correctionOrigin = document.getElementById("correction-origin");
 
 let currentResult = null;
+let audioPlayer = null;
 
 init();
 
@@ -39,6 +40,7 @@ speakButton.addEventListener("click", () => speakSelection(0.82));
 slowButton.addEventListener("click", () => speakSelection(0.62));
 
 stopButton.addEventListener("click", async () => {
+  stopAudio();
   await sendMessage({ type: "SAYTHIS_STOP" });
   setStatus("Stopped.");
 });
@@ -69,6 +71,15 @@ async function speakSelection(rate) {
   if (!text) {
     setStatus("No selected text.");
     updateButtonState();
+    return;
+  }
+
+  if (!currentResult) {
+    await resolveSelection(false);
+  }
+
+  if (playAudio(currentResult, rate)) {
+    setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
     return;
   }
 
@@ -134,6 +145,7 @@ async function resolveSelection(useOnline) {
   currentResult = response.result;
   renderResult(currentResult);
   setStatus("Ready.");
+  return currentResult;
 }
 
 async function readActiveTabSelection() {
@@ -212,6 +224,34 @@ function renderResult(result) {
     li.textContent = item;
     evidence.append(li);
   }
+}
+
+function playAudio(result, rate) {
+  const audio = getBestAudio(result);
+  if (!audio?.url) {
+    return false;
+  }
+
+  stopAudio();
+  audioPlayer = new Audio(audio.url);
+  audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
+  audioPlayer.addEventListener("error", () => {
+    setStatus("Audio failed. Use Speak for TTS fallback.");
+  }, { once: true });
+  audioPlayer.play().catch(() => {
+    setStatus("Audio could not start. Use Speak for TTS fallback.");
+  });
+  return true;
+}
+
+function stopAudio() {
+  if (!audioPlayer) {
+    return;
+  }
+
+  audioPlayer.pause();
+  audioPlayer.currentTime = 0;
+  audioPlayer = null;
 }
 
 function sendMessage(message) {

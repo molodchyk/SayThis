@@ -19,6 +19,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - A compact on-page result card after context-menu or keyboard use.
 - Local community-memory controls for confirmations, wrong results, missing terms, and corrections.
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
+- Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
 - Options for default online lookup, on-page card display, and local community-memory data management.
 - Chrome TTS as a temporary local fallback.
 - Product, research, and technical planning docs.

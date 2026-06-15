@@ -31,6 +31,11 @@
     "tts"
   ],
   "host_permissions": [
-    "https://www.wikidata.org/*"
-  ]
+    "https://www.wikidata.org/*",
+    "https://commons.wikimedia.org/*",
+    "https://upload.wikimedia.org/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://www.wikidata.org https://commons.wikimedia.org https://upload.wikimedia.org; media-src 'self' https://commons.wikimedia.org https://upload.wikimedia.org"
+  }
 }

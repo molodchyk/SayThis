@@ -6,18 +6,19 @@
 
   let host;
   let root;
+  let audioPlayer;
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== "SAYTHIS_SHOW_RESULT") {
       return false;
     }
 
-    renderOverlay(message.result);
+    renderOverlay(message.result, { autoPlay: Boolean(message.autoPlay) });
     sendResponse({ ok: true });
     return true;
   });
 
-  function renderOverlay(result) {
+  function renderOverlay(result, options = {}) {
     if (!result) {
       return;
     }
@@ -203,6 +204,7 @@
     `;
 
     root.querySelector(".close").addEventListener("click", () => {
+      stopAudio();
       host.remove();
       host = null;
       root = null;
@@ -217,6 +219,10 @@
         feedback: { kind: "wrong" }
       });
     });
+
+    if (options.autoPlay) {
+      speak(result, 0.82);
+    }
   }
 
   function ensureRoot() {
@@ -230,12 +236,55 @@
   }
 
   function speak(result, rate) {
+    if (playAudio(result, rate)) {
+      return;
+    }
+
     chrome.runtime.sendMessage({
       type: "SAYTHIS_SPEAK",
       text: result.query || result.display,
       result,
       rate
     });
+  }
+
+  function playAudio(result, rate) {
+    const audio = getBestAudio(result);
+    if (!audio?.url) {
+      return false;
+    }
+
+    stopAudio();
+    audioPlayer = new Audio(audio.url);
+    audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
+    audioPlayer.play().catch(() => {
+      chrome.runtime.sendMessage({
+        type: "SAYTHIS_SPEAK",
+        text: result.query || result.display,
+        result,
+        rate
+      });
+    });
+    return true;
+  }
+
+  function stopAudio() {
+    if (!audioPlayer) {
+      return;
+    }
+
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+    audioPlayer = null;
+  }
+
+  function getBestAudio(result) {
+    const audio = result?.pronunciation?.audio;
+    if (!Array.isArray(audio) || !audio.length) {
+      return null;
+    }
+
+    return audio.find((item) => item?.url && item.quality === "verified") || audio.find((item) => item?.url) || null;
   }
 
   function escapeHtml(value) {

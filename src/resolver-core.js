@@ -158,7 +158,8 @@ export function createRemoteStructuredResult(selection, source) {
   const scriptInfo = detectScript(query);
   const sourceForm = normalizeSelection(source.sourceForm || source.display || query);
   const language = normalizeLanguage(source.language);
-  const sourceStatus = "structured-source";
+  const hasAudio = Boolean(source.pronunciation?.audio?.length);
+  const sourceStatus = normalizeSourceStatus(source.sourceStatus || (hasAudio ? "verified-audio" : "structured-source"));
 
   return normalizeResult({
     id: source.id || `remote:${lookupKey}`,
@@ -175,7 +176,7 @@ export function createRemoteStructuredResult(selection, source) {
     category: source.category || "term",
     origin: source.origin || "",
     pronunciation: source.pronunciation || {},
-    confidence: source.confidence || "medium",
+    confidence: source.confidence || (hasAudio ? "high" : "medium"),
     sourceStatus,
     sourceLabel: SOURCE_LABELS[sourceStatus],
     evidence: source.evidence || [],
@@ -222,7 +223,7 @@ export function updateCommunityEntries(entries, selection, feedback) {
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
     for (const field of ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]) {
-      const value = normalizeSelection(feedback[field]);
+      const value = field === "audioUrl" ? normalizeLongValue(feedback[field]) : normalizeSelection(feedback[field]);
       if (value) {
         next[field] = value;
       }
@@ -249,6 +250,15 @@ export function resultToSpeechOptions(result, overrides = {}) {
   }
 
   return { text, options };
+}
+
+export function getBestAudio(result) {
+  const audio = result?.pronunciation?.audio;
+  if (!Array.isArray(audio) || !audio.length) {
+    return null;
+  }
+
+  return audio.find((item) => item?.url && item.quality === "verified") || audio.find((item) => item?.url) || null;
 }
 
 export function sourceLabelForStatus(status) {
@@ -443,8 +453,30 @@ function normalizePronunciation(pronunciation = {}) {
   return {
     ipa: pronunciation.ipa || "",
     simple: pronunciation.simple || "",
-    audio: Array.isArray(pronunciation.audio) ? pronunciation.audio : []
+    audio: normalizeAudio(pronunciation.audio)
   };
+}
+
+function normalizeAudio(audio) {
+  if (!Array.isArray(audio)) {
+    return [];
+  }
+
+  return audio
+    .map((item) => ({
+      url: normalizeLongValue(item?.url),
+      label: normalizeSelection(item?.label),
+      source: normalizeSelection(item?.source),
+      quality: normalizeSelection(item?.quality)
+    }))
+    .filter((item) => item.url);
+}
+
+function normalizeLongValue(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 2048);
 }
 
 function normalizeOrigin(origin) {
@@ -570,4 +602,3 @@ function clamp(value, min, max) {
   }
   return Math.min(max, Math.max(min, value));
 }
-
