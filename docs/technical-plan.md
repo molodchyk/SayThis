@@ -17,7 +17,7 @@ Chrome Manifest V3 components:
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
-- `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, and feedback actions after context-menu or keyboard-command use.
+- `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.
 - `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
@@ -51,7 +51,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Source-form-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
-- Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, and quick feedback actions.
+- Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - Local confirmation, wrong-result, missing-term, correction, audio-source, and variant-note storage.
 - Opt-in community sync endpoint with queued retry behavior.
 - Optional host permission request for the configured community sync endpoint.

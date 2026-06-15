@@ -49,6 +49,8 @@
           box-sizing: border-box;
           border: 1px solid #d7ded9;
           border-radius: 8px;
+          max-height: min(720px, calc(100vh - 36px));
+          overflow: auto;
           padding: 12px;
           background: #ffffff;
           box-shadow: 0 14px 45px rgb(20 28 25 / 18%);
@@ -206,6 +208,57 @@
           color: #65726d;
           font-size: 11px;
         }
+
+        [hidden] {
+          display: none !important;
+        }
+
+        .correction-panel {
+          border-top: 1px solid #d7ded9;
+          margin-top: 10px;
+          padding-top: 10px;
+        }
+
+        .correction-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .correction-panel label {
+          display: grid;
+          gap: 4px;
+          color: #65726d;
+          font-size: 11px;
+          font-weight: 750;
+          text-transform: uppercase;
+        }
+
+        .correction-panel label.full {
+          grid-column: 1 / -1;
+        }
+
+        .correction-panel input {
+          box-sizing: border-box;
+          min-width: 0;
+          width: 100%;
+          border: 1px solid #ccd6d1;
+          border-radius: 6px;
+          padding: 7px;
+          color: #16211f;
+          background: #ffffff;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 500;
+          text-transform: none;
+        }
+
+        .form-actions {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 8px;
+        }
       </style>
       <article class="card" role="dialog" aria-label="SayThis pronunciation result">
         <div class="head">
@@ -247,10 +300,27 @@
           <button class="action" type="button" data-action="speak">Speak</button>
           <button class="action secondary" type="button" data-action="online">Online</button>
           <button class="action secondary" type="button" data-action="slow">Slow</button>
+          <button class="action secondary" type="button" data-action="correct">Correct</button>
           <button class="action secondary" type="button" data-action="confirm">Confirm</button>
           <button class="action secondary" type="button" data-action="missing">Missing</button>
           <button class="action secondary" type="button" data-action="wrong">Wrong</button>
         </div>
+        <form class="correction-panel" data-correction hidden>
+          <div class="correction-grid">
+            ${correctionInput("Source", "sourceForm", result.sourceForm, 160)}
+            ${correctionInput("Language", "language", result.language, 24)}
+            ${correctionInput("Language name", "languageName", result.languageName, 80)}
+            ${correctionInput("Guide", "simple", result.pronunciation?.simple, 120)}
+            ${correctionInput("IPA", "ipa", result.pronunciation?.ipa, 120)}
+            ${correctionInput("Origin", "origin", result.origin, 160, "full")}
+            ${correctionInput("Audio source", "audioUrl", getBestAudio(result)?.url, 2048, "full", "url")}
+            ${correctionInput("Variant note", "variantNote", result.notes, 160, "full")}
+          </div>
+          <div class="form-actions">
+            <button class="action" type="submit">Save</button>
+            <button class="action secondary" type="button" data-action="cancel-correction">Cancel</button>
+          </div>
+        </form>
         <p class="status" aria-live="polite"></p>
       </article>
     `;
@@ -265,13 +335,28 @@
     root.querySelector('[data-action="speak"]').addEventListener("click", () => speak(result, 0.82));
     root.querySelector('[data-action="online"]').addEventListener("click", () => resolveOnline(result));
     root.querySelector('[data-action="slow"]').addEventListener("click", () => speak(result, 0.62));
+    root.querySelector('[data-action="correct"]').addEventListener("click", () => toggleCorrection());
     root.querySelector('[data-action="confirm"]').addEventListener("click", () => sendFeedback(result, "confirm"));
     root.querySelector('[data-action="missing"]').addEventListener("click", () => sendFeedback(result, "missing"));
     root.querySelector('[data-action="wrong"]').addEventListener("click", () => sendFeedback(result, "wrong"));
+    root.querySelector('[data-action="cancel-correction"]').addEventListener("click", () => toggleCorrection(false));
+    root.querySelector("[data-correction]").addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendCorrection(result);
+    });
 
     if (options.autoPlay) {
       speak(result, 0.82);
     }
+  }
+
+  function correctionInput(label, field, value, maxLength, className = "", type = "text") {
+    return `
+      <label class="${escapeAttribute(className)}">
+        <span>${escapeHtml(label)}</span>
+        <input data-correction-field="${escapeAttribute(field)}" type="${escapeAttribute(type)}" maxlength="${maxLength}" value="${escapeAttribute(value || "")}" spellcheck="false">
+      </label>
+    `;
   }
 
   function resolveOnline(result) {
@@ -307,6 +392,57 @@
       renderOverlay(response.result || result);
       setStatus("Saved.");
     });
+  }
+
+  function toggleCorrection(force) {
+    const form = root?.querySelector("[data-correction]");
+    if (!form) {
+      return;
+    }
+
+    form.hidden = typeof force === "boolean" ? !force : !form.hidden;
+    if (!form.hidden) {
+      form.querySelector("[data-correction-field]")?.focus();
+    }
+  }
+
+  function sendCorrection(result) {
+    const feedback = correctionFeedbackFromForm();
+    if (!hasCorrectionDetail(feedback)) {
+      setStatus("Add correction details.");
+      return;
+    }
+
+    setStatus("Saving.");
+    chrome.runtime.sendMessage({
+      type: "SAYTHIS_FEEDBACK",
+      text: result.query || result.display,
+      feedback
+    }, (response) => {
+      if (chrome.runtime.lastError || !response?.ok) {
+        setStatus(response?.error || chrome.runtime.lastError?.message || "Could not save.");
+        return;
+      }
+
+      renderOverlay(response.result || result);
+      setStatus("Saved.");
+    });
+  }
+
+  function correctionFeedbackFromForm() {
+    const feedback = { kind: "correction" };
+    for (const input of root?.querySelectorAll("[data-correction-field]") || []) {
+      const field = input.dataset.correctionField;
+      feedback[field] = field === "audioUrl"
+        ? normalizeLongText(input.value)
+        : normalizeText(input.value);
+    }
+    return feedback;
+  }
+
+  function hasCorrectionDetail(feedback) {
+    return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "variantNote"]
+      .some((field) => Boolean(feedback[field]));
   }
 
   function setStatus(value) {
@@ -428,6 +564,10 @@
 
   function normalizeText(value) {
     return String(value || "").replace(/\s+/g, " ").trim().slice(0, 160);
+  }
+
+  function normalizeLongText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim().slice(0, 2048);
   }
 
   function normalizeUrl(value) {
