@@ -26,6 +26,7 @@
     ensureRoot();
     const evidence = (result.evidence || []).slice(0, 2);
     const sources = sourceItems(result).slice(0, 2);
+    const alternates = alternateItems(result).slice(0, 2);
     const community = result.community || {};
     const communityText = [
       community.confirmations ? `${community.confirmations} confirmation${community.confirmations === 1 ? "" : "s"}` : "",
@@ -155,6 +156,27 @@
           overflow-wrap: anywhere;
         }
 
+        .alternates {
+          display: grid;
+          gap: 4px;
+          margin: 0 0 12px;
+          padding: 0;
+          list-style: none;
+          color: #4d5a56;
+          font-size: 12px;
+        }
+
+        .alternates li {
+          border-left: 2px solid #dcefe9;
+          padding-left: 8px;
+        }
+
+        .alternates strong {
+          display: block;
+          color: #16211f;
+          font-weight: 750;
+        }
+
         .actions {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
@@ -212,6 +234,7 @@
           ${evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
+        ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><strong>${escapeHtml(item.display || "Alternate")}</strong>${escapeHtml(item.summary)}</li>`).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <div class="actions">
           <button class="action" type="button" data-action="speak">Speak</button>
@@ -329,12 +352,32 @@
     return items;
   }
 
+  function alternateItems(result) {
+    const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
+    return alternates
+      .map((item) => {
+        const sourceForm = normalizeText(item.sourceForm || item.display || item.query);
+        const language = normalizeText(item.languageName || item.language);
+        const source = normalizeText(item.sourceLabel || item.sourceStatus || item.confidence);
+        const guide = normalizeText(item.pronunciation?.simple || item.pronunciation?.ipa);
+        return {
+          display: normalizeText(item.display || sourceForm),
+          summary: [sourceForm, language, source, guide].filter(Boolean).join(" · ")
+        };
+      })
+      .filter((item) => item.display || item.summary);
+  }
+
   function normalizeSourceItem(item) {
     const url = normalizeUrl(item?.url);
     return {
       label: String(item?.label || item?.source || hostLabel(url) || "Source").trim().slice(0, 160),
       url
     };
+  }
+
+  function normalizeText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim().slice(0, 160);
   }
 
   function normalizeUrl(value) {

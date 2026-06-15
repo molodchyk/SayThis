@@ -119,6 +119,52 @@ test("promotes remote results with verified audio", () => {
   assert.equal(getBestAudio(result).quality, "verified");
 });
 
+test("preserves useful displaced remote candidates", () => {
+  const structured = createRemoteStructuredResult("Exampleterm", {
+    id: "wikidata:exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "la",
+    pronunciation: { simple: "eg-ZAM-pluh-term" },
+    evidence: ["Structured source candidate"]
+  });
+  const audio = createRemoteStructuredResult("Exampleterm", {
+    id: "forvo:exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/exampleterm.ogg",
+        label: "Pronunciation audio",
+        quality: "verified"
+      }]
+    },
+    evidence: ["Verified audio candidate"]
+  });
+  const merged = mergeRemoteResult(structured, audio);
+
+  assert.equal(merged.id, "forvo:exampleterm");
+  assert.equal(merged.alternateResults.length, 1);
+  assert.equal(merged.alternateResults[0].id, "wikidata:exampleterm");
+  assert.equal(merged.alternateResults[0].pronunciation.simple, "eg-ZAM-pluh-term");
+});
+
+test("does not expose best-effort fallback as an alternate candidate", () => {
+  const fallback = resolveTerm("Unlistedterm", { entries: [] });
+  const remote = createRemoteStructuredResult("Unlistedterm", {
+    id: "remote:unlistedterm",
+    display: "Unlistedterm",
+    sourceForm: "Unlistedterm",
+    language: "en",
+    pronunciation: { simple: "un-LIS-ted-term" }
+  });
+  const merged = mergeRemoteResult(fallback, remote);
+
+  assert.equal(merged.id, "remote:unlistedterm");
+  assert.deepEqual(merged.alternateResults, []);
+});
+
 test("maps packaged audio paths to extension URLs", () => {
   const result = createRemoteStructuredResult("Packaged", {
     id: "packaged",

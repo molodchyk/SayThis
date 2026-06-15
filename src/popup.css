@@ -190,7 +190,8 @@ dd {
 }
 
 .evidence,
-.sources {
+.sources,
+.alternates {
   display: grid;
   gap: 4px;
   margin: 0;
@@ -202,6 +203,27 @@ dd {
 .sources {
   list-style: none;
   padding-left: 0;
+}
+
+.alternates {
+  list-style: none;
+  padding-left: 0;
+}
+
+.alternates:empty {
+  display: none;
+}
+
+.alternates li {
+  display: grid;
+  gap: 2px;
+  border-left: 2px solid #dcefe9;
+  padding-left: 8px;
+}
+
+.alternate-label {
+  color: #16211f;
+  font-weight: 720;
 }
 
 .sources a {
@@ -281,9 +303,14 @@ input {
 
   .evidence,
   .sources,
+  .alternates,
   .eyebrow,
   dt {
     color: #aab8b3;
+  }
+
+  .alternate-label {
+    color: #edf4f1;
   }
 
   .sources a {

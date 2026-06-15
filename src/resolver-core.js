@@ -135,21 +135,22 @@ export function mergeRemoteResult(localResult, remoteResult) {
   const remoteRank = CONFIDENCE_RANK[remoteResult.confidence] || 0;
 
   if (localResult.sourceStatus === "best-effort-fallback" && remoteRank >= localRank) {
-    return remoteResult;
+    return withAlternateResults(remoteResult, [localResult]);
   }
 
   if (remoteRank > localRank) {
-    return remoteResult;
+    return withAlternateResults(remoteResult, [localResult]);
   }
 
   if (!localResult.sourceForm && remoteResult.sourceForm) {
-    return { ...localResult, ...remoteResult, community: localResult.community };
+    return withAlternateResults({
+      ...localResult,
+      ...remoteResult,
+      community: localResult.community
+    }, [localResult]);
   }
 
-  return {
-    ...localResult,
-    alternateResults: [...(localResult.alternateResults || []), remoteResult]
-  };
+  return withAlternateResults(localResult, [remoteResult]);
 }
 
 export function createRemoteStructuredResult(selection, source) {
@@ -451,6 +452,78 @@ function emptyCommunity() {
     corrections: 0,
     updatedAt: ""
   };
+}
+
+function withAlternateResults(primary, candidates = []) {
+  const alternates = [
+    ...(Array.isArray(primary.alternateResults) ? primary.alternateResults : []),
+    ...candidates.flatMap(flattenAlternateCandidate)
+  ];
+  const unique = [];
+  const seen = new Set();
+  const primaryKey = alternateKey(primary);
+
+  for (const alternate of alternates) {
+    const summary = alternateResultSummary(alternate);
+    const key = alternateKey(summary);
+    if (!key || key === primaryKey || seen.has(key) || !isUsefulAlternate(summary)) {
+      continue;
+    }
+
+    seen.add(key);
+    unique.push(summary);
+  }
+
+  return {
+    ...primary,
+    alternateResults: unique.slice(0, 5)
+  };
+}
+
+function flattenAlternateCandidate(candidate) {
+  if (!candidate || typeof candidate !== "object") {
+    return [];
+  }
+
+  return [
+    candidate,
+    ...(Array.isArray(candidate.alternateResults) ? candidate.alternateResults : [])
+  ];
+}
+
+function alternateResultSummary(result = {}) {
+  const sourceStatus = normalizeSourceStatus(result.sourceStatus);
+  return {
+    id: normalizeSelection(result.id),
+    display: normalizeSelection(result.display || result.query || result.sourceForm),
+    sourceForm: normalizeSelection(result.sourceForm || result.display || result.query),
+    language: normalizeLanguage(result.language),
+    languageName: normalizeSelection(result.languageName || languageNameFromCode(result.language)),
+    category: normalizeSelection(result.category),
+    confidence: normalizeConfidence(result.confidence),
+    sourceStatus,
+    sourceLabel: result.sourceLabel || sourceLabelForStatus(sourceStatus),
+    pronunciation: normalizePronunciation(result.pronunciation),
+    evidence: Array.isArray(result.evidence) ? result.evidence.slice(0, 2).map(normalizeSelection).filter(Boolean) : [],
+    sources: Array.isArray(result.sources) ? result.sources.slice(0, 2) : []
+  };
+}
+
+function alternateKey(result = {}) {
+  return [
+    normalizeSelection(result.id),
+    createLookupKey(result.sourceForm || result.display || result.query),
+    normalizeSelection(result.language),
+    normalizeSelection(result.sourceStatus)
+  ].filter(Boolean).join("|");
+}
+
+function isUsefulAlternate(result = {}) {
+  return Boolean(
+    result.sourceStatus &&
+    !["unknown", "best-effort-fallback"].includes(result.sourceStatus) &&
+    (result.sourceForm || result.display || result.pronunciation?.ipa || result.pronunciation?.simple)
+  );
 }
 
 function normalizeResult(result) {

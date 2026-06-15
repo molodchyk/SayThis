@@ -47,7 +47,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
-- Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, and source links.
+- Result card with source form, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, and alternate candidate summaries.
 - Local confirmation, wrong-result, missing-term, correction, audio-source, and variant-note storage.
 - Opt-in community sync endpoint with queued retry behavior.
 - Optional host permission request for the configured community sync endpoint.
@@ -79,7 +79,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 
 For Latin-script input, entity or term resolution should happen before generic language detection. A romanized term can look like many languages, but a matched entity can provide a reliable native/source form.
 
-The resolver should keep multiple candidates alive until it has enough source evidence to rank them. A single early language guess should not decide the result for rare terms.
+The resolver keeps useful displaced candidates on the winning result so the UI can show ambiguity when structured sources disagree or a higher-confidence audio source outranks another source-backed match. A single early language guess should not decide the result for rare terms.
 
 ## Data Model
 

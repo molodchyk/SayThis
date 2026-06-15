@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  alternateItemsForResult,
   evidenceItemsForResult,
   sourceItemsForResult
 } from "../src/result-view.js";
@@ -53,5 +54,32 @@ test("builds safe unique source links from result sources and audio", () => {
   }, {
     label: "Pronunciation audio",
     url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.ogg"
+  }]);
+});
+
+test("builds compact alternate candidate summaries", () => {
+  const items = alternateItemsForResult({
+    alternateResults: [{
+      display: "Exampleterm",
+      sourceForm: "Exampleterm",
+      languageName: "Latin",
+      sourceLabel: "Structured source",
+      pronunciation: {
+        simple: "eg-ZAM-pluh-term"
+      }
+    }, {
+      display: "",
+      sourceForm: "",
+      languageName: ""
+    }]
+  });
+
+  assert.deepEqual(items, [{
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "Latin",
+    source: "Structured source",
+    guide: "eg-ZAM-pluh-term",
+    summary: "Exampleterm · Latin · Structured source · eg-ZAM-pluh-term"
   }]);
 });

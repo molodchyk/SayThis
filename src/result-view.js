@@ -29,6 +29,14 @@ export function sourceItemsForResult(result, limit = 4) {
     .slice(0, limit);
 }
 
+export function alternateItemsForResult(result, limit = 3) {
+  const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
+  return alternates
+    .map(normalizeAlternateItem)
+    .filter((item) => item.sourceForm || item.display)
+    .slice(0, limit);
+}
+
 function uniqueSourceItems(items) {
   const seen = new Set();
   const result = [];
@@ -44,6 +52,27 @@ function uniqueSourceItems(items) {
   }
 
   return result;
+}
+
+function normalizeAlternateItem(item = {}) {
+  const sourceForm = normalizeSelection(item.sourceForm || item.display || item.query);
+  const language = normalizeSelection(item.languageName || item.language);
+  const source = normalizeSelection(item.sourceLabel || item.sourceStatus || item.confidence);
+  const guide = normalizeSelection(item.pronunciation?.simple || item.pronunciation?.ipa);
+
+  return {
+    display: normalizeSelection(item.display || sourceForm),
+    sourceForm,
+    language,
+    source,
+    guide,
+    summary: [
+      sourceForm,
+      language,
+      source,
+      guide
+    ].filter(Boolean).join(" · ")
+  };
 }
 
 function normalizeSourceItem(item = {}) {

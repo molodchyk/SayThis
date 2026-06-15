@@ -1,5 +1,6 @@
 import { getBestAudio, normalizeSelection } from "./resolver-core.js";
 import {
+  alternateItemsForResult,
   evidenceItemsForResult,
   sourceItemsForResult
 } from "./result-view.js";
@@ -31,6 +32,7 @@ const category = document.getElementById("category");
 const origin = document.getElementById("origin");
 const ipa = document.getElementById("ipa");
 const simpleGuide = document.getElementById("simple-guide");
+const alternates = document.getElementById("alternates");
 const evidence = document.getElementById("evidence");
 const sources = document.getElementById("sources");
 const confirmButton = document.getElementById("confirm");
@@ -226,6 +228,18 @@ function renderResult(result) {
   correctionOrigin.value = correctionValues.origin;
   correctionAudio.value = correctionValues.audioUrl;
   correctionVariant.value = correctionValues.variantNote;
+
+  alternates.replaceChildren();
+  for (const item of alternateItemsForResult(result)) {
+    const li = document.createElement("li");
+    const label = document.createElement("span");
+    label.className = "alternate-label";
+    label.textContent = item.display || "Alternate";
+    const summary = document.createElement("span");
+    summary.textContent = item.summary;
+    li.append(label, summary);
+    alternates.append(li);
+  }
 
   evidence.replaceChildren();
   for (const item of evidenceItemsForResult(result)) {
