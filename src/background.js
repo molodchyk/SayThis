@@ -49,14 +49,17 @@ import {
 } from "./message-contracts.js";
 import {
   createCommunitySubmission,
-  DEFAULT_SYNC_SETTINGS,
   enqueueSubmissionWhenEnabled,
   flushSubmissionQueue,
   mergeApprovedEntries,
-  normalizeSyncSettings,
   pullApprovedEntries,
   syncSummary
 } from "./community-sync.js";
+import {
+  normalizeCredentials,
+  normalizeSettings,
+  onlineCacheScope
+} from "./shared/settings.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -72,23 +75,6 @@ const STORAGE_KEYS = {
   syncSummary: "syncSummary",
   settings: "settings"
 };
-const DEFAULT_SETTINGS = {
-  onlineByDefault: false,
-  showOverlay: true,
-  autoSpeakPopup: true,
-  customSourceEnabled: false,
-  customSourceEndpoint: "",
-  customSourceLabel: "",
-  forvoEnabled: false,
-  forvoLanguage: "",
-  gazetteerEnabled: false,
-  gazetteerEndpoint: "",
-  ...DEFAULT_SYNC_SETTINGS
-};
-const DEFAULT_CREDENTIALS = {
-  forvoApiKey: ""
-};
-
 let seedPromise;
 let offscreenCreatePromise;
 
@@ -861,69 +847,10 @@ async function getSettings() {
   return normalizeSettings(stored[STORAGE_KEYS.settings]);
 }
 
-function normalizeSettings(settings = {}) {
-  const syncSettings = normalizeSyncSettings(settings);
-  const customSourceEndpoint = normalizeHttpsEndpoint(settings.customSourceEndpoint);
-  const gazetteerEndpoint = normalizeHttpsEndpoint(settings.gazetteerEndpoint);
-  const forvoLanguage = normalizeLanguageCode(settings.forvoLanguage);
-  return {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-    onlineByDefault: Boolean(settings.onlineByDefault),
-    showOverlay: settings.showOverlay !== false,
-    autoSpeakPopup: settings.autoSpeakPopup !== false,
-    customSourceEndpoint,
-    customSourceLabel: normalizeSelection(settings.customSourceLabel),
-    customSourceEnabled: Boolean(settings.customSourceEnabled && customSourceEndpoint),
-    forvoLanguage,
-    forvoEnabled: Boolean(settings.forvoEnabled),
-    gazetteerEndpoint,
-    gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteerEndpoint),
-    ...syncSettings
-  };
-}
-
-function normalizeCredentials(credentials = {}) {
-  return {
-    ...DEFAULT_CREDENTIALS,
-    forvoApiKey: String(credentials.forvoApiKey || "").trim().replace(/\s+/g, "")
-  };
-}
-
-function normalizeHttpsEndpoint(value) {
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const url = new URL(raw);
-    return url.protocol === "https:" ? url.toString() : "";
-  } catch {
-    return "";
-  }
-}
-
-function onlineCacheScope(settings, credentials = {}) {
-  return [
-    settings.customSourceEnabled && settings.customSourceEndpoint ? `custom ${settings.customSourceEndpoint}` : "",
-    settings.gazetteerEnabled && settings.gazetteerEndpoint ? `gazetteer ${settings.gazetteerEndpoint}` : "",
-    settings.forvoEnabled && credentials.forvoApiKey ? `forvo ${settings.forvoLanguage || "all"}` : ""
-  ].filter(Boolean).join(" ");
-}
-
 function useOnlineMessageOptions(message = {}) {
   if (!Object.prototype.hasOwnProperty.call(message, "useOnline")) {
     return {};
   }
 
   return { useOnline: Boolean(message.useOnline) };
-}
-
-function normalizeLanguageCode(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/_/g, "-")
-    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
 }

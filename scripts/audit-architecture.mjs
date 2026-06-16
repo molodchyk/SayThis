@@ -21,7 +21,7 @@ const AUDITED_EXTENSIONS = new Set([
   ".mjs"
 ]);
 const DEFAULT_FILE_BASELINE = {
-  "src/background.js": 929
+  "src/background.js": 856
 };
 const DEFAULT_FOLDER_BASELINE = {
   src: 24,

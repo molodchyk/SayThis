@@ -26,6 +26,7 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/resolver/status.js"));
   assert.ok(files.includes("src/resolver/text.js"));
   assert.ok(files.includes("src/resolver/values.js"));
+  assert.ok(files.includes("src/shared/settings.js"));
   assert.ok(files.includes("src/forvo-adapter.js"));
   assert.ok(files.includes("src/nominatim-adapter.js"));
   assert.ok(files.includes("src/popup.html"));

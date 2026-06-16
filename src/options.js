@@ -20,6 +20,14 @@ import {
   createFlushSyncMessage,
   createPullApprovedMessage
 } from "./message-contracts.js";
+import {
+  normalizeApiKey,
+  normalizeCredentials,
+  normalizeHttpsEndpoint as normalizeEndpoint,
+  normalizeLanguageCode,
+  normalizeSettings,
+  normalizeShortText
+} from "./shared/settings.js";
 
 const STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
@@ -31,25 +39,6 @@ const STORAGE_KEYS = {
   syncSummary: "syncSummary",
   settings: "settings"
 };
-const DEFAULT_SETTINGS = {
-  onlineByDefault: false,
-  showOverlay: true,
-  autoSpeakPopup: true,
-  customSourceEnabled: false,
-  customSourceEndpoint: "",
-  customSourceLabel: "",
-  forvoEnabled: false,
-  forvoLanguage: "",
-  gazetteerEnabled: false,
-  gazetteerEndpoint: "",
-  communitySyncEnabled: false,
-  communityPullEnabled: false,
-  communityEndpoint: ""
-};
-const DEFAULT_CREDENTIALS = {
-  forvoApiKey: ""
-};
-
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
@@ -366,37 +355,6 @@ function summarizeQueue(queue) {
   };
 }
 
-function normalizeSettings(settings = {}) {
-  const endpoint = normalizeEndpoint(settings.communityEndpoint);
-  const customSource = normalizeEndpoint(settings.customSourceEndpoint);
-  const gazetteer = normalizeEndpoint(settings.gazetteerEndpoint);
-  const forvoLanguageValue = normalizeLanguageCode(settings.forvoLanguage);
-  return {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-    onlineByDefault: Boolean(settings.onlineByDefault),
-    showOverlay: settings.showOverlay !== false,
-    autoSpeakPopup: settings.autoSpeakPopup !== false,
-    customSourceEndpoint: customSource,
-    customSourceLabel: normalizeShortText(settings.customSourceLabel),
-    customSourceEnabled: Boolean(settings.customSourceEnabled && customSource),
-    forvoLanguage: forvoLanguageValue,
-    forvoEnabled: Boolean(settings.forvoEnabled),
-    gazetteerEndpoint: gazetteer,
-    gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteer),
-    communityEndpoint: endpoint,
-    communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint),
-    communityPullEnabled: Boolean(settings.communityPullEnabled && endpoint)
-  };
-}
-
-function normalizeCredentials(credentials = {}) {
-  return {
-    ...DEFAULT_CREDENTIALS,
-    forvoApiKey: normalizeApiKey(credentials.forvoApiKey)
-  };
-}
-
 function credentialsFromControls() {
   return normalizeCredentials({
     forvoApiKey: forvoApiKey.value
@@ -488,36 +446,6 @@ async function removeUnusedRemotePermissions(previousSettings, nextSettings, pre
       // Permission cleanup is best-effort; saving settings should still finish.
     }
   }
-}
-
-function normalizeEndpoint(value) {
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const url = new URL(raw);
-    return url.protocol === "https:" ? url.toString() : "";
-  } catch {
-    return "";
-  }
-}
-
-function normalizeApiKey(value) {
-  return String(value || "").trim().replace(/\s+/g, "");
-}
-
-function normalizeShortText(value) {
-  return String(value || "").replace(/\s+/g, " ").trim().slice(0, 80);
-}
-
-function normalizeLanguageCode(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/_/g, "-")
-    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
 }
 
 function isPlainObject(value) {

@@ -28,6 +28,7 @@ Chrome Manifest V3 components:
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
 - `server/admin-page.js`: static moderator UI for reviewing pending community submissions.
+- `shared/settings.js`: pure settings and credential normalization used by the background worker and options page.
 - `assets/icons/`: generated PNG icons referenced by the manifest and toolbar action.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
@@ -45,6 +46,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Selection capture from popup, privacy-first context menu, explicit online context menu, `Alt+Shift+S`, and online lookup with `Alt+Shift+O`.
 - Popup active-selection flow can auto-speak after resolving, with a user setting to disable it.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
+- Shared settings and credential normalization for the background worker and options page.
 - Static smoke tests for popup/options DOM bindings, manifest-linked files, extension page scripts, and runtime import resolution.
 - Optional loaded-extension smoke runner for service-worker, popup, options startup, and keyboard-overlay flow in a separate opt-in Chrome or Edge profile.
 - Packaged PNG icons for toolbar and install surfaces.

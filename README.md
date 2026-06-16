@@ -14,6 +14,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 
 - Context-menu actions for selected text, including an explicit online lookup action.
 - Shared runtime message builders for popup, options, offscreen-audio, and background commands.
+- Shared settings and credential normalization for the background worker and options page.
 - Static Chrome-surface smoke tests for HTML bindings, packaged files, and module imports.
 - Optional loaded-extension Chrome smoke runner for popup/options/service-worker startup and keyboard-overlay checks.
 - Packaged extension icons for toolbar and install surfaces.
