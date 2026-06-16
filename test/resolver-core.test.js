@@ -39,6 +39,12 @@ import {
   normalizeTrustSignals as normalizeValueTrustSignals,
   normalizeUrl as normalizeValueUrl
 } from "../src/resolver/values.js";
+import {
+  getBestAudio as getBestAudioDirect,
+  mapResultAudioUrls as mapResultAudioUrlsDirect,
+  mergeAudioItems,
+  normalizePronunciation as normalizePronunciationDirect
+} from "../src/resolver/audio.js";
 
 const seedData = JSON.parse(await readFile(new URL("../data/pronunciation-seed.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -97,6 +103,27 @@ test("normalizes resolver values from a narrow module", () => {
   assert.equal(normalizeLongValue(` ${"a".repeat(2050)} `).length, 2048);
   assert.equal(normalizeValueCount(12.8), 12);
   assert.equal(normalizeValueCount(-1), 0);
+});
+
+test("maps resolver audio helpers from a narrow module", () => {
+  const pronunciation = normalizePronunciationDirect({
+    ipa: "/a/",
+    audio: [
+      { url: " assets/audio/public/a.ogg ", label: " One ", source: " Local ", quality: "verified" },
+      { url: "", label: "empty" }
+    ]
+  });
+
+  assert.equal(pronunciation.ipa, "/a/");
+  assert.equal(pronunciation.audio.length, 1);
+  assert.equal(pronunciation.audio[0].url, "assets/audio/public/a.ogg");
+  assert.equal(getBestAudioDirect({ pronunciation }).url, "assets/audio/public/a.ogg");
+  assert.equal(getBestAudio({ pronunciation }).url, "assets/audio/public/a.ogg");
+
+  const mapped = mapResultAudioUrlsDirect({ pronunciation }, (url) => `chrome-extension://id/${url}`);
+
+  assert.equal(mapped.pronunciation.audio[0].url, "chrome-extension://id/assets/audio/public/a.ogg");
+  assert.equal(mergeAudioItems(pronunciation.audio, pronunciation.audio).length, 1);
 });
 
 test("resolves bundled entries by alias", () => {

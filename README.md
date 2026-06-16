@@ -85,6 +85,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Pure resolver status and confidence helpers split into a narrow module.
 - Pure resolver text helpers split into a narrow module behind compatibility exports.
 - Pure resolver value sanitizers split into a narrow module.
+- Pure resolver audio helpers split into a narrow module.
 
 Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use synthetic TTS only as a clearly labeled fallback.
 

@@ -8,6 +8,7 @@ Chrome Manifest V3 components:
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
+- `resolver/audio.js`: pure pronunciation-audio selection, URL mapping, and pronunciation normalization helpers used by resolver results.
 - `resolver/language.js`: pure language display-name, speech-locale, and script-hint helpers used by resolver results.
 - `resolver/status.js`: pure source-status labels, confidence ranking, and status normalization helpers used by resolver results.
 - `resolver/text.js`: pure selected-text normalization, lookup-key generation, and script detection helpers re-exported by `resolver-core.js`.
@@ -52,6 +53,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Source-status labels and confidence ranking have a narrow pure module.
 - Text normalization and script detection have a narrow pure module behind resolver-core compatibility exports.
 - URL, count, alias, trust-signal, and long-field normalization have a narrow pure module.
+- Pronunciation-audio selection and normalization have a narrow pure module.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.

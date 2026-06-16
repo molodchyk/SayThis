@@ -21,6 +21,7 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/message-contracts.js"));
   assert.ok(files.includes("src/permission-origins.js"));
   assert.ok(files.includes("src/pronunciation-source-plan.js"));
+  assert.ok(files.includes("src/resolver/audio.js"));
   assert.ok(files.includes("src/resolver/language.js"));
   assert.ok(files.includes("src/resolver/status.js"));
   assert.ok(files.includes("src/resolver/text.js"));
