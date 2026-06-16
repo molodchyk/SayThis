@@ -10,6 +10,7 @@ Chrome Manifest V3 components:
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
 - `resolver/audio.js`: pure pronunciation-audio selection, URL mapping, and pronunciation normalization helpers used by resolver results.
+- `resolver/community.js`: pure local community-memory normalization, lookup, summary, and trust-signal helpers used by resolver results.
 - `resolver/language.js`: pure language display-name, speech-locale, and script-hint helpers used by resolver results.
 - `resolver/status.js`: pure source-status labels, confidence ranking, and status normalization helpers used by resolver results.
 - `resolver/text.js`: pure selected-text normalization, lookup-key generation, and script detection helpers re-exported by `resolver-core.js`.
@@ -58,6 +59,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Text normalization and script detection have a narrow pure module behind resolver-core compatibility exports.
 - URL, count, alias, trust-signal, and long-field normalization have a narrow pure module.
 - Pronunciation-audio selection and normalization have a narrow pure module.
+- Local community-memory normalization and summaries have a narrow pure module.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
 - Online source orchestration has a background-owned module outside the service-worker entry point.

@@ -45,6 +45,14 @@ import {
   mergeAudioItems,
   normalizePronunciation as normalizePronunciationDirect
 } from "../src/resolver/audio.js";
+import {
+  applyCommunitySummary as applyCommunitySummaryDirect,
+  communitySummary,
+  emptyCommunity as emptyCommunityDirect,
+  findCommunityEntry,
+  normalizeCommunityEntries as normalizeCommunityEntriesDirect,
+  updateCommunityEntries as updateCommunityEntriesDirect
+} from "../src/resolver/community.js";
 
 const seedData = JSON.parse(await readFile(new URL("../data/pronunciation-seed.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -124,6 +132,37 @@ test("maps resolver audio helpers from a narrow module", () => {
 
   assert.equal(mapped.pronunciation.audio[0].url, "chrome-extension://id/assets/audio/public/a.ogg");
   assert.equal(mergeAudioItems(pronunciation.audio, pronunciation.audio).length, 1);
+});
+
+test("maps resolver community helpers from a narrow module", () => {
+  const corrected = updateCommunityEntriesDirect({}, " Exampleterm ", {
+    kind: "correction",
+    sourceForm: " Exampleterm ",
+    aliases: "Alias; Alias",
+    simple: "eg-ZAM-pluh-term",
+    audioUrl: "https://example.com/audio.ogg",
+    sourceUrl: "https://example.com/source",
+    variantNote: "Regional studio variant"
+  });
+  const confirmed = updateCommunityEntriesDirect(corrected, "Exampleterm", { kind: "confirm" });
+  const normalized = normalizeCommunityEntriesDirect(confirmed);
+  const found = findCommunityEntry("alias", normalized);
+  const summarized = applyCommunitySummaryDirect({ id: "result" }, found);
+
+  assert.equal(found.sourceForm, "Exampleterm");
+  assert.deepEqual(found.aliases, ["Alias"]);
+  assert.deepEqual(found.trustSignals, ["local-correction", "source-backed", "audio-backed", "variant-noted", "local-confirmed"]);
+  assert.equal(summarized.community.confirmations, 1);
+  assert.deepEqual(communitySummary(found), summarized.community);
+  assert.deepEqual(emptyCommunityDirect(), {
+    confirmations: 0,
+    flags: 0,
+    requests: 0,
+    corrections: 0,
+    updatedAt: ""
+  });
+  assert.deepEqual(normalizeCommunityEntries(confirmed), normalized);
+  assert.deepEqual(applyCommunitySummary({ id: "result" }, found), summarized);
 });
 
 test("resolves bundled entries by alias", () => {
