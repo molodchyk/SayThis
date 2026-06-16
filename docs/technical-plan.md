@@ -52,6 +52,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym source-form scoring for proper nouns and research terms.
 - Wikidata native-script alias scoring when stronger source-form claims are absent.
 - Wikidata selection preserves useful alternate entity candidates for result ambiguity and follow-up audio lookup.
+- Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Wiktionary enPR and respelling templates parsed into simple pronunciation guides.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.

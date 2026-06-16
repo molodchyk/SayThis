@@ -234,6 +234,18 @@ test("extracts pronunciation audio and IPA claims", () => {
             value: "Example pronunciation.ogg"
           }
         }
+      }, {
+        mainsnak: {
+          datavalue: {
+            value: "Example pronunciation alternate.ogg"
+          }
+        }
+      }, {
+        mainsnak: {
+          datavalue: {
+            value: "Example pronunciation.ogg"
+          }
+        }
       }],
       P898: [{
         mainsnak: {
@@ -252,7 +264,11 @@ test("extracts pronunciation audio and IPA claims", () => {
   assert.deepEqual(result.aliases, ["Sample entry"]);
   assert.equal(result.confidence, "high");
   assert.equal(result.pronunciation.ipa, "ɪɡˈzɑːmpəl");
+  assert.equal(result.pronunciation.audio.length, 2);
   assert.equal(result.pronunciation.audio[0].url, commonsRedirectUrl("Example pronunciation.ogg"));
+  assert.equal(result.pronunciation.audio[1].url, commonsRedirectUrl("Example pronunciation alternate.ogg"));
+  assert.equal(result.pronunciation.audio[1].label, "Pronunciation audio 2");
+  assert.ok(result.evidence.includes("Additional Wikidata pronunciation audio: 1"));
 });
 
 test("selects a later candidate when it has stronger pronunciation evidence", () => {

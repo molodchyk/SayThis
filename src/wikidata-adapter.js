@@ -39,7 +39,7 @@ export function buildWikidataResult(query, match, entity) {
 
   const sourceCandidate = chooseSourceCandidate(query, match, entity);
   const description = entity.descriptions?.en?.value || match.description || "";
-  const audioFile = firstStringClaimValue(entity, PRONUNCIATION_AUDIO);
+  const audioFiles = stringClaimValues(entity, PRONUNCIATION_AUDIO).slice(0, 4);
   const ipa = firstStringClaimValue(entity, IPA_TRANSCRIPTION);
   const sourceForm = sourceCandidate?.value || match.label || query;
   const aliases = wikidataAliases(entity, [match.label, sourceForm]).slice(0, 8);
@@ -56,25 +56,29 @@ export function buildWikidataResult(query, match, entity) {
     pronunciation: {
       ipa,
       simple: "",
-      audio: audioFile ? [{
+      audio: audioFiles.map((audioFile, index) => ({
         url: commonsRedirectUrl(audioFile),
-        label: "Pronunciation audio",
+        label: audioFiles.length > 1 ? `Pronunciation audio ${index + 1}` : "Pronunciation audio",
         source: "Wikimedia Commons",
         quality: "verified"
-      }] : []
+      }))
     },
-    sourceStatus: audioFile ? "verified-audio" : "structured-source",
-    confidence: audioFile ? "high" : confidenceForCandidate(query, sourceCandidate),
+    sourceStatus: audioFiles.length ? "verified-audio" : "structured-source",
+    confidence: audioFiles.length ? "high" : confidenceForCandidate(query, sourceCandidate),
     evidence: [
       `Wikidata entity ${entity.id || match.id}`,
       sourceCandidate?.source ? `Source form from ${sourceCandidate.source}` : "",
-      audioFile ? "Pronunciation audio from Wikidata" : "",
+      audioFiles.length ? "Pronunciation audio from Wikidata" : "",
+      audioFiles.length > 1 ? `Additional Wikidata pronunciation audio: ${audioFiles.length - 1}` : "",
       ipa ? "IPA from Wikidata" : "",
       aliases.length ? `Aliases: ${aliases.join(", ")}` : ""
     ].filter(Boolean),
     sources: [
       { label: "Wikidata", url: `https://www.wikidata.org/wiki/${entity.id || match.id}` },
-      audioFile ? { label: "Pronunciation audio", url: commonsRedirectUrl(audioFile) } : null
+      ...audioFiles.map((audioFile, index) => ({
+        label: audioFiles.length > 1 ? `Pronunciation audio ${index + 1}` : "Pronunciation audio",
+        url: commonsRedirectUrl(audioFile)
+      }))
     ].filter(Boolean)
   });
 }
@@ -404,15 +408,27 @@ function sitelinkCandidates(entity, source) {
 }
 
 function firstStringClaimValue(entity, propertyId) {
+  return stringClaimValues(entity, propertyId)[0] || "";
+}
+
+function stringClaimValues(entity, propertyId) {
   const claims = entity.claims?.[propertyId] || [];
+  const values = [];
+  const seen = new Set();
+
   for (const claim of claims) {
     const value = claim?.mainsnak?.datavalue?.value;
     if (typeof value === "string" && value.trim()) {
-      return value.trim();
+      const text = value.trim();
+      const key = createLookupKey(text);
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        values.push(text);
+      }
     }
   }
 
-  return "";
+  return values;
 }
 
 function wikidataAliases(entity, excludedValues = []) {

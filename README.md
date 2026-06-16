@@ -28,6 +28,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym claims as source-form and alias signals.
 - Wikidata native-script aliases can be promoted to source forms when stronger name fields are missing.
 - Wikidata lookup preserves useful alternate entity candidates for ambiguity review and follow-up audio lookup.
+- Wikidata pronunciation-audio lookup preserves multiple Commons recordings when an entity provides them.
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, audio sources, and variant notes.
