@@ -118,6 +118,34 @@ test("uses native sitelink titles when name claims are sparse", () => {
   assert.ok(result.evidence.some((item) => item.includes("sitelink title")));
 });
 
+test("uses native aliases as source-form candidates", () => {
+  const result = buildWikidataResult("Miyazaki", {
+    id: "Q5",
+    label: "Miyazaki",
+    language: "en",
+    description: "family name"
+  }, {
+    id: "Q5",
+    labels: {
+      en: { language: "en", value: "Miyazaki" }
+    },
+    descriptions: {
+      en: { language: "en", value: "family name" }
+    },
+    claims: {},
+    aliases: {
+      ja: [{ language: "ja", value: "宮崎" }],
+      en: [{ language: "en", value: "Miyazaki surname" }]
+    }
+  });
+
+  assert.equal(result.sourceForm, "宮崎");
+  assert.equal(result.language, "ja");
+  assert.equal(result.confidence, "medium");
+  assert.deepEqual(result.aliases, ["Miyazaki surname"]);
+  assert.ok(result.evidence.some((item) => item.includes("alias")));
+});
+
 test("uses translated title claims as source-form candidates", () => {
   const result = buildWikidataResult("Totoro", {
     id: "Q3",

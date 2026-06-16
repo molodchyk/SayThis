@@ -164,6 +164,7 @@ function chooseSourceCandidate(query, match, entity) {
     ...monolingualClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name"),
     ...stringClaimCandidates(entity, TAXON_NAME, "taxon name", { language: "la" }),
     ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym"),
+    ...aliasCandidates(entity, "alias"),
     ...sitelinkCandidates(entity, "sitelink title"),
     ...labelCandidates(entity, "label")
   ].filter((candidate) => candidate.value);
@@ -254,6 +255,8 @@ function scoreCandidate(candidate, selectedScript) {
     score += 4;
   } else if (candidate.source === "taxon name" || candidate.source === "pseudonym") {
     score += 3;
+  } else if (candidate.source === "alias") {
+    score -= 3;
   } else if (candidate.source === "short name") {
     score += 3;
   } else if (candidate.source === "sitelink title") {
@@ -289,6 +292,10 @@ function confidenceForCandidate(query, candidate) {
   }
 
   if (["title", "nickname", "taxon common name"].includes(candidate.source) && candidate.language && candidate.language !== "en") {
+    return "medium";
+  }
+
+  if (candidate.source === "alias" && candidate.language && candidate.language !== "en" && detectScript(candidate.value).script !== detectScript(query).script) {
     return "medium";
   }
 
@@ -329,6 +336,17 @@ function labelCandidates(entity, source) {
     language: label.language || "",
     source
   }));
+}
+
+function aliasCandidates(entity, source) {
+  return Object.values(entity.aliases || {})
+    .flatMap((aliases) => Array.isArray(aliases) ? aliases : [])
+    .map((alias) => ({
+      value: normalizeSelection(alias?.value),
+      language: alias?.language || "",
+      source
+    }))
+    .filter((candidate) => candidate.value);
 }
 
 function sitelinkCandidates(entity, source) {
