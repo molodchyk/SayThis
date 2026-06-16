@@ -285,13 +285,35 @@ function playAudio(result, rate) {
   }
 
   stopAudio();
+  let fallbackStarted = false;
+  const fallbackToSpeech = async () => {
+    if (fallbackStarted) {
+      return;
+    }
+
+    fallbackStarted = true;
+    setStatus("Audio failed. Using TTS fallback.");
+    const text = normalizeSelection(selectionInput.value);
+    const response = await sendMessage(createSpeakMessage(text, {
+      result,
+      rate
+    }));
+    if (response.ok) {
+      currentResult = response.result;
+      renderResult(currentResult);
+      setStatus(rate < 0.7 ? "Speaking slowly." : "Speaking.");
+    } else {
+      setStatus(response.error || "Speech failed.");
+    }
+  };
+
   audioPlayer = new Audio(audio.url);
   audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
   audioPlayer.addEventListener("error", () => {
-    setStatus("Audio failed. Use Speak for TTS fallback.");
+    fallbackToSpeech();
   }, { once: true });
   audioPlayer.play().catch(() => {
-    setStatus("Audio could not start. Use Speak for TTS fallback.");
+    fallbackToSpeech();
   });
   return true;
 }

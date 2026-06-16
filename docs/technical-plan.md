@@ -67,6 +67,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Community service container image and deployment notes.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
+- Popup source-audio failures automatically fall back to TTS playback.
 - Packaged public audio path rewriting for curated entries.
 - Chrome ZIP packaging from an explicit runtime-file allowlist with private, licensed, and raw data exclusions.
 

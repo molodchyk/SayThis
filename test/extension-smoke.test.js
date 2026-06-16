@@ -118,6 +118,15 @@ test("popup quick feedback labels match their feedback kinds", async () => {
   assert.match(source, /confirmButton\.addEventListener\("click", \(\) => saveFeedback\(\{ kind: "confirm" \}\)\)/);
 });
 
+test("popup source-audio failure falls back to TTS", async () => {
+  const source = await readText("src/popup.js");
+
+  assert.match(source, /Audio failed\. Using TTS fallback\./);
+  assert.match(source, /const fallbackToSpeech = async \(\) =>/);
+  assert.match(source, /createSpeakMessage\(text, \{/);
+  assert.match(source, /fallbackStarted/);
+});
+
 function idsInHtml(html) {
   return matches(html, /\bid="([^"]+)"/g);
 }
