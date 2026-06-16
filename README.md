@@ -93,6 +93,7 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 - SWOT analysis: `docs/swot-analysis.md`
 - Research notes: `docs/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
+- Extension modularization playbook: `docs/extension-modularization-playbook.md`
 - Community service: `docs/community-service.md`
 - Deployment: `docs/deployment.md`
 - Custom source: `docs/custom-source.md`
