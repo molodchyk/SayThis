@@ -51,6 +51,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community moderation rejected-history storage is bounded.
 - Community service can reject browser-originated requests outside configured allowed origins.
 - Community service serializes store writes so concurrent submissions do not overwrite pending entries.
+- Community service trusts proxy rate-limit headers only when explicitly enabled.
 - Non-browser CI for unit tests, syntax checks, and Chrome package creation.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.

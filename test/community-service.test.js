@@ -283,6 +283,47 @@ test("limits repeated public submissions by client", async () => {
   assert.equal(response.store.pending.length, 2);
 });
 
+test("trusts proxy rate-limit headers only when enabled", async () => {
+  const keys = [];
+  const rateLimiter = {
+    check(key) {
+      keys.push(key);
+      return { ok: true, retryAfterMs: 0 };
+    }
+  };
+  const request = {
+    method: "POST",
+    url: "/community",
+    remoteAddress: "203.0.113.10",
+    headers: {
+      "cf-connecting-ip": "198.51.100.20",
+      "x-real-ip": "198.51.100.21"
+    },
+    body: JSON.stringify({
+      id: "sub_proxy_rate",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  };
+
+  await handleCommunityRequest(request, createEmptyStore(), { rateLimiter });
+  await handleCommunityRequest({
+    ...request,
+    body: JSON.stringify({
+      id: "sub_proxy_rate_trusted",
+      term: "gnocchi",
+      lookupKey: "gnocchi",
+      kind: "missing"
+    })
+  }, createEmptyStore(), {
+    rateLimiter,
+    trustProxyHeaders: true
+  });
+
+  assert.deepEqual(keys, ["203.0.113.10", "198.51.100.20"]);
+});
+
 test("caps pending submissions without rejecting duplicate retries", async () => {
   let response = await handleCommunityRequest({
     method: "POST",

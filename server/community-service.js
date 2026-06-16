@@ -150,6 +150,7 @@ export async function createCommunityServer(options = {}) {
   const allowedOrigins = normalizeAllowedOrigins(
     options.allowedOrigins ?? process.env.SAYTHIS_ALLOWED_ORIGINS
   );
+  const trustProxyHeaders = options.trustProxyHeaders ?? process.env.SAYTHIS_TRUST_PROXY_HEADERS === "1";
   let store = await readStore(storePath);
   const runStoreOperation = createStoreOperationQueue();
 
@@ -181,7 +182,8 @@ export async function createCommunityServer(options = {}) {
           maxPendingSubmissions,
           maxRejectedSubmissions,
           allowedOrigins,
-          rateLimiter
+          rateLimiter,
+          trustProxyHeaders
         });
 
         await writeStore(storePath, next.store);
@@ -325,17 +327,24 @@ function checkSubmissionRate(request, options) {
     return { ok: true, retryAfterMs: 0 };
   }
 
-  return options.rateLimiter.check(clientKeyFromRequest(request));
+  return options.rateLimiter.check(clientKeyFromRequest(request, options.trustProxyHeaders));
 }
 
-function clientKeyFromRequest(request) {
-  return String(
-    request.clientKey ||
-    request.headers?.["cf-connecting-ip"] ||
-    request.headers?.["x-real-ip"] ||
-    request.remoteAddress ||
-    "unknown"
-  );
+function clientKeyFromRequest(request, trustProxyHeaders = false) {
+  if (request.clientKey) {
+    return String(request.clientKey);
+  }
+
+  if (trustProxyHeaders) {
+    return String(
+      request.headers?.["cf-connecting-ip"] ||
+      request.headers?.["x-real-ip"] ||
+      request.remoteAddress ||
+      "unknown"
+    );
+  }
+
+  return String(request.remoteAddress || "unknown");
 }
 
 function parseJsonBody(body) {

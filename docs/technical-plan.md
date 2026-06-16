@@ -62,6 +62,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Static moderator page for loading pending submissions and approving or rejecting structured pronunciation entries.
 - Community service request-size limits, in-memory public submission rate limiting, and configurable pending-queue caps.
 - Community service serialized store writes for overlapping public or moderator requests.
+- Community service proxy IP headers are ignored for rate limiting unless explicitly enabled.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.

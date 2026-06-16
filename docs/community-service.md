@@ -15,6 +15,7 @@ $env:SAYTHIS_RATE_WINDOW_MS = "60000"
 $env:SAYTHIS_MAX_PENDING_SUBMISSIONS = "1000"
 $env:SAYTHIS_MAX_REJECTED_SUBMISSIONS = "1000"
 $env:SAYTHIS_ALLOWED_ORIGINS = "*"
+$env:SAYTHIS_TRUST_PROXY_HEADERS = "0"
 npm run community:serve
 ```
 
@@ -53,6 +54,7 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_MAX_PENDING_SUBMISSIONS`: `1000`
 - `SAYTHIS_MAX_REJECTED_SUBMISSIONS`: `1000`
 - `SAYTHIS_ALLOWED_ORIGINS`: `*`
+- `SAYTHIS_TRUST_PROXY_HEADERS`: `0`
 
 When the pending moderation queue reaches `SAYTHIS_MAX_PENDING_SUBMISSIONS`, new public submissions are rejected with `pending-limit-reached`. Duplicate retries of an already pending submission id are still accepted without adding another entry.
 
@@ -65,6 +67,8 @@ Approving a pending submission publishes it only when the final entry includes p
 For a production deployment, set `SAYTHIS_ALLOWED_ORIGINS` to a comma-separated list of trusted origins, such as `https://example.com,chrome-extension://<extension-id>`. The default `*` keeps local and early public testing simple.
 
 Requests with an `Origin` header outside `SAYTHIS_ALLOWED_ORIGINS` are rejected with `origin-not-allowed`. Requests without an `Origin` header are accepted for server-to-server use.
+
+Set `SAYTHIS_TRUST_PROXY_HEADERS=1` only when the service runs behind a trusted proxy that sets `cf-connecting-ip` or `x-real-ip`. Otherwise rate limiting uses the direct remote address.
 
 ## Moderator Endpoints
 
