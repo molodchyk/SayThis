@@ -189,7 +189,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     simple: override.simple || correction.simple || result.simple,
     audioUrl: override.audioUrl || correction.audioUrl || result.audioUrl,
     sourceUrl: override.sourceUrl || correction.sourceUrl || result.sourceUrl,
-    variantNote: override.variantNote || correction.variantNote,
+    variantNote: override.variantNote || correction.variantNote || result.variantNote,
     trustSignals: trustSignals.length ? trustSignals : defaultTrustSignals(submission, correction, result, override),
     approvedAt: now,
     updatedAt: now
@@ -268,6 +268,8 @@ function normalizeResultMetadata(value = {}) {
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
+    variantNote: normalizeSelection(value.variantNote || value.notes),
+    trustSignals: normalizeTrustSignals(value.trustSignals),
     sourceStatus: normalizeSelection(value.sourceStatus),
     confidence: normalizeSelection(value.confidence)
   };
@@ -376,7 +378,7 @@ function normalizeAliases(value) {
 }
 
 function defaultTrustSignals(submission = {}, correction = {}, result = {}, override = {}) {
-  const signals = ["moderator-reviewed"];
+  const signals = ["moderator-reviewed", ...normalizeTrustSignals(result.trustSignals)];
   const sourceUrl = override.sourceUrl || correction.sourceUrl || result.sourceUrl;
   const audioUrl = override.audioUrl || correction.audioUrl || result.audioUrl;
   const confirmations = Number(override.confirmations ?? (submission.kind === "confirm" ? 1 : 0));

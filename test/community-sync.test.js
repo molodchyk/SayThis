@@ -68,6 +68,8 @@ test("creates privacy-scoped community submissions", () => {
       audio: [{ url: "https://example.com/audio.ogg" }]
     },
     sources: [{ label: "Source", url: "https://example.com/source" }],
+    notes: "Regional studio variant",
+    trustSignals: ["source-backed", "moderator-reviewed"],
     sourceStatus: "verified-audio",
     confidence: "high"
   });
@@ -85,6 +87,8 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(submission.result.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(submission.result.audioUrl, "https://example.com/audio.ogg");
   assert.equal(submission.result.sourceUrl, "https://example.com/source");
+  assert.equal(submission.result.variantNote, "Regional studio variant");
+  assert.deepEqual(submission.result.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(Object.hasOwn(submission, "url"), false);
   assert.equal(Object.hasOwn(submission, "pageUrl"), false);
 });
@@ -188,6 +192,8 @@ test("normalizes queued submissions without request metadata", () => {
       display: "chiaroscuro",
       sourceForm: "chiaroscuro",
       language: "it",
+      variantNote: "Regional studio variant",
+      trustSignals: ["source-backed", "source-backed"],
       sourceStatus: "verified-audio",
       confidence: "high",
       pageUrl: "https://private.example/page"
@@ -212,6 +218,8 @@ test("normalizes queued submissions without request metadata", () => {
   assert.deepEqual(queue[0].correction.aliases, ["light-dark"]);
   assert.equal(queue[0].correction.sourceUrl, "https://example.com/source");
   assert.equal(queue[0].result.id, "wiktionary:chiaroscuro");
+  assert.equal(queue[0].result.variantNote, "Regional studio variant");
+  assert.deepEqual(queue[0].result.trustSignals, ["source-backed"]);
   assert.equal(Object.hasOwn(queue[0], "pageUrl"), false);
   assert.equal(Object.hasOwn(queue[0], "headers"), false);
   assert.equal(Object.hasOwn(queue[0].result, "pageUrl"), false);

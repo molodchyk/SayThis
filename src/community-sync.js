@@ -210,6 +210,8 @@ function normalizeResultMetadata(result = null) {
     simple: normalizeSelection(result.pronunciation?.simple),
     audioUrl: firstResultAudioUrl(result),
     sourceUrl: firstResultSourceUrl(result),
+    variantNote: normalizeSelection(result.variantNote || result.notes),
+    trustSignals: normalizeTrustSignals(result.trustSignals),
     sourceStatus: normalizeSelection(result.sourceStatus),
     confidence: normalizeSelection(result.confidence)
   };

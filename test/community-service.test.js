@@ -458,6 +458,8 @@ test("approves confirmed resolver metadata into shared entries", async () => {
         simple: "SEER-sha",
         audioUrl: "https://example.com/saoirse.ogg",
         sourceUrl: "https://example.com/saoirse",
+        variantNote: "regional speaker variant",
+        trustSignals: ["source-backed", "curator-reviewed"],
         sourceStatus: "verified-audio",
         confidence: "high"
       }
@@ -480,9 +482,11 @@ test("approves confirmed resolver metadata into shared entries", async () => {
   assert.equal(response.body.entry.simple, "SEER-sha");
   assert.equal(response.body.entry.audioUrl, "https://example.com/saoirse.ogg");
   assert.equal(response.body.entry.sourceUrl, "https://example.com/saoirse");
+  assert.equal(response.body.entry.variantNote, "regional speaker variant");
   assert.deepEqual(response.body.entry.trustSignals, [
     "moderator-reviewed",
     "source-backed",
+    "curator-reviewed",
     "audio-backed",
     "contributor-confirmed",
     "verified-audio"

@@ -64,6 +64,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local confirmation, wrong-result, missing-term, correction, aliases, audio-source, source-link, variant-note storage, and import/export normalization.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
 - Opt-in community sync endpoint with queued retry behavior.
+- Community submissions preserve result trust signals and variant notes through moderation.
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
