@@ -22,7 +22,7 @@ const AUDITED_EXTENSIONS = new Set([
 ]);
 const DEFAULT_FILE_BASELINE = {
   "src/background.js": 929,
-  "src/resolver-core.js": 1022
+  "src/resolver-core.js": 940
 };
 const DEFAULT_FOLDER_BASELINE = {
   src: 24,

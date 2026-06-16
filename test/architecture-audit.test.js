@@ -18,7 +18,7 @@ test("keeps known large files as notices while inside baseline", () => {
   const audit = createArchitectureAudit({
     files: [{
       path: "src/resolver-core.js",
-      lineCount: 1022
+      lineCount: 940
     }],
     folders: []
   });
@@ -26,13 +26,13 @@ test("keeps known large files as notices while inside baseline", () => {
   assert.equal(audit.ok, true);
   assert.equal(audit.fileFindings.length, 1);
   assert.equal(audit.fileFindings[0].severity, "notice");
-  assert.equal(audit.fileFindings[0].baseline, 1022);
+  assert.equal(audit.fileFindings[0].baseline, 940);
 });
 
 test("fails when a large file grows past its baseline", () => {
   const findings = fileSizeFindings([{
     path: "src/resolver-core.js",
-    lineCount: 1023
+    lineCount: 941
   }]);
 
   assert.equal(findings.length, 1);

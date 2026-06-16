@@ -14,6 +14,11 @@ import {
   resultToSpeechOptions,
   updateCommunityEntries
 } from "../src/resolver-core.js";
+import {
+  createLookupKey as createTextLookupKey,
+  detectScript as detectTextScript,
+  normalizeSelection as normalizeTextSelection
+} from "../src/resolver/text.js";
 
 const seedData = JSON.parse(await readFile(new URL("../data/pronunciation-seed.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -38,6 +43,12 @@ test("manifest exposes extension resolver capabilities", () => {
 
 test("normalizes aliases with diacritics", () => {
   assert.equal(createLookupKey(" Nguyễn "), "nguyen");
+});
+
+test("keeps resolver text helpers behind direct and compatibility exports", () => {
+  assert.equal(normalizeTextSelection("  alpha\n beta  "), "alpha beta");
+  assert.equal(createTextLookupKey(" Nguyễn "), createLookupKey(" Nguyễn "));
+  assert.deepEqual(detectTextScript("Αθήνα"), detectScript("Αθήνα"));
 });
 
 test("resolves bundled entries by alias", () => {
