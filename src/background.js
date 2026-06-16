@@ -535,7 +535,7 @@ async function showResultOnTab(tabId, result, options = {}) {
 
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ["src/content-overlay.js"]
+      files: ["src/content/overlay-style.js", "src/content-overlay.js"]
     });
     await chrome.tabs.sendMessage(tabId, createShowResultMessage(result, {
       autoPlay: Boolean(options.autoPlay)

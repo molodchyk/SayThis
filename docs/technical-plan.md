@@ -24,6 +24,7 @@ Chrome Manifest V3 components:
 - `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.
+- `content/overlay-style.js`: owns the classic-script style payload injected before the on-page card.
 - `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
@@ -85,6 +86,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Nominatim-compatible lookup keeps language-tagged alternate place names as alternate results, so audio lookup can retry the same spelling with the right language hint.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.
 - Result card with source form, aliases, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
+- On-page overlay styles are split into a companion injected content script, keeping the overlay controller below the file-size soft limit.
 - Alternate candidate summaries preserve speech-locale hints and can be spoken directly from popup or on-page result cards.
 - Local confirmation, wrong-result, missing-term, correction, aliases, audio-source, source-link, variant-note storage, and import/export normalization.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
