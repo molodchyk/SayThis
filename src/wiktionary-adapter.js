@@ -45,7 +45,7 @@ const LANGUAGE_CODES = {
 
 export function buildWiktionaryResult(query, pageTitle, wikitext) {
   const parsed = parseWiktionaryPronunciation(wikitext);
-  if (!parsed.ipa && !parsed.audioFile && !parsed.origin) {
+  if (!parsed.ipa && !parsed.simple && !parsed.audioFile && !parsed.origin) {
     return null;
   }
 
@@ -71,6 +71,7 @@ export function parseWiktionaryPronunciation(wikitext = "") {
       language: "",
       languageName: "",
       ipa: "",
+      simple: "",
       audioFile: "",
       origin: "",
       alternateEntries: []
@@ -96,7 +97,7 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed) {
     origin: parsed.origin,
     pronunciation: {
       ipa: parsed.ipa,
-      simple: "",
+      simple: parsed.simple,
       audio: parsed.audioFile ? [{
         url: commonsRedirectUrl(parsed.audioFile),
         label: "Pronunciation audio",
@@ -125,6 +126,7 @@ function parseLanguageEntry(section) {
     language: LANGUAGE_CODES[languageName] || "",
     languageName,
     ipa: firstIpa(body),
+    simple: firstSimpleGuide(body),
     audioFile: firstAudioFile(body),
     origin: firstEtymologyLine(body)
   };
@@ -180,6 +182,10 @@ function scoreEntry(entry) {
     score += 6;
   }
 
+  if (entry.simple) {
+    score += 4;
+  }
+
   if (entry.origin) {
     score += 2;
   }
@@ -192,11 +198,11 @@ function scoreEntry(entry) {
 }
 
 function entryHasLookupData(entry) {
-  return Boolean(entry.languageName || entry.origin || entry.ipa || entry.audioFile);
+  return Boolean(entry.languageName || entry.origin || entry.ipa || entry.simple || entry.audioFile);
 }
 
 function entryHasPronunciationData(entry) {
-  return Boolean(entry.ipa || entry.audioFile);
+  return Boolean(entry.ipa || entry.simple || entry.audioFile);
 }
 
 function firstIpa(text) {
@@ -227,6 +233,33 @@ function firstAudioFile(text) {
     .map((part) => part.trim())
     .filter(Boolean);
   return normalizeSelection(parts.find((part) => /\.(?:ogg|oga|mp3|wav)$/i.test(part)) || "");
+}
+
+function firstSimpleGuide(text) {
+  const enPrTemplate = text.match(/\{\{enPR\|([^{}]+?)\}\}/i);
+  const enPr = firstTemplateValue(enPrTemplate?.[1]);
+  if (enPr) {
+    return enPr;
+  }
+
+  const respellTemplate = text.match(/\{\{(?:respell|enPR respelling)\|([^{}]+?)\}\}/i);
+  const respellParts = templateValues(respellTemplate?.[1]);
+  const guideParts = /^[a-z]{2,3}$/i.test(respellParts[0] || "")
+    ? respellParts.slice(1)
+    : respellParts;
+  const respell = guideParts.join("-");
+  return normalizeSelection(respell);
+}
+
+function firstTemplateValue(value) {
+  return templateValues(value)[0] || "";
+}
+
+function templateValues(value) {
+  return String(value || "")
+    .split("|")
+    .map((part) => stripWikitext(part))
+    .filter((part) => part && !part.includes("="));
 }
 
 function firstEtymologyLine(text) {

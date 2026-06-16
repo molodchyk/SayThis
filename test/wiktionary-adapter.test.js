@@ -12,6 +12,7 @@ const CHIAROSCURO_WIKITEXT = `
 Borrowed from {{bor|en|it|chiaroscuro}}, from {{m|it|chiaro}} + {{m|it|oscuro}}.
 
 ===Pronunciation===
+* {{enPR|kē-är'ə-skûrō}}
 * {{IPA|en|/kiˌɑːɹəˈskʊəɹoʊ/}}
 * {{audio|en|En-us-chiaroscuro.ogg|Audio (US)}}
 
@@ -50,12 +51,23 @@ const TURKISH_WIKITEXT = `
 # Pen.
 `;
 
+const RESPELL_WIKITEXT = `
+==English==
+
+===Pronunciation===
+* {{respell|en|kee|AH|roh|SKOOR|oh}}
+
+===Noun===
+# A term with a simple guide.
+`;
+
 test("parses IPA, audio, language, and etymology from Wiktionary wikitext", () => {
   const parsed = parseWiktionaryPronunciation(CHIAROSCURO_WIKITEXT);
 
   assert.equal(parsed.language, "en");
   assert.equal(parsed.languageName, "English");
   assert.equal(parsed.ipa, "/kiˌɑːɹəˈskʊəɹoʊ/");
+  assert.equal(parsed.simple, "kē-är'ə-skûrō");
   assert.equal(parsed.audioFile, "En-us-chiaroscuro.ogg");
   assert.equal(parsed.origin, "Borrowed from chiaroscuro, from chiaro + oscuro.");
 });
@@ -67,6 +79,7 @@ test("builds a verified-audio pronunciation result from Wiktionary", () => {
   assert.equal(result.sourceStatus, "verified-audio");
   assert.equal(result.confidence, "high");
   assert.equal(result.pronunciation.ipa, "/kiˌɑːɹəˈskʊəɹoʊ/");
+  assert.equal(result.pronunciation.simple, "kē-är'ə-skûrō");
   assert.equal(result.pronunciation.audio[0].source, "Wiktionary");
   assert.ok(result.origin.includes("chiaro"));
 });
@@ -101,4 +114,13 @@ test("maps additional Wiktionary language sections to source codes", () => {
   assert.equal(result.languageName, "Turkish");
   assert.equal(result.ttsLang, "tr-TR");
   assert.equal(result.pronunciation.ipa, "/kaˈlem/");
+});
+
+test("captures Wiktionary respelling guides", () => {
+  const parsed = parseWiktionaryPronunciation(RESPELL_WIKITEXT);
+  const result = buildWiktionaryResult("example", "example", RESPELL_WIKITEXT);
+
+  assert.equal(parsed.simple, "kee-AH-roh-SKOOR-oh");
+  assert.equal(result.pronunciation.simple, "kee-AH-roh-SKOOR-oh");
+  assert.equal(result.confidence, "low");
 });
