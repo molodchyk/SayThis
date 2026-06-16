@@ -24,6 +24,7 @@ import {
   normalizeApiKey,
   normalizeCredentials,
   normalizeHttpsEndpoint as normalizeEndpoint,
+  normalizeLanguageHints,
   normalizeLanguageCode,
   normalizeSettings,
   normalizeShortText
@@ -43,6 +44,7 @@ const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
 const autoSpeakPopup = document.getElementById("auto-speak-popup");
+const lookupLanguageHints = document.getElementById("lookup-language-hints");
 const customSourceEnabled = document.getElementById("custom-source-enabled");
 const customSourceEndpoint = document.getElementById("custom-source-endpoint");
 const customSourceLabel = document.getElementById("custom-source-label");
@@ -73,6 +75,7 @@ init();
 onlineDefault.addEventListener("change", saveSettings);
 showOverlay.addEventListener("change", saveSettings);
 autoSpeakPopup.addEventListener("change", saveSettings);
+lookupLanguageHints.addEventListener("change", saveSettings);
 customSourceEnabled.addEventListener("change", saveSettings);
 customSourceEndpoint.addEventListener("change", saveSettings);
 customSourceLabel.addEventListener("change", saveSettings);
@@ -109,6 +112,7 @@ async function init() {
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
   autoSpeakPopup.checked = settings.autoSpeakPopup;
+  lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
   customSourceEnabled.checked = settings.customSourceEnabled;
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
@@ -148,6 +152,7 @@ async function saveSettings() {
   });
   customSourceEnabled.checked = settings.customSourceEnabled;
   autoSpeakPopup.checked = settings.autoSpeakPopup;
+  lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
   forvoEnabled.checked = settings.forvoEnabled;
@@ -234,6 +239,7 @@ async function importData() {
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
   autoSpeakPopup.checked = settings.autoSpeakPopup;
+  lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
   customSourceEnabled.checked = settings.customSourceEnabled;
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
@@ -366,6 +372,7 @@ async function settingsFromControls(credentials) {
     onlineByDefault: onlineDefault.checked,
     showOverlay: showOverlay.checked,
     autoSpeakPopup: autoSpeakPopup.checked,
+    lookupLanguageHints: normalizeLanguageHints(lookupLanguageHints.value),
     customSourceEnabled: customSourceEnabled.checked,
     customSourceEndpoint: normalizeEndpoint(customSourceEndpoint.value),
     customSourceLabel: normalizeShortText(customSourceLabel.value),

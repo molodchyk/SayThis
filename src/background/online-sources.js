@@ -31,7 +31,9 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
     settings.customSourceEnabled
       ? resolveSafely(resolveWithCustomSource, text, settings.customSourceEndpoint, settings.customSourceLabel)
       : Promise.resolve(null),
-    resolveSafely(resolveWithWikidata, text),
+    resolveSafely(resolveWithWikidata, text, {
+      languageHints: settings.lookupLanguageHints
+    }),
     resolveSafely(resolveWithWiktionary, text),
     settings.gazetteerEnabled
       ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint)
@@ -67,13 +69,15 @@ export async function resolveSafely(resolver, ...args) {
   }
 }
 
-export async function resolveWithWikidata(text) {
+export async function resolveWithWikidata(text, options = {}) {
   const query = normalizeSelection(text);
   if (!query) {
     return null;
   }
 
-  const searchResults = await Promise.all(wikidataSearchLanguages(query).map(async (language) => {
+  const searchResults = await Promise.all(wikidataSearchLanguages(query, {
+    languageHints: options.languageHints
+  }).map(async (language) => {
     try {
       return await fetchWikidataSearch(query, language);
     } catch {

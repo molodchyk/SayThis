@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
   autoSpeakPopup: true,
+  lookupLanguageHints: [],
   customSourceEnabled: false,
   customSourceEndpoint: "",
   customSourceLabel: "",
@@ -26,6 +27,7 @@ export function normalizeSettings(settings = {}) {
   const customSourceEndpoint = normalizeHttpsEndpoint(settings.customSourceEndpoint);
   const gazetteerEndpoint = normalizeHttpsEndpoint(settings.gazetteerEndpoint);
   const forvoLanguage = normalizeLanguageCode(settings.forvoLanguage);
+  const lookupLanguageHints = normalizeLanguageHints(settings.lookupLanguageHints);
 
   return {
     ...DEFAULT_SETTINGS,
@@ -33,6 +35,7 @@ export function normalizeSettings(settings = {}) {
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
     autoSpeakPopup: settings.autoSpeakPopup !== false,
+    lookupLanguageHints,
     customSourceEndpoint,
     customSourceLabel: normalizeShortText(settings.customSourceLabel),
     customSourceEnabled: Boolean(settings.customSourceEnabled && customSourceEndpoint),
@@ -56,6 +59,7 @@ export function onlineCacheScope(settings, credentials = {}) {
   const safeCredentials = normalizeCredentials(credentials);
 
   return [
+    safeSettings.lookupLanguageHints.length ? `wikidata ${safeSettings.lookupLanguageHints.join(",")}` : "",
     safeSettings.customSourceEnabled && safeSettings.customSourceEndpoint ? `custom ${safeSettings.customSourceEndpoint}` : "",
     safeSettings.gazetteerEnabled && safeSettings.gazetteerEndpoint ? `gazetteer ${safeSettings.gazetteerEndpoint}` : "",
     safeSettings.forvoEnabled && safeCredentials.forvoApiKey ? `forvo ${safeSettings.forvoLanguage || "all"}` : ""
@@ -90,4 +94,28 @@ export function normalizeLanguageCode(value) {
     .toLowerCase()
     .replace(/_/g, "-")
     .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
+}
+
+export function normalizeLanguageHints(value, options = {}) {
+  const limit = Number(options.limit || 8);
+  const values = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[\s,;]+/);
+  const seen = new Set();
+  const hints = [];
+
+  for (const item of values) {
+    const code = normalizeLanguageCode(item).split("-")[0];
+    if (!code || seen.has(code)) {
+      continue;
+    }
+
+    seen.add(code);
+    hints.push(code);
+    if (hints.length >= limit) {
+      break;
+    }
+  }
+
+  return hints;
 }

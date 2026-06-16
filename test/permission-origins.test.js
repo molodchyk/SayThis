@@ -9,6 +9,7 @@ import {
   normalizeCredentials,
   normalizeHttpsEndpoint,
   normalizeLanguageCode,
+  normalizeLanguageHints,
   normalizeSettings,
   normalizeShortText,
   onlineCacheScope
@@ -66,6 +67,7 @@ test("normalizes extension settings and credentials from one module", () => {
     onlineByDefault: "yes",
     showOverlay: false,
     autoSpeakPopup: false,
+    lookupLanguageHints: " pl, PT_BR; invalid!, ja, pl ",
     customSourceEnabled: true,
     customSourceEndpoint: " https://packs.example/search?set=terms ",
     customSourceLabel: " Curated   terms ",
@@ -84,6 +86,7 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(settings.onlineByDefault, true);
   assert.equal(settings.showOverlay, false);
   assert.equal(settings.autoSpeakPopup, false);
+  assert.deepEqual(settings.lookupLanguageHints, ["pl", "pt", "ja"]);
   assert.equal(settings.customSourceEnabled, true);
   assert.equal(settings.customSourceEndpoint, "https://packs.example/search?set=terms");
   assert.equal(settings.customSourceLabel, "Curated terms");
@@ -97,5 +100,6 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(normalizeApiKey(" a b "), "ab");
   assert.equal(normalizeShortText(` ${"a".repeat(90)} `).length, 80);
   assert.equal(normalizeLanguageCode("EN_us"), "en-us");
-  assert.equal(onlineCacheScope(settings, credentials), "custom https://packs.example/search?set=terms forvo pt-br");
+  assert.deepEqual(normalizeLanguageHints(["EN-us", "pl", "en", "bad!"]), ["en", "pl"]);
+  assert.equal(onlineCacheScope(settings, credentials), "wikidata pl,pt,ja custom https://packs.example/search?set=terms forvo pt-br");
 });

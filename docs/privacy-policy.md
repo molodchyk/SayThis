@@ -8,6 +8,7 @@ SayThis may store this data in Chrome extension local storage:
 
 - the last selected term and last resolver result
 - resolver settings and endpoint settings
+- lookup language hints
 - local pronunciation feedback, such as confirmations, missing-entry requests, and corrections
 - approved shared pronunciation entries pulled from a configured community endpoint
 - a bounded cache of successful online lookup results
@@ -20,7 +21,7 @@ Forvo API keys stay in local extension storage and are not included in data expo
 
 Remote lookup is user-triggered or opt-in. SayThis can send the selected term to these services:
 
-- Wikidata and Wiktionary lookup
+- Wikidata and Wiktionary lookup; Wikidata requests may include lookup language hints as API language parameters
 - Wikimedia Commons audio URLs when audio is played
 - Forvo lookup, only after the user enables Forvo and stores an API key
 - a user-configured custom source endpoint

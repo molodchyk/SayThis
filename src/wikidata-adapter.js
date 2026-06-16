@@ -5,6 +5,11 @@ import {
   normalizeSelection
 } from "./resolver-core.js";
 
+export {
+  normalizeSearchLanguageHints,
+  wikidataSearchLanguages
+} from "./wikidata/search-languages.js";
+
 const NATIVE_LABEL = "P1705";
 const NATIVE_NAME = "P1559";
 const OFFICIAL_NAME = "P1448";
@@ -68,20 +73,6 @@ const ENTITY_TYPE_PRIORITY = [
   "Q202444",
   "Q1969448"
 ];
-const SCRIPT_SEARCH_LANGUAGES = {
-  Arabic: ["ar", "fa"],
-  Armenian: ["hy"],
-  Cyrillic: ["ru", "bg", "sr"],
-  Devanagari: ["hi", "mr", "ne"],
-  Greek: ["el"],
-  Han: ["zh", "ja", "ko"],
-  Hangul: ["ko"],
-  Hebrew: ["he"],
-  Hiragana: ["ja"],
-  Katakana: ["ja"],
-  Thai: ["th"]
-};
-
 export function buildWikidataResult(query, match, entity) {
   if (!match?.id || !entity) {
     return null;
@@ -188,11 +179,6 @@ export function createWikidataSearchOnlyResult(query, match) {
 
 export function commonsRedirectUrl(fileName) {
   return `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(fileName)}`;
-}
-
-export function wikidataSearchLanguages(query) {
-  const script = detectScript(query).script;
-  return [...new Set(["en", ...(SCRIPT_SEARCH_LANGUAGES[script] || [])])].slice(0, 4);
 }
 
 function searchOnlyAliases(query, match = {}) {

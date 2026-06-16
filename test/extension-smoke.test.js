@@ -113,6 +113,7 @@ test("online source resolver retries Wiktionary with resolved source forms", asy
   assert.match(source, /additionalPronunciationLookupCandidates/);
   assert.match(source, /resolveWithNominatimCandidates/);
   assert.match(source, /resolveWithWiktionaryCandidates/);
+  assert.match(source, /languageHints: settings\.lookupLanguageHints/);
   assert.match(source, /nominatimCandidateResult/);
   assert.match(source, /refinedStructuredResult/);
   assert.match(source, /resolveWithForvoCandidates\(text, refinedStructuredResult/);
@@ -184,6 +185,9 @@ test("options page exposes shared-entry data controls", async () => {
 
   assert.match(html, /id="auto-speak-popup"/);
   assert.match(source, /autoSpeakPopup/);
+  assert.match(html, /id="lookup-language-hints"/);
+  assert.match(source, /lookupLanguageHints/);
+  assert.match(source, /normalizeLanguageHints/);
   assert.match(html, /id="pull-enabled"/);
   assert.match(html, /id="pull-approved"/);
   assert.match(html, /id="clear-approved"/);
