@@ -75,6 +75,9 @@ test("builds a structured place result with local source form", () => {
   assert.equal(result.language, "el");
   assert.equal(result.sourceStatus, "structured-source");
   assert.equal(result.category, "place");
+  assert.equal(result.alternateResults.length, 1);
+  assert.equal(result.alternateResults[0].sourceForm, "Athens");
+  assert.equal(result.alternateResults[0].language, "en");
   assert.ok(result.origin.includes("Greece"));
   assert.ok(result.evidence.some((item) => item.includes("Nominatim-compatible")));
   assert.ok(result.sources.some((source) => source.url === "https://www.openstreetmap.org/relation/1370736"));

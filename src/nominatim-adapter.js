@@ -60,31 +60,38 @@ export function buildNominatimResult(query, places = []) {
   const placeType = placeTypeLabel(place);
   const country = normalizeSelection(place.address?.country);
   const osmId = osmObjectLabel(place);
+  const id = `nominatim:${osmId || createLookupKey(place.display_name || sourceForm)}`;
+  const display = normalizeSelection(place.name || selectedText);
+  const origin = [placeType, country].filter(Boolean).join("; ");
 
-  return createRemoteStructuredResult(selectedText, {
-    id: `nominatim:${osmId || createLookupKey(place.display_name || sourceForm)}`,
-    display: normalizeSelection(place.name || selectedText),
+  const result = createRemoteStructuredResult(selectedText, {
+    id,
+    display,
     aliases,
     sourceForm,
     language: sourceCandidate?.language || "",
     languageName: "",
     category: "place",
-    origin: [placeType, country].filter(Boolean).join("; "),
+    origin,
     pronunciation: {},
     sourceStatus: "structured-source",
     confidence: sourceCandidate?.confidence || "medium",
-    evidence: [
-      "Gazetteer match from Nominatim-compatible search",
-      osmId ? `OpenStreetMap object ${osmId}` : "",
-      placeType ? `Place type: ${placeType}` : "",
-      sourceCandidate?.source ? `Source form from ${sourceCandidate.source}` : "",
-      "Data attribution: OpenStreetMap contributors"
-    ].filter(Boolean),
-    sources: [
-      osmUrl ? { label: "OpenStreetMap", url: osmUrl } : null,
-      { label: "OpenStreetMap attribution", url: "https://www.openstreetmap.org/copyright" }
-    ].filter(Boolean)
+    evidence: placeEvidence(osmId, placeType, sourceCandidate?.source),
+    sources: placeSources(osmUrl)
   });
+
+  const alternateResults = alternateResultsFromPlace(selectedText, place, sourceCandidate, {
+    id,
+    display,
+    origin,
+    osmId,
+    osmUrl,
+    placeType
+  });
+
+  return alternateResults.length
+    ? { ...result, alternateResults }
+    : result;
 }
 
 export function selectBestNominatimPlace(query, places = []) {
@@ -160,6 +167,71 @@ function aliasCandidatesFromPlace(place, excludedValues = []) {
   }
 
   return aliases.slice(0, 12);
+}
+
+function alternateResultsFromPlace(query, place, primaryCandidate, context) {
+  const selectedScript = detectScript(query).script;
+  const seen = new Set([nameCandidateKey(primaryCandidate)].filter(Boolean));
+  const alternates = [];
+
+  const candidates = nameCandidates(place)
+    .map((candidate) => ({
+      ...candidate,
+      score: scoreSourceCandidate(query, selectedScript, candidate)
+    }))
+    .sort((left, right) => right.score - left.score);
+
+  for (const candidate of candidates) {
+    const key = nameCandidateKey(candidate);
+    if (!key || !candidate.language || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    alternates.push(createRemoteStructuredResult(query, {
+      id: `${context.id}:alternate:${createLookupKey(candidate.value)}:${candidate.language}`,
+      display: context.display,
+      aliases: [],
+      sourceForm: candidate.value,
+      language: candidate.language,
+      languageName: "",
+      category: "place",
+      origin: context.origin,
+      pronunciation: {},
+      sourceStatus: "structured-source",
+      confidence: candidate.confidence || "low",
+      evidence: placeEvidence(context.osmId, context.placeType, candidate.source),
+      sources: placeSources(context.osmUrl)
+    }));
+
+    if (alternates.length >= 4) {
+      break;
+    }
+  }
+
+  return alternates;
+}
+
+function nameCandidateKey(candidate = {}) {
+  const key = createLookupKey(candidate.value);
+  return key ? `${key}:${candidate.language || ""}` : "";
+}
+
+function placeEvidence(osmId, placeType, source) {
+  return [
+    "Gazetteer match from Nominatim-compatible search",
+    osmId ? `OpenStreetMap object ${osmId}` : "",
+    placeType ? `Place type: ${placeType}` : "",
+    source ? `Source form from ${source}` : "",
+    "Data attribution: OpenStreetMap contributors"
+  ].filter(Boolean);
+}
+
+function placeSources(osmUrl) {
+  return [
+    osmUrl ? { label: "OpenStreetMap", url: osmUrl } : null,
+    { label: "OpenStreetMap attribution", url: "https://www.openstreetmap.org/copyright" }
+  ].filter(Boolean);
 }
 
 function addCandidate(candidates, key, value, source) {
