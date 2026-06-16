@@ -32,6 +32,13 @@ import {
   sourceLabelForStatus as sourceLabelForStatusDirect,
   strongerConfidence
 } from "../src/resolver/status.js";
+import {
+  normalizeAliases as normalizeValueAliases,
+  normalizeCount as normalizeValueCount,
+  normalizeLongValue,
+  normalizeTrustSignals as normalizeValueTrustSignals,
+  normalizeUrl as normalizeValueUrl
+} from "../src/resolver/values.js";
 
 const seedData = JSON.parse(await readFile(new URL("../data/pronunciation-seed.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -80,6 +87,16 @@ test("maps resolver status helpers from a narrow module", () => {
   assert.equal(strongerConfidence("low", "medium"), "medium");
   assert.equal(sourceLabelForStatusDirect("structured-source"), "Structured source");
   assert.equal(sourceLabelForStatus("structured-source"), sourceLabelForStatusDirect("structured-source"));
+});
+
+test("normalizes resolver values from a narrow module", () => {
+  assert.deepEqual(normalizeValueAliases("Alpha; Beta; Alpha"), ["Alpha", "Beta"]);
+  assert.deepEqual(normalizeValueTrustSignals(["source-backed", "source-backed", "audio-backed"]), ["source-backed", "audio-backed"]);
+  assert.equal(normalizeValueUrl(" https://example.com/audio.ogg "), "https://example.com/audio.ogg");
+  assert.equal(normalizeValueUrl("http://example.com/audio.ogg"), "");
+  assert.equal(normalizeLongValue(` ${"a".repeat(2050)} `).length, 2048);
+  assert.equal(normalizeValueCount(12.8), 12);
+  assert.equal(normalizeValueCount(-1), 0);
 });
 
 test("resolves bundled entries by alias", () => {

@@ -15,6 +15,13 @@ import {
   sourceLabelForStatus,
   strongerConfidence
 } from "./resolver/status.js";
+import {
+  normalizeAliases,
+  normalizeCount,
+  normalizeLongValue,
+  normalizeTrustSignals,
+  normalizeUrl
+} from "./resolver/values.js";
 
 export {
   MAX_SELECTION_LENGTH,
@@ -710,48 +717,6 @@ function normalizeAudio(audio) {
       quality: normalizeSelection(item?.quality)
     }))
     .filter((item) => item.url);
-}
-
-function normalizeLongValue(value) {
-  return String(value || "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 2048);
-}
-
-function normalizeUrl(value) {
-  const raw = normalizeLongValue(value);
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const url = new URL(raw);
-    return ["https:", "chrome-extension:"].includes(url.protocol) ? url.toString() : "";
-  } catch {
-    return "";
-  }
-}
-
-function normalizeAliases(value) {
-  const raw = Array.isArray(value)
-    ? value
-    : String(value || "").split(/[;,\n]/);
-
-  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
-}
-
-function normalizeTrustSignals(value) {
-  const raw = Array.isArray(value)
-    ? value
-    : String(value || "").split(/[;,\n]/);
-
-  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
-}
-
-function normalizeCount(value) {
-  const number = Number(value || 0);
-  return Number.isFinite(number) ? Math.floor(clamp(number, 0, 100000)) : 0;
 }
 
 function shouldResolveAudioUrl(url) {
