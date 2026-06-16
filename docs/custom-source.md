@@ -82,6 +82,8 @@ Or multiple entries:
 
 SayThis ranks returned entries by exact alias/source-form match, pronunciation evidence, audio, and confidence. A configured custom source is queried before generic online sources, so domain-reviewed data can take priority when confidence is equal.
 
+When several returned entries match the selected term, SayThis keeps the strongest entry as the primary result and preserves the next matching entries as alternate candidates. This lets a domain pack represent variants, roots, or language-specific pronunciations without forcing them into one entry.
+
 ## Privacy
 
 Custom sources are disabled by default. SayThis sends only the selected term to the configured endpoint. It does not send page URLs or browsing history.

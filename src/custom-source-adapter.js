@@ -26,14 +26,39 @@ export function buildCustomSourceUrl(query, endpoint) {
 
 export function buildCustomSourceResult(query, payload = {}, options = {}) {
   const selectedText = normalizeSelection(query);
-  const entry = selectBestCustomEntry(selectedText, payload);
+  const rankedEntries = rankedCustomEntries(selectedText, payload);
+  const entry = rankedEntries[0]?.entry;
   if (!selectedText || !entry) {
     return null;
   }
 
+  const label = normalizeSelection(options.label || payload.sourceName || payload.name || "Custom source");
+  const result = createCustomSourceEntryResult(selectedText, entry, payload, label);
+  const alternateResults = alternateResultsFromRankedEntries(selectedText, rankedEntries.slice(1), payload, label);
+
+  return alternateResults.length
+    ? { ...result, alternateResults }
+    : result;
+}
+
+export function selectBestCustomEntry(query, payload = {}) {
+  return rankedCustomEntries(query, payload)[0]?.entry || null;
+}
+
+function rankedCustomEntries(query, payload = {}) {
+  const entries = normalizeEntries(payload);
+  return entries
+    .map((entry, index) => ({
+      entry,
+      score: scoreEntry(query, entry, index)
+    }))
+    .filter((candidate) => candidate.score > 0)
+    .sort((left, right) => right.score - left.score);
+}
+
+function createCustomSourceEntryResult(selectedText, entry, payload, label) {
   const sourceForm = normalizeSelection(entry.sourceForm || entry.native || entry.term || entry.display || selectedText);
   const display = normalizeSelection(entry.display || entry.term || sourceForm || selectedText);
-  const label = normalizeSelection(options.label || payload.sourceName || payload.name || "Custom source");
   const audio = normalizeAudio(entry);
   const ipa = normalizeSelection(entry.ipa || entry.pronunciation?.ipa);
   const simple = normalizeSelection(entry.simple || entry.pronunciation?.simple);
@@ -72,15 +97,34 @@ export function buildCustomSourceResult(query, payload = {}, options = {}) {
   });
 }
 
-export function selectBestCustomEntry(query, payload = {}) {
-  const entries = normalizeEntries(payload);
-  return entries
-    .map((entry, index) => ({
-      entry,
-      score: scoreEntry(query, entry, index)
-    }))
-    .filter((candidate) => candidate.score > 0)
-    .sort((left, right) => right.score - left.score)[0]?.entry || null;
+function alternateResultsFromRankedEntries(selectedText, rankedEntries, payload, label) {
+  const alternates = [];
+  const seen = new Set();
+
+  for (const { entry } of rankedEntries) {
+    const result = createCustomSourceEntryResult(selectedText, entry, payload, label);
+    const key = customResultKey(result);
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    alternates.push(result);
+
+    if (alternates.length >= 4) {
+      break;
+    }
+  }
+
+  return alternates;
+}
+
+function customResultKey(result = {}) {
+  return [
+    normalizeSelection(result.id),
+    createLookupKey(result.sourceForm || result.display || result.query),
+    normalizeSelection(result.language)
+  ].filter(Boolean).join("|");
 }
 
 function normalizeEntries(payload = {}) {

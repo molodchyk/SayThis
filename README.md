@@ -39,6 +39,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Wikidata lookup adds script-based search languages for non-Latin selections.
 - Custom sources can provide array or text aliases and keyed entry maps.
+- Custom sources preserve matching alternate entries for variants or language-specific pronunciations.
 - Source-form and alias-guided Wiktionary lookup after structured resolution.
 - Wiktionary enPR and respelling guides are surfaced as simple pronunciation guides.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.

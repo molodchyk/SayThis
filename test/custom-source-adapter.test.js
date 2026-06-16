@@ -107,3 +107,36 @@ test("preserves custom source string aliases on results", () => {
   assert.equal(result.sourceForm, "chiaroscuro");
   assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
 });
+
+test("preserves alternate custom source matches", () => {
+  const result = buildCustomSourceResult("lume", {
+    sourceName: "Research pack",
+    entries: [{
+      id: "term:lume-it",
+      term: "lume",
+      sourceForm: "lume",
+      language: "it",
+      audioUrl: "https://example.com/audio/lume-it.ogg",
+      simple: "LOO-meh"
+    }, {
+      id: "term:lume-pt",
+      term: "lume",
+      sourceForm: "lume",
+      language: "pt",
+      simple: "LOO-mee"
+    }, {
+      id: "term:sfumato",
+      term: "sfumato",
+      sourceForm: "sfumato",
+      language: "it",
+      simple: "sfoo-MAH-toh"
+    }]
+  });
+
+  assert.equal(result.id, "custom:term:lume-it");
+  assert.equal(result.language, "it");
+  assert.equal(result.alternateResults.length, 1);
+  assert.equal(result.alternateResults[0].id, "custom:term:lume-pt");
+  assert.equal(result.alternateResults[0].language, "pt");
+  assert.equal(result.alternateResults[0].pronunciation.simple, "LOO-mee");
+});
