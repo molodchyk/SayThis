@@ -181,6 +181,50 @@ test("online source resolver exposes deterministic helpers", async () => {
   }
 });
 
+test("online source resolver passes language hints to gazetteer lookup", async () => {
+  const {
+    resolveWithNominatim
+  } = await import("../src/background/online-sources.js");
+  const originalFetch = globalThis.fetch;
+  let requestedUrl = "";
+
+  try {
+    globalThis.fetch = async (url) => {
+      requestedUrl = url;
+      return {
+        ok: true,
+        async json() {
+          return [{
+            osm_type: "relation",
+            osm_id: "777",
+            name: "Exampletown",
+            display_name: "Exampletown, Exampleland",
+            category: "place",
+            type: "village",
+            importance: 0.6,
+            address: { country: "Exampleland" },
+            namedetails: {
+              name: "Exampletown",
+              "name:pl": "Przykladowo"
+            }
+          }];
+        }
+      };
+    };
+
+    const result = await resolveWithNominatim("Exampletown", "https://example.com/search", {
+      languageHints: ["pl"]
+    });
+    const url = new URL(requestedUrl);
+
+    assert.equal(url.searchParams.get("accept-language"), "pl,en");
+    assert.equal(result.sourceForm, "Przykladowo");
+    assert.equal(result.language, "pl");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("online source resolver tries hinted Wiktionary editions", async () => {
   const {
     resolveWithWiktionary

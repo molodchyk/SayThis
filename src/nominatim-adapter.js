@@ -39,21 +39,23 @@ export function buildNominatimSearchUrl(query, endpoint, options = {}) {
   url.searchParams.set("extratags", "1");
   url.searchParams.set("dedupe", "1");
 
-  if (options.acceptLanguage) {
-    url.searchParams.set("accept-language", normalizeSelection(options.acceptLanguage));
+  const acceptLanguage = normalizeSelection(options.acceptLanguage);
+  if (acceptLanguage) {
+    url.searchParams.set("accept-language", acceptLanguage);
   }
 
   return url.toString();
 }
 
-export function buildNominatimResult(query, places = []) {
+export function buildNominatimResult(query, places = [], options = {}) {
   const selectedText = normalizeSelection(query);
-  const place = selectBestNominatimPlace(selectedText, places);
+  const languageHints = gazetteerLanguageHintSet(options.languageHints);
+  const place = selectBestNominatimPlace(selectedText, places, { languageHints });
   if (!selectedText || !place) {
     return null;
   }
 
-  const sourceCandidate = chooseSourceCandidate(selectedText, place);
+  const sourceCandidate = chooseSourceCandidate(selectedText, place, { languageHints });
   const sourceForm = sourceCandidate?.value || normalizeSelection(place.name || selectedText);
   const aliases = aliasCandidatesFromPlace(place, [selectedText, sourceForm]);
   const osmUrl = osmUrlFromPlace(place);
@@ -86,7 +88,8 @@ export function buildNominatimResult(query, places = []) {
     origin,
     osmId,
     osmUrl,
-    placeType
+    placeType,
+    languageHints
   });
 
   return alternateResults.length
@@ -94,18 +97,46 @@ export function buildNominatimResult(query, places = []) {
     : result;
 }
 
-export function selectBestNominatimPlace(query, places = []) {
+export function selectBestNominatimPlace(query, places = [], options = {}) {
+  const languageHints = gazetteerLanguageHintSet(options.languageHints);
   const candidates = Array.isArray(places) ? places : [];
   return candidates
     .map((place, index) => ({
       place,
-      score: scorePlace(query, place, index)
+      score: scorePlace(query, place, index, { languageHints })
     }))
     .filter((item) => item.score > 0)
     .sort((left, right) => right.score - left.score)[0]?.place || null;
 }
 
-function chooseSourceCandidate(query, place) {
+export function nominatimAcceptLanguage(options = {}) {
+  const values = [
+    options.language,
+    ...(Array.isArray(options.languageHints) ? options.languageHints : String(options.languageHints || "").split(/[\s,;]+/)),
+    "en"
+  ];
+  const seen = new Set();
+  const languages = [];
+
+  for (const value of values) {
+    const language = normalizeGazetteerLanguage(value);
+    if (!language || seen.has(language)) {
+      continue;
+    }
+
+    seen.add(language);
+    languages.push(language);
+    if (languages.length >= 5) {
+      break;
+    }
+  }
+
+  return languages.length > 1 || languages[0] !== "en"
+    ? languages.join(",")
+    : "";
+}
+
+function chooseSourceCandidate(query, place, options = {}) {
   const candidates = nameCandidates(place);
   if (!candidates.length) {
     return {
@@ -117,10 +148,11 @@ function chooseSourceCandidate(query, place) {
   }
 
   const selectedScript = detectScript(query).script;
+  const languageHints = gazetteerLanguageHintSet(options.languageHints);
   return candidates
     .map((candidate) => ({
       ...candidate,
-      score: scoreSourceCandidate(query, selectedScript, candidate)
+      score: scoreSourceCandidate(query, selectedScript, candidate, { languageHints })
     }))
     .sort((left, right) => right.score - left.score)[0];
 }
@@ -173,11 +205,12 @@ function alternateResultsFromPlace(query, place, primaryCandidate, context) {
   const selectedScript = detectScript(query).script;
   const seen = new Set([nameCandidateKey(primaryCandidate)].filter(Boolean));
   const alternates = [];
+  const languageHints = gazetteerLanguageHintSet(context.languageHints);
 
   const candidates = nameCandidates(place)
     .map((candidate) => ({
       ...candidate,
-      score: scoreSourceCandidate(query, selectedScript, candidate)
+      score: scoreSourceCandidate(query, selectedScript, candidate, { languageHints })
     }))
     .sort((left, right) => right.score - left.score);
 
@@ -291,11 +324,12 @@ function confidenceForNameKey(key) {
   return LOCAL_NAME_KEYS.has(base) ? "medium" : "low";
 }
 
-function scoreSourceCandidate(query, selectedScript, candidate) {
+function scoreSourceCandidate(query, selectedScript, candidate, options = {}) {
   const queryKey = createLookupKey(query);
   const candidateKey = createLookupKey(candidate.value);
   const script = detectScript(candidate.value).script;
   const base = String(candidate.key || "").split(":")[0];
+  const languageHints = gazetteerLanguageHintSet(options.languageHints);
   let score = 0;
 
   if (base === "name") {
@@ -314,6 +348,10 @@ function scoreSourceCandidate(query, selectedScript, candidate) {
     score += 6;
   }
 
+  if (matchesGazetteerLanguageHint(candidate.language, languageHints)) {
+    score += 8;
+  }
+
   if (script && script !== "Unknown" && script !== selectedScript) {
     score += 5;
   }
@@ -329,9 +367,11 @@ function scoreSourceCandidate(query, selectedScript, candidate) {
   return score;
 }
 
-function scorePlace(query, place = {}, index) {
+function scorePlace(query, place = {}, index, options = {}) {
   const queryKey = createLookupKey(query);
-  const names = nameCandidates(place).map((candidate) => createLookupKey(candidate.value));
+  const languageHints = gazetteerLanguageHintSet(options.languageHints);
+  const candidates = nameCandidates(place);
+  const names = candidates.map((candidate) => createLookupKey(candidate.value));
   const displayKey = createLookupKey(place.display_name);
   const type = normalizeSelection(place.type || place.addresstype).toLowerCase();
   const category = normalizeSelection(place.category || place.class).toLowerCase();
@@ -348,6 +388,10 @@ function scorePlace(query, place = {}, index) {
     score += 14;
   } else if (displayKey.includes(queryKey)) {
     score += 8;
+  }
+
+  if (candidates.some((candidate) => matchesGazetteerLanguageHint(candidate.language, languageHints))) {
+    score += 6;
   }
 
   if (PLACE_TYPES.has(type) || PLACE_TYPES.has(category)) {
@@ -412,6 +456,49 @@ function normalizeEndpoint(endpoint) {
   } catch {
     return null;
   }
+}
+
+function gazetteerLanguageHintSet(value) {
+  return value instanceof Set
+    ? value
+    : new Set(normalizeGazetteerLanguages(value));
+}
+
+function normalizeGazetteerLanguages(value) {
+  const values = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[\s,;]+/);
+  const seen = new Set();
+  const languages = [];
+
+  for (const item of values) {
+    const language = normalizeGazetteerLanguage(item);
+    if (!language || seen.has(language)) {
+      continue;
+    }
+
+    seen.add(language);
+    languages.push(language);
+    if (languages.length >= 5) {
+      break;
+    }
+  }
+
+  return languages;
+}
+
+function normalizeGazetteerLanguage(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0]
+    ?.split("-")[0] || "";
+}
+
+function matchesGazetteerLanguageHint(language, hints = new Set()) {
+  const base = normalizeGazetteerLanguage(language);
+  return Boolean(base && hints.has(base));
 }
 
 function clampInteger(value, min, max, fallback) {

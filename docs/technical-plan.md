@@ -89,6 +89,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Forvo candidate planning can retry configured-language lookups with resolved source-language hints.
 - Matching verified audio is merged onto structured results so source context, IPA, and origin are preserved.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
+- Gazetteer lookup accepts language hints for request language order and source-form scoring.
 - Nominatim-compatible lookup keeps language-tagged alternate place names as alternate results, so audio lookup can retry the same spelling with the right language hint.
 - Source-form and alias-guided gazetteer retries after other structured sources resolve a better lookup form.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.
@@ -196,7 +197,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 5. Keep community submissions scoped to the selected term and pronunciation metadata.
 6. Community sync is disabled by default, accepts only HTTPS endpoints, queues feedback only when enabled, and requests endpoint-origin access only after the user enables submission or approved-entry refresh.
 7. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata.
-8. Gazetteer lookup accepts only HTTPS endpoints and is disabled until a user configures one.
+8. Gazetteer lookup accepts only HTTPS endpoints, is disabled until a user configures one, and uses lookup language hints only as request/source-form hints.
 9. Forvo lookup is disabled until a user enables it and stores a local API key; the key is not included in exports.
 10. Custom source lookup accepts only HTTPS endpoints and sends only the selected term.
 

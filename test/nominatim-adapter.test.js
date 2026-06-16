@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   buildNominatimResult,
   buildNominatimSearchUrl,
+  nominatimAcceptLanguage,
   selectBestNominatimPlace
 } from "../src/nominatim-adapter.js";
 
@@ -22,6 +23,9 @@ test("builds a conservative Nominatim-compatible search URL", () => {
   assert.equal(url.searchParams.get("extratags"), "1");
   assert.equal(url.searchParams.get("dedupe"), "1");
   assert.equal(url.searchParams.get("accept-language"), "el,en");
+  assert.equal(nominatimAcceptLanguage({
+    languageHints: "pl, el, invalid!, pt-BR"
+  }), "pl,el,pt,en");
 });
 
 test("rejects non-https gazetteer endpoints", () => {
@@ -82,4 +86,30 @@ test("builds a structured place result with local source form", () => {
   assert.ok(result.evidence.some((item) => item.includes("Nominatim-compatible")));
   assert.ok(result.sources.some((source) => source.url === "https://www.openstreetmap.org/relation/1370736"));
   assert.ok(result.sources.some((source) => source.label.includes("attribution")));
+});
+
+test("uses language hints for gazetteer source forms", () => {
+  const result = buildNominatimResult("Exampletown", [{
+    osm_type: "relation",
+    osm_id: "777",
+    name: "Exampletown",
+    display_name: "Exampletown, Exampleland",
+    category: "place",
+    type: "village",
+    importance: 0.6,
+    address: {
+      country: "Exampleland"
+    },
+    namedetails: {
+      name: "Exampletown",
+      "name:de": "Beispieldorf",
+      "name:pl": "Przykladowo"
+    }
+  }], {
+    languageHints: ["pl"]
+  });
+
+  assert.equal(result.sourceForm, "Przykladowo");
+  assert.equal(result.language, "pl");
+  assert.equal(result.alternateResults.some((item) => item.language === "de"), true);
 });

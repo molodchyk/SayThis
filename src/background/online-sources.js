@@ -13,7 +13,8 @@ import {
 } from "../wiktionary-adapter.js";
 import {
   buildNominatimResult,
-  buildNominatimSearchUrl
+  buildNominatimSearchUrl,
+  nominatimAcceptLanguage
 } from "../nominatim-adapter.js";
 import {
   buildForvoResult,
@@ -40,7 +41,9 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
       languageHints: settings.lookupLanguageHints
     }),
     settings.gazetteerEnabled
-      ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint)
+      ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint, {
+        languageHints: settings.lookupLanguageHints
+      })
       : Promise.resolve(null)
   ]);
 
@@ -48,7 +51,9 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const nominatimCandidateResult = settings.gazetteerEnabled && structuredResult
-    ? await resolveWithNominatimCandidates(text, structuredResult, settings.gazetteerEndpoint)
+    ? await resolveWithNominatimCandidates(text, structuredResult, settings.gazetteerEndpoint, {
+      languageHints: settings.lookupLanguageHints
+    })
     : null;
   const wiktionaryCandidateResult = structuredResult
     ? await resolveWithWiktionaryCandidates(text, structuredResult)
@@ -220,15 +225,17 @@ export async function resolveWithWiktionaryCandidates(text, structuredResult) {
   return result;
 }
 
-export async function resolveWithNominatim(text, endpoint) {
-  return resolveWithNominatimLookup(text, text, endpoint);
+export async function resolveWithNominatim(text, endpoint, options = {}) {
+  return resolveWithNominatimLookup(text, text, endpoint, options);
 }
 
 export async function resolveWithNominatimLookup(selectedText, lookupWord, endpoint, options = {}) {
   const selected = normalizeSelection(selectedText);
   const query = normalizeSelection(lookupWord);
-  const language = normalizeSelection(options.language);
-  const acceptLanguage = language ? `${language},en` : "";
+  const acceptLanguage = nominatimAcceptLanguage({
+    language: options.language,
+    languageHints: options.languageHints
+  });
   const url = buildNominatimSearchUrl(query, endpoint, {
     limit: 5,
     acceptLanguage
@@ -248,10 +255,12 @@ export async function resolveWithNominatimLookup(selectedText, lookupWord, endpo
   }
 
   const data = await response.json();
-  return buildNominatimResult(selected, data);
+  return buildNominatimResult(selected, data, {
+    languageHints: options.languageHints
+  });
 }
 
-export async function resolveWithNominatimCandidates(text, structuredResult, endpoint) {
+export async function resolveWithNominatimCandidates(text, structuredResult, endpoint, options = {}) {
   const query = normalizeSelection(text);
   if (!query) {
     return null;
@@ -260,7 +269,8 @@ export async function resolveWithNominatimCandidates(text, structuredResult, end
   let result = null;
   for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
     const placeResult = await resolveSafely(resolveWithNominatimLookup, query, candidate.word, endpoint, {
-      language: candidate.language
+      language: candidate.language,
+      languageHints: options.languageHints
     });
     if (!placeResult) {
       continue;
