@@ -151,6 +151,7 @@ export async function createCommunityServer(options = {}) {
     options.allowedOrigins ?? process.env.SAYTHIS_ALLOWED_ORIGINS
   );
   let store = await readStore(storePath);
+  const runStoreOperation = createStoreOperationQueue();
 
   const server = createServer(async (request, response) => {
     let body = "";
@@ -166,27 +167,35 @@ export async function createCommunityServer(options = {}) {
       return;
     }
 
-    const result = await handleCommunityRequest({
-      method: request.method,
-      url: request.url,
-      headers: request.headers,
-      remoteAddress: request.socket?.remoteAddress,
-      body
-    }, store, {
-      adminToken,
-      maxBodyBytes,
-      maxPendingSubmissions,
-      maxRejectedSubmissions,
-      allowedOrigins,
-      rateLimiter
-    });
+    try {
+      const result = await runStoreOperation(async () => {
+        const next = await handleCommunityRequest({
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          remoteAddress: request.socket?.remoteAddress,
+          body
+        }, store, {
+          adminToken,
+          maxBodyBytes,
+          maxPendingSubmissions,
+          maxRejectedSubmissions,
+          allowedOrigins,
+          rateLimiter
+        });
 
-    store = result.store;
-    await writeStore(storePath, store);
-    sendCommunityResponse(response, result, {
-      allowedOrigins,
-      requestOrigin: request.headers.origin
-    });
+        await writeStore(storePath, next.store);
+        store = next.store;
+        return next;
+      });
+
+      sendCommunityResponse(response, result, {
+        allowedOrigins,
+        requestOrigin: request.headers.origin
+      });
+    } catch {
+      sendJsonResponse(response, 500, { error: "server-error" });
+    }
   });
 
   return server;
@@ -369,6 +378,15 @@ async function readStore(storePath) {
 async function writeStore(storePath, store) {
   await mkdir(dirname(storePath), { recursive: true });
   await writeFile(storePath, `${JSON.stringify(normalizeStore(store), null, 2)}\n`, "utf8");
+}
+
+function createStoreOperationQueue() {
+  let queue = Promise.resolve();
+  return function run(task) {
+    const operation = queue.then(task, task);
+    queue = operation.catch(() => {});
+    return operation;
+  };
 }
 
 function sendCommunityResponse(response, result, options = {}) {

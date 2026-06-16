@@ -130,4 +130,6 @@ The service writes a JSON store containing:
 - `approved`: approved shared entries keyed by lookup key
 - `rejected`: rejected submission summaries
 
+The built-in Node service serializes store writes in process so overlapping requests do not overwrite pending entries.
+
 The store intentionally excludes request headers, IP addresses, and page URLs.

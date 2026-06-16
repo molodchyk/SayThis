@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import {
   createEmptyStore,
@@ -7,6 +10,7 @@ import {
 import {
   adminTokenMatches,
   corsAllowOrigin,
+  createCommunityServer,
   createMemoryRateLimiter,
   handleCommunityRequest,
   normalizeAllowedOrigins,
@@ -547,3 +551,65 @@ test("caps rejected submission history", async () => {
   assert.equal(store.rejected.length, 2);
   assert.deepEqual(store.rejected.map((item) => item.id), ["sub_reject_2", "sub_reject_3"]);
 });
+
+test("serializes community store writes for concurrent submissions", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "saythis-community-"));
+  const storePath = join(dir, "store.json");
+  let server;
+
+  t.after(async () => {
+    if (server?.listening) {
+      await closeServer(server);
+    }
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  server = await createCommunityServer({
+    storePath,
+    maxPendingSubmissions: 50,
+    rateLimiter: {
+      check() {
+        return { ok: true, retryAfterMs: 0 };
+      }
+    }
+  });
+  await listen(server);
+
+  const { port } = server.address();
+  const responses = await Promise.all(Array.from({ length: 12 }, (_item, index) => {
+    const id = `sub_parallel_${index}`;
+    return fetch(`http://127.0.0.1:${port}/community`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id,
+        term: id,
+        lookupKey: id,
+        kind: "missing"
+      })
+    });
+  }));
+  const store = JSON.parse(await readFile(storePath, "utf8"));
+
+  assert.deepEqual(responses.map((response) => response.status), Array(12).fill(202));
+  assert.equal(store.pending.length, 12);
+  assert.deepEqual(store.pending.map((item) => item.id), Array.from({ length: 12 }, (_item, index) => `sub_parallel_${index}`));
+});
+
+function listen(server) {
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", resolve);
+  });
+}
+
+function closeServer(server) {
+  return new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+}
