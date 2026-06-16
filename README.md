@@ -46,6 +46,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Custom sources preserve matching alternate entries for variants or language-specific pronunciations.
 - Source-form and alias-guided Wiktionary lookup after structured resolution.
 - Wiktionary enPR and respelling guides are surfaced as simple pronunciation guides.
+- Wiktionary pronunciation-audio lookup preserves multiple Commons recordings from one language section.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
 - Forvo audio paths are preserved as long source URLs for playback.
 - Forvo results preserve additional same-word, same-language recordings for source-backed practice options.

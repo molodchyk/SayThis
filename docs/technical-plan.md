@@ -56,6 +56,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Wiktionary enPR and respelling templates parsed into simple pronunciation guides.
+- Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.

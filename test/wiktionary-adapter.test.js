@@ -15,6 +15,8 @@ Borrowed from {{bor|en|it|chiaroscuro}}, from {{m|it|chiaro}} + {{m|it|oscuro}}.
 * {{enPR|kē-är'ə-skûrō}}
 * {{IPA|en|/kiˌɑːɹəˈskʊəɹoʊ/}}
 * {{audio|en|En-us-chiaroscuro.ogg|Audio (US)}}
+* {{audio|en|En-uk-chiaroscuro.ogg|Audio (UK)}}
+* {{audio|en|En-us-chiaroscuro.ogg|Audio (US)}}
 
 ===Noun===
 # The use of light and dark.
@@ -69,6 +71,7 @@ test("parses IPA, audio, language, and etymology from Wiktionary wikitext", () =
   assert.equal(parsed.ipa, "/kiˌɑːɹəˈskʊəɹoʊ/");
   assert.equal(parsed.simple, "kē-är'ə-skûrō");
   assert.equal(parsed.audioFile, "En-us-chiaroscuro.ogg");
+  assert.deepEqual(parsed.audioFiles, ["En-us-chiaroscuro.ogg", "En-uk-chiaroscuro.ogg"]);
   assert.equal(parsed.origin, "Borrowed from chiaroscuro, from chiaro + oscuro.");
 });
 
@@ -80,7 +83,10 @@ test("builds a verified-audio pronunciation result from Wiktionary", () => {
   assert.equal(result.confidence, "high");
   assert.equal(result.pronunciation.ipa, "/kiˌɑːɹəˈskʊəɹoʊ/");
   assert.equal(result.pronunciation.simple, "kē-är'ə-skûrō");
+  assert.equal(result.pronunciation.audio.length, 2);
   assert.equal(result.pronunciation.audio[0].source, "Wiktionary");
+  assert.equal(result.pronunciation.audio[1].label, "Pronunciation audio 2");
+  assert.ok(result.evidence.includes("Additional Wiktionary pronunciation audio: 1"));
   assert.ok(result.origin.includes("chiaro"));
 });
 
@@ -91,6 +97,7 @@ test("uses the language section that carries pronunciation data", () => {
   assert.equal(parsed.languageName, "Italian");
   assert.equal(parsed.ipa, "/ˈlu.me/");
   assert.equal(parsed.audioFile, "It-lume.ogg");
+  assert.deepEqual(parsed.audioFiles, ["It-lume.ogg"]);
   assert.equal(parsed.origin, "From lume.");
 });
 

@@ -45,7 +45,7 @@ const LANGUAGE_CODES = {
 
 export function buildWiktionaryResult(query, pageTitle, wikitext) {
   const parsed = parseWiktionaryPronunciation(wikitext);
-  if (!parsed.ipa && !parsed.simple && !parsed.audioFile && !parsed.origin) {
+  if (!parsed.ipa && !parsed.simple && !hasAudioFiles(parsed) && !parsed.origin) {
     return null;
   }
 
@@ -73,6 +73,7 @@ export function parseWiktionaryPronunciation(wikitext = "") {
       ipa: "",
       simple: "",
       audioFile: "",
+      audioFiles: [],
       origin: "",
       alternateEntries: []
     };
@@ -87,6 +88,7 @@ export function parseWiktionaryPronunciation(wikitext = "") {
 }
 
 function createWiktionaryRemoteResult(query, pageTitle, parsed) {
+  const audioFiles = normalizedAudioFiles(parsed);
   return createRemoteStructuredResult(query, {
     id: `wiktionary:${createLookupKey(pageTitle || query)}`,
     display: pageTitle || query,
@@ -98,20 +100,21 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed) {
     pronunciation: {
       ipa: parsed.ipa,
       simple: parsed.simple,
-      audio: parsed.audioFile ? [{
-        url: commonsRedirectUrl(parsed.audioFile),
-        label: "Pronunciation audio",
+      audio: audioFiles.map((audioFile, index) => ({
+        url: commonsRedirectUrl(audioFile),
+        label: audioFiles.length > 1 ? `Pronunciation audio ${index + 1}` : "Pronunciation audio",
         source: "Wiktionary",
         quality: "verified"
-      }] : []
+      }))
     },
-    sourceStatus: parsed.audioFile ? "verified-audio" : "structured-source",
-    confidence: parsed.audioFile ? "high" : parsed.ipa ? "medium" : "low",
+    sourceStatus: audioFiles.length ? "verified-audio" : "structured-source",
+    confidence: audioFiles.length ? "high" : parsed.ipa ? "medium" : "low",
     evidence: [
       "Wiktionary pronunciation entry",
       parsed.languageName ? `Language section: ${parsed.languageName}` : "",
       parsed.ipa ? "IPA from Wiktionary" : "",
-      parsed.audioFile ? "Pronunciation audio from Wiktionary" : "",
+      audioFiles.length ? "Pronunciation audio from Wiktionary" : "",
+      audioFiles.length > 1 ? `Additional Wiktionary pronunciation audio: ${audioFiles.length - 1}` : "",
       parsed.origin ? "Origin note from Wiktionary" : ""
     ].filter(Boolean),
     sources: [{ label: "Wiktionary", url: `https://en.wiktionary.org/wiki/${encodeURIComponent(pageTitle || query)}` }]
@@ -121,13 +124,15 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed) {
 function parseLanguageEntry(section) {
   const languageName = normalizeSelection(section.languageName);
   const body = section.body || "";
+  const audioFiles = audioFilesFromText(body);
 
   return {
     language: LANGUAGE_CODES[languageName] || "",
     languageName,
     ipa: firstIpa(body),
     simple: firstSimpleGuide(body),
-    audioFile: firstAudioFile(body),
+    audioFile: audioFiles[0] || "",
+    audioFiles,
     origin: firstEtymologyLine(body)
   };
 }
@@ -174,7 +179,7 @@ function choosePrimaryEntry(entries) {
 function scoreEntry(entry) {
   let score = 0;
 
-  if (entry.audioFile) {
+  if (hasAudioFiles(entry)) {
     score += 8;
   }
 
@@ -198,11 +203,11 @@ function scoreEntry(entry) {
 }
 
 function entryHasLookupData(entry) {
-  return Boolean(entry.languageName || entry.origin || entry.ipa || entry.simple || entry.audioFile);
+  return Boolean(entry.languageName || entry.origin || entry.ipa || entry.simple || hasAudioFiles(entry));
 }
 
 function entryHasPronunciationData(entry) {
-  return Boolean(entry.ipa || entry.simple || entry.audioFile);
+  return Boolean(entry.ipa || entry.simple || hasAudioFiles(entry));
 }
 
 function firstIpa(text) {
@@ -222,17 +227,48 @@ function firstIpa(text) {
   return stripWikitext(rawIpa?.[1] || "");
 }
 
-function firstAudioFile(text) {
-  const audioTemplate = text.match(/\{\{(?:audio|audio-IPA)\|([^{}]+?)\}\}/i);
-  if (!audioTemplate) {
-    return "";
+function audioFilesFromText(text) {
+  const seen = new Set();
+  const files = [];
+  const audioTemplates = String(text || "").matchAll(/\{\{(?:audio|audio-IPA)\|([^{}]+?)\}\}/gi);
+
+  for (const audioTemplate of audioTemplates) {
+    const parts = audioTemplate[1]
+      .split("|")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const file = normalizeSelection(parts.find((part) => /\.(?:ogg|oga|mp3|wav)$/i.test(part)) || "");
+    const key = createLookupKey(file);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      files.push(file);
+    }
   }
 
-  const parts = audioTemplate[1]
-    .split("|")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return normalizeSelection(parts.find((part) => /\.(?:ogg|oga|mp3|wav)$/i.test(part)) || "");
+  return files.slice(0, 4);
+}
+
+function normalizedAudioFiles(parsed = {}) {
+  const files = Array.isArray(parsed.audioFiles) && parsed.audioFiles.length
+    ? parsed.audioFiles
+    : [parsed.audioFile];
+  const seen = new Set();
+  const unique = [];
+
+  for (const file of files) {
+    const text = normalizeSelection(file);
+    const key = createLookupKey(text);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      unique.push(text);
+    }
+  }
+
+  return unique.slice(0, 4);
+}
+
+function hasAudioFiles(entry = {}) {
+  return normalizedAudioFiles(entry).length > 0;
 }
 
 function firstSimpleGuide(text) {
