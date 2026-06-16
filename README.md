@@ -75,6 +75,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
 - Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, and Chrome package creation.
+- Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.
 - Chrome TTS as a temporary local fallback.
@@ -150,6 +151,12 @@ Create a Chrome ZIP package:
 
 ```powershell
 npm run package:chrome
+```
+
+Run the architecture audit:
+
+```powershell
+npm run audit:architecture
 ```
 
 Run the optional loaded-extension smoke check:
