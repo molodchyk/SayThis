@@ -41,10 +41,13 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
   const structuredResult = [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
+  const nominatimCandidateResult = settings.gazetteerEnabled && structuredResult
+    ? await resolveWithNominatimCandidates(text, structuredResult, settings.gazetteerEndpoint)
+    : null;
   const wiktionaryCandidateResult = structuredResult
     ? await resolveWithWiktionaryCandidates(text, structuredResult)
     : null;
-  const refinedStructuredResult = [structuredResult, wiktionaryCandidateResult]
+  const refinedStructuredResult = [structuredResult, nominatimCandidateResult, wiktionaryCandidateResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const forvoResult = settings.forvoEnabled
@@ -191,9 +194,19 @@ export async function resolveWithWiktionaryCandidates(text, structuredResult) {
 }
 
 export async function resolveWithNominatim(text, endpoint) {
-  const query = normalizeSelection(text);
-  const url = buildNominatimSearchUrl(query, endpoint, { limit: 5 });
-  if (!query || !url) {
+  return resolveWithNominatimLookup(text, text, endpoint);
+}
+
+export async function resolveWithNominatimLookup(selectedText, lookupWord, endpoint, options = {}) {
+  const selected = normalizeSelection(selectedText);
+  const query = normalizeSelection(lookupWord);
+  const language = normalizeSelection(options.language);
+  const acceptLanguage = language ? `${language},en` : "";
+  const url = buildNominatimSearchUrl(query, endpoint, {
+    limit: 5,
+    acceptLanguage
+  });
+  if (!selected || !query || !url) {
     return null;
   }
 
@@ -208,7 +221,28 @@ export async function resolveWithNominatim(text, endpoint) {
   }
 
   const data = await response.json();
-  return buildNominatimResult(query, data);
+  return buildNominatimResult(selected, data);
+}
+
+export async function resolveWithNominatimCandidates(text, structuredResult, endpoint) {
+  const query = normalizeSelection(text);
+  if (!query) {
+    return null;
+  }
+
+  let result = null;
+  for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
+    const placeResult = await resolveSafely(resolveWithNominatimLookup, query, candidate.word, endpoint, {
+      language: candidate.language
+    });
+    if (!placeResult) {
+      continue;
+    }
+
+    result = mergeRemoteResult(result, placeResult);
+  }
+
+  return result;
 }
 
 export async function resolveWithCustomSource(text, endpoint, label) {

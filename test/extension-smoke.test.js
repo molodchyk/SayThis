@@ -111,7 +111,9 @@ test("online source resolver retries Wiktionary with resolved source forms", asy
 
   assert.match(background, /resolveWithOnlineSources/);
   assert.match(source, /additionalPronunciationLookupCandidates/);
+  assert.match(source, /resolveWithNominatimCandidates/);
   assert.match(source, /resolveWithWiktionaryCandidates/);
+  assert.match(source, /nominatimCandidateResult/);
   assert.match(source, /refinedStructuredResult/);
   assert.match(source, /resolveWithForvoCandidates\(text, refinedStructuredResult/);
   assert.match(source, /includeResolvedLanguageFallback: true/);
@@ -121,18 +123,59 @@ test("online source resolver retries Wiktionary with resolved source forms", asy
 test("online source resolver exposes deterministic helpers", async () => {
   const {
     resolveSafely,
+    resolveWithNominatimCandidates,
     uniqueWikidataMatches
   } = await import("../src/background/online-sources.js");
+  const originalFetch = globalThis.fetch;
+  const requestedUrls = [];
 
-  assert.deepEqual(uniqueWikidataMatches([
-    { id: "Q1", label: "First" },
-    { id: "Q1", label: "Duplicate" },
-    { id: "" },
-    { id: "Q2", label: "Second" }
-  ]).map((match) => match.id), ["Q1", "Q2"]);
-  assert.equal(await resolveSafely(async () => {
-    throw new Error("network unavailable");
-  }), null);
+  try {
+    globalThis.fetch = async (url) => {
+      requestedUrls.push(url);
+      return {
+        ok: true,
+        async json() {
+          return [{
+            osm_type: "relation",
+            osm_id: "1370736",
+            name: "Αθήνα",
+            display_name: "Αθήνα, Greece",
+            category: "boundary",
+            type: "administrative",
+            importance: 0.9,
+            address: { country: "Greece" },
+            namedetails: {
+              name: "Αθήνα",
+              "name:en": "Athens",
+              "name:el": "Αθήνα"
+            }
+          }];
+        }
+      };
+    };
+
+    assert.deepEqual(uniqueWikidataMatches([
+      { id: "Q1", label: "First" },
+      { id: "Q1", label: "Duplicate" },
+      { id: "" },
+      { id: "Q2", label: "Second" }
+    ]).map((match) => match.id), ["Q1", "Q2"]);
+    assert.equal(await resolveSafely(async () => {
+      throw new Error("network unavailable");
+    }), null);
+
+    const place = await resolveWithNominatimCandidates("Athens", {
+      sourceForm: "Αθήνα",
+      language: "el"
+    }, "https://example.com/search");
+    const url = new URL(requestedUrls[0]);
+
+    assert.equal(place.sourceForm, "Αθήνα");
+    assert.equal(url.searchParams.get("q"), "Αθήνα");
+    assert.equal(url.searchParams.get("accept-language"), "el,en");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("options page exposes shared-entry data controls", async () => {

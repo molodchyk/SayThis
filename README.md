@@ -59,6 +59,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Forvo lookup retries configured-language candidates with resolved source-language hints when available.
 - Verified audio from matching sources is merged onto structured results so IPA, origin, and source context stay visible.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
+- Source-form and alias-guided gazetteer retries after structured lookup.
 - Local cache for successful online lookup results.
 - Imported lookup-cache results are allowlisted to pronunciation result fields while preserving trust and variant metadata.
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
