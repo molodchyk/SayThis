@@ -105,6 +105,35 @@ test("drops empty correction submissions before sync queueing", () => {
   assert.deepEqual(queued, []);
 });
 
+test("keeps structured missing request metadata for moderation", () => {
+  const submission = createCommunitySubmission("Unknownterm", {
+    kind: "missing",
+    sourceForm: "Unknownterm",
+    aliases: "Unknown term; Unknownterm",
+    language: "la",
+    root: "unknown root",
+    simple: "un-NOHN-term",
+    sourceUrl: "https://example.com/unknownterm"
+  });
+  const queue = normalizeSubmissionQueue([submission]);
+
+  assert.equal(submission.kind, "missing");
+  assert.equal(submission.correction.sourceForm, "Unknownterm");
+  assert.deepEqual(submission.correction.aliases, ["Unknown term", "Unknownterm"]);
+  assert.equal(submission.correction.root, "unknown root");
+  assert.equal(queue[0].correction.simple, "un-NOHN-term");
+  assert.equal(queue[0].correction.sourceUrl, "https://example.com/unknownterm");
+});
+
+test("keeps plain missing requests lightweight", () => {
+  const submission = createCommunitySubmission("Unknownterm", { kind: "missing" });
+  const queue = normalizeSubmissionQueue([submission]);
+
+  assert.equal(submission.kind, "missing");
+  assert.deepEqual(submission.correction, {});
+  assert.deepEqual(queue[0].correction, {});
+});
+
 test("drops unsafe links from shared correction submissions", () => {
   const submission = createCommunitySubmission("gnocchi", {
     kind: "correction",

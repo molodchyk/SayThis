@@ -133,7 +133,7 @@
     root.querySelector('[data-action="slow"]').addEventListener("click", () => speak(result, 0.62));
     root.querySelector('[data-action="correct"]').addEventListener("click", () => toggleCorrection());
     root.querySelector('[data-action="confirm"]').addEventListener("click", () => sendFeedback(result, "confirm"));
-    root.querySelector('[data-action="missing"]').addEventListener("click", () => sendFeedback(result, "missing"));
+    root.querySelector('[data-action="missing"]').addEventListener("click", () => sendFeedback(result, "missing", correctionFeedbackFromForm("missing")));
     root.querySelector('[data-action="wrong"]').addEventListener("click", () => sendFeedback(result, "wrong"));
     for (const button of root.querySelectorAll('[data-action="alternate"]')) {
       button.addEventListener("click", () => {
@@ -186,13 +186,13 @@
     });
   }
 
-  function sendFeedback(result, kind) {
+  function sendFeedback(result, kind, feedback = { kind }) {
     setStatus("Saving.");
 
     chrome.runtime.sendMessage({
       type: "SAYTHIS_FEEDBACK",
       text: result.query || result.display,
-      feedback: { kind }
+      feedback
     }, (response) => {
       if (chrome.runtime.lastError || !response?.ok) {
         setStatus(response?.error || chrome.runtime.lastError?.message || "Could not save.");
@@ -217,7 +217,7 @@
   }
 
   function sendCorrection(result) {
-    const feedback = correctionFeedbackFromForm();
+    const feedback = correctionFeedbackFromForm("correction");
     if (!hasCorrectionDetail(feedback)) {
       setStatus("Add correction details.");
       return;
@@ -239,8 +239,8 @@
     });
   }
 
-  function correctionFeedbackFromForm() {
-    const feedback = { kind: "correction" };
+  function correctionFeedbackFromForm(kind) {
+    const feedback = { kind };
     for (const input of root?.querySelectorAll("[data-correction-field]") || []) {
       const field = input.dataset.correctionField;
       if (field === "aliases") {

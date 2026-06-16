@@ -545,6 +545,49 @@ test("does not publish approved entries without pronunciation data", async () =>
   assert.equal(response.store.pending.length, 0);
 });
 
+test("approves structured missing requests after review", async () => {
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_missing_structured",
+      term: "Exampleterm",
+      lookupKey: "exampleterm",
+      kind: "missing",
+      correction: {
+        sourceForm: "Exampleterm",
+        aliases: ["Example term"],
+        language: "la",
+        root: "example root",
+        simple: "eg-ZAM-pluh-term",
+        sourceUrl: "https://example.com/exampleterm"
+      }
+    })
+  }, createEmptyStore());
+
+  assert.equal(response.status, 202);
+  assert.equal(response.store.pending[0].correction.root, "example root");
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/admin/approve",
+    headers: { authorization: "Bearer secret" },
+    body: JSON.stringify({ id: "sub_missing_structured" })
+  }, response.store, { adminToken: "secret" });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.entry.requests, 1);
+  assert.equal(response.body.entry.simple, "eg-ZAM-pluh-term");
+  assert.equal(response.body.entry.root, "example root");
+  assert.deepEqual(response.body.entry.aliases, ["Example term"]);
+  assert.deepEqual(response.body.entry.trustSignals, [
+    "moderator-reviewed",
+    "source-backed",
+    "requested"
+  ]);
+});
+
 test("rejects pending submissions with admin token", async () => {
   let response = await handleCommunityRequest({
     method: "POST",

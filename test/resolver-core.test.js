@@ -234,6 +234,29 @@ test("uses variant-only local community corrections", () => {
   assert.equal(result.community.corrections, 1);
 });
 
+test("captures structured missing requests without promoting them to answers", () => {
+  const entries = updateCommunityEntries({}, "Exampleterm", {
+    kind: "missing",
+    sourceForm: "Exampleterm",
+    aliases: "Example term",
+    language: "la",
+    root: "example root",
+    simple: "eg-ZAM-pluh-term",
+    sourceUrl: "https://example.com/exampleterm"
+  });
+  const result = resolveTerm("Exampleterm", {
+    entries: [],
+    communityEntries: entries
+  });
+
+  assert.equal(entries.exampleterm.requests, 1);
+  assert.equal(entries.exampleterm.request.root, "example root");
+  assert.deepEqual(entries.exampleterm.request.aliases, ["Example term"]);
+  assert.deepEqual(entries.exampleterm.trustSignals, ["source-backed", "requested"]);
+  assert.equal(result.id, "fallback:exampleterm");
+  assert.equal(result.community.requests, 1);
+});
+
 test("normalizes imported local community entries", () => {
   const entries = normalizeCommunityEntries({
     raw: {

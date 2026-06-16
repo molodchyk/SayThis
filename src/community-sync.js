@@ -12,6 +12,7 @@ export const DEFAULT_SYNC_SETTINGS = {
 const MAX_QUEUE_SIZE = 250;
 const MAX_ATTEMPTS = 5;
 const FEEDBACK_KINDS = new Set(["confirm", "wrong", "missing", "correction"]);
+const STRUCTURED_FEEDBACK_KINDS = new Set(["missing", "correction"]);
 
 export function normalizeSyncSettings(settings = {}) {
   const endpoint = normalizeEndpoint(settings.communityEndpoint);
@@ -46,22 +47,13 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
     result: normalizeResultMetadata(result)
   };
 
-  if (kind === "correction") {
-    payload.correction = {
-      sourceForm: normalizeSelection(feedback.sourceForm),
-      aliases: normalizeAliases(feedback.aliases),
-      language: normalizeSelection(feedback.language),
-      languageName: normalizeSelection(feedback.languageName),
-      origin: normalizeSelection(feedback.origin),
-      root: normalizeSelection(feedback.root),
-      ipa: normalizeSelection(feedback.ipa),
-      simple: normalizeSelection(feedback.simple),
-      audioUrl: normalizeHttpsUrl(feedback.audioUrl),
-      sourceUrl: normalizeHttpsUrl(feedback.sourceUrl),
-      variantNote: normalizeSelection(feedback.variantNote)
-    };
-    if (!hasCorrectionDetail(payload.correction)) {
+  if (STRUCTURED_FEEDBACK_KINDS.has(kind)) {
+    payload.correction = normalizeCorrection(feedback);
+    if (kind === "correction" && !hasCorrectionDetail(payload.correction)) {
       return null;
+    }
+    if (kind === "missing" && !hasCorrectionDetail(payload.correction)) {
+      payload.correction = {};
     }
   }
 
@@ -232,9 +224,12 @@ function normalizeQueueItem(item = {}) {
   }
 
   const correction = normalizeCorrection(item.correction);
-  if (kind === "correction" && !hasCorrectionDetail(correction)) {
+  const hasStructuredDetail = hasCorrectionDetail(correction);
+  if (kind === "correction" && !hasStructuredDetail) {
     return null;
   }
+
+  const shouldKeepCorrection = kind === "correction" || (kind === "missing" && hasStructuredDetail);
 
   return {
     schemaVersion: 1,
@@ -243,7 +238,7 @@ function normalizeQueueItem(item = {}) {
     term,
     lookupKey,
     kind,
-    correction: kind === "correction" ? correction : {},
+    correction: shouldKeepCorrection ? correction : {},
     result: normalizeResultMetadata(item.result),
     attempts: normalizeAttemptCount(item.attempts),
     lastAttemptAt: normalizeSelection(item.lastAttemptAt),

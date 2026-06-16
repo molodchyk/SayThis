@@ -96,6 +96,28 @@ test("builds correction feedback payloads", () => {
   });
 });
 
+test("builds structured missing feedback payloads", () => {
+  assert.deepEqual(createFeedbackMessage(" term ", {
+    kind: "missing",
+    sourceForm: " term ",
+    aliases: "alias one; alias two",
+    language: "en-US",
+    root: "term root",
+    sourceUrl: " https://example.com/source "
+  }), {
+    type: MESSAGE_TYPES.feedback,
+    text: "term",
+    feedback: {
+      kind: "missing",
+      sourceForm: "term",
+      aliases: ["alias one", "alias two"],
+      language: "en-US",
+      root: "term root",
+      sourceUrl: "https://example.com/source"
+    }
+  });
+});
+
 test("drops invalid feedback kinds", () => {
   assert.deepEqual(createFeedbackMessage("term", { kind: "chat" }), {
     type: MESSAGE_TYPES.feedback,

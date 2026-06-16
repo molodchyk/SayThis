@@ -79,22 +79,10 @@ stopButton.addEventListener("click", async () => {
 
 confirmButton.addEventListener("click", () => saveFeedback({ kind: "confirm" }));
 wrongButton.addEventListener("click", () => saveFeedback({ kind: "wrong" }));
-missingButton.addEventListener("click", () => saveFeedback({ kind: "missing" }));
+missingButton.addEventListener("click", () => saveFeedback(feedbackFromCorrectionFields("missing")));
 
 saveCorrectionButton.addEventListener("click", () => {
-  const feedback = correctionFeedbackFromValues({
-    sourceForm: correctionSource.value,
-    aliases: correctionAliases.value,
-    language: correctionLanguage.value,
-    languageName: correctionLanguageName.value,
-    simple: correctionSimple.value,
-    ipa: correctionIpa.value,
-    origin: correctionOrigin.value,
-    root: correctionRoot.value,
-    audioUrl: correctionAudio.value,
-    sourceUrl: correctionSourceUrl.value,
-    variantNote: correctionVariant.value
-  });
+  const feedback = feedbackFromCorrectionFields("correction");
 
   if (!hasCorrectionDetail(feedback)) {
     setStatus("Add correction details.");
@@ -323,6 +311,25 @@ function renderResult(result) {
     li.append(anchor);
     sources.append(li);
   }
+}
+
+function feedbackFromCorrectionFields(kind) {
+  return {
+    ...correctionFeedbackFromValues({
+      sourceForm: correctionSource.value,
+      aliases: correctionAliases.value,
+      language: correctionLanguage.value,
+      languageName: correctionLanguageName.value,
+      simple: correctionSimple.value,
+      ipa: correctionIpa.value,
+      origin: correctionOrigin.value,
+      root: correctionRoot.value,
+      audioUrl: correctionAudio.value,
+      sourceUrl: correctionSourceUrl.value,
+      variantNote: correctionVariant.value
+    }),
+    kind
+  };
 }
 
 function speakAlternate(index, rate) {

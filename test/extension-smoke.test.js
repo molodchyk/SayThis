@@ -74,7 +74,7 @@ test("overlay exposes playback and feedback actions", async () => {
 
   assert.match(source, /type: "SAYTHIS_RESOLVE"/);
   assert.match(source, /useOnline: true/);
-  assert.match(source, /kind: "correction"/);
+  assert.match(source, /correctionFeedbackFromForm\("correction"\)/);
   assert.match(source, /community\.requests/);
   assert.match(source, /community\.flags/);
   assert.match(source, /<dt>Aliases<\/dt>/);
@@ -91,9 +91,10 @@ test("overlay exposes playback and feedback actions", async () => {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));
   }
 
-  for (const kind of ["confirm", "missing", "wrong"]) {
+  for (const kind of ["confirm", "wrong"]) {
     assert.match(source, new RegExp(`sendFeedback\\(result, ["']${kind}["']\\)`));
   }
+  assert.match(source, /sendFeedback\(result, "missing", correctionFeedbackFromForm\("missing"\)\)/);
 });
 
 test("background routes local and online keyboard commands", async () => {
@@ -349,6 +350,7 @@ test("popup quick feedback labels match their feedback kinds", async () => {
 
   assert.match(html, /id="confirm"[^>]*>Confirm<\/button>/);
   assert.match(source, /confirmButton\.addEventListener\("click", \(\) => saveFeedback\(\{ kind: "confirm" \}\)\)/);
+  assert.match(source, /missingButton\.addEventListener\("click", \(\) => saveFeedback\(feedbackFromCorrectionFields\("missing"\)\)\)/);
 });
 
 test("popup source-audio failure falls back to TTS", async () => {

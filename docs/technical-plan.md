@@ -104,6 +104,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - On-page overlay styles are split into a companion injected content script, keeping the overlay controller below the file-size soft limit.
 - Alternate candidate summaries preserve speech-locale hints and can be spoken directly from popup or on-page result cards.
 - Local confirmation, wrong-result, missing-term, correction, aliases, root, audio-source, source-link, variant-note storage, and import/export normalization.
+- Missing-entry requests can carry candidate source forms, aliases, roots, guides, and source links without promoting them to local pronunciation answers.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
 - Local community entries preserve and derive trust signals from local actions and source evidence.
 - Result and correction views accept root and variant-note metadata from cached and shared payloads.

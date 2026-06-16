@@ -397,6 +397,9 @@ function defaultTrustSignals(submission = {}, correction = {}, result = {}, over
   if (submission.kind === "correction") {
     signals.push("correction-reviewed");
   }
+  if (submission.kind === "missing") {
+    signals.push("requested");
+  }
   if (confirmations >= 2) {
     signals.push("repeated-confirmation");
   } else if (confirmations > 0) {

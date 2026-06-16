@@ -28,7 +28,7 @@ Remote lookup is user-triggered or opt-in. SayThis can send the selected term to
 - a user-configured Nominatim-compatible place-name endpoint; lookup language hints may be sent as request language parameters
 - a user-configured community endpoint, only after community submission or approved-entry refresh is enabled
 
-Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. It does not submit page URLs or browsing history.
+Community sync submits only the selected term, feedback type, correction or missing-request candidate fields, and resolver metadata. It does not submit page URLs or browsing history.
 
 ## Data SayThis Does Not Collect
 

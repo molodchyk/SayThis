@@ -49,6 +49,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     audioUrl: existing.audioUrl || "",
     sourceUrl: existing.sourceUrl || "",
     variantNote: existing.variantNote || "",
+    request: normalizeRequest(existing.request),
     trustSignals: normalizeTrustSignals(existing.trustSignals),
     createdAt: existing.createdAt || now,
     updatedAt: now
@@ -60,6 +61,10 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     next.flags += 1;
   } else if (feedback.kind === "missing") {
     next.requests += 1;
+    const request = normalizeRequest(feedback);
+    if (hasRequestDetail(request)) {
+      next.request = mergeRequest(next.request, request);
+    }
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
     for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
@@ -165,6 +170,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     audioUrl: normalizeUrl(entry.audioUrl),
     sourceUrl: normalizeUrl(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
+    request: normalizeRequest(entry.request),
     trustSignals: normalizeTrustSignals(entry.trustSignals),
     createdAt: normalizeSelection(entry.createdAt),
     updatedAt: normalizeSelection(entry.updatedAt)
@@ -176,6 +182,7 @@ function hasCommunityEntryContent(entry = {}) {
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
     normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    hasRequestDetail(normalizeRequest(entry.request)) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     normalizeCount(entry.confirmations) ||
     normalizeCount(entry.flags) ||
@@ -193,7 +200,7 @@ function communityTrustSignals(existingSignals, feedback = {}, entry = {}) {
   if (feedback.kind === "correction") {
     signals.push("local-correction");
   }
-  if (entry.sourceUrl) {
+  if (entry.sourceUrl || entry.request?.sourceUrl) {
     signals.push("source-backed");
   }
   if (entry.audioUrl) {
@@ -205,8 +212,58 @@ function communityTrustSignals(existingSignals, feedback = {}, entry = {}) {
   if (entry.root) {
     signals.push("root-noted");
   }
+  if (feedback.kind === "missing") {
+    signals.push("requested");
+  }
 
   return normalizeTrustSignals(signals);
+}
+
+function normalizeRequest(value = {}) {
+  return {
+    sourceForm: normalizeSelection(value.sourceForm),
+    aliases: normalizeAliases(value.aliases),
+    language: normalizeLanguage(value.language),
+    languageName: normalizeSelection(value.languageName),
+    origin: normalizeSelection(value.origin),
+    root: normalizeSelection(value.root),
+    ipa: normalizeSelection(value.ipa),
+    simple: normalizeSelection(value.simple),
+    sourceUrl: normalizeUrl(value.sourceUrl),
+    variantNote: normalizeSelection(value.variantNote)
+  };
+}
+
+function mergeRequest(existing = {}, incoming = {}) {
+  const existingAliases = normalizeAliases(existing.aliases);
+  const incomingAliases = normalizeAliases(incoming.aliases);
+  return {
+    sourceForm: incoming.sourceForm || existing.sourceForm || "",
+    aliases: normalizeAliases([...existingAliases, ...incomingAliases]),
+    language: incoming.language || existing.language || "",
+    languageName: incoming.languageName || existing.languageName || "",
+    origin: incoming.origin || existing.origin || "",
+    root: incoming.root || existing.root || "",
+    ipa: incoming.ipa || existing.ipa || "",
+    simple: incoming.simple || existing.simple || "",
+    sourceUrl: incoming.sourceUrl || existing.sourceUrl || "",
+    variantNote: incoming.variantNote || existing.variantNote || ""
+  };
+}
+
+function hasRequestDetail(request = {}) {
+  return Boolean(
+    request.sourceForm ||
+    normalizeAliases(request.aliases).length ||
+    request.language ||
+    request.languageName ||
+    request.origin ||
+    request.root ||
+    request.ipa ||
+    request.simple ||
+    request.sourceUrl ||
+    request.variantNote
+  );
 }
 
 function communityEntryKeys(entry = {}) {
