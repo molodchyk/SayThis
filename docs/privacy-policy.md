@@ -21,7 +21,7 @@ Forvo API keys stay in local extension storage and are not included in data expo
 
 Remote lookup is user-triggered or opt-in. SayThis can send the selected term to these services:
 
-- Wikidata and Wiktionary lookup; Wikidata requests may include lookup language hints as API language parameters
+- Wikidata and Wiktionary lookup; Wikidata requests may include lookup language hints as API language parameters, and hints rank returned source forms locally
 - Wikimedia Commons audio URLs when audio is played
 - Forvo lookup, only after the user enables Forvo and stores an API key
 - a user-configured custom source endpoint

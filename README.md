@@ -32,7 +32,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wikidata instance/subclass claims inform result categories and candidate ranking.
 - Wikidata lookup preserves useful alternate entity candidates for ambiguity review and follow-up audio lookup.
 - Wikidata pronunciation-audio lookup preserves multiple Commons recordings when an entity provides them.
-- Optional Wikidata lookup language hints for rare Latin-script terms.
+- Optional Wikidata lookup language hints for rare Latin-script terms and competing source forms.
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - Split on-page overlay style payload so the overlay controller stays narrow.
 - An offscreen audio player for verified audio when the page card cannot be injected.
@@ -143,7 +143,7 @@ The first useful version should be narrow and trusted:
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 
-Community sync, approved-entry refresh, custom source lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Lookup language hints only alter Wikidata API language parameters. Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. Feedback is not queued for sync until community sync is enabled. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata. SayThis does not submit page URLs or browsing history. Forvo API keys are stored locally and are not included in data exports.
+Community sync, approved-entry refresh, custom source lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Lookup language hints only alter Wikidata API language parameters and local source-form ranking. Community sync submits only the selected term, feedback type, correction fields, and resolver metadata. Feedback is not queued for sync until community sync is enabled. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata. SayThis does not submit page URLs or browsing history. Forvo API keys are stored locally and are not included in data exports.
 
 ## Development
 

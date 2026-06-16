@@ -114,6 +114,8 @@ test("online source resolver retries Wiktionary with resolved source forms", asy
   assert.match(source, /resolveWithNominatimCandidates/);
   assert.match(source, /resolveWithWiktionaryCandidates/);
   assert.match(source, /languageHints: settings\.lookupLanguageHints/);
+  assert.match(source, /selectBestWikidataResult\(query, matches, entityById, \{/);
+  assert.match(source, /languageHints: options\.languageHints/);
   assert.match(source, /nominatimCandidateResult/);
   assert.match(source, /refinedStructuredResult/);
   assert.match(source, /resolveWithForvoCandidates\(text, refinedStructuredResult/);

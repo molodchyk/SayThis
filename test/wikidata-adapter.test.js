@@ -179,6 +179,45 @@ test("uses translated title claims as source-form candidates", () => {
   assert.ok(result.evidence.some((item) => item.includes("title")));
 });
 
+test("uses lookup language hints when source forms compete", () => {
+  const result = buildWikidataResult("Exampletown", {
+    id: "Qhint",
+    label: "Exampletown",
+    language: "en",
+    description: "settlement"
+  }, {
+    id: "Qhint",
+    labels: {
+      en: { language: "en", value: "Exampletown" }
+    },
+    descriptions: {
+      en: { language: "en", value: "settlement" }
+    },
+    claims: {
+      P1705: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "de", text: "Beispielstadt" }
+          }
+        }
+      }, {
+        mainsnak: {
+          datavalue: {
+            value: { language: "pl", text: "Przyklad" }
+          }
+        }
+      }]
+    },
+    aliases: {}
+  }, {
+    languageHints: ["pl"]
+  });
+
+  assert.equal(result.sourceForm, "Przyklad");
+  assert.equal(result.language, "pl");
+  assert.ok(result.evidence.includes("Source form matched lookup language hint: pl"));
+});
+
 test("uses taxon names as source-form candidates", () => {
   const result = buildWikidataResult("yellow fever mosquito", {
     id: "Q4",

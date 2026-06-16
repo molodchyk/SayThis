@@ -67,7 +67,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Online source orchestration has a background-owned module outside the service-worker entry point.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Script-based Wikidata search languages for non-Latin selections.
-- Optional lookup language hints expand Wikidata search for rare Latin-script terms without adding a chat surface.
+- Optional lookup language hints expand Wikidata search and source-form scoring for rare Latin-script terms without adding a chat surface.
 - Structured source aliases preserved for resolver results and correction prefill.
 - Wikidata native-label, native-name, official-name, birth-name, generic-name, short-name, and sitelink-title source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym source-form scoring for proper nouns and research terms.

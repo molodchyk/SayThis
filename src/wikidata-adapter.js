@@ -4,6 +4,9 @@ import {
   detectScript,
   normalizeSelection
 } from "./resolver-core.js";
+import {
+  normalizeSearchLanguageHints as normalizeWikidataSearchLanguageHints
+} from "./wikidata/search-languages.js";
 
 export {
   normalizeSearchLanguageHints,
@@ -73,12 +76,12 @@ const ENTITY_TYPE_PRIORITY = [
   "Q202444",
   "Q1969448"
 ];
-export function buildWikidataResult(query, match, entity) {
+export function buildWikidataResult(query, match, entity, options = {}) {
   if (!match?.id || !entity) {
     return null;
   }
 
-  const sourceCandidate = chooseSourceCandidate(query, match, entity);
+  const sourceCandidate = chooseSourceCandidate(query, match, entity, options);
   const description = entity.descriptions?.en?.value || match.description || "";
   const entityType = wikidataEntityType(entity);
   const audioFiles = stringClaimValues(entity, PRONUNCIATION_AUDIO).slice(0, 4);
@@ -111,6 +114,7 @@ export function buildWikidataResult(query, match, entity) {
       `Wikidata entity ${entity.id || match.id}`,
       entityType.label ? `Entity type: ${entityType.label}` : "",
       sourceCandidate?.source ? `Source form from ${sourceCandidate.source}` : "",
+      sourceCandidate?.languageHint ? `Source form matched lookup language hint: ${sourceCandidate.language}` : "",
       audioFiles.length ? "Pronunciation audio from Wikidata" : "",
       audioFiles.length > 1 ? `Additional Wikidata pronunciation audio: ${audioFiles.length - 1}` : "",
       ipa ? "IPA from Wikidata" : "",
@@ -126,19 +130,22 @@ export function buildWikidataResult(query, match, entity) {
   });
 }
 
-export function selectBestWikidataResult(query, matches = [], entityById = {}) {
+export function selectBestWikidataResult(query, matches = [], entityById = {}, options = {}) {
+  const languageHints = languageHintSet(options.languageHints);
   const results = matches
     .filter((match) => match?.id)
     .map((match, index) => {
       const entity = entityById[match.id];
-      const result = entity ? buildWikidataResult(query, match, entity) : createWikidataSearchOnlyResult(query, match);
+      const result = entity
+        ? buildWikidataResult(query, match, entity, { languageHints })
+        : createWikidataSearchOnlyResult(query, match);
       if (!result) {
         return null;
       }
 
       return {
         result,
-        score: scoreWikidataResult(query, match, entity, result, index)
+        score: scoreWikidataResult(query, match, entity, result, index, { languageHints })
       };
     })
     .filter(Boolean)
@@ -195,8 +202,9 @@ function searchOnlyAliases(query, match = {}) {
     });
 }
 
-function chooseSourceCandidate(query, match, entity) {
+function chooseSourceCandidate(query, match, entity, options = {}) {
   const selectedScript = detectScript(query).script;
+  const languageHints = languageHintSet(options.languageHints);
   const candidates = [
     ...monolingualClaimCandidates(entity, NATIVE_LABEL, "native label"),
     ...monolingualClaimCandidates(entity, NATIVE_NAME, "native name"),
@@ -225,12 +233,13 @@ function chooseSourceCandidate(query, match, entity) {
   return candidates
     .map((candidate) => ({
       ...candidate,
-      score: scoreCandidate(candidate, selectedScript)
+      languageHint: matchesLanguageHint(candidate.language, languageHints),
+      score: scoreCandidate(candidate, selectedScript, languageHints)
     }))
     .sort((left, right) => right.score - left.score)[0];
 }
 
-function scoreWikidataResult(query, match, entity, result, index) {
+function scoreWikidataResult(query, match, entity, result, index, options = {}) {
   const queryKey = createLookupKey(query);
   const labelKey = createLookupKey(match.label);
   const matchTextKey = createLookupKey(match.match?.text);
@@ -238,6 +247,7 @@ function scoreWikidataResult(query, match, entity, result, index) {
   const sourceKey = createLookupKey(result.sourceForm);
   const description = String(match.description || entity?.descriptions?.en?.value || "").toLowerCase();
   const entityType = wikidataEntityType(entity);
+  const languageHints = languageHintSet(options.languageHints);
   let score = Math.max(0, 24 - index * 2);
 
   if (labelKey === queryKey) {
@@ -255,6 +265,14 @@ function scoreWikidataResult(query, match, entity, result, index) {
   }
 
   if (sourceKey && sourceKey !== queryKey) {
+    score += 8;
+  }
+
+  if (matchesLanguageHint(match.language, languageHints)) {
+    score += 8;
+  }
+
+  if (matchesLanguageHint(result.language, languageHints)) {
     score += 8;
   }
 
@@ -324,7 +342,7 @@ function isUsefulWikidataAlternate(result = {}) {
   );
 }
 
-function scoreCandidate(candidate, selectedScript) {
+function scoreCandidate(candidate, selectedScript, languageHints = new Set()) {
   const script = detectScript(candidate.value).script;
   let score = 0;
 
@@ -352,6 +370,10 @@ function scoreCandidate(candidate, selectedScript) {
 
   if (candidate.language && candidate.language !== "en") {
     score += 4;
+  }
+
+  if (matchesLanguageHint(candidate.language, languageHints)) {
+    score += 7;
   }
 
   if (script && script !== "Unknown" && script !== selectedScript) {
@@ -549,4 +571,15 @@ function normalizeSitelinkTitle(value) {
 function languageFromSitelink(value) {
   const match = String(value || "").toLowerCase().match(/^([a-z]{2,3})(?:[_-][a-z0-9]+)*wiki$/);
   return match?.[1] || "";
+}
+
+function languageHintSet(value) {
+  return value instanceof Set
+    ? value
+    : new Set(normalizeWikidataSearchLanguageHints(value));
+}
+
+function matchesLanguageHint(language, hints = new Set()) {
+  const base = String(language || "").trim().toLowerCase().split(/[-_]/)[0];
+  return Boolean(base && hints.has(base));
 }

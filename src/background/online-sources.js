@@ -90,7 +90,9 @@ export async function resolveWithWikidata(text, options = {}) {
   }
 
   const entityById = await fetchWikidataEntities(matches.slice(0, 5));
-  return selectBestWikidataResult(query, matches, entityById);
+  return selectBestWikidataResult(query, matches, entityById, {
+    languageHints: options.languageHints
+  });
 }
 
 export async function fetchWikidataSearch(query, language) {
