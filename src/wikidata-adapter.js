@@ -10,6 +10,19 @@ const OFFICIAL_NAME = "P1448";
 const SHORT_NAME = "P1813";
 const PRONUNCIATION_AUDIO = "P443";
 const IPA_TRANSCRIPTION = "P898";
+const SCRIPT_SEARCH_LANGUAGES = {
+  Arabic: ["ar", "fa"],
+  Armenian: ["hy"],
+  Cyrillic: ["ru", "bg", "sr"],
+  Devanagari: ["hi", "mr", "ne"],
+  Greek: ["el"],
+  Han: ["zh", "ja", "ko"],
+  Hangul: ["ko"],
+  Hebrew: ["he"],
+  Hiragana: ["ja"],
+  Katakana: ["ja"],
+  Thai: ["th"]
+};
 
 export function buildWikidataResult(query, match, entity) {
   if (!match?.id || !entity) {
@@ -108,6 +121,11 @@ export function createWikidataSearchOnlyResult(query, match) {
 
 export function commonsRedirectUrl(fileName) {
   return `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(fileName)}`;
+}
+
+export function wikidataSearchLanguages(query) {
+  const script = detectScript(query).script;
+  return [...new Set(["en", ...(SCRIPT_SEARCH_LANGUAGES[script] || [])])].slice(0, 4);
 }
 
 function searchOnlyAliases(query, match = {}) {

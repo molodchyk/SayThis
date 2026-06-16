@@ -3,7 +3,8 @@ import test from "node:test";
 import {
   buildWikidataResult,
   commonsRedirectUrl,
-  selectBestWikidataResult
+  selectBestWikidataResult,
+  wikidataSearchLanguages
 } from "../src/wikidata-adapter.js";
 
 test("prefers native label claims over English labels", () => {
@@ -176,4 +177,11 @@ test("uses alias matches to outrank weaker search order", () => {
 
   assert.equal(result.id, "wikidata:Qalias");
   assert.ok(result.evidence.some((item) => item.includes("Exact Alias")));
+});
+
+test("plans bounded Wikidata search languages from selected script", () => {
+  assert.deepEqual(wikidataSearchLanguages("Athens"), ["en"]);
+  assert.deepEqual(wikidataSearchLanguages("Αθήνα"), ["en", "el"]);
+  assert.deepEqual(wikidataSearchLanguages("Москва"), ["en", "ru", "bg", "sr"]);
+  assert.deepEqual(wikidataSearchLanguages("東京"), ["en", "zh", "ja", "ko"]);
 });

@@ -10,7 +10,8 @@ import {
   updateCommunityEntries
 } from "./resolver-core.js";
 import {
-  selectBestWikidataResult
+  selectBestWikidataResult,
+  wikidataSearchLanguages
 } from "./wikidata-adapter.js";
 import {
   buildWiktionaryResult
@@ -584,10 +585,27 @@ async function resolveWithWikidata(text) {
     return null;
   }
 
+  const searchResults = await Promise.all(wikidataSearchLanguages(query).map(async (language) => {
+    try {
+      return await fetchWikidataSearch(query, language);
+    } catch {
+      return [];
+    }
+  }));
+  const matches = uniqueWikidataMatches(searchResults.flat()).slice(0, 8);
+  if (!matches.length) {
+    return null;
+  }
+
+  const entityById = await fetchWikidataEntities(matches.slice(0, 5));
+  return selectBestWikidataResult(query, matches, entityById);
+}
+
+async function fetchWikidataSearch(query, language) {
   const params = new URLSearchParams({
     action: "wbsearchentities",
     search: query,
-    language: "en",
+    language,
     uselang: "en",
     format: "json",
     origin: "*",
@@ -596,17 +614,32 @@ async function resolveWithWikidata(text) {
 
   const searchResponse = await fetch(`https://www.wikidata.org/w/api.php?${params.toString()}`);
   if (!searchResponse.ok) {
-    return null;
+    return [];
   }
 
   const searchData = await searchResponse.json();
-  const matches = (searchData.search || []).filter((match) => match?.id).slice(0, 8);
-  if (!matches.length) {
-    return null;
+  return (searchData.search || [])
+    .filter((match) => match?.id)
+    .map((match) => ({
+      ...match,
+      language: match.language || language
+    }));
+}
+
+function uniqueWikidataMatches(matches = []) {
+  const seen = new Set();
+  const unique = [];
+
+  for (const match of matches) {
+    if (!match?.id || seen.has(match.id)) {
+      continue;
+    }
+
+    seen.add(match.id);
+    unique.push(match);
   }
 
-  const entityById = await fetchWikidataEntities(matches.slice(0, 5));
-  return selectBestWikidataResult(query, matches, entityById);
+  return unique;
 }
 
 async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {

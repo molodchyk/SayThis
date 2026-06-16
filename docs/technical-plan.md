@@ -44,6 +44,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
+- Script-based Wikidata search languages for non-Latin selections.
 - Structured source aliases preserved for resolver results and correction prefill.
 - Wikidata native/official source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
