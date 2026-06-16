@@ -154,6 +154,7 @@ function chooseSourceCandidate(query, match, entity) {
     ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name"),
     ...monolingualClaimCandidates(entity, NAME, "name"),
     ...monolingualClaimCandidates(entity, SHORT_NAME, "short name"),
+    ...sitelinkCandidates(entity, "sitelink title"),
     ...labelCandidates(entity, "label")
   ].filter((candidate) => candidate.value);
 
@@ -239,6 +240,8 @@ function scoreCandidate(candidate, selectedScript) {
     score += 5;
   } else if (candidate.source === "short name") {
     score += 3;
+  } else if (candidate.source === "sitelink title") {
+    score += 3;
   }
 
   if (candidate.language && candidate.language !== "en") {
@@ -265,7 +268,15 @@ function confidenceForCandidate(query, candidate) {
     return "low";
   }
 
-  return candidate.source === "native label" || candidate.source === "native name" || candidate.source === "official name" ? "medium" : "low";
+  if (candidate.source === "native label" || candidate.source === "native name" || candidate.source === "official name") {
+    return "medium";
+  }
+
+  if (candidate.source === "sitelink title" && detectScript(candidate.value).script !== detectScript(query).script) {
+    return "medium";
+  }
+
+  return "low";
 }
 
 function monolingualClaimCandidates(entity, propertyId, source) {
@@ -286,6 +297,18 @@ function labelCandidates(entity, source) {
     language: label.language || "",
     source
   }));
+}
+
+function sitelinkCandidates(entity, source) {
+  return Object.entries(entity.sitelinks || {})
+    .map(([key, sitelink]) => {
+      const value = normalizeSitelinkTitle(sitelink?.title);
+      const language = languageFromSitelink(sitelink?.site || key);
+      return value && language
+        ? { value, language, source }
+        : null;
+    })
+    .filter(Boolean);
 }
 
 function firstStringClaimValue(entity, propertyId) {
@@ -310,6 +333,7 @@ function wikidataAliases(entity, excludedValues = []) {
     ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name").map((candidate) => candidate.value),
     ...monolingualClaimCandidates(entity, NAME, "name").map((candidate) => candidate.value),
     ...monolingualClaimCandidates(entity, SHORT_NAME, "short name").map((candidate) => candidate.value),
+    ...sitelinkCandidates(entity, "sitelink title").map((candidate) => candidate.value),
     ...Object.values(entity.labels || {}).map((label) => label.value)
   ];
   const seen = new Set();
@@ -325,4 +349,13 @@ function wikidataAliases(entity, excludedValues = []) {
       seen.add(key);
       return true;
     });
+}
+
+function normalizeSitelinkTitle(value) {
+  return normalizeSelection(String(value || "").replace(/_/g, " "));
+}
+
+function languageFromSitelink(value) {
+  const match = String(value || "").toLowerCase().match(/^([a-z]{2,3})(?:[_-][a-z0-9]+)*wiki$/);
+  return match?.[1] || "";
 }

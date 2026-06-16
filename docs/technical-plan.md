@@ -8,7 +8,7 @@ Chrome Manifest V3 components:
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
-- `wikidata-adapter.js`: extracts source forms, native-name style claims, aliases, IPA, and pronunciation audio from Wikidata entities.
+- `wikidata-adapter.js`: extracts source forms, native-name style claims, sitelink titles, aliases, IPA, and pronunciation audio from Wikidata entities.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
 - `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
@@ -47,7 +47,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Script-based Wikidata search languages for non-Latin selections.
 - Structured source aliases preserved for resolver results and correction prefill.
-- Wikidata native-label, native-name, official-name, birth-name, generic-name, and short-name source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
+- Wikidata native-label, native-name, official-name, birth-name, generic-name, short-name, and sitelink-title source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.

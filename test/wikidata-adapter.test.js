@@ -89,6 +89,35 @@ test("uses native name claims as source-form candidates", () => {
   assert.ok(result.evidence.some((item) => item.includes("native name")));
 });
 
+test("uses native sitelink titles when name claims are sparse", () => {
+  const result = buildWikidataResult("Miyazaki", {
+    id: "Q2",
+    label: "Miyazaki",
+    language: "en",
+    description: "film director"
+  }, {
+    id: "Q2",
+    labels: {
+      en: { language: "en", value: "Miyazaki" }
+    },
+    descriptions: {
+      en: { language: "en", value: "film director" }
+    },
+    claims: {},
+    aliases: {},
+    sitelinks: {
+      enwiki: { site: "enwiki", title: "Hayao_Miyazaki" },
+      jawiki: { site: "jawiki", title: "宮崎駿" }
+    }
+  });
+
+  assert.equal(result.sourceForm, "宮崎駿");
+  assert.equal(result.language, "ja");
+  assert.equal(result.confidence, "medium");
+  assert.ok(result.aliases.includes("Hayao Miyazaki"));
+  assert.ok(result.evidence.some((item) => item.includes("sitelink title")));
+});
+
 test("extracts pronunciation audio and IPA claims", () => {
   const result = buildWikidataResult("Example", {
     id: "Q1",
