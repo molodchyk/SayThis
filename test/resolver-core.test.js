@@ -204,7 +204,7 @@ test("uses browser language display names for valid source codes", () => {
   });
 
   assert.equal(result.languageName, "Turkish");
-  assert.equal(result.ttsLang, "tr");
+  assert.equal(result.ttsLang, "tr-TR");
 
   const regional = createRemoteStructuredResult("Exampleterm", {
     id: "remote:regional-language",
@@ -215,6 +215,27 @@ test("uses browser language display names for valid source codes", () => {
 
   assert.match(regional.languageName, /Portuguese/);
   assert.equal(regional.ttsLang, "pt-BR");
+});
+
+test("maps structured source language codes to speech locales", () => {
+  const cases = [
+    ["hy", "hy-AM"],
+    ["hi", "hi-IN"],
+    ["th", "th-TH"],
+    ["bg", "bg-BG"],
+    ["sr", "sr-RS"]
+  ];
+
+  for (const [language, ttsLang] of cases) {
+    const result = createRemoteStructuredResult("Exampleterm", {
+      id: `remote:${language}`,
+      display: "Exampleterm",
+      sourceForm: "Exampleterm",
+      language
+    });
+
+    assert.equal(result.ttsLang, ttsLang);
+  }
 });
 
 test("prefers remote structured result over best-effort fallback", () => {
