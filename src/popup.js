@@ -54,6 +54,10 @@ const correctionAudio = document.getElementById("correction-audio");
 const correctionSourceUrl = document.getElementById("correction-source-url");
 const correctionVariant = document.getElementById("correction-variant");
 
+const DEFAULT_POPUP_SETTINGS = {
+  autoSpeakPopup: true
+};
+
 let currentResult = null;
 let audioPlayer = null;
 
@@ -143,7 +147,11 @@ async function init() {
       lastSelection: activeSelection,
       lastSource: "active-tab"
     });
-    await resolveSelection();
+    const result = await resolveSelection();
+    const settings = await readPopupSettings();
+    if (settings.autoSpeakPopup && result) {
+      await speakSelection(0.82);
+    }
   } else {
     const stored = await chrome.storage.local.get(["lastSelection", "lastResult"]);
     selectionInput.value = stored.lastSelection || "";
@@ -155,6 +163,15 @@ async function init() {
   }
 
   updateButtonState();
+}
+
+async function readPopupSettings() {
+  const stored = await chrome.storage.local.get(["settings"]);
+  return {
+    ...DEFAULT_POPUP_SETTINGS,
+    ...(stored.settings || {}),
+    autoSpeakPopup: stored.settings?.autoSpeakPopup !== false
+  };
 }
 
 async function resolveSelection(useOnline) {

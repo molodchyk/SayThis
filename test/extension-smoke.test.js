@@ -114,6 +114,8 @@ test("options page exposes shared-entry data controls", async () => {
   const html = await readText("src/options.html");
   const source = await readText("src/options.js");
 
+  assert.match(html, /id="auto-speak-popup"/);
+  assert.match(source, /autoSpeakPopup/);
   assert.match(html, /id="pull-enabled"/);
   assert.match(html, /id="pull-approved"/);
   assert.match(html, /id="clear-approved"/);
@@ -146,6 +148,8 @@ test("popup source-audio failure falls back to TTS", async () => {
   const html = await readText("src/popup.html");
 
   assert.match(html, /id="audio-list"/);
+  assert.match(source, /autoSpeakPopup/);
+  assert.match(source, /await speakSelection\(0\.82\)/);
   assert.match(source, /audioItemsForResult/);
   assert.match(source, /speakAlternate\(item\.index, 0\.82\)/);
   assert.match(source, /replaceCurrent: false/);

@@ -34,6 +34,7 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  autoSpeakPopup: true,
   customSourceEnabled: false,
   customSourceEndpoint: "",
   customSourceLabel: "",
@@ -52,6 +53,7 @@ const DEFAULT_CREDENTIALS = {
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
+const autoSpeakPopup = document.getElementById("auto-speak-popup");
 const customSourceEnabled = document.getElementById("custom-source-enabled");
 const customSourceEndpoint = document.getElementById("custom-source-endpoint");
 const customSourceLabel = document.getElementById("custom-source-label");
@@ -81,6 +83,7 @@ init();
 
 onlineDefault.addEventListener("change", saveSettings);
 showOverlay.addEventListener("change", saveSettings);
+autoSpeakPopup.addEventListener("change", saveSettings);
 customSourceEnabled.addEventListener("change", saveSettings);
 customSourceEndpoint.addEventListener("change", saveSettings);
 customSourceLabel.addEventListener("change", saveSettings);
@@ -116,6 +119,7 @@ async function init() {
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  autoSpeakPopup.checked = settings.autoSpeakPopup;
   customSourceEnabled.checked = settings.customSourceEnabled;
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
@@ -154,6 +158,7 @@ async function saveSettings() {
     [STORAGE_KEYS.credentials]: credentials
   });
   customSourceEnabled.checked = settings.customSourceEnabled;
+  autoSpeakPopup.checked = settings.autoSpeakPopup;
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
   forvoEnabled.checked = settings.forvoEnabled;
@@ -239,6 +244,7 @@ async function importData() {
 
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
+  autoSpeakPopup.checked = settings.autoSpeakPopup;
   customSourceEnabled.checked = settings.customSourceEnabled;
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
@@ -370,6 +376,7 @@ function normalizeSettings(settings = {}) {
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    autoSpeakPopup: settings.autoSpeakPopup !== false,
     customSourceEndpoint: customSource,
     customSourceLabel: normalizeShortText(settings.customSourceLabel),
     customSourceEnabled: Boolean(settings.customSourceEnabled && customSource),
@@ -400,6 +407,7 @@ async function settingsFromControls(credentials) {
   return settingsWithEndpointPermission({
     onlineByDefault: onlineDefault.checked,
     showOverlay: showOverlay.checked,
+    autoSpeakPopup: autoSpeakPopup.checked,
     customSourceEnabled: customSourceEnabled.checked,
     customSourceEndpoint: normalizeEndpoint(customSourceEndpoint.value),
     customSourceLabel: normalizeShortText(customSourceLabel.value),

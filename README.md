@@ -19,6 +19,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Packaged extension icons for toolbar and install surfaces.
 - Keyboard commands for selected text: `Alt+Shift+S` and online lookup with `Alt+Shift+O`.
 - A popup with selected-text capture and speak/stop controls.
+- Popup opens can auto-speak the active selection, with an options-page toggle.
 - A resolver result card with source form, aliases, language, origin, IPA/simple guide, confidence, evidence, and source links.
 - Alternate candidate display when structured sources disagree or a stronger source displaces another useful match.
 - Alternate candidates can be spoken from the popup or on-page card, so ambiguity is actionable instead of only informational.

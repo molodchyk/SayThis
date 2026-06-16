@@ -75,6 +75,7 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS = {
   onlineByDefault: false,
   showOverlay: true,
+  autoSpeakPopup: true,
   customSourceEnabled: false,
   customSourceEndpoint: "",
   customSourceLabel: "",
@@ -866,6 +867,7 @@ function normalizeSettings(settings = {}) {
     ...settings,
     onlineByDefault: Boolean(settings.onlineByDefault),
     showOverlay: settings.showOverlay !== false,
+    autoSpeakPopup: settings.autoSpeakPopup !== false,
     customSourceEndpoint,
     customSourceLabel: normalizeSelection(settings.customSourceLabel),
     customSourceEnabled: Boolean(settings.customSourceEnabled && customSourceEndpoint),
