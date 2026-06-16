@@ -29,20 +29,21 @@ import {
   buildCustomSourceUrl
 } from "../custom-source-adapter.js";
 
-export async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {
+export async function resolveWithOnlineSources(text, settings = {}, credentials = {}, context = {}) {
+  const languageHints = onlineLookupLanguageHints(settings.lookupLanguageHints, context.localResult);
   const [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult] = await Promise.all([
     settings.customSourceEnabled
       ? resolveSafely(resolveWithCustomSource, text, settings.customSourceEndpoint, settings.customSourceLabel)
       : Promise.resolve(null),
     resolveSafely(resolveWithWikidata, text, {
-      languageHints: settings.lookupLanguageHints
+      languageHints
     }),
     resolveSafely(resolveWithWiktionary, text, {
-      languageHints: settings.lookupLanguageHints
+      languageHints
     }),
     settings.gazetteerEnabled
       ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint, {
-        languageHints: settings.lookupLanguageHints
+        languageHints
       })
       : Promise.resolve(null)
   ]);
@@ -52,7 +53,7 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const nominatimCandidateResult = settings.gazetteerEnabled && structuredResult
     ? await resolveWithNominatimCandidates(text, structuredResult, settings.gazetteerEndpoint, {
-      languageHints: settings.lookupLanguageHints
+      languageHints
     })
     : null;
   const wiktionaryCandidateResult = structuredResult
@@ -62,12 +63,26 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const forvoResult = settings.forvoEnabled
-    ? await resolveWithForvoCandidates(text, refinedStructuredResult, credentials.forvoApiKey, settings)
+    ? await resolveWithForvoCandidates(text, refinedStructuredResult || context.localResult, credentials.forvoApiKey, {
+      ...settings,
+      lookupLanguageHints: languageHints
+    })
     : null;
 
   return [refinedStructuredResult, forvoResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
+}
+
+export function onlineLookupLanguageHints(configuredHints = [], localResult = {}) {
+  const hints = normalizedLanguageHints(configuredHints);
+  const localLanguage = localResult?.sourceStatus === "best-effort-fallback"
+    ? normalizeLanguageHint(localResult.language)
+    : "";
+
+  return localLanguage && !hints.includes(localLanguage)
+    ? [...hints, localLanguage].slice(0, 8)
+    : hints;
 }
 
 export async function resolveSafely(resolver, ...args) {
@@ -371,4 +386,36 @@ export async function fetchWikidataEntities(matches) {
   }));
 
   return Object.fromEntries(pairs.filter(Boolean));
+}
+
+function normalizedLanguageHints(value) {
+  const values = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[\s,;]+/);
+  const seen = new Set();
+  const hints = [];
+
+  for (const item of values) {
+    const language = normalizeLanguageHint(item);
+    if (!language || seen.has(language)) {
+      continue;
+    }
+
+    seen.add(language);
+    hints.push(language);
+    if (hints.length >= 8) {
+      break;
+    }
+  }
+
+  return hints;
+}
+
+function normalizeLanguageHint(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0]
+    ?.split("-")[0] || "";
 }

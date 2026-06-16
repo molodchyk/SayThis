@@ -9,6 +9,9 @@ import {
   ttsLangFromLanguage
 } from "./resolver/language.js";
 import {
+  orthographicLanguageHint
+} from "./resolver/orthography.js";
+import {
   confidenceRank,
   normalizeConfidence,
   normalizeSourceStatus,
@@ -41,6 +44,7 @@ export {
   detectScript,
   normalizeSelection
 } from "./resolver/text.js";
+export { orthographicLanguageHint } from "./resolver/orthography.js";
 export { sourceLabelForStatus } from "./resolver/status.js";
 export { getBestAudio, mapResultAudioUrls } from "./resolver/audio.js";
 export {
@@ -235,7 +239,10 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
 function createFallbackResult(query, lookupKey, scriptInfo) {
   const hint = scriptHintForScript(scriptInfo.script);
   const isLatin = scriptInfo.script === "Latin";
+  const orthographyHint = isLatin ? orthographicLanguageHint(query) : null;
   const sourceStatus = isLatin ? "best-effort-fallback" : "generated-from-source";
+  const language = hint.language || orthographyHint?.language || "";
+  const languageName = hint.languageName || orthographyHint?.languageName || (isLatin ? "Unresolved Latin-script term" : "Unresolved term");
 
   return normalizeResult({
     id: `fallback:${lookupKey}`,
@@ -246,16 +253,19 @@ function createFallbackResult(query, lookupKey, scriptInfo) {
     speakText: query,
     script: scriptInfo.script,
     queryScript: scriptInfo.script,
-    language: hint.language || "",
-    languageName: hint.languageName || (isLatin ? "Unresolved Latin-script term" : "Unresolved term"),
-    ttsLang: hint.ttsLang || "",
+    language,
+    languageName,
+    ttsLang: hint.ttsLang || ttsLangFromLanguage(language),
     category: "unresolved",
     origin: "",
     pronunciation: {},
-    confidence: isLatin ? "low" : "medium",
+    confidence: isLatin ? orthographyHint?.confidence || "low" : "medium",
     sourceStatus,
     sourceLabel: sourceLabelForStatus(sourceStatus),
-    evidence: isLatin ? ["No structured match found"] : [`Detected ${scriptInfo.script} script`],
+    evidence: [
+      ...(isLatin ? ["No structured match found"] : [`Detected ${scriptInfo.script} script`]),
+      orthographyHint?.evidence || ""
+    ].filter(Boolean),
     sources: [],
     notes: "",
     community: emptyCommunity()

@@ -219,7 +219,9 @@ async function resolveSelection(text, options = {}) {
     try {
       const remoteResult = cached.hit
         ? cached.result
-        : await resolveWithOnlineSources(selectedText, settings, credentials);
+        : await resolveWithOnlineSources(selectedText, settings, credentials, {
+          localResult
+        });
       if (!cached.hit && isCacheableResult(remoteResult)) {
         resultCache = upsertCachedResult(resultCache, selectedText, remoteResult, cacheOptions);
       }
