@@ -43,8 +43,8 @@ const LANGUAGE_CODES = {
   Vietnamese: "vi"
 };
 
-export function buildWiktionaryResult(query, pageTitle, wikitext) {
-  const parsed = parseWiktionaryPronunciation(wikitext);
+export function buildWiktionaryResult(query, pageTitle, wikitext, options = {}) {
+  const parsed = parseWiktionaryPronunciation(wikitext, options);
   if (!parsed.ipa && !parsed.simple && !hasAudioFiles(parsed) && !parsed.origin) {
     return null;
   }
@@ -59,12 +59,13 @@ export function buildWiktionaryResult(query, pageTitle, wikitext) {
     : result;
 }
 
-export function parseWiktionaryPronunciation(wikitext = "") {
+export function parseWiktionaryPronunciation(wikitext = "", options = {}) {
   const text = String(wikitext || "");
+  const preferredLanguage = normalizeLanguageHint(options.preferredLanguage || options.language);
   const entries = languageEntries(text)
     .map(parseLanguageEntry)
     .filter(entryHasLookupData);
-  const primary = choosePrimaryEntry(entries);
+  const primary = choosePrimaryEntry(entries, preferredLanguage);
 
   if (!primary) {
     return {
@@ -166,17 +167,17 @@ function languageEntries(text) {
     : [{ languageName: "", body: text }];
 }
 
-function choosePrimaryEntry(entries) {
+function choosePrimaryEntry(entries, preferredLanguage = "") {
   return entries
     .map((entry, index) => ({
       entry,
       index,
-      score: scoreEntry(entry)
+      score: scoreEntry(entry, preferredLanguage)
     }))
     .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.entry || null;
 }
 
-function scoreEntry(entry) {
+function scoreEntry(entry, preferredLanguage = "") {
   let score = 0;
 
   if (hasAudioFiles(entry)) {
@@ -197,6 +198,10 @@ function scoreEntry(entry) {
 
   if (entry.language) {
     score += 1;
+  }
+
+  if (preferredLanguage && baseLanguage(entry.language) === baseLanguage(preferredLanguage)) {
+    score += 12;
   }
 
   return score;
@@ -296,6 +301,18 @@ function templateValues(value) {
     .split("|")
     .map((part) => stripWikitext(part))
     .filter((part) => part && !part.includes("="));
+}
+
+function normalizeLanguageHint(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
+}
+
+function baseLanguage(language) {
+  return normalizeLanguageHint(language).split("-")[0];
 }
 
 function firstEtymologyLine(text) {

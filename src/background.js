@@ -686,7 +686,7 @@ async function resolveWithWiktionary(text) {
   return resolveWithWiktionaryLookup(text, text);
 }
 
-async function resolveWithWiktionaryLookup(selectedText, lookupWord) {
+async function resolveWithWiktionaryLookup(selectedText, lookupWord, options = {}) {
   const selected = normalizeSelection(selectedText);
   const query = normalizeSelection(lookupWord);
   if (!selected || !query) {
@@ -716,7 +716,9 @@ async function resolveWithWiktionaryLookup(selectedText, lookupWord) {
     return null;
   }
 
-  return buildWiktionaryResult(selected, page.title || query, wikitext);
+  return buildWiktionaryResult(selected, page.title || query, wikitext, {
+    preferredLanguage: options.language
+  });
 }
 
 async function resolveWithWiktionaryCandidates(text, structuredResult) {
@@ -727,7 +729,9 @@ async function resolveWithWiktionaryCandidates(text, structuredResult) {
 
   let result = null;
   for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
-    const wiktionaryResult = await resolveSafely(resolveWithWiktionaryLookup, query, candidate.word);
+    const wiktionaryResult = await resolveSafely(resolveWithWiktionaryLookup, query, candidate.word, {
+      language: candidate.language
+    });
     if (!wiktionaryResult) {
       continue;
     }

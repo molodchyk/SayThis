@@ -111,6 +111,25 @@ test("builds alternate results for other pronunciation sections", () => {
   assert.equal(result.alternateResults[0].pronunciation.ipa, "/ˈlu.mi/");
 });
 
+test("prefers a matching Wiktionary language section when hinted", () => {
+  const parsed = parseWiktionaryPronunciation(SECTIONED_WIKITEXT, {
+    preferredLanguage: "pt-BR"
+  });
+  const result = buildWiktionaryResult("lume", "lume", SECTIONED_WIKITEXT, {
+    preferredLanguage: "pt"
+  });
+
+  assert.equal(parsed.language, "pt");
+  assert.equal(parsed.languageName, "Portuguese");
+  assert.equal(parsed.ipa, "/ˈlu.mi/");
+  assert.equal(parsed.audioFile, "");
+  assert.equal(result.language, "pt");
+  assert.equal(result.sourceStatus, "structured-source");
+  assert.equal(result.alternateResults.length, 1);
+  assert.equal(result.alternateResults[0].language, "it");
+  assert.equal(result.alternateResults[0].sourceStatus, "verified-audio");
+});
+
 test("maps additional Wiktionary language sections to source codes", () => {
   const parsed = parseWiktionaryPronunciation(TURKISH_WIKITEXT);
   const result = buildWiktionaryResult("kalem", "kalem", TURKISH_WIKITEXT);
