@@ -59,7 +59,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Forvo candidate planning can retry configured-language lookups with resolved source-language hints.
 - Matching verified audio is merged onto structured results so source context, IPA, and origin are preserved.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
-- Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
+- Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.
 - Result card with source form, aliases, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - Local confirmation, wrong-result, missing-term, correction, aliases, audio-source, source-link, variant-note storage, and import/export normalization.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.

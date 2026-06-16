@@ -46,7 +46,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Verified audio from matching sources is merged onto structured results so IPA, origin, and source context stay visible.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
 - Local cache for successful online lookup results.
-- Imported lookup-cache results are allowlisted to pronunciation result fields.
+- Imported lookup-cache results are allowlisted to pronunciation result fields while preserving trust and variant metadata.
 - Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
 - Popup source-audio playback falls back to TTS automatically if the audio cannot start.
 - Options for default online lookup, on-page card display, and local/shared community-memory data management.

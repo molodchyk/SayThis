@@ -176,7 +176,7 @@ function normalizeCachedResult(result, lookupKey, term) {
     sourceLabel: normalizeSelection(result.sourceLabel),
     evidence: Array.isArray(result.evidence) ? result.evidence.slice(0, 8).map(normalizeSelection).filter(Boolean) : [],
     sources: normalizeSourceItems(result.sources).slice(0, 8),
-    notes: normalizeSelection(result.notes),
+    notes: normalizeSelection(result.notes || result.variantNote),
     community: normalizeCommunity(result.community),
     alternateResults: normalizeAlternateResults(result.alternateResults).slice(0, 3)
   };

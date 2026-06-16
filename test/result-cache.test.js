@@ -131,8 +131,10 @@ test("sanitizes imported cached result payloads", () => {
           query: "Dirty",
           display: "Dirty",
           sourceForm: "Dirty",
+          trustSignals: "source-backed; source-backed; moderator-reviewed",
           sourceStatus: "verified-audio",
           confidence: "high",
+          variantNote: "Regional pronunciation variant",
           pageUrl: "https://private.example/page",
           headers: { cookie: "secret" },
           pronunciation: {
@@ -168,6 +170,8 @@ test("sanitizes imported cached result payloads", () => {
   assert.equal(result.pronunciation.audio.length, 1);
   assert.equal(result.sources.length, 1);
   assert.equal(result.alternateResults.length, 1);
+  assert.deepEqual(result.trustSignals, ["source-backed", "moderator-reviewed"]);
+  assert.equal(result.notes, "Regional pronunciation variant");
   assert.equal(Object.hasOwn(result, "pageUrl"), false);
   assert.equal(Object.hasOwn(result, "headers"), false);
   assert.equal(Object.hasOwn(result.pronunciation.audio[0], "extra"), false);
