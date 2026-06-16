@@ -7,7 +7,7 @@ export function evidenceItemsForResult(result, limit = 6) {
   return [
     ...trustSignalItems(result?.trustSignals),
     ...(Array.isArray(result?.evidence) ? result.evidence : []),
-    result?.notes || "",
+    result?.notes || result?.variantNote || "",
     community.confirmations ? `${community.confirmations} local confirmation${community.confirmations === 1 ? "" : "s"}` : "",
     community.corrections ? `${community.corrections} local correction${community.corrections === 1 ? "" : "s"}` : "",
     community.requests ? `${community.requests} local request${community.requests === 1 ? "" : "s"}` : "",

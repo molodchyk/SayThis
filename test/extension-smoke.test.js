@@ -74,6 +74,8 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /community\.flags/);
   assert.match(source, /<dt>Aliases<\/dt>/);
   assert.match(source, /aliasesTextFromResult\(result\) \|\| "None"/);
+  assert.match(source, /result\.notes \|\| result\.variantNote/);
+  assert.match(source, /\.filter\(Boolean\)\.slice\(0, 2\)/);
 
   for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "audioUrl", "sourceUrl", "variantNote"]) {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));

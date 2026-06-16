@@ -43,6 +43,15 @@ test("prefills correction values from resolver result", () => {
   });
 });
 
+test("prefills variant note aliases from resolver result", () => {
+  const values = correctionValuesFromResult({
+    sourceForm: "Exampleterm",
+    variantNote: "Regional pronunciation variant"
+  });
+
+  assert.equal(values.variantNote, "Regional pronunciation variant");
+});
+
 test("builds correction feedback with audio source and variant note", () => {
   const feedback = correctionFeedbackFromValues({
     sourceForm: "  gnocchi ",

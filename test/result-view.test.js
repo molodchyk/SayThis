@@ -41,6 +41,16 @@ test("builds evidence items with wrong-result flag context", () => {
   ]);
 });
 
+test("builds evidence items with variant note aliases", () => {
+  const items = evidenceItemsForResult({
+    variantNote: "Regional pronunciation variant"
+  });
+
+  assert.deepEqual(items, [
+    "Regional pronunciation variant"
+  ]);
+});
+
 test("builds safe unique source links from result sources and audio", () => {
   const items = sourceItemsForResult({
     sources: [{

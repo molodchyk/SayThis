@@ -16,7 +16,7 @@ export function correctionValuesFromResult(result = {}) {
     origin: normalizeSelection(result.origin),
     audioUrl: normalizeUrl(bestAudio?.url),
     sourceUrl,
-    variantNote: normalizeSelection(result.notes)
+    variantNote: normalizeSelection(result.notes || result.variantNote)
   };
 }
 

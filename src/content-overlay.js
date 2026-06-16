@@ -26,8 +26,9 @@
     ensureRoot();
     const evidence = [
       ...trustSignalItems(result.trustSignals),
-      ...(result.evidence || [])
-    ].slice(0, 2);
+      ...(result.evidence || []),
+      result.notes || result.variantNote || ""
+    ].filter(Boolean).slice(0, 2);
     const sources = sourceItems(result).slice(0, 2);
     const alternates = alternateItems(result).slice(0, 2);
     const community = result.community || {};
@@ -325,7 +326,7 @@
             ${correctionInput("Origin", "origin", result.origin, 160, "full")}
             ${correctionInput("Audio source", "audioUrl", getBestAudio(result)?.url, 2048, "full", "url")}
             ${correctionInput("Source link", "sourceUrl", firstSourceUrl(result), 2048, "full", "url")}
-            ${correctionInput("Variant note", "variantNote", result.notes, 160, "full")}
+            ${correctionInput("Variant note", "variantNote", result.notes || result.variantNote, 160, "full")}
           </div>
           <div class="form-actions">
             <button class="action" type="submit">Save</button>
