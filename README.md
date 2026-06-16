@@ -21,6 +21,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - A popup with selected-text capture and speak/stop controls.
 - A resolver result card with source form, aliases, language, origin, IPA/simple guide, confidence, evidence, and source links.
 - Alternate candidate display when structured sources disagree or a stronger source displaces another useful match.
+- Alternate candidates can be spoken from the popup or on-page card, so ambiguity is actionable instead of only informational.
 - Alias capture from structured sources and community corrections.
 - Wikidata name-variant aliases from labels, sitelink titles, and native, native-name, official, birth-name, generic-name, and short-name claims.
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym claims as source-form and alias signals.

@@ -65,6 +65,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Nominatim-compatible lookup keeps language-tagged alternate place names as alternate results, so audio lookup can retry the same spelling with the right language hint.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.
 - Result card with source form, aliases, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
+- Alternate candidate summaries preserve speech-locale hints and can be spoken directly from popup or on-page result cards.
 - Local confirmation, wrong-result, missing-term, correction, aliases, audio-source, source-link, variant-note storage, and import/export normalization.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
 - Local community entries preserve and derive trust signals from local actions and source evidence.

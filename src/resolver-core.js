@@ -744,12 +744,14 @@ function flattenAlternateCandidate(candidate) {
 
 function alternateResultSummary(result = {}) {
   const sourceStatus = normalizeSourceStatus(result.sourceStatus);
+  const language = normalizeLanguage(result.language);
   return {
     id: normalizeSelection(result.id),
     display: normalizeSelection(result.display || result.query || result.sourceForm),
     sourceForm: normalizeSelection(result.sourceForm || result.display || result.query),
-    language: normalizeLanguage(result.language),
-    languageName: normalizeSelection(result.languageName || languageNameFromCode(result.language)),
+    language,
+    languageName: normalizeSelection(result.languageName || languageNameFromCode(language)),
+    ttsLang: normalizeSelection(result.ttsLang || ttsLangFromLanguage(language)),
     category: normalizeSelection(result.category),
     confidence: normalizeConfidence(result.confidence),
     sourceStatus,

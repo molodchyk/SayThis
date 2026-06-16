@@ -158,6 +158,7 @@ test("sanitizes imported cached result payloads", () => {
           alternateResults: [{
             display: "Alternate",
             sourceForm: "Alternate",
+            ttsLang: "it-IT",
             pronunciation: { simple: "ALL-ter-nate" },
             pageUrl: "https://private.example/alternate"
           }]
@@ -170,6 +171,7 @@ test("sanitizes imported cached result payloads", () => {
   assert.equal(result.pronunciation.audio.length, 1);
   assert.equal(result.sources.length, 1);
   assert.equal(result.alternateResults.length, 1);
+  assert.equal(result.alternateResults[0].ttsLang, "it-IT");
   assert.deepEqual(result.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(result.notes, "Regional pronunciation variant");
   assert.equal(Object.hasOwn(result, "pageUrl"), false);

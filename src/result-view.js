@@ -38,7 +38,7 @@ export function audioItemsForResult(result, limit = 4) {
 export function alternateItemsForResult(result, limit = 3) {
   const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
   return alternates
-    .map(normalizeAlternateItem)
+    .map((item, index) => normalizeAlternateItem(item, index))
     .filter((item) => item.sourceForm || item.display)
     .slice(0, limit);
 }
@@ -77,13 +77,14 @@ function uniqueAudioItems(items) {
   return result;
 }
 
-function normalizeAlternateItem(item = {}) {
+function normalizeAlternateItem(item = {}, index = 0) {
   const sourceForm = normalizeSelection(item.sourceForm || item.display || item.query);
   const language = normalizeSelection(item.languageName || item.language);
   const source = normalizeSelection(item.sourceLabel || item.sourceStatus || item.confidence);
   const guide = normalizeSelection(item.pronunciation?.simple || item.pronunciation?.ipa);
 
   return {
+    index,
     display: normalizeSelection(item.display || sourceForm),
     sourceForm,
     language,

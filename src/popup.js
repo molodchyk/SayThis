@@ -251,12 +251,17 @@ function renderResult(result) {
   alternates.replaceChildren();
   for (const item of alternateItemsForResult(result)) {
     const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "small secondary";
+    button.textContent = "Speak";
+    button.addEventListener("click", () => speakAlternate(item.index, 0.82));
     const label = document.createElement("span");
     label.className = "alternate-label";
     label.textContent = item.display || "Alternate";
     const summary = document.createElement("span");
     summary.textContent = item.summary;
-    li.append(label, summary);
+    li.append(button, label, summary);
     alternates.append(li);
   }
 
@@ -298,12 +303,45 @@ function renderResult(result) {
   }
 }
 
+function speakAlternate(index, rate) {
+  const alternate = Array.isArray(currentResult?.alternateResults)
+    ? currentResult.alternateResults[index]
+    : null;
+  if (!alternate) {
+    return;
+  }
+
+  if (playAudioItem(getBestAudio(alternate), alternate, rate, { replaceCurrent: false })) {
+    setStatus("Playing alternate.");
+    return;
+  }
+
+  speakResultCandidate(alternate, rate);
+}
+
+async function speakResultCandidate(result, rate) {
+  const text = normalizeSelection(selectionInput.value || result?.query || result?.sourceForm || result?.display);
+  if (!text) {
+    setStatus("No selected text.");
+    return;
+  }
+
+  const response = await sendMessage(createSpeakMessage(text, {
+    result,
+    rate
+  }));
+
+  setStatus(response.ok
+    ? rate < 0.7 ? "Speaking alternate slowly." : "Speaking alternate."
+    : response.error || "Speech failed.");
+}
+
 function playAudio(result, rate) {
   const audio = getBestAudio(result);
   return playAudioItem(audio, result, rate);
 }
 
-function playAudioItem(audio, result, rate) {
+function playAudioItem(audio, result, rate, options = {}) {
   if (!audio?.url) {
     return false;
   }
@@ -323,8 +361,10 @@ function playAudioItem(audio, result, rate) {
       rate
     }));
     if (response.ok) {
-      currentResult = response.result;
-      renderResult(currentResult);
+      if (options.replaceCurrent !== false) {
+        currentResult = response.result;
+        renderResult(currentResult);
+      }
       setStatus(rate < 0.7 ? "Speaking slowly." : "Speaking.");
     } else {
       setStatus(response.error || "Speech failed.");

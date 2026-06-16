@@ -205,8 +205,25 @@
         }
 
         .alternates li {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 2px 8px;
+          align-items: center;
           border-left: 2px solid #dcefe9;
           padding-left: 8px;
+        }
+
+        .alternates button {
+          grid-row: span 2;
+          border: 1px solid #0f6b58;
+          border-radius: 6px;
+          padding: 5px 8px;
+          color: #0f6b58;
+          background: transparent;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 750;
+          cursor: pointer;
         }
 
         .alternates strong {
@@ -334,7 +351,7 @@
           ${evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
-        ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><strong>${escapeHtml(item.display || "Alternate")}</strong>${escapeHtml(item.summary)}</li>`).join("")}</ul>` : ""}
+        ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><button type="button" data-action="alternate" data-alternate-index="${item.index}">Speak</button><strong>${escapeHtml(item.display || "Alternate")}</strong><span>${escapeHtml(item.summary)}</span></li>`).join("")}</ul>` : ""}
         ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation recordings">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">Play</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <div class="actions">
@@ -382,6 +399,12 @@
     root.querySelector('[data-action="confirm"]').addEventListener("click", () => sendFeedback(result, "confirm"));
     root.querySelector('[data-action="missing"]').addEventListener("click", () => sendFeedback(result, "missing"));
     root.querySelector('[data-action="wrong"]').addEventListener("click", () => sendFeedback(result, "wrong"));
+    for (const button of root.querySelectorAll('[data-action="alternate"]')) {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.alternateIndex);
+        speakCandidate(result.alternateResults?.[index], 0.82);
+      });
+    }
     for (const button of root.querySelectorAll('[data-action="recording"]')) {
       button.addEventListener("click", () => {
         const index = Number(button.dataset.audioIndex);
@@ -523,9 +546,17 @@
       return;
     }
 
+    speakCandidate(result, rate);
+  }
+
+  function speakCandidate(result, rate) {
+    if (!result) {
+      return;
+    }
+
     chrome.runtime.sendMessage({
       type: "SAYTHIS_SPEAK",
-      text: result.query || result.display,
+      text: result.query || result.sourceForm || result.display,
       result,
       rate
     });
@@ -655,12 +686,13 @@
   function alternateItems(result) {
     const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
     return alternates
-      .map((item) => {
+      .map((item, index) => {
         const sourceForm = normalizeText(item.sourceForm || item.display || item.query);
         const language = normalizeText(item.languageName || item.language);
         const source = normalizeText(item.sourceLabel || item.sourceStatus || item.confidence);
         const guide = normalizeText(item.pronunciation?.simple || item.pronunciation?.ipa);
         return {
+          index,
           display: normalizeText(item.display || sourceForm),
           summary: [sourceForm, language, source, guide].filter(Boolean).join(" · ")
         };

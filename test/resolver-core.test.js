@@ -361,6 +361,7 @@ test("preserves useful displaced remote candidates", () => {
   assert.equal(merged.id, "forvo:exampleterm");
   assert.equal(merged.alternateResults.length, 1);
   assert.equal(merged.alternateResults[0].id, "wikidata:exampleterm");
+  assert.equal(merged.alternateResults[0].ttsLang, "it-IT");
   assert.equal(merged.alternateResults[0].pronunciation.simple, "eg-ZAM-pluh-term");
 });
 

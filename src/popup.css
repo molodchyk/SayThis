@@ -226,9 +226,14 @@ dd {
 
 .alternates li {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 2px;
   border-left: 2px solid #dcefe9;
   padding-left: 8px;
+}
+
+.alternates li > span:last-child {
+  grid-column: 2;
 }
 
 .alternate-label {

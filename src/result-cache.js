@@ -218,6 +218,7 @@ function normalizeAlternateResults(items = []) {
       sourceForm: normalizeSelection(item?.sourceForm),
       language: normalizeSelection(item?.language),
       languageName: normalizeSelection(item?.languageName),
+      ttsLang: normalizeSelection(item?.ttsLang),
       category: normalizeSelection(item?.category),
       confidence: normalizeSelection(item?.confidence),
       sourceStatus: normalizeSelection(item?.sourceStatus),

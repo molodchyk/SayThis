@@ -136,6 +136,7 @@ test("builds compact alternate candidate summaries", () => {
   });
 
   assert.deepEqual(items, [{
+    index: 0,
     display: "Exampleterm",
     sourceForm: "Exampleterm",
     language: "Latin",
