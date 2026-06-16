@@ -28,6 +28,7 @@ Chrome Manifest V3 components:
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
 - `scripts/package-extension.mjs`: builds a deterministic Chrome ZIP from runtime extension files.
 - `scripts/smoke-loaded-extension.mjs`: opt-in Chrome or Edge launch smoke runner for service-worker, popup, options startup, and keyboard-overlay flow.
+- `Dockerfile.community`: builds the self-hostable community moderation service image.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
 - `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
@@ -63,6 +64,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Community service request-size limits, in-memory public submission rate limiting, and configurable pending-queue caps.
 - Community service serialized store writes for overlapping public or moderator requests.
 - Community service proxy IP headers are ignored for rate limiting unless explicitly enabled.
+- Community service container image and deployment notes.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
 - Packaged public audio path rewriting for curated entries.
@@ -166,6 +168,5 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 ## Near-Term Tasks
 
 - Broaden online entity scoring with additional structured sources.
-- Add deployment recipes and stronger production abuse controls for the community backend.
 - Add actual curated public audio files after source/license review.
 - Add loaded-extension smoke coverage for the context-menu flow.

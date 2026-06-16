@@ -21,6 +21,8 @@ npm run community:serve
 
 The service listens on `http://127.0.0.1:8787` by default. For real extension sync, deploy it behind HTTPS and configure the extension endpoint to the public `/community` URL.
 
+Container deployment notes are in `docs/deployment.md`.
+
 Open the moderator page locally at:
 
 ```http

@@ -52,6 +52,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service can reject browser-originated requests outside configured allowed origins.
 - Community service serializes store writes so concurrent submissions do not overwrite pending entries.
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
+- Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, and Chrome package creation.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.
@@ -72,6 +73,7 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 - Research notes: `docs/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
 - Community service: `docs/community-service.md`
+- Deployment: `docs/deployment.md`
 - Custom source: `docs/custom-source.md`
 - Seed glossary: `data/pronunciation-seed.json`
 
