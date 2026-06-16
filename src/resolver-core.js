@@ -8,6 +8,13 @@ import {
   scriptHintForScript,
   ttsLangFromLanguage
 } from "./resolver/language.js";
+import {
+  confidenceRank,
+  normalizeConfidence,
+  normalizeSourceStatus,
+  sourceLabelForStatus,
+  strongerConfidence
+} from "./resolver/status.js";
 
 export {
   MAX_SELECTION_LENGTH,
@@ -15,22 +22,7 @@ export {
   detectScript,
   normalizeSelection
 } from "./resolver/text.js";
-
-const SOURCE_LABELS = {
-  "verified-audio": "Verified audio",
-  "community-confirmed": "Community confirmed",
-  "structured-source": "Structured source",
-  "generated-from-source": "Generated from source form",
-  "best-effort-fallback": "Best-effort fallback",
-  unknown: "Unknown"
-};
-
-const CONFIDENCE_RANK = {
-  high: 5,
-  medium: 3,
-  low: 1,
-  unknown: 0
-};
+export { sourceLabelForStatus } from "./resolver/status.js";
 
 export function resolveTerm(selection, options = {}) {
   const query = normalizeSelection(selection);
@@ -63,8 +55,8 @@ export function mergeRemoteResult(localResult, remoteResult) {
     return remoteResult;
   }
 
-  const localRank = CONFIDENCE_RANK[localResult.confidence] || 0;
-  const remoteRank = CONFIDENCE_RANK[remoteResult.confidence] || 0;
+  const localRank = confidenceRank(localResult.confidence);
+  const remoteRank = confidenceRank(remoteResult.confidence);
 
   if (localResult.sourceStatus === "best-effort-fallback" && remoteRank >= localRank) {
     return withAlternateResults(remoteResult, [localResult]);
@@ -117,7 +109,7 @@ export function createRemoteStructuredResult(selection, source) {
     pronunciation: source.pronunciation || {},
     confidence: source.confidence || (hasAudio ? "high" : "medium"),
     sourceStatus,
-    sourceLabel: SOURCE_LABELS[sourceStatus],
+    sourceLabel: sourceLabelForStatus(sourceStatus),
     evidence: source.evidence || [],
     sources: source.sources || [],
     notes: source.notes || "",
@@ -312,10 +304,6 @@ export function mapResultAudioUrls(result, resolveUrl) {
   };
 }
 
-export function sourceLabelForStatus(status) {
-  return SOURCE_LABELS[status] || SOURCE_LABELS.unknown;
-}
-
 function findSeedEntry(lookupKey, entries = []) {
   return entries.find((entry) => entryKeys(entry).includes(lookupKey));
 }
@@ -446,7 +434,7 @@ function createUnknownResult(query, lookupKey, scriptInfo) {
     pronunciation: {},
     confidence: "unknown",
     sourceStatus: "unknown",
-    sourceLabel: SOURCE_LABELS.unknown,
+    sourceLabel: sourceLabelForStatus("unknown"),
     evidence: [],
     sources: [],
     notes: "",
@@ -553,10 +541,6 @@ function pronunciationTargetKeys(result = {}) {
 
 function baseLanguage(language) {
   return normalizeLanguage(language).toLowerCase().split(/[-_]/)[0];
-}
-
-function strongerConfidence(left, right) {
-  return (CONFIDENCE_RANK[right] || 0) > (CONFIDENCE_RANK[left] || 0) ? right : left;
 }
 
 function mergeAudioItems(...groups) {
@@ -789,14 +773,6 @@ function normalizeOrigin(origin) {
 
 function normalizeLanguage(language) {
   return String(language || "").trim();
-}
-
-function normalizeConfidence(confidence) {
-  return CONFIDENCE_RANK[confidence] !== undefined ? confidence : "unknown";
-}
-
-function normalizeSourceStatus(status) {
-  return SOURCE_LABELS[status] ? status : "unknown";
 }
 
 function entryKeys(entry) {

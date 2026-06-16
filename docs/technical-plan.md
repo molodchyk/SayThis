@@ -9,6 +9,7 @@ Chrome Manifest V3 components:
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
 - `resolver/language.js`: pure language display-name, speech-locale, and script-hint helpers used by resolver results.
+- `resolver/status.js`: pure source-status labels, confidence ranking, and status normalization helpers used by resolver results.
 - `resolver/text.js`: pure selected-text normalization, lookup-key generation, and script detection helpers re-exported by `resolver-core.js`.
 - `wikidata-adapter.js`: extracts source forms, native-name style claims, sitelink titles, aliases, IPA, and pronunciation audio from Wikidata entities.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
@@ -47,6 +48,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Packaged PNG icons for toolbar and install surfaces.
 - Local resolver over bundled entries and local community memory.
 - Language names, speech locales, and script hints have a narrow pure module.
+- Source-status labels and confidence ranking have a narrow pure module.
 - Text normalization and script detection have a narrow pure module behind resolver-core compatibility exports.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.

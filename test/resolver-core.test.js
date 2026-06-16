@@ -12,6 +12,7 @@ import {
   normalizeCommunityEntries,
   resolveTerm,
   resultToSpeechOptions,
+  sourceLabelForStatus,
   updateCommunityEntries
 } from "../src/resolver-core.js";
 import {
@@ -24,6 +25,13 @@ import {
   scriptHintForScript,
   ttsLangFromLanguage
 } from "../src/resolver/language.js";
+import {
+  confidenceRank,
+  normalizeConfidence,
+  normalizeSourceStatus,
+  sourceLabelForStatus as sourceLabelForStatusDirect,
+  strongerConfidence
+} from "../src/resolver/status.js";
 
 const seedData = JSON.parse(await readFile(new URL("../data/pronunciation-seed.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -62,6 +70,16 @@ test("maps resolver language helpers from a narrow module", () => {
   assert.equal(languageNameFromCode("tr"), "Turkish");
   assert.equal(scriptHintForScript("Greek").ttsLang, "el-GR");
   assert.deepEqual(scriptHintForScript("Unknown"), {});
+});
+
+test("maps resolver status helpers from a narrow module", () => {
+  assert.equal(confidenceRank("high"), 5);
+  assert.equal(normalizeConfidence("unclear"), "unknown");
+  assert.equal(normalizeSourceStatus("verified-audio"), "verified-audio");
+  assert.equal(normalizeSourceStatus("generated"), "unknown");
+  assert.equal(strongerConfidence("low", "medium"), "medium");
+  assert.equal(sourceLabelForStatusDirect("structured-source"), "Structured source");
+  assert.equal(sourceLabelForStatus("structured-source"), sourceLabelForStatusDirect("structured-source"));
 });
 
 test("resolves bundled entries by alias", () => {
