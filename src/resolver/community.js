@@ -43,6 +43,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     language: existing.language || "",
     languageName: existing.languageName || "",
     origin: existing.origin || "",
+    root: existing.root || "",
     ipa: existing.ipa || "",
     simple: existing.simple || "",
     audioUrl: existing.audioUrl || "",
@@ -61,7 +62,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     next.requests += 1;
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
-    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
       const value = field === "aliases"
         ? normalizeAliases(feedback[field])
         : field === "audioUrl" || field === "sourceUrl"
@@ -98,7 +99,7 @@ export function findCommunityEntry(lookupKey, entries = {}) {
 }
 
 export function hasCommunityPronunciationData(entry = {}) {
-  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
+  return Boolean(entry.sourceForm || entry.language || entry.root || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
 }
 
 export function withCommunitySummary(result, communityEntry) {
@@ -158,6 +159,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     language: normalizeLanguage(entry.language),
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
+    root: normalizeSelection(entry.root),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
     audioUrl: normalizeUrl(entry.audioUrl),
@@ -173,7 +175,7 @@ function hasCommunityEntryContent(entry = {}) {
   return Boolean(
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
-    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     normalizeCount(entry.confirmations) ||
     normalizeCount(entry.flags) ||
@@ -199,6 +201,9 @@ function communityTrustSignals(existingSignals, feedback = {}, entry = {}) {
   }
   if (entry.variantNote) {
     signals.push("variant-noted");
+  }
+  if (entry.root) {
+    signals.push("root-noted");
   }
 
   return normalizeTrustSignals(signals);

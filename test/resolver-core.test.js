@@ -139,6 +139,7 @@ test("maps resolver community helpers from a narrow module", () => {
     kind: "correction",
     sourceForm: " Exampleterm ",
     aliases: "Alias; Alias",
+    root: "example root",
     simple: "eg-ZAM-pluh-term",
     audioUrl: "https://example.com/audio.ogg",
     sourceUrl: "https://example.com/source",
@@ -150,8 +151,9 @@ test("maps resolver community helpers from a narrow module", () => {
   const summarized = applyCommunitySummaryDirect({ id: "result" }, found);
 
   assert.equal(found.sourceForm, "Exampleterm");
+  assert.equal(found.root, "example root");
   assert.deepEqual(found.aliases, ["Alias"]);
-  assert.deepEqual(found.trustSignals, ["local-correction", "source-backed", "audio-backed", "variant-noted", "local-confirmed"]);
+  assert.deepEqual(found.trustSignals, ["local-correction", "source-backed", "audio-backed", "variant-noted", "root-noted", "local-confirmed"]);
   assert.equal(summarized.community.confirmations, 1);
   assert.deepEqual(communitySummary(found), summarized.community);
   assert.deepEqual(emptyCommunityDirect(), {
@@ -190,6 +192,7 @@ test("uses local community correction before fallback", () => {
     sourceForm: "Exampleterm",
     aliases: "Sampleterm; Example term",
     language: "it",
+    root: "example root",
     simple: "eg-ZAM-pluh-term",
     sourceUrl: "https://example.com/exampleterm"
   });
@@ -202,9 +205,10 @@ test("uses local community correction before fallback", () => {
   assert.equal(result.id, "community:exampleterm");
   assert.deepEqual(result.aliases, ["Sampleterm", "Example term"]);
   assert.equal(result.language, "it");
+  assert.equal(result.root, "example root");
   assert.equal(result.pronunciation.simple, "eg-ZAM-pluh-term");
   assert.ok(result.sources.some((source) => source.url === "https://example.com/exampleterm"));
-  assert.deepEqual(result.trustSignals, ["local-correction", "source-backed", "local-confirmed"]);
+  assert.deepEqual(result.trustSignals, ["local-correction", "source-backed", "root-noted", "local-confirmed"]);
   assert.equal(result.community.confirmations, 1);
 
   const aliasResult = resolveTerm("Sampleterm", {

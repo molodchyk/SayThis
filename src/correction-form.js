@@ -14,6 +14,7 @@ export function correctionValuesFromResult(result = {}) {
     simple: normalizeSelection(result.pronunciation?.simple),
     ipa: normalizeSelection(result.pronunciation?.ipa),
     origin: normalizeSelection(result.origin),
+    root: normalizeSelection(result.root),
     audioUrl: normalizeUrl(bestAudio?.url),
     sourceUrl,
     variantNote: normalizeSelection(result.notes || result.variantNote)
@@ -30,6 +31,7 @@ export function correctionFeedbackFromValues(values = {}) {
     simple: normalizeSelection(values.simple),
     ipa: normalizeSelection(values.ipa),
     origin: normalizeSelection(values.origin),
+    root: normalizeSelection(values.root),
     audioUrl: normalizeUrl(values.audioUrl),
     sourceUrl: normalizeUrl(values.sourceUrl),
     variantNote: normalizeSelection(values.variantNote)
@@ -37,7 +39,7 @@ export function correctionFeedbackFromValues(values = {}) {
 }
 
 export function hasCorrectionDetail(feedback = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+  return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(feedback[field])) ||
     Boolean(normalizeAliases(feedback.aliases).length);
 }

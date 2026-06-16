@@ -142,6 +142,7 @@ test("accepts submissions without storing request metadata", async () => {
       sourceForm: "chiaroscuro",
       aliases: ["light-dark"],
       language: "it",
+      root: "chiaro + oscuro",
       simple: "kee-ah-roh-SKOO-roh",
       sourceUrl: "https://example.com/chiaroscuro"
     }
@@ -161,6 +162,7 @@ test("accepts submissions without storing request metadata", async () => {
   assert.equal(Object.hasOwn(result.store.pending[0], "ip"), false);
   assert.equal(Object.hasOwn(result.store.pending[0], "headers"), false);
   assert.deepEqual(result.store.pending[0].correction.aliases, ["light-dark"]);
+  assert.equal(result.store.pending[0].correction.root, "chiaro + oscuro");
   assert.equal(result.store.pending[0].correction.sourceUrl, "https://example.com/chiaroscuro");
 });
 
@@ -388,6 +390,7 @@ test("serves approved entries and requires auth for moderation", async () => {
         sourceForm: "gnocchi",
         aliases: ["gnocco"],
         language: "it",
+        root: "gnocco",
         simple: "NYOH-kee",
         sourceUrl: "https://example.com/gnocchi"
       }
@@ -433,6 +436,7 @@ test("serves approved entries and requires auth for moderation", async () => {
     "correction-reviewed"
   ]);
   assert.equal(response.body.entries[0].simple, "NYOH-kee");
+  assert.equal(response.body.entries[0].root, "gnocco");
   assert.equal(response.body.entries[0].sourceUrl, "https://example.com/gnocchi");
 });
 
@@ -454,6 +458,7 @@ test("approves confirmed resolver metadata into shared entries", async () => {
         language: "ga",
         languageName: "Irish",
         origin: "given name",
+        root: "Saoirse",
         ipa: "ˈsˠiːɾʲʃə",
         simple: "SEER-sha",
         audioUrl: "https://example.com/saoirse.ogg",
@@ -478,6 +483,7 @@ test("approves confirmed resolver metadata into shared entries", async () => {
   assert.deepEqual(response.body.entry.aliases, ["Sersha"]);
   assert.equal(response.body.entry.language, "ga");
   assert.equal(response.body.entry.origin, "given name");
+  assert.equal(response.body.entry.root, "Saoirse");
   assert.equal(response.body.entry.ipa, "ˈsˠiːɾʲʃə");
   assert.equal(response.body.entry.simple, "SEER-sha");
   assert.equal(response.body.entry.audioUrl, "https://example.com/saoirse.ogg");

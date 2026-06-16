@@ -52,6 +52,17 @@ test("builds evidence items with variant note aliases", () => {
   ]);
 });
 
+test("builds evidence items with pronunciation roots", () => {
+  const items = evidenceItemsForResult({
+    evidence: ["Root: chiaro + oscuro"],
+    root: "chiaro + oscuro"
+  });
+
+  assert.deepEqual(items, [
+    "Root: chiaro + oscuro"
+  ]);
+});
+
 test("builds safe unique source links from result sources and audio", () => {
   const items = sourceItemsForResult({
     sources: [{

@@ -51,6 +51,7 @@ test("creates privacy-scoped community submissions", () => {
     sourceForm: "chiaroscuro",
     aliases: ["light-dark", "chiaro scuro"],
     language: "it",
+    root: "chiaro + oscuro",
     simple: "kee-ah-roh-SKOO-roh",
     audioUrl: "https://example.com/audio.ogg",
     sourceUrl: "https://example.com/source"
@@ -62,6 +63,7 @@ test("creates privacy-scoped community submissions", () => {
     language: "it",
     languageName: "Italian",
     origin: "Italian art term",
+    root: "chiaro + oscuro",
     pronunciation: {
       ipa: "kjaroˈskuːro",
       simple: "kee-ah-roh-SKOO-roh",
@@ -79,10 +81,12 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(submission.kind, "correction");
   assert.equal(submission.correction.language, "it");
   assert.deepEqual(submission.correction.aliases, ["light-dark", "chiaro scuro"]);
+  assert.equal(submission.correction.root, "chiaro + oscuro");
   assert.equal(submission.correction.sourceUrl, "https://example.com/source");
   assert.equal(submission.result.id, "wiktionary:chiaroscuro");
   assert.deepEqual(submission.result.aliases, ["chiaro scuro"]);
   assert.equal(submission.result.origin, "Italian art term");
+  assert.equal(submission.result.root, "chiaro + oscuro");
   assert.equal(submission.result.ipa, "kjaroˈskuːro");
   assert.equal(submission.result.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(submission.result.audioUrl, "https://example.com/audio.ogg");
@@ -184,6 +188,7 @@ test("normalizes queued submissions without request metadata", () => {
     correction: {
       sourceForm: " chiaroscuro ",
       aliases: "light-dark; light-dark",
+      root: " chiaro + oscuro ",
       simple: "kee-ah-roh-SKOO-roh",
       sourceUrl: " https://example.com/source "
     },
@@ -192,6 +197,7 @@ test("normalizes queued submissions without request metadata", () => {
       display: "chiaroscuro",
       sourceForm: "chiaroscuro",
       language: "it",
+      root: "chiaro + oscuro",
       variantNote: "Regional studio variant",
       trustSignals: ["source-backed", "source-backed"],
       sourceStatus: "verified-audio",
@@ -216,8 +222,10 @@ test("normalizes queued submissions without request metadata", () => {
   assert.equal(queue[0].term, "Chiaroscuro");
   assert.equal(queue[0].attempts, 2);
   assert.deepEqual(queue[0].correction.aliases, ["light-dark"]);
+  assert.equal(queue[0].correction.root, "chiaro + oscuro");
   assert.equal(queue[0].correction.sourceUrl, "https://example.com/source");
   assert.equal(queue[0].result.id, "wiktionary:chiaroscuro");
+  assert.equal(queue[0].result.root, "chiaro + oscuro");
   assert.equal(queue[0].result.variantNote, "Regional studio variant");
   assert.deepEqual(queue[0].result.trustSignals, ["source-backed"]);
   assert.equal(Object.hasOwn(queue[0], "pageUrl"), false);
@@ -233,6 +241,7 @@ test("normalizes approved community entries", () => {
       trustSignals: ["source-backed", "source-backed", "moderator-reviewed"],
       sourceForm: "chiaroscuro",
       language: "it",
+      root: "chiaro + oscuro",
       confirmations: 8,
       corrections: 2,
       ipa: "kjaroˈskuːro",
@@ -247,6 +256,7 @@ test("normalizes approved community entries", () => {
   assert.deepEqual(entries.chiaroscuro.aliases, ["light-dark"]);
   assert.deepEqual(entries.chiaroscuro.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(entries.chiaroscuro.language, "it");
+  assert.equal(entries.chiaroscuro.root, "chiaro + oscuro");
   assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");
 });

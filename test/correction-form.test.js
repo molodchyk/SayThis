@@ -13,6 +13,7 @@ test("prefills correction values from resolver result", () => {
     language: "it",
     languageName: "Italian",
     origin: "Italian",
+    root: "chiaro + oscuro",
     notes: "regional studio pronunciation",
     pronunciation: {
       ipa: "kjaroˈskuːro",
@@ -37,6 +38,7 @@ test("prefills correction values from resolver result", () => {
     simple: "kee-ah-roh-SKOO-roh",
     ipa: "kjaroˈskuːro",
     origin: "Italian",
+    root: "chiaro + oscuro",
     audioUrl: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.ogg",
     sourceUrl: "https://en.wiktionary.org/wiki/chiaroscuro",
     variantNote: "regional studio pronunciation"
@@ -61,6 +63,7 @@ test("builds correction feedback with audio source and variant note", () => {
     simple: " NYOH-kee ",
     ipa: "ˈɲɔkki",
     origin: "Italian",
+    root: "gnocco",
     audioUrl: " https://example.com/audio.ogg ",
     sourceUrl: " https://example.com/source ",
     variantNote: "Northern Italian variant"
@@ -75,6 +78,7 @@ test("builds correction feedback with audio source and variant note", () => {
     simple: "NYOH-kee",
     ipa: "ˈɲɔkki",
     origin: "Italian",
+    root: "gnocco",
     audioUrl: "https://example.com/audio.ogg",
     sourceUrl: "https://example.com/source",
     variantNote: "Northern Italian variant"
@@ -96,4 +100,5 @@ test("drops unsafe correction URLs", () => {
 test("detects whether a correction carries pronunciation data", () => {
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({})), false);
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ aliases: "alternate" })), true);
+  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ root: "source root" })), true);
 });

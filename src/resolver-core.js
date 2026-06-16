@@ -135,6 +135,7 @@ export function createRemoteStructuredResult(selection, source) {
     ttsLang: source.ttsLang || ttsLangFromLanguage(language),
     category: source.category || "term",
     origin: source.origin || "",
+    root: normalizeSelection(source.root),
     pronunciation: source.pronunciation || {},
     confidence: source.confidence || (hasAudio ? "high" : "medium"),
     sourceStatus,
@@ -186,6 +187,7 @@ function createEntryResult(query, lookupKey, scriptInfo, entry) {
     ttsLang: entry.ttsLang || ttsLangFromLanguage(language),
     category: entry.category || "term",
     origin: normalizeOrigin(entry.origin),
+    root: normalizeSelection(entry.root),
     pronunciation,
     confidence: normalizeConfidence(entry.confidence || "medium"),
     sourceStatus,
@@ -221,6 +223,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     ttsLang: ttsLangFromLanguage(language),
     category: "community-entry",
     origin: entry.origin || "",
+    root: normalizeSelection(entry.root),
     pronunciation: {
       ipa: entry.ipa || "",
       simple: entry.simple || "",
@@ -445,6 +448,7 @@ function alternateResultSummary(result = {}) {
     languageName: normalizeSelection(result.languageName || languageNameFromCode(language)),
     ttsLang: normalizeSelection(result.ttsLang || ttsLangFromLanguage(language)),
     category: normalizeSelection(result.category),
+    root: normalizeSelection(result.root),
     confidence: normalizeConfidence(result.confidence),
     sourceStatus,
     sourceLabel: result.sourceLabel || sourceLabelForStatus(sourceStatus),
@@ -474,6 +478,7 @@ function isUsefulAlternate(result = {}) {
 function normalizeResult(result) {
   return {
     ...result,
+    root: normalizeSelection(result.root),
     aliases: normalizeAliases(result.aliases),
     confidence: normalizeConfidence(result.confidence),
     sourceStatus: normalizeSourceStatus(result.sourceStatus),

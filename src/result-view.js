@@ -4,9 +4,11 @@ import {
 
 export function evidenceItemsForResult(result, limit = 6) {
   const community = result?.community || {};
+  const seen = new Set();
   return [
     ...trustSignalItems(result?.trustSignals),
     ...(Array.isArray(result?.evidence) ? result.evidence : []),
+    result?.root ? `Root: ${result.root}` : "",
     result?.notes || result?.variantNote || "",
     community.confirmations ? `${community.confirmations} local confirmation${community.confirmations === 1 ? "" : "s"}` : "",
     community.corrections ? `${community.corrections} local correction${community.corrections === 1 ? "" : "s"}` : "",
@@ -14,7 +16,14 @@ export function evidenceItemsForResult(result, limit = 6) {
     community.flags ? `${community.flags} local wrong-result flag${community.flags === 1 ? "" : "s"}` : ""
   ]
     .map(normalizeSelection)
-    .filter(Boolean)
+    .filter((item) => {
+      if (!item || seen.has(item)) {
+        return false;
+      }
+
+      seen.add(item);
+      return true;
+    })
     .slice(0, limit);
 }
 

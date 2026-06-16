@@ -33,6 +33,7 @@ const aliasesDisplay = document.getElementById("aliases");
 const language = document.getElementById("language");
 const category = document.getElementById("category");
 const origin = document.getElementById("origin");
+const root = document.getElementById("root");
 const ipa = document.getElementById("ipa");
 const simpleGuide = document.getElementById("simple-guide");
 const alternates = document.getElementById("alternates");
@@ -50,6 +51,7 @@ const correctionLanguageName = document.getElementById("correction-language-name
 const correctionSimple = document.getElementById("correction-simple");
 const correctionIpa = document.getElementById("correction-ipa");
 const correctionOrigin = document.getElementById("correction-origin");
+const correctionRoot = document.getElementById("correction-root");
 const correctionAudio = document.getElementById("correction-audio");
 const correctionSourceUrl = document.getElementById("correction-source-url");
 const correctionVariant = document.getElementById("correction-variant");
@@ -88,6 +90,7 @@ saveCorrectionButton.addEventListener("click", () => {
     simple: correctionSimple.value,
     ipa: correctionIpa.value,
     origin: correctionOrigin.value,
+    root: correctionRoot.value,
     audioUrl: correctionAudio.value,
     sourceUrl: correctionSourceUrl.value,
     variantNote: correctionVariant.value
@@ -251,6 +254,7 @@ function renderResult(result) {
   language.textContent = result.languageName || result.language || "Unknown";
   category.textContent = result.category || "Unknown";
   origin.textContent = result.origin || "Unknown";
+  root.textContent = result.root || "Unknown";
   ipa.textContent = result.pronunciation?.ipa || "Not available";
   simpleGuide.textContent = result.pronunciation?.simple || "Not available";
 
@@ -261,6 +265,7 @@ function renderResult(result) {
   correctionSimple.value = correctionValues.simple;
   correctionIpa.value = correctionValues.ipa;
   correctionOrigin.value = correctionValues.origin;
+  correctionRoot.value = correctionValues.root;
   correctionAudio.value = correctionValues.audioUrl;
   correctionSourceUrl.value = correctionValues.sourceUrl;
   correctionVariant.value = correctionValues.variantNote;

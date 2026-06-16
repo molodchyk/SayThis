@@ -81,6 +81,7 @@ test("builds a structured custom source result", () => {
   assert.deepEqual(result.trustSignals, ["domain-reviewed"]);
   assert.equal(result.language, "it");
   assert.equal(result.category, "art-term");
+  assert.equal(result.root, "chiaro + scuro");
   assert.equal(result.sourceStatus, "verified-audio");
   assert.equal(result.confidence, "high");
   assert.equal(result.pronunciation.ipa, "kjaroˈskuːro");

@@ -53,6 +53,7 @@ export function createCommunitySubmission(selection, feedback = {}, result = nul
       language: normalizeSelection(feedback.language),
       languageName: normalizeSelection(feedback.languageName),
       origin: normalizeSelection(feedback.origin),
+      root: normalizeSelection(feedback.root),
       ipa: normalizeSelection(feedback.ipa),
       simple: normalizeSelection(feedback.simple),
       audioUrl: normalizeHttpsUrl(feedback.audioUrl),
@@ -206,6 +207,7 @@ function normalizeResultMetadata(result = null) {
     language: normalizeSelection(result.language),
     languageName: normalizeSelection(result.languageName),
     origin: normalizeSelection(result.origin),
+    root: normalizeSelection(result.root),
     ipa: normalizeSelection(result.pronunciation?.ipa),
     simple: normalizeSelection(result.pronunciation?.simple),
     audioUrl: firstResultAudioUrl(result),
@@ -256,6 +258,7 @@ function normalizeCorrection(value = {}) {
     language: normalizeSelection(value.language),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
+    root: normalizeSelection(value.root),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
@@ -287,6 +290,7 @@ function normalizeApprovedEntry(entry = {}, fallbackLookupKey = "") {
     language: normalizeSelection(entry.language),
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
+    root: normalizeSelection(entry.root),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
     audioUrl: normalizeHttpsUrl(entry.audioUrl),
@@ -302,7 +306,7 @@ function hasApprovedEntryContent(entry = {}) {
   return Boolean(
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
-    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.variantNote) ||
+    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.variantNote) ||
     normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     clampNumber(entry.confirmations, 0, 100000) ||
@@ -333,7 +337,7 @@ function normalizeStoredFeedbackKind(kind) {
 }
 
 function hasCorrectionDetail(correction = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+  return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field])) ||
     Boolean(normalizeAliases(correction.aliases).length);
 }

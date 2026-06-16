@@ -28,6 +28,7 @@
     const evidence = [
       ...trustSignalItems(result.trustSignals),
       ...(result.evidence || []),
+      result.root ? `Root: ${result.root}` : "",
       result.notes || result.variantNote || ""
     ].filter(Boolean).slice(0, 2);
     const sources = sourceItems(result).slice(0, 2);
@@ -69,6 +70,10 @@
             <dd>${escapeHtml(result.languageName || result.language || "Unknown")}</dd>
           </div>
           <div>
+            <dt>Root</dt>
+            <dd>${escapeHtml(result.root || "Unknown")}</dd>
+          </div>
+          <div>
             <dt>IPA</dt>
             <dd>${escapeHtml(result.pronunciation?.ipa || "Not available")}</dd>
           </div>
@@ -102,6 +107,7 @@
             ${correctionInput("Guide", "simple", result.pronunciation?.simple, 120)}
             ${correctionInput("IPA", "ipa", result.pronunciation?.ipa, 120)}
             ${correctionInput("Origin", "origin", result.origin, 160, "full")}
+            ${correctionInput("Root", "root", result.root, 160, "full")}
             ${correctionInput("Audio source", "audioUrl", getBestAudio(result)?.url, 2048, "full", "url")}
             ${correctionInput("Source link", "sourceUrl", firstSourceUrl(result), 2048, "full", "url")}
             ${correctionInput("Variant note", "variantNote", result.notes || result.variantNote, 160, "full")}
@@ -249,7 +255,7 @@
   }
 
   function hasCorrectionDetail(feedback) {
-    return ["sourceForm", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+    return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
       .some((field) => Boolean(feedback[field])) ||
       Boolean(normalizeAliases(feedback.aliases).length);
   }

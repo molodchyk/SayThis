@@ -100,13 +100,13 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Nominatim-compatible lookup keeps language-tagged alternate place names as alternate results, so audio lookup can retry the same spelling with the right language hint.
 - Source-form and alias-guided gazetteer retries after other structured sources resolve a better lookup form.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.
-- Result card with source form, aliases, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
+- Result card with source form, aliases, language, category, origin, root, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - On-page overlay styles are split into a companion injected content script, keeping the overlay controller below the file-size soft limit.
 - Alternate candidate summaries preserve speech-locale hints and can be spoken directly from popup or on-page result cards.
-- Local confirmation, wrong-result, missing-term, correction, aliases, audio-source, source-link, variant-note storage, and import/export normalization.
+- Local confirmation, wrong-result, missing-term, correction, aliases, root, audio-source, source-link, variant-note storage, and import/export normalization.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
 - Local community entries preserve and derive trust signals from local actions and source evidence.
-- Result and correction views accept variant-note metadata from cached and shared payloads.
+- Result and correction views accept root and variant-note metadata from cached and shared payloads.
 - Opt-in community sync endpoint with queued retry behavior.
 - Community submissions preserve result trust signals and variant notes through moderation.
 - Optional host permission request for the configured community sync endpoint.
@@ -157,6 +157,7 @@ Core fields:
 - `aliases`: romanized forms, alternate spellings, common old spellings.
 - `category`: place, person, organization, term, loanword, scientific-term, technical-term, other.
 - `origin`: source language, etymological root, or domain where known.
+- `root`: pronunciation-relevant root, stem, component word, or etymological cue when distinct from origin.
 - `pronunciation`: IPA, simple guide, and audio references.
 - `priority`: high, medium, low.
 - `sourceStatus`: verified-audio, community-confirmed, structured-source, generated-fallback, unknown.

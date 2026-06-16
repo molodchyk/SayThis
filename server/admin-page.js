@@ -294,8 +294,12 @@ export function renderAdminPage() {
           <input data-input="languageName">
         </label>
         <label>
-          Origin or root
+          Origin
           <input data-input="origin">
+        </label>
+        <label>
+          Root
+          <input data-input="root">
         </label>
         <label>
           IPA
@@ -391,6 +395,7 @@ export function renderAdminPage() {
         language: entry.correction?.language || entry.result?.language || "",
         languageName: entry.correction?.languageName || entry.result?.languageName || "",
         origin: entry.correction?.origin || "",
+        root: entry.correction?.root || entry.result?.root || "",
         ipa: entry.correction?.ipa || "",
         simple: entry.correction?.simple || "",
         audioUrl: entry.correction?.audioUrl || "",
@@ -456,7 +461,7 @@ export function renderAdminPage() {
 
     function collectFields(article) {
       const entry = {};
-      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
+      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
         const value = article.querySelector(\`[data-input="\${name}"]\`)?.value.trim();
         if (value) {
           entry[name] = value;

@@ -95,6 +95,7 @@ function normalizeFeedback(feedback = {}) {
     simple: normalizeSelection(feedback.simple),
     ipa: normalizeSelection(feedback.ipa),
     origin: normalizeSelection(feedback.origin),
+    root: normalizeSelection(feedback.root),
     audioUrl: normalizeUrl(feedback.audioUrl),
     sourceUrl: normalizeUrl(feedback.sourceUrl),
     variantNote: normalizeSelection(feedback.variantNote)

@@ -87,7 +87,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /speakCandidate\(result\.alternateResults\?\.\[index\], 0\.82\)/);
   assert.match(source, /playAudioItem\(recordings\[index\], result, 0\.82\)/);
 
-  for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "audioUrl", "sourceUrl", "variantNote"]) {
+  for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "root", "audioUrl", "sourceUrl", "variantNote"]) {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));
   }
 
