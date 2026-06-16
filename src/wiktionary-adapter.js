@@ -27,10 +27,47 @@ const LANGUAGE_CODES = {
 
 export function buildWiktionaryResult(query, pageTitle, wikitext) {
   const parsed = parseWiktionaryPronunciation(wikitext);
-  if (!parsed.ipa && !parsed.audioFile && !parsed.languageName && !parsed.origin) {
+  if (!parsed.ipa && !parsed.audioFile && !parsed.origin) {
     return null;
   }
 
+  const result = createWiktionaryRemoteResult(query, pageTitle, parsed);
+  const alternateResults = (parsed.alternateEntries || [])
+    .map((entry) => createWiktionaryRemoteResult(query, pageTitle, entry))
+    .filter(Boolean);
+
+  return alternateResults.length
+    ? { ...result, alternateResults }
+    : result;
+}
+
+export function parseWiktionaryPronunciation(wikitext = "") {
+  const text = String(wikitext || "");
+  const entries = languageEntries(text)
+    .map(parseLanguageEntry)
+    .filter(entryHasLookupData);
+  const primary = choosePrimaryEntry(entries);
+
+  if (!primary) {
+    return {
+      language: "",
+      languageName: "",
+      ipa: "",
+      audioFile: "",
+      origin: "",
+      alternateEntries: []
+    };
+  }
+
+  return {
+    ...primary,
+    alternateEntries: entries
+      .filter((entry) => entry !== primary && entryHasPronunciationData(entry))
+      .slice(0, 4)
+  };
+}
+
+function createWiktionaryRemoteResult(query, pageTitle, parsed) {
   return createRemoteStructuredResult(query, {
     id: `wiktionary:${createLookupKey(pageTitle || query)}`,
     display: pageTitle || query,
@@ -53,6 +90,7 @@ export function buildWiktionaryResult(query, pageTitle, wikitext) {
     confidence: parsed.audioFile ? "high" : parsed.ipa ? "medium" : "low",
     evidence: [
       "Wiktionary pronunciation entry",
+      parsed.languageName ? `Language section: ${parsed.languageName}` : "",
       parsed.ipa ? "IPA from Wiktionary" : "",
       parsed.audioFile ? "Pronunciation audio from Wiktionary" : "",
       parsed.origin ? "Origin note from Wiktionary" : ""
@@ -61,26 +99,86 @@ export function buildWiktionaryResult(query, pageTitle, wikitext) {
   });
 }
 
-export function parseWiktionaryPronunciation(wikitext = "") {
-  const text = String(wikitext || "");
-  const languageName = firstLanguageHeading(text);
-  const language = LANGUAGE_CODES[languageName] || "";
-  const ipa = firstIpa(text);
-  const audioFile = firstAudioFile(text);
-  const origin = firstEtymologyLine(text);
+function parseLanguageEntry(section) {
+  const languageName = normalizeSelection(section.languageName);
+  const body = section.body || "";
 
   return {
-    language,
+    language: LANGUAGE_CODES[languageName] || "",
     languageName,
-    ipa,
-    audioFile,
-    origin
+    ipa: firstIpa(body),
+    audioFile: firstAudioFile(body),
+    origin: firstEtymologyLine(body)
   };
 }
 
-function firstLanguageHeading(text) {
-  const match = text.match(/^==\s*([^=\n]+?)\s*==\s*$/m);
-  return normalizeSelection(match?.[1]);
+function languageEntries(text) {
+  const sections = [];
+  const headingPattern = /^==\s*([^=\n]+?)\s*==\s*$/gm;
+  let match;
+  let current = null;
+
+  while ((match = headingPattern.exec(text)) !== null) {
+    if (current) {
+      current.body = text.slice(current.start, match.index);
+      sections.push(current);
+    }
+
+    current = {
+      languageName: normalizeSelection(match[1]),
+      start: headingPattern.lastIndex,
+      body: ""
+    };
+  }
+
+  if (current) {
+    current.body = text.slice(current.start);
+    sections.push(current);
+  }
+
+  return sections.length
+    ? sections
+    : [{ languageName: "", body: text }];
+}
+
+function choosePrimaryEntry(entries) {
+  return entries
+    .map((entry, index) => ({
+      entry,
+      index,
+      score: scoreEntry(entry)
+    }))
+    .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.entry || null;
+}
+
+function scoreEntry(entry) {
+  let score = 0;
+
+  if (entry.audioFile) {
+    score += 8;
+  }
+
+  if (entry.ipa) {
+    score += 6;
+  }
+
+  if (entry.origin) {
+    score += 2;
+  }
+
+  if (entry.language) {
+    score += 1;
+  }
+
+  return score;
+}
+
+function entryHasLookupData(entry) {
+  return Boolean(entry.languageName || entry.origin || entry.ipa || entry.audioFile);
+}
+
+function entryHasPronunciationData(entry) {
+  return Boolean(entry.ipa || entry.audioFile);
 }
 
 function firstIpa(text) {
