@@ -120,6 +120,7 @@ test("online source resolver retries Wiktionary with resolved source forms", asy
   assert.match(source, /refinedStructuredResult/);
   assert.match(source, /resolveWithForvoCandidates\(text, refinedStructuredResult/);
   assert.match(source, /includeResolvedLanguageFallback: true/);
+  assert.match(source, /languageHints: settings\.lookupLanguageHints/);
   assert.match(source, /language: candidate\.language/);
 });
 
@@ -220,6 +221,45 @@ test("online source resolver passes language hints to gazetteer lookup", async (
     assert.equal(url.searchParams.get("accept-language"), "pl,en");
     assert.equal(result.sourceForm, "Przykladowo");
     assert.equal(result.language, "pl");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("online source resolver uses language hints for Forvo candidates", async () => {
+  const {
+    resolveWithForvoCandidates
+  } = await import("../src/background/online-sources.js");
+  const originalFetch = globalThis.fetch;
+  let requestedUrl = "";
+
+  try {
+    globalThis.fetch = async (url) => {
+      requestedUrl = url;
+      return {
+        ok: true,
+        async json() {
+          return {
+            items: [{
+              id: 99,
+              word: "przyklad",
+              code: "pl",
+              langname: "Polish",
+              pathogg: "https://audio.example/przyklad.ogg",
+              rate: 5
+            }]
+          };
+        }
+      };
+    };
+
+    const result = await resolveWithForvoCandidates("przyklad", null, "api-key", {
+      lookupLanguageHints: ["pl"]
+    });
+
+    assert.match(requestedUrl, /\/language\/pl$/);
+    assert.equal(result.language, "pl");
+    assert.equal(result.sourceStatus, "verified-audio");
   } finally {
     globalThis.fetch = originalFetch;
   }

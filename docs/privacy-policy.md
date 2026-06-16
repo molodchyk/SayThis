@@ -23,7 +23,7 @@ Remote lookup is user-triggered or opt-in. SayThis can send the selected term to
 
 - Wikidata and Wiktionary lookup; lookup language hints may be sent as Wikidata API language parameters and may choose extra Wiktionary editions after English Wiktionary
 - Wikimedia Commons audio URLs when audio is played
-- Forvo lookup, only after the user enables Forvo and stores an API key
+- Forvo lookup, only after the user enables Forvo and stores an API key; lookup language hints may be sent as Forvo language filters
 - a user-configured custom source endpoint
 - a user-configured Nominatim-compatible place-name endpoint; lookup language hints may be sent as request language parameters
 - a user-configured community endpoint, only after community submission or approved-entry refresh is enabled

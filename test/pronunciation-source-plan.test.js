@@ -102,7 +102,8 @@ test("uses configured pronunciation language over resolved hints", () => {
     sourceForm: "gnocchi",
     language: "it"
   }, {
-    language: "en"
+    language: "en",
+    languageHints: ["pl", "it"]
   });
 
   assert.deepEqual(candidates, [{
@@ -127,6 +128,47 @@ test("can retry configured pronunciation language with resolved hints", () => {
   }, {
     word: "gnocchi",
     language: "it"
+  }]);
+});
+
+test("uses lookup language hints for pronunciation audio when language is unresolved", () => {
+  const candidates = pronunciationLookupCandidates("Exampleterm", null, {
+    languageHints: "pl, it, invalid!, es"
+  });
+
+  assert.deepEqual(candidates, [{
+    word: "Exampleterm",
+    language: "pl"
+  }, {
+    word: "Exampleterm",
+    language: "it"
+  }, {
+    word: "Exampleterm",
+    language: "es"
+  }]);
+});
+
+test("adds lookup language hints after resolved pronunciation language", () => {
+  const candidates = pronunciationLookupCandidates("Quixote", {
+    display: "Quixote",
+    sourceForm: "Quijote",
+    language: "es"
+  }, {
+    languageHints: ["pt", "es"]
+  });
+
+  assert.deepEqual(candidates, [{
+    word: "Quijote",
+    language: "es"
+  }, {
+    word: "Quijote",
+    language: "pt"
+  }, {
+    word: "Quixote",
+    language: "es"
+  }, {
+    word: "Quixote",
+    language: "pt"
   }]);
 });
 

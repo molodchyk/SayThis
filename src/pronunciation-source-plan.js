@@ -7,29 +7,23 @@ export function pronunciationLookupCandidates(selection, result, options = {}) {
   const selectedText = normalizeSelection(selection);
   const configuredLanguage = normalizeLanguageHint(options.language || options.forvoLanguage);
   const primaryLanguage = normalizeLanguageHint(result?.language);
+  const languageHints = normalizeLanguageHints(options.languageHints);
   const includeResolvedLanguageFallback = Boolean(options.includeResolvedLanguageFallback);
   const candidates = [];
 
-  addCandidate(candidates, result?.sourceForm, configuredLanguage || primaryLanguage);
-  addLanguageFallback(candidates, result?.sourceForm, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
-  addCandidate(candidates, result?.display, configuredLanguage || primaryLanguage);
-  addLanguageFallback(candidates, result?.display, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
-  addAliasCandidates(candidates, result?.aliases, configuredLanguage || primaryLanguage);
-  addAliasLanguageFallbacks(candidates, result?.aliases, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
+  addCandidateSet(candidates, result?.sourceForm, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
+  addCandidateSet(candidates, result?.display, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
+  addAliasCandidates(candidates, result?.aliases, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
 
   for (const alternate of Array.isArray(result?.alternateResults) ? result.alternateResults : []) {
     const alternateLanguage = normalizeLanguageHint(alternate.language) || primaryLanguage;
-    const language = configuredLanguage || alternateLanguage;
-    addCandidate(candidates, alternate.sourceForm, language);
-    addLanguageFallback(candidates, alternate.sourceForm, configuredLanguage, alternateLanguage, includeResolvedLanguageFallback);
-    addCandidate(candidates, alternate.display, language);
-    addLanguageFallback(candidates, alternate.display, configuredLanguage, alternateLanguage, includeResolvedLanguageFallback);
-    addAliasCandidates(candidates, alternate.aliases, language);
-    addAliasLanguageFallbacks(candidates, alternate.aliases, configuredLanguage, alternateLanguage, includeResolvedLanguageFallback);
+    const languages = candidateLanguages(configuredLanguage, alternateLanguage, languageHints, includeResolvedLanguageFallback);
+    addCandidateSet(candidates, alternate.sourceForm, languages);
+    addCandidateSet(candidates, alternate.display, languages);
+    addAliasCandidates(candidates, alternate.aliases, languages);
   }
 
-  addCandidate(candidates, selectedText, configuredLanguage || primaryLanguage);
-  addLanguageFallback(candidates, selectedText, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
+  addCandidateSet(candidates, selectedText, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
 
   return uniqueCandidates(candidates).slice(0, 5);
 }
@@ -55,31 +49,20 @@ function addCandidate(candidates, word, language) {
   });
 }
 
-function addAliasCandidates(candidates, aliases, language) {
+function addCandidateSet(candidates, word, languages) {
+  const safeLanguages = Array.isArray(languages) && languages.length ? languages : [""];
+  for (const language of safeLanguages) {
+    addCandidate(candidates, word, language);
+  }
+}
+
+function addAliasCandidates(candidates, aliases, languages) {
   const values = Array.isArray(aliases)
     ? aliases
     : String(aliases || "").split(/[;,\n]/);
 
   for (const alias of values) {
-    addCandidate(candidates, alias, language);
-  }
-}
-
-function addLanguageFallback(candidates, word, configuredLanguage, resolvedLanguage, includeFallback) {
-  if (!includeFallback || !configuredLanguage || !resolvedLanguage || configuredLanguage === resolvedLanguage) {
-    return;
-  }
-
-  addCandidate(candidates, word, resolvedLanguage);
-}
-
-function addAliasLanguageFallbacks(candidates, aliases, configuredLanguage, resolvedLanguage, includeFallback) {
-  const values = Array.isArray(aliases)
-    ? aliases
-    : String(aliases || "").split(/[;,\n]/);
-
-  for (const alias of values) {
-    addLanguageFallback(candidates, alias, configuredLanguage, resolvedLanguage, includeFallback);
+    addCandidateSet(candidates, alias, languages);
   }
 }
 
@@ -106,6 +89,66 @@ function normalizeLanguageHint(value) {
     .toLowerCase()
     .replace(/_/g, "-")
     .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
+}
+
+function normalizeLanguageHints(value) {
+  const values = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[\s,;]+/);
+  const seen = new Set();
+  const languages = [];
+
+  for (const item of values) {
+    const language = normalizeLanguageHint(item).split("-")[0];
+    if (!language || seen.has(language)) {
+      continue;
+    }
+
+    seen.add(language);
+    languages.push(language);
+    if (languages.length >= 3) {
+      break;
+    }
+  }
+
+  return languages;
+}
+
+function candidateLanguages(configuredLanguage, resolvedLanguage, languageHints = [], includeResolvedLanguageFallback = false) {
+  const languages = [];
+
+  if (configuredLanguage) {
+    languages.push(configuredLanguage);
+  } else if (resolvedLanguage) {
+    languages.push(resolvedLanguage);
+  }
+
+  if (!configuredLanguage) {
+    languages.push(...languageHints);
+  }
+
+  if (includeResolvedLanguageFallback && configuredLanguage && resolvedLanguage) {
+    languages.push(resolvedLanguage);
+  }
+
+  return uniqueLanguages(languages);
+}
+
+function uniqueLanguages(languages) {
+  const seen = new Set();
+  const unique = [];
+
+  for (const language of languages) {
+    const normalized = normalizeLanguageHint(language);
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    unique.push(normalized);
+  }
+
+  return unique;
 }
 
 function clampInteger(value, min, max, fallback) {

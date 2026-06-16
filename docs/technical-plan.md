@@ -84,6 +84,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Forvo lookup preserves additional same-word, same-language recordings on the resolved result.
+- Forvo lookup can use lookup language hints when no dedicated Forvo language filter is set.
 - Popup and on-page result cards expose playable recording choices when multiple audio sources are available.
 - Source-form and alias-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
 - Forvo candidate planning can retry configured-language lookups with resolved source-language hints.
@@ -198,7 +199,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 6. Community sync is disabled by default, accepts only HTTPS endpoints, queues feedback only when enabled, and requests endpoint-origin access only after the user enables submission or approved-entry refresh.
 7. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata.
 8. Gazetteer lookup accepts only HTTPS endpoints, is disabled until a user configures one, and uses lookup language hints only as request/source-form hints.
-9. Forvo lookup is disabled until a user enables it and stores a local API key; the key is not included in exports.
+9. Forvo lookup is disabled until a user enables it and stores a local API key; the key is not included in exports, and lookup hints only shape language filters.
 10. Custom source lookup accepts only HTTPS endpoints and sends only the selected term.
 
 ## Technical Risks
