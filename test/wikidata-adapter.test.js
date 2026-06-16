@@ -217,6 +217,36 @@ test("uses taxon names as source-form candidates", () => {
   assert.ok(result.evidence.some((item) => item.includes("taxon name")));
 });
 
+test("uses entity type claims for category evidence", () => {
+  const result = buildWikidataResult("Springfield", {
+    id: "Qplace",
+    label: "Springfield",
+    language: "en",
+    description: "settlement"
+  }, {
+    id: "Qplace",
+    labels: {
+      en: { language: "en", value: "Springfield" }
+    },
+    descriptions: {
+      en: { language: "en", value: "settlement" }
+    },
+    claims: {
+      P31: [{
+        mainsnak: {
+          datavalue: {
+            value: { id: "Q515", "numeric-id": 515 }
+          }
+        }
+      }]
+    },
+    aliases: {}
+  });
+
+  assert.equal(result.category, "place");
+  assert.ok(result.evidence.includes("Entity type: city"));
+});
+
 test("extracts pronunciation audio and IPA claims", () => {
   const result = buildWikidataResult("Example", {
     id: "Q1",
@@ -424,6 +454,60 @@ test("uses alias matches to outrank weaker search order", () => {
 
   assert.equal(result.id, "wikidata:Qalias");
   assert.ok(result.evidence.some((item) => item.includes("Exact Alias")));
+});
+
+test("uses entity type claims to deprioritize disambiguation candidates", () => {
+  const matches = [{
+    id: "Qfirst",
+    label: "Springfield",
+    language: "en",
+    description: "index entry",
+    match: { text: "Springfield" }
+  }, {
+    id: "Qplace",
+    label: "Springfield",
+    language: "en",
+    description: "settlement",
+    match: { text: "Springfield" }
+  }];
+  const result = selectBestWikidataResult("Springfield", matches, {
+    Qfirst: {
+      id: "Qfirst",
+      labels: {
+        en: { language: "en", value: "Springfield" }
+      },
+      claims: {
+        P31: [{
+          mainsnak: {
+            datavalue: {
+              value: { id: "Q4167410", "numeric-id": 4167410 }
+            }
+          }
+        }]
+      },
+      aliases: {}
+    },
+    Qplace: {
+      id: "Qplace",
+      labels: {
+        en: { language: "en", value: "Springfield" }
+      },
+      claims: {
+        P31: [{
+          mainsnak: {
+            datavalue: {
+              value: { id: "Q515", "numeric-id": 515 }
+            }
+          }
+        }]
+      },
+      aliases: {}
+    }
+  });
+
+  assert.equal(result.id, "wikidata:Qplace");
+  assert.equal(result.category, "place");
+  assert.ok(result.evidence.includes("Entity type: city"));
 });
 
 test("plans bounded Wikidata search languages from selected script", () => {

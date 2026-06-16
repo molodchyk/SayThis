@@ -18,6 +18,56 @@ const TAXON_COMMON_NAME = "P1843";
 const PSEUDONYM = "P742";
 const PRONUNCIATION_AUDIO = "P443";
 const IPA_TRANSCRIPTION = "P898";
+const INSTANCE_OF = "P31";
+const SUBCLASS_OF = "P279";
+const ENTITY_TYPE_BY_ID = {
+  Q5: { category: "person", label: "person", score: 10 },
+  Q4167410: { category: "disambiguation", label: "disambiguation", score: -60 },
+  Q16521: { category: "scientific term", label: "taxon", score: 9 },
+  Q515: { category: "place", label: "city", score: 10 },
+  Q532: { category: "place", label: "village", score: 10 },
+  Q3957: { category: "place", label: "town", score: 10 },
+  Q486972: { category: "place", label: "human settlement", score: 9 },
+  Q6256: { category: "place", label: "country", score: 9 },
+  Q56061: { category: "place", label: "administrative area", score: 8 },
+  Q82794: { category: "place", label: "geographic region", score: 8 },
+  Q8502: { category: "place", label: "mountain", score: 8 },
+  Q4022: { category: "place", label: "river", score: 8 },
+  Q23442: { category: "place", label: "island", score: 8 },
+  Q43229: { category: "organization", label: "organization", score: 7 },
+  Q4830453: { category: "organization", label: "business", score: 7 },
+  Q3918: { category: "organization", label: "university", score: 7 },
+  Q11424: { category: "creative title", label: "film", score: 5 },
+  Q5398426: { category: "creative title", label: "series", score: 5 },
+  Q7725634: { category: "creative title", label: "literary title", score: 5 },
+  Q4167836: { category: "name", label: "family name", score: 4 },
+  Q202444: { category: "name", label: "given name", score: 4 },
+  Q1969448: { category: "concept", label: "term", score: 4 }
+};
+const ENTITY_TYPE_PRIORITY = [
+  "Q4167410",
+  "Q5",
+  "Q515",
+  "Q532",
+  "Q3957",
+  "Q486972",
+  "Q6256",
+  "Q56061",
+  "Q82794",
+  "Q8502",
+  "Q4022",
+  "Q23442",
+  "Q16521",
+  "Q43229",
+  "Q4830453",
+  "Q3918",
+  "Q11424",
+  "Q5398426",
+  "Q7725634",
+  "Q4167836",
+  "Q202444",
+  "Q1969448"
+];
 const SCRIPT_SEARCH_LANGUAGES = {
   Arabic: ["ar", "fa"],
   Armenian: ["hy"],
@@ -39,6 +89,7 @@ export function buildWikidataResult(query, match, entity) {
 
   const sourceCandidate = chooseSourceCandidate(query, match, entity);
   const description = entity.descriptions?.en?.value || match.description || "";
+  const entityType = wikidataEntityType(entity);
   const audioFiles = stringClaimValues(entity, PRONUNCIATION_AUDIO).slice(0, 4);
   const ipa = firstStringClaimValue(entity, IPA_TRANSCRIPTION);
   const sourceForm = sourceCandidate?.value || match.label || query;
@@ -51,7 +102,7 @@ export function buildWikidataResult(query, match, entity) {
     sourceForm,
     language: sourceCandidate?.language || match.language || "en",
     languageName: "",
-    category: description || "structured source match",
+    category: entityType.category || description || "structured source match",
     origin: description,
     pronunciation: {
       ipa,
@@ -67,6 +118,7 @@ export function buildWikidataResult(query, match, entity) {
     confidence: audioFiles.length ? "high" : confidenceForCandidate(query, sourceCandidate),
     evidence: [
       `Wikidata entity ${entity.id || match.id}`,
+      entityType.label ? `Entity type: ${entityType.label}` : "",
       sourceCandidate?.source ? `Source form from ${sourceCandidate.source}` : "",
       audioFiles.length ? "Pronunciation audio from Wikidata" : "",
       audioFiles.length > 1 ? `Additional Wikidata pronunciation audio: ${audioFiles.length - 1}` : "",
@@ -199,6 +251,7 @@ function scoreWikidataResult(query, match, entity, result, index) {
   const aliasKeys = wikidataAliases(entity || {}).map(createLookupKey);
   const sourceKey = createLookupKey(result.sourceForm);
   const description = String(match.description || entity?.descriptions?.en?.value || "").toLowerCase();
+  const entityType = wikidataEntityType(entity);
   let score = Math.max(0, 24 - index * 2);
 
   if (labelKey === queryKey) {
@@ -236,6 +289,8 @@ function scoreWikidataResult(query, match, entity, result, index) {
   if (description.includes("disambiguation")) {
     score -= 50;
   }
+
+  score += entityType.score || 0;
 
   if (description.includes("family name") || description.includes("given name") || description.includes("place") || description.includes("city")) {
     score += 4;
@@ -409,6 +464,43 @@ function sitelinkCandidates(entity, source) {
 
 function firstStringClaimValue(entity, propertyId) {
   return stringClaimValues(entity, propertyId)[0] || "";
+}
+
+function wikidataEntityType(entity) {
+  const ids = entityClaimIds(entity, INSTANCE_OF, SUBCLASS_OF);
+  for (const id of ENTITY_TYPE_PRIORITY) {
+    if (ids.includes(id)) {
+      return ENTITY_TYPE_BY_ID[id];
+    }
+  }
+
+  return { category: "", label: "", score: 0 };
+}
+
+function entityClaimIds(entity, ...propertyIds) {
+  const ids = [];
+  const seen = new Set();
+
+  for (const propertyId of propertyIds) {
+    for (const claim of entity?.claims?.[propertyId] || []) {
+      const id = entityIdFromClaimValue(claim?.mainsnak?.datavalue?.value);
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        ids.push(id);
+      }
+    }
+  }
+
+  return ids;
+}
+
+function entityIdFromClaimValue(value) {
+  if (typeof value?.id === "string" && /^Q\d+$/.test(value.id)) {
+    return value.id;
+  }
+
+  const numericId = Number(value?.["numeric-id"]);
+  return Number.isInteger(numericId) && numericId > 0 ? `Q${numericId}` : "";
 }
 
 function stringClaimValues(entity, propertyId) {
