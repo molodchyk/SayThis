@@ -25,6 +25,15 @@ export function pronunciationLookupCandidates(selection, result, options = {}) {
   return uniqueCandidates(candidates).slice(0, 5);
 }
 
+export function additionalPronunciationLookupCandidates(selection, result, options = {}) {
+  const selectedKey = createLookupKey(selection);
+  const limit = clampInteger(options.limit, 1, 5, 3);
+
+  return pronunciationLookupCandidates(selection, result, options)
+    .filter((candidate) => createLookupKey(candidate.word) !== selectedKey)
+    .slice(0, limit);
+}
+
 function addCandidate(candidates, word, language) {
   const normalizedWord = normalizeSelection(word);
   if (!normalizedWord) {
@@ -70,4 +79,13 @@ function normalizeLanguageHint(value) {
     .toLowerCase()
     .replace(/_/g, "-")
     .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
+}
+
+function clampInteger(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.floor(number)));
 }

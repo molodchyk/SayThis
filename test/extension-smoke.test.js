@@ -93,6 +93,15 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /useOnline: true/);
 });
 
+test("background retries Wiktionary with resolved source forms", async () => {
+  const source = await readText("src/background.js");
+
+  assert.match(source, /additionalPronunciationLookupCandidates/);
+  assert.match(source, /resolveWithWiktionaryCandidates/);
+  assert.match(source, /refinedStructuredResult/);
+  assert.match(source, /resolveWithForvoCandidates\(text, refinedStructuredResult/);
+});
+
 test("options page exposes shared-entry data controls", async () => {
   const html = await readText("src/options.html");
   const source = await readText("src/options.js");

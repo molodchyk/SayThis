@@ -25,6 +25,7 @@ import {
   buildForvoWordPronunciationsUrl
 } from "./forvo-adapter.js";
 import {
+  additionalPronunciationLookupCandidates,
   pronunciationLookupCandidates
 } from "./pronunciation-source-plan.js";
 import {
@@ -657,11 +658,17 @@ async function resolveWithOnlineSources(text, settings = {}, credentials = {}) {
   const structuredResult = [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
+  const wiktionaryCandidateResult = structuredResult
+    ? await resolveWithWiktionaryCandidates(text, structuredResult)
+    : null;
+  const refinedStructuredResult = [structuredResult, wiktionaryCandidateResult]
+    .filter(Boolean)
+    .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const forvoResult = settings.forvoEnabled
-    ? await resolveWithForvoCandidates(text, structuredResult, credentials.forvoApiKey, settings)
+    ? await resolveWithForvoCandidates(text, refinedStructuredResult, credentials.forvoApiKey, settings)
     : null;
 
-  return [structuredResult, forvoResult]
+  return [refinedStructuredResult, forvoResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }
@@ -675,8 +682,13 @@ async function resolveSafely(resolver, ...args) {
 }
 
 async function resolveWithWiktionary(text) {
-  const query = normalizeSelection(text);
-  if (!query) {
+  return resolveWithWiktionaryLookup(text, text);
+}
+
+async function resolveWithWiktionaryLookup(selectedText, lookupWord) {
+  const selected = normalizeSelection(selectedText);
+  const query = normalizeSelection(lookupWord);
+  if (!selected || !query) {
     return null;
   }
 
@@ -703,7 +715,29 @@ async function resolveWithWiktionary(text) {
     return null;
   }
 
-  return buildWiktionaryResult(query, page.title || query, wikitext);
+  return buildWiktionaryResult(selected, page.title || query, wikitext);
+}
+
+async function resolveWithWiktionaryCandidates(text, structuredResult) {
+  const query = normalizeSelection(text);
+  if (!query) {
+    return null;
+  }
+
+  let result = null;
+  for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
+    const wiktionaryResult = await resolveSafely(resolveWithWiktionaryLookup, query, candidate.word);
+    if (!wiktionaryResult) {
+      continue;
+    }
+
+    result = mergeRemoteResult(result, wiktionaryResult);
+    if (result?.sourceStatus === "verified-audio") {
+      return result;
+    }
+  }
+
+  return result;
 }
 
 async function resolveWithNominatim(text, endpoint) {

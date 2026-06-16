@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  additionalPronunciationLookupCandidates,
   pronunciationLookupCandidates
 } from "../src/pronunciation-source-plan.js";
 
@@ -114,5 +115,29 @@ test("falls back to selected text when no structured result exists", () => {
   assert.deepEqual(pronunciationLookupCandidates("  chiaroscuro  ", null), [{
     word: "chiaroscuro",
     language: ""
+  }]);
+});
+
+test("plans additional lookup candidates without repeating selected text", () => {
+  const candidates = additionalPronunciationLookupCandidates("Athens", {
+    display: "Athens",
+    sourceForm: "Αθήνα",
+    language: "el",
+    aliases: ["Athina", "Athens"],
+    alternateResults: [{
+      display: "Athens",
+      sourceForm: "Athenae",
+      language: "la"
+    }]
+  }, {
+    limit: 2
+  });
+
+  assert.deepEqual(candidates, [{
+    word: "Αθήνα",
+    language: "el"
+  }, {
+    word: "Athina",
+    language: "el"
   }]);
 });
