@@ -9,6 +9,10 @@ import {
   createZip,
   packageNameFromManifest
 } from "../scripts/package-extension.mjs";
+import {
+  auditPublicAudio,
+  seedPublicAudioPaths
+} from "../scripts/audit-public-audio.mjs";
 
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
 
@@ -34,6 +38,7 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/nominatim-adapter.js"));
   assert.ok(files.includes("src/popup.html"));
   assert.ok(files.includes("src/offscreen-audio.html"));
+  assert.ok(files.includes("data/public-audio-manifest.json"));
   assert.ok(files.includes("data/pronunciation-seed.json"));
 
   for (const path of manifestReferencedFiles(manifest)) {
@@ -78,6 +83,72 @@ test("creates deterministic package name and zip envelope", () => {
   assert.equal(zip.includes(Buffer.from("manifest.json")), true);
   assert.equal(zip.includes(Buffer.from("src/example.js")), true);
   assert.equal(zip.readUInt32LE(zip.length - 22), 0x06054b50);
+});
+
+test("audits packaged public audio references before release", async () => {
+  const root = await mkdtemp(join(tmpdir(), "saythis-audio-audit-"));
+  const seed = {
+    entries: [{
+      id: "sample",
+      pronunciation: {
+        audio: [{ url: "assets/audio/public/sample.ogg" }]
+      }
+    }]
+  };
+  const manifest = {
+    schemaVersion: 1,
+    entries: [{
+      path: "assets/audio/public/sample.ogg",
+      label: "Sample pronunciation",
+      source: "Contributor recording",
+      license: "CC0-1.0",
+      attribution: "Sample speaker",
+      reviewStatus: "approved"
+    }]
+  };
+
+  await writeFixture(root, "data/pronunciation-seed.json", JSON.stringify(seed));
+  await writeFixture(root, "data/public-audio-manifest.json", JSON.stringify(manifest));
+  await writeFixture(root, "assets/audio/public/sample.ogg", "");
+
+  const audit = await auditPublicAudio(root);
+
+  assert.equal(audit.ok, true);
+  assert.equal(audit.referencedCount, 1);
+  assert.equal(audit.manifestCount, 1);
+  assert.equal(audit.packagedCount, 1);
+  assert.deepEqual(seedPublicAudioPaths(seed), ["assets/audio/public/sample.ogg"]);
+});
+
+test("rejects public audio without approved metadata or files", async () => {
+  const root = await mkdtemp(join(tmpdir(), "saythis-audio-audit-bad-"));
+
+  await writeFixture(root, "data/pronunciation-seed.json", JSON.stringify({
+    entries: [{
+      id: "sample",
+      pronunciation: {
+        audio: [{ url: "assets/audio/public/missing.ogg" }]
+      }
+    }]
+  }));
+  await writeFixture(root, "data/public-audio-manifest.json", JSON.stringify({
+    schemaVersion: 1,
+    entries: [{
+      path: "assets/audio/public/unapproved.ogg",
+      label: "Unapproved pronunciation",
+      source: "Unknown",
+      license: "Unknown",
+      attribution: "Unknown",
+      reviewStatus: "pending"
+    }]
+  }));
+  await writeFixture(root, "assets/audio/public/unapproved.ogg", "");
+
+  const audit = await auditPublicAudio(root);
+
+  assert.equal(audit.ok, false);
+  assert.ok(audit.findings.some((item) => item.type === "seed-reference" && item.path.endsWith("missing.ogg")));
+  assert.ok(audit.findings.some((item) => item.type === "manifest-review" && item.path.endsWith("unapproved.ogg")));
 });
 
 function manifestReferencedFiles(value) {

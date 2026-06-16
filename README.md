@@ -163,6 +163,12 @@ Create a Chrome ZIP package:
 npm run package:chrome
 ```
 
+Audit packaged public audio metadata:
+
+```powershell
+npm run audit:public-audio
+```
+
 Run the architecture audit:
 
 ```powershell

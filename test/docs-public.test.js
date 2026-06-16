@@ -26,3 +26,13 @@ test("documents community service deployment artifacts", async () => {
   assert.match(dockerignore, /assets\/audio\/private/);
   assert.match(dockerignore, /data\/licensed/);
 });
+
+test("documents public audio release guardrails", async () => {
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const audioReadme = await readFile(new URL("../assets/audio/public/README.md", import.meta.url), "utf8");
+  const manifest = JSON.parse(await readFile(new URL("../data/public-audio-manifest.json", import.meta.url), "utf8"));
+
+  assert.match(readme, /audit:public-audio/);
+  assert.match(audioReadme, /data\/public-audio-manifest\.json/);
+  assert.equal(manifest.schemaVersion, 1);
+});

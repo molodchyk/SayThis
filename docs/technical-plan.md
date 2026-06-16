@@ -37,6 +37,7 @@ Chrome Manifest V3 components:
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
 - `scripts/package-extension.mjs`: builds a deterministic Chrome ZIP from runtime extension files.
 - `scripts/audit-architecture.mjs`: checks file-size and folder-density budgets against the modularization playbook baseline.
+- `scripts/audit-public-audio.mjs`: validates packaged public-audio file presence and release metadata before Chrome ZIP creation.
 - `scripts/smoke-loaded-extension.mjs`: opt-in Chrome or Edge launch smoke runner for service-worker, popup, options startup, and keyboard-overlay flow.
 - `Dockerfile.community`: builds the self-hostable community moderation service image.
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
@@ -109,6 +110,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
 - Popup source-audio failures automatically fall back to TTS playback.
 - Packaged public audio path rewriting for curated entries.
+- Public audio release audit for packaged recording metadata, file presence, and seed-reference coverage.
 - Chrome ZIP packaging from an explicit runtime-file allowlist with private, licensed, and raw data exclusions.
 - Architecture audit for file-size and folder-density budgets, with current broad files tracked as explicit baseline debt.
 

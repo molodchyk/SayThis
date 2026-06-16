@@ -2,6 +2,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, posix } from "node:path";
 import { pathToFileURL } from "node:url";
 import { deflateRawSync } from "node:zlib";
+import {
+  auditPublicAudio
+} from "./audit-public-audio.mjs";
 
 const PACKAGE_ROOTS = [
   "manifest.json",
@@ -52,6 +55,11 @@ export function packageNameFromManifest(manifest) {
 export async function createExtensionPackage(options = {}) {
   const root = options.root || process.cwd();
   const outputDir = options.outputDir || DEFAULT_OUTPUT_DIR;
+  const audioAudit = await auditPublicAudio(root);
+  if (!audioAudit.ok) {
+    throw new Error(`Public audio audit failed: ${audioAudit.findings.map((item) => `${item.path} ${item.message}`).join("; ")}`);
+  }
+
   const manifest = JSON.parse(await readFile(joinRoot(root, "manifest.json"), "utf8"));
   const outputPath = options.outputPath || joinRoot(root, outputDir, packageNameFromManifest(manifest));
   const files = await collectPackageFiles(root);
