@@ -76,6 +76,9 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /aliasesTextFromResult\(result\) \|\| "None"/);
   assert.match(source, /result\.notes \|\| result\.variantNote/);
   assert.match(source, /\.filter\(Boolean\)\.slice\(0, 2\)/);
+  assert.match(source, /class="recordings"/);
+  assert.match(source, /data-action="recording"/);
+  assert.match(source, /playAudioItem\(recordings\[index\], result, 0\.82\)/);
 
   for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "audioUrl", "sourceUrl", "variantNote"]) {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));
@@ -138,7 +141,11 @@ test("popup quick feedback labels match their feedback kinds", async () => {
 
 test("popup source-audio failure falls back to TTS", async () => {
   const source = await readText("src/popup.js");
+  const html = await readText("src/popup.html");
 
+  assert.match(html, /id="audio-list"/);
+  assert.match(source, /audioItemsForResult/);
+  assert.match(source, /playAudioItem\(item, currentResult, 0\.82\)/);
   assert.match(source, /Audio failed\. Using TTS fallback\./);
   assert.match(source, /const fallbackToSpeech = async \(\) =>/);
   assert.match(source, /createSpeakMessage\(text, \{/);

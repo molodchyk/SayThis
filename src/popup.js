@@ -1,6 +1,7 @@
 import { getBestAudio, normalizeSelection } from "./resolver-core.js";
 import {
   alternateItemsForResult,
+  audioItemsForResult,
   evidenceItemsForResult,
   sourceItemsForResult
 } from "./result-view.js";
@@ -35,6 +36,7 @@ const origin = document.getElementById("origin");
 const ipa = document.getElementById("ipa");
 const simpleGuide = document.getElementById("simple-guide");
 const alternates = document.getElementById("alternates");
+const audioList = document.getElementById("audio-list");
 const evidence = document.getElementById("evidence");
 const sources = document.getElementById("sources");
 const confirmButton = document.getElementById("confirm");
@@ -258,6 +260,24 @@ function renderResult(result) {
     alternates.append(li);
   }
 
+  audioList.replaceChildren();
+  for (const item of audioItemsForResult(result)) {
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "small secondary";
+    button.textContent = "Play";
+    button.addEventListener("click", () => {
+      if (playAudioItem(item, currentResult, 0.82)) {
+        setStatus("Playing recording.");
+      }
+    });
+    const label = document.createElement("span");
+    label.textContent = item.label || "Pronunciation audio";
+    li.append(button, label);
+    audioList.append(li);
+  }
+
   evidence.replaceChildren();
   for (const item of evidenceItemsForResult(result)) {
     const li = document.createElement("li");
@@ -280,6 +300,10 @@ function renderResult(result) {
 
 function playAudio(result, rate) {
   const audio = getBestAudio(result);
+  return playAudioItem(audio, result, rate);
+}
+
+function playAudioItem(audio, result, rate) {
   if (!audio?.url) {
     return false;
   }

@@ -191,7 +191,8 @@ dd {
 
 .evidence,
 .sources,
-.alternates {
+.alternates,
+.audio-list {
   display: grid;
   gap: 4px;
   margin: 0;
@@ -205,13 +206,22 @@ dd {
   padding-left: 0;
 }
 
-.alternates {
+.alternates,
+.audio-list {
   list-style: none;
   padding-left: 0;
 }
 
-.alternates:empty {
+.alternates:empty,
+.audio-list:empty {
   display: none;
+}
+
+.audio-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
 }
 
 .alternates li {
@@ -304,6 +314,7 @@ input {
   .evidence,
   .sources,
   .alternates,
+  .audio-list,
   .eyebrow,
   dt {
     color: #aab8b3;

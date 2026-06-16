@@ -25,15 +25,14 @@ function trustSignalItems(value) {
 
 export function sourceItemsForResult(result, limit = 4) {
   const sourceItems = Array.isArray(result?.sources) ? result.sources : [];
-  const audioItems = Array.isArray(result?.pronunciation?.audio)
-    ? result.pronunciation.audio.map((item) => ({
-      label: item.label || item.source || "Pronunciation audio",
-      url: item.url
-    }))
-    : [];
 
-  return uniqueSourceItems([...sourceItems, ...audioItems])
+  return uniqueSourceItems([...sourceItems, ...audioItemsForResult(result, limit)])
     .slice(0, limit);
+}
+
+export function audioItemsForResult(result, limit = 4) {
+  const items = Array.isArray(result?.pronunciation?.audio) ? result.pronunciation.audio : [];
+  return uniqueAudioItems(items).slice(0, limit);
 }
 
 export function alternateItemsForResult(result, limit = 3) {
@@ -61,6 +60,23 @@ function uniqueSourceItems(items) {
   return result;
 }
 
+function uniqueAudioItems(items) {
+  const seen = new Set();
+  const result = [];
+
+  for (const item of items) {
+    const audio = normalizeAudioItem(item);
+    if (!audio.url || seen.has(audio.url)) {
+      continue;
+    }
+
+    seen.add(audio.url);
+    result.push(audio);
+  }
+
+  return result;
+}
+
 function normalizeAlternateItem(item = {}) {
   const sourceForm = normalizeSelection(item.sourceForm || item.display || item.query);
   const language = normalizeSelection(item.languageName || item.language);
@@ -79,6 +95,16 @@ function normalizeAlternateItem(item = {}) {
       source,
       guide
     ].filter(Boolean).join(" · ")
+  };
+}
+
+function normalizeAudioItem(item = {}) {
+  const url = normalizeUrl(item.url);
+  return {
+    label: normalizeSelection(item.label || item.source || hostLabel(url) || "Pronunciation audio"),
+    source: normalizeSelection(item.source),
+    quality: normalizeSelection(item.quality),
+    url
   };
 }
 

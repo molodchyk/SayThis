@@ -31,6 +31,7 @@
     ].filter(Boolean).slice(0, 2);
     const sources = sourceItems(result).slice(0, 2);
     const alternates = alternateItems(result).slice(0, 2);
+    const recordings = audioItems(result).slice(0, 4);
     const community = result.community || {};
     const communityText = [
       community.confirmations ? `${community.confirmations} confirmation${community.confirmations === 1 ? "" : "s"}` : "",
@@ -162,6 +163,35 @@
           color: #0f6b58;
           font-weight: 750;
           overflow-wrap: anywhere;
+        }
+
+        .recordings {
+          display: grid;
+          gap: 6px;
+          margin: 0 0 12px;
+          padding: 0;
+          list-style: none;
+          color: #4d5a56;
+          font-size: 12px;
+        }
+
+        .recordings li {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          align-items: center;
+          gap: 8px;
+        }
+
+        .recordings button {
+          border: 1px solid #0f6b58;
+          border-radius: 6px;
+          padding: 5px 8px;
+          color: #0f6b58;
+          background: transparent;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 750;
+          cursor: pointer;
         }
 
         .alternates {
@@ -305,6 +335,7 @@
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
         ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><strong>${escapeHtml(item.display || "Alternate")}</strong>${escapeHtml(item.summary)}</li>`).join("")}</ul>` : ""}
+        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation recordings">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">Play</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <div class="actions">
           <button class="action" type="button" data-action="speak">Speak</button>
@@ -351,6 +382,14 @@
     root.querySelector('[data-action="confirm"]').addEventListener("click", () => sendFeedback(result, "confirm"));
     root.querySelector('[data-action="missing"]').addEventListener("click", () => sendFeedback(result, "missing"));
     root.querySelector('[data-action="wrong"]').addEventListener("click", () => sendFeedback(result, "wrong"));
+    for (const button of root.querySelectorAll('[data-action="recording"]')) {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.audioIndex);
+        if (playAudioItem(recordings[index], result, 0.82)) {
+          setStatus("Playing recording.");
+        }
+      });
+    }
     root.querySelector('[data-action="cancel-correction"]').addEventListener("click", () => toggleCorrection(false));
     root.querySelector("[data-correction]").addEventListener("submit", (event) => {
       event.preventDefault();
@@ -494,6 +533,10 @@
 
   function playAudio(result, rate) {
     const audio = getBestAudio(result);
+    return playAudioItem(audio, result, rate);
+  }
+
+  function playAudioItem(audio, result, rate) {
     if (!audio?.url) {
       return false;
     }
@@ -569,6 +612,24 @@
     return items;
   }
 
+  function audioItems(result) {
+    const audio = Array.isArray(result?.pronunciation?.audio) ? result.pronunciation.audio : [];
+    const seen = new Set();
+    const items = [];
+
+    for (const item of audio) {
+      const normalized = normalizeAudioItem(item);
+      if (!normalized.url || seen.has(normalized.url)) {
+        continue;
+      }
+
+      seen.add(normalized.url);
+      items.push(normalized);
+    }
+
+    return items;
+  }
+
   function firstSourceUrl(result) {
     const source = (Array.isArray(result?.sources) ? result.sources : [])
       .find((item) => normalizeUrl(item?.url));
@@ -611,6 +672,14 @@
     const url = normalizeUrl(item?.url);
     return {
       label: String(item?.label || item?.source || hostLabel(url) || "Source").trim().slice(0, 160),
+      url
+    };
+  }
+
+  function normalizeAudioItem(item) {
+    const url = normalizeUrl(item?.url);
+    return {
+      label: normalizeText(item?.label || item?.source || hostLabel(url) || "Pronunciation audio"),
       url
     };
   }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   alternateItemsForResult,
+  audioItemsForResult,
   evidenceItemsForResult,
   sourceItemsForResult
 } from "../src/result-view.js";
@@ -80,6 +81,40 @@ test("builds safe unique source links from result sources and audio", () => {
   }, {
     label: "Pronunciation audio",
     url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.ogg"
+  }]);
+});
+
+test("builds playable audio items", () => {
+  const items = audioItemsForResult({
+    pronunciation: {
+      audio: [{
+        label: "Primary recording",
+        source: "Forvo",
+        quality: "verified",
+        url: "https://example.com/primary.ogg"
+      }, {
+        label: "Duplicate",
+        url: "https://example.com/primary.ogg"
+      }, {
+        label: "Unsafe",
+        url: "javascript:alert(1)"
+      }, {
+        source: "Archive",
+        url: "chrome-extension://id/audio.ogg"
+      }]
+    }
+  });
+
+  assert.deepEqual(items, [{
+    label: "Primary recording",
+    source: "Forvo",
+    quality: "verified",
+    url: "https://example.com/primary.ogg"
+  }, {
+    label: "Archive",
+    source: "Archive",
+    quality: "",
+    url: "chrome-extension://id/audio.ogg"
   }]);
 });
 
