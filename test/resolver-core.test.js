@@ -19,6 +19,11 @@ import {
   detectScript as detectTextScript,
   normalizeSelection as normalizeTextSelection
 } from "../src/resolver/text.js";
+import {
+  languageNameFromCode,
+  scriptHintForScript,
+  ttsLangFromLanguage
+} from "../src/resolver/language.js";
 
 const seedData = JSON.parse(await readFile(new URL("../data/pronunciation-seed.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -49,6 +54,14 @@ test("keeps resolver text helpers behind direct and compatibility exports", () =
   assert.equal(normalizeTextSelection("  alpha\n beta  "), "alpha beta");
   assert.equal(createTextLookupKey(" Nguyễn "), createLookupKey(" Nguyễn "));
   assert.deepEqual(detectTextScript("Αθήνα"), detectScript("Αθήνα"));
+});
+
+test("maps resolver language helpers from a narrow module", () => {
+  assert.equal(ttsLangFromLanguage("hy"), "hy-AM");
+  assert.equal(ttsLangFromLanguage("pt-BR"), "pt-BR");
+  assert.equal(languageNameFromCode("tr"), "Turkish");
+  assert.equal(scriptHintForScript("Greek").ttsLang, "el-GR");
+  assert.deepEqual(scriptHintForScript("Unknown"), {});
 });
 
 test("resolves bundled entries by alias", () => {
