@@ -106,9 +106,12 @@ export function selectBestWikidataResult(query, matches = [], entityById = {}) {
     return best;
   }
 
+  const alternateResults = alternateWikidataResults(results, best);
+
   return {
     ...best,
-    evidence: [...(best.evidence || []), `Selected from ${results.length} Wikidata candidates`]
+    evidence: [...(best.evidence || []), `Selected from ${results.length} Wikidata candidates`],
+    ...(alternateResults.length ? { alternateResults } : {})
   };
 }
 
@@ -235,6 +238,45 @@ function scoreWikidataResult(query, match, entity, result, index) {
   }
 
   return score;
+}
+
+function alternateWikidataResults(results, best) {
+  const seen = new Set([wikidataResultKey(best)].filter(Boolean));
+  const alternates = [];
+
+  for (const item of results) {
+    const result = item.result;
+    const key = wikidataResultKey(result);
+    if (!key || seen.has(key) || !isUsefulWikidataAlternate(result)) {
+      continue;
+    }
+
+    seen.add(key);
+    alternates.push(result);
+
+    if (alternates.length >= 4) {
+      break;
+    }
+  }
+
+  return alternates;
+}
+
+function wikidataResultKey(result = {}) {
+  return [
+    normalizeSelection(result.id),
+    createLookupKey(result.sourceForm || result.display || result.query),
+    normalizeSelection(result.language)
+  ].filter(Boolean).join("|");
+}
+
+function isUsefulWikidataAlternate(result = {}) {
+  const category = normalizeSelection(result.category || result.origin).toLowerCase();
+  return Boolean(
+    result.sourceForm &&
+    result.sourceStatus &&
+    !category.includes("disambiguation")
+  );
 }
 
 function scoreCandidate(candidate, selectedScript) {

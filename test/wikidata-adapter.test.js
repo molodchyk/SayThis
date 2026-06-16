@@ -306,6 +306,69 @@ test("selects a later candidate when it has stronger pronunciation evidence", ()
   assert.equal(result.id, "wikidata:Qgood");
   assert.equal(result.sourceStatus, "verified-audio");
   assert.ok(result.evidence.includes("Selected from 2 Wikidata candidates"));
+  assert.equal(result.alternateResults, undefined);
+});
+
+test("preserves useful Wikidata alternates after selecting the strongest candidate", () => {
+  const matches = [{
+    id: "Qaudio",
+    label: "Aten",
+    language: "en",
+    description: "ancient Egyptian deity",
+    match: { text: "Aten" }
+  }, {
+    id: "Qsite",
+    label: "Aten",
+    language: "en",
+    description: "archaeological site",
+    match: { text: "Aten" }
+  }];
+  const result = selectBestWikidataResult("Aten", matches, {
+    Qaudio: {
+      id: "Qaudio",
+      labels: {
+        en: { language: "en", value: "Aten" }
+      },
+      descriptions: {
+        en: { language: "en", value: "ancient Egyptian deity" }
+      },
+      claims: {
+        P443: [{
+          mainsnak: {
+            datavalue: {
+              value: "Aten pronunciation.ogg"
+            }
+          }
+        }]
+      },
+      aliases: {}
+    },
+    Qsite: {
+      id: "Qsite",
+      labels: {
+        en: { language: "en", value: "Aten" }
+      },
+      descriptions: {
+        en: { language: "en", value: "archaeological site" }
+      },
+      claims: {
+        P1448: [{
+          mainsnak: {
+            datavalue: {
+              value: { language: "en", text: "Aten site" }
+            }
+          }
+        }]
+      },
+      aliases: {}
+    }
+  });
+
+  assert.equal(result.id, "wikidata:Qaudio");
+  assert.equal(result.alternateResults.length, 1);
+  assert.equal(result.alternateResults[0].id, "wikidata:Qsite");
+  assert.equal(result.alternateResults[0].sourceForm, "Aten site");
+  assert.equal(result.alternateResults[0].language, "en");
 });
 
 test("uses alias matches to outrank weaker search order", () => {
