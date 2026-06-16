@@ -253,6 +253,7 @@ export function updateCommunityEntries(entries, selection, feedback) {
     audioUrl: existing.audioUrl || "",
     sourceUrl: existing.sourceUrl || "",
     variantNote: existing.variantNote || "",
+    trustSignals: normalizeTrustSignals(existing.trustSignals),
     createdAt: existing.createdAt || now,
     updatedAt: now
   };
@@ -276,6 +277,8 @@ export function updateCommunityEntries(entries, selection, feedback) {
       }
     }
   }
+
+  next.trustSignals = communityTrustSignals(next.trustSignals, feedback, next);
 
   return {
     ...(entries || {}),
@@ -307,6 +310,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     audioUrl: normalizeUrl(entry.audioUrl),
     sourceUrl: normalizeUrl(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
+    trustSignals: normalizeTrustSignals(entry.trustSignals),
     createdAt: normalizeSelection(entry.createdAt),
     updatedAt: normalizeSelection(entry.updatedAt)
   };
@@ -317,11 +321,34 @@ function hasCommunityEntryContent(entry = {}) {
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
     normalizeSelection(entry.language || entry.languageName || entry.origin || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    normalizeTrustSignals(entry.trustSignals).length ||
     normalizeCount(entry.confirmations) ||
     normalizeCount(entry.flags) ||
     normalizeCount(entry.requests) ||
     normalizeCount(entry.corrections)
   );
+}
+
+function communityTrustSignals(existingSignals, feedback = {}, entry = {}) {
+  const signals = normalizeTrustSignals(existingSignals);
+
+  if (feedback.kind === "confirm") {
+    signals.push("local-confirmed");
+  }
+  if (feedback.kind === "correction") {
+    signals.push("local-correction");
+  }
+  if (entry.sourceUrl) {
+    signals.push("source-backed");
+  }
+  if (entry.audioUrl) {
+    signals.push("audio-backed");
+  }
+  if (entry.variantNote) {
+    signals.push("variant-noted");
+  }
+
+  return normalizeTrustSignals(signals);
 }
 
 export function applyCommunitySummary(result, communityEntry) {

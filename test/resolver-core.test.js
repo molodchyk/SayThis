@@ -79,6 +79,7 @@ test("uses local community correction before fallback", () => {
   assert.equal(result.language, "it");
   assert.equal(result.pronunciation.simple, "eg-ZAM-pluh-term");
   assert.ok(result.sources.some((source) => source.url === "https://example.com/exampleterm"));
+  assert.deepEqual(result.trustSignals, ["local-correction", "source-backed", "local-confirmed"]);
   assert.equal(result.community.confirmations, 1);
 
   const aliasResult = resolveTerm("Sampleterm", {
@@ -118,6 +119,7 @@ test("normalizes imported local community entries", () => {
       language: " it ",
       simple: " eg-ZAM-pluh-term ",
       sourceUrl: " https://example.com/exampleterm ",
+      trustSignals: "source-backed; moderator-reviewed; source-backed",
       extra: "discarded"
     },
     empty: {
@@ -132,6 +134,7 @@ test("normalizes imported local community entries", () => {
   assert.equal(entries.exampleterm.corrections, 0);
   assert.deepEqual(entries.exampleterm.aliases, ["Sampleterm", "Example term"]);
   assert.equal(entries.exampleterm.sourceUrl, "https://example.com/exampleterm");
+  assert.deepEqual(entries.exampleterm.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(Object.hasOwn(entries.exampleterm, "extra"), false);
 });
 
