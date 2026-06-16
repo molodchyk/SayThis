@@ -49,6 +49,46 @@ test("prefers native label claims over English labels", () => {
   assert.ok(result.evidence.some((item) => item.includes("native label")));
 });
 
+test("uses native name claims as source-form candidates", () => {
+  const result = buildWikidataResult("Miyazaki", {
+    id: "Q1",
+    label: "Hayao Miyazaki",
+    language: "en",
+    description: "film director"
+  }, {
+    id: "Q1",
+    labels: {
+      en: { language: "en", value: "Hayao Miyazaki" }
+    },
+    descriptions: {
+      en: { language: "en", value: "film director" }
+    },
+    claims: {
+      P1559: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "ja", text: "宮崎駿" }
+          }
+        }
+      }],
+      P1477: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "en", text: "Miyazaki Hayao" }
+          }
+        }
+      }]
+    },
+    aliases: {}
+  });
+
+  assert.equal(result.sourceForm, "宮崎駿");
+  assert.equal(result.language, "ja");
+  assert.equal(result.confidence, "medium");
+  assert.ok(result.aliases.includes("Miyazaki Hayao"));
+  assert.ok(result.evidence.some((item) => item.includes("native name")));
+});
+
 test("extracts pronunciation audio and IPA claims", () => {
   const result = buildWikidataResult("Example", {
     id: "Q1",

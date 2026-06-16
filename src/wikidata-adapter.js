@@ -6,8 +6,11 @@ import {
 } from "./resolver-core.js";
 
 const NATIVE_LABEL = "P1705";
+const NATIVE_NAME = "P1559";
 const OFFICIAL_NAME = "P1448";
 const SHORT_NAME = "P1813";
+const BIRTH_NAME = "P1477";
+const NAME = "P2561";
 const PRONUNCIATION_AUDIO = "P443";
 const IPA_TRANSCRIPTION = "P898";
 const SCRIPT_SEARCH_LANGUAGES = {
@@ -146,7 +149,10 @@ function chooseSourceCandidate(query, match, entity) {
   const selectedScript = detectScript(query).script;
   const candidates = [
     ...monolingualClaimCandidates(entity, NATIVE_LABEL, "native label"),
+    ...monolingualClaimCandidates(entity, NATIVE_NAME, "native name"),
     ...monolingualClaimCandidates(entity, OFFICIAL_NAME, "official name"),
+    ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name"),
+    ...monolingualClaimCandidates(entity, NAME, "name"),
     ...monolingualClaimCandidates(entity, SHORT_NAME, "short name"),
     ...labelCandidates(entity, "label")
   ].filter((candidate) => candidate.value);
@@ -225,8 +231,12 @@ function scoreCandidate(candidate, selectedScript) {
 
   if (candidate.source === "native label") {
     score += 8;
+  } else if (candidate.source === "native name") {
+    score += 7;
   } else if (candidate.source === "official name") {
     score += 6;
+  } else if (candidate.source === "birth name" || candidate.source === "name") {
+    score += 5;
   } else if (candidate.source === "short name") {
     score += 3;
   }
@@ -255,7 +265,7 @@ function confidenceForCandidate(query, candidate) {
     return "low";
   }
 
-  return candidate.source === "native label" || candidate.source === "official name" ? "medium" : "low";
+  return candidate.source === "native label" || candidate.source === "native name" || candidate.source === "official name" ? "medium" : "low";
 }
 
 function monolingualClaimCandidates(entity, propertyId, source) {
@@ -295,7 +305,10 @@ function wikidataAliases(entity, excludedValues = []) {
   const values = [
     ...Object.values(entity.aliases || {}).flat().map((alias) => alias.value),
     ...monolingualClaimCandidates(entity, NATIVE_LABEL, "native label").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, NATIVE_NAME, "native name").map((candidate) => candidate.value),
     ...monolingualClaimCandidates(entity, OFFICIAL_NAME, "official name").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, NAME, "name").map((candidate) => candidate.value),
     ...monolingualClaimCandidates(entity, SHORT_NAME, "short name").map((candidate) => candidate.value),
     ...Object.values(entity.labels || {}).map((label) => label.value)
   ];
