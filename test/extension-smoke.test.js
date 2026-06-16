@@ -127,6 +127,16 @@ test("popup source-audio failure falls back to TTS", async () => {
   assert.match(source, /fallbackStarted/);
 });
 
+test("overlay source-audio failure falls back to TTS", async () => {
+  const source = await readText("src/content-overlay.js");
+
+  assert.match(source, /Audio failed\. Using TTS fallback\./);
+  assert.match(source, /const fallbackToSpeech = \(\) =>/);
+  assert.match(source, /audioPlayer\.addEventListener\("error"/);
+  assert.match(source, /type: "SAYTHIS_SPEAK"/);
+  assert.match(source, /fallbackStarted/);
+});
+
 function idsInHtml(html) {
   return matches(html, /\bid="([^"]+)"/g);
 }

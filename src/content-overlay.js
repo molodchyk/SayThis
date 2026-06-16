@@ -497,16 +497,30 @@
       return false;
     }
 
-    stopAudio();
-    audioPlayer = new Audio(audio.url);
-    audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
-    audioPlayer.play().catch(() => {
+    let fallbackStarted = false;
+    const fallbackToSpeech = () => {
+      if (fallbackStarted) {
+        return;
+      }
+
+      fallbackStarted = true;
+      setStatus("Audio failed. Using TTS fallback.");
       chrome.runtime.sendMessage({
         type: "SAYTHIS_SPEAK",
         text: result.query || result.display,
         result,
         rate
       });
+    };
+
+    stopAudio();
+    audioPlayer = new Audio(audio.url);
+    audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
+    audioPlayer.addEventListener("error", () => {
+      fallbackToSpeech();
+    });
+    audioPlayer.play().catch(() => {
+      fallbackToSpeech();
     });
     return true;
   }
