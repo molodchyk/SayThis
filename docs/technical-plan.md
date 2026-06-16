@@ -5,6 +5,7 @@
 Chrome Manifest V3 components:
 
 - `background.js`: creates the context menu and handles text-to-speech messages.
+- `background/online-sources.js`: orchestrates optional online source lookups, source-form retries, and pronunciation-audio fallback candidates.
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
@@ -58,6 +59,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Pronunciation-audio selection and normalization have a narrow pure module.
 - Script-sensitive fallback for non-Latin selected text.
 - Optional Wikidata lookup from the popup `Online` action.
+- Online source orchestration has a background-owned module outside the service-worker entry point.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Script-based Wikidata search languages for non-Latin selections.
 - Structured source aliases preserved for resolver results and correction prefill.

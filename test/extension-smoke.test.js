@@ -100,15 +100,34 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /useOnline: true/);
 });
 
-test("background retries Wiktionary with resolved source forms", async () => {
-  const source = await readText("src/background.js");
+test("online source resolver retries Wiktionary with resolved source forms", async () => {
+  const background = await readText("src/background.js");
+  const source = await readText("src/background/online-sources.js");
 
+  assert.match(background, /resolveWithOnlineSources/);
   assert.match(source, /additionalPronunciationLookupCandidates/);
   assert.match(source, /resolveWithWiktionaryCandidates/);
   assert.match(source, /refinedStructuredResult/);
   assert.match(source, /resolveWithForvoCandidates\(text, refinedStructuredResult/);
   assert.match(source, /includeResolvedLanguageFallback: true/);
   assert.match(source, /language: candidate\.language/);
+});
+
+test("online source resolver exposes deterministic helpers", async () => {
+  const {
+    resolveSafely,
+    uniqueWikidataMatches
+  } = await import("../src/background/online-sources.js");
+
+  assert.deepEqual(uniqueWikidataMatches([
+    { id: "Q1", label: "First" },
+    { id: "Q1", label: "Duplicate" },
+    { id: "" },
+    { id: "Q2", label: "Second" }
+  ]).map((match) => match.id), ["Q1", "Q2"]);
+  assert.equal(await resolveSafely(async () => {
+    throw new Error("network unavailable");
+  }), null);
 });
 
 test("options page exposes shared-entry data controls", async () => {
