@@ -25,6 +25,10 @@ test("manifest references packaged png icons", async () => {
   }
 });
 
+test("manifest allows hinted Wiktionary editions", () => {
+  assert.ok(manifest.host_permissions.includes("https://*.wiktionary.org/*"));
+});
+
 function pngDimensions(buffer) {
   return {
     width: buffer.readUInt32BE(16),

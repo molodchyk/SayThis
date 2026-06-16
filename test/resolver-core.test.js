@@ -67,7 +67,7 @@ test("manifest exposes extension resolver capabilities", () => {
   assert.equal(manifest.commands["pronounce-selection"].suggested_key.default, "Alt+Shift+S");
   assert.equal(manifest.commands["pronounce-selection-online"].suggested_key.default, "Alt+Shift+O");
   assert.ok(manifest.host_permissions.includes("https://www.wikidata.org/*"));
-  assert.ok(manifest.host_permissions.includes("https://en.wiktionary.org/*"));
+  assert.ok(manifest.host_permissions.includes("https://*.wiktionary.org/*"));
   assert.equal(manifest.host_permissions.includes("https://*/*"), false);
   assert.ok(manifest.optional_host_permissions.includes("https://*/*"));
   assert.ok(manifest.host_permissions.includes("https://commons.wikimedia.org/*"));

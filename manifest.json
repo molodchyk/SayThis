@@ -51,7 +51,7 @@
   ],
   "host_permissions": [
     "https://www.wikidata.org/*",
-    "https://en.wiktionary.org/*",
+    "https://*.wiktionary.org/*",
     "https://commons.wikimedia.org/*",
     "https://upload.wikimedia.org/*"
   ],

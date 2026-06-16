@@ -181,6 +181,56 @@ test("online source resolver exposes deterministic helpers", async () => {
   }
 });
 
+test("online source resolver tries hinted Wiktionary editions", async () => {
+  const {
+    resolveWithWiktionary
+  } = await import("../src/background/online-sources.js");
+  const originalFetch = globalThis.fetch;
+  const requestedHosts = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsedUrl = new URL(url);
+      requestedHosts.push(parsedUrl.host);
+      const sourceLanguage = parsedUrl.host.split(".")[0];
+      const missing = sourceLanguage === "en";
+
+      return {
+        ok: true,
+        async json() {
+          return {
+            query: {
+              pages: missing
+                ? [{ missing: true }]
+                : [{
+                  title: "przyklad",
+                  revisions: [{
+                    slots: {
+                      main: {
+                        content: `==Wymowa==\n* {{IPA|pl|/ˈpʂɨ.kwat/}}\n* {{audio|pl|Pl-przyklad.ogg|audio}}`
+                      }
+                    }
+                  }]
+                }]
+            }
+          };
+        }
+      };
+    };
+
+    const result = await resolveWithWiktionary("przyklad", {
+      languageHints: ["pl"]
+    });
+
+    assert.deepEqual(requestedHosts, ["en.wiktionary.org", "pl.wiktionary.org"]);
+    assert.equal(result.language, "pl");
+    assert.equal(result.sourceStatus, "verified-audio");
+    assert.equal(result.sources[0].url, "https://pl.wiktionary.org/wiki/przyklad");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("options page exposes shared-entry data controls", async () => {
   const html = await readText("src/options.html");
   const source = await readText("src/options.js");

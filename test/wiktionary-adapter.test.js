@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildWiktionaryApiUrl,
   buildWiktionaryResult,
-  parseWiktionaryPronunciation
+  parseWiktionaryPronunciation,
+  wiktionaryPageUrl,
+  wiktionarySourceLanguages
 } from "../src/wiktionary-adapter.js";
 
 const CHIAROSCURO_WIKITEXT = `
@@ -63,6 +66,12 @@ const RESPELL_WIKITEXT = `
 # A term with a simple guide.
 `;
 
+const LOCAL_EDITION_WIKITEXT = `
+==Wymowa==
+* {{IPA|pl|/ˈpʂɨ.kwat/}}
+* {{audio|pl|Pl-przyklad.ogg|audio}}
+`;
+
 test("parses IPA, audio, language, and etymology from Wiktionary wikitext", () => {
   const parsed = parseWiktionaryPronunciation(CHIAROSCURO_WIKITEXT);
 
@@ -88,6 +97,7 @@ test("builds a verified-audio pronunciation result from Wiktionary", () => {
   assert.equal(result.pronunciation.audio[1].label, "Pronunciation audio 2");
   assert.ok(result.evidence.includes("Additional Wiktionary pronunciation audio: 1"));
   assert.ok(result.origin.includes("chiaro"));
+  assert.equal(result.sources[0].url, "https://en.wiktionary.org/wiki/chiaroscuro");
 });
 
 test("uses the language section that carries pronunciation data", () => {
@@ -140,6 +150,36 @@ test("maps additional Wiktionary language sections to source codes", () => {
   assert.equal(result.languageName, "Turkish");
   assert.equal(result.ttsLang, "tr-TR");
   assert.equal(result.pronunciation.ipa, "/kaˈlem/");
+});
+
+test("builds bounded Wiktionary edition URLs from language hints", () => {
+  const url = new URL(buildWiktionaryApiUrl("kalem", "tr"));
+
+  assert.equal(url.origin, "https://tr.wiktionary.org");
+  assert.equal(url.searchParams.get("titles"), "kalem");
+  assert.deepEqual(wiktionarySourceLanguages({
+    languageHints: "pl, tr, pt-BR, invalid!, ru"
+  }), ["en", "pl", "tr", "pt"]);
+  assert.equal(wiktionaryPageUrl("przyklad", "pl"), "https://pl.wiktionary.org/wiki/przyklad");
+  assert.equal(buildWiktionaryApiUrl("", "pl"), "");
+});
+
+test("uses source language fallback for local Wiktionary editions", () => {
+  const parsed = parseWiktionaryPronunciation(LOCAL_EDITION_WIKITEXT, {
+    sourceLanguage: "pl"
+  });
+  const result = buildWiktionaryResult("przyklad", "przyklad", LOCAL_EDITION_WIKITEXT, {
+    sourceLanguage: "pl"
+  });
+
+  assert.equal(parsed.language, "pl");
+  assert.equal(parsed.languageName, "");
+  assert.equal(result.id, "wiktionary:przyklad:pl");
+  assert.equal(result.language, "pl");
+  assert.equal(result.languageName, "Polish");
+  assert.equal(result.pronunciation.audio[0].url.includes("Pl-przyklad.ogg"), true);
+  assert.ok(result.evidence.includes("Wiktionary edition: pl"));
+  assert.equal(result.sources[0].url, "https://pl.wiktionary.org/wiki/przyklad");
 });
 
 test("captures Wiktionary respelling guides", () => {

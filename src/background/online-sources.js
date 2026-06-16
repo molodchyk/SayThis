@@ -7,7 +7,9 @@ import {
   wikidataSearchLanguages
 } from "../wikidata-adapter.js";
 import {
-  buildWiktionaryResult
+  buildWiktionaryApiUrl,
+  buildWiktionaryResult,
+  wiktionarySourceLanguages
 } from "../wiktionary-adapter.js";
 import {
   buildNominatimResult,
@@ -34,7 +36,9 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
     resolveSafely(resolveWithWikidata, text, {
       languageHints: settings.lookupLanguageHints
     }),
-    resolveSafely(resolveWithWiktionary, text),
+    resolveSafely(resolveWithWiktionary, text, {
+      languageHints: settings.lookupLanguageHints
+    }),
     settings.gazetteerEnabled
       ? resolveSafely(resolveWithNominatim, text, settings.gazetteerEndpoint)
       : Promise.resolve(null)
@@ -136,29 +140,24 @@ export function uniqueWikidataMatches(matches = []) {
   return unique;
 }
 
-export async function resolveWithWiktionary(text) {
-  return resolveWithWiktionaryLookup(text, text);
+export async function resolveWithWiktionary(text, options = {}) {
+  return resolveWithWiktionarySources(text, text, options);
 }
 
 export async function resolveWithWiktionaryLookup(selectedText, lookupWord, options = {}) {
   const selected = normalizeSelection(selectedText);
   const query = normalizeSelection(lookupWord);
+  const sourceLanguage = options.sourceLanguage || "en";
+  const url = buildWiktionaryApiUrl(query, sourceLanguage);
   if (!selected || !query) {
     return null;
   }
 
-  const params = new URLSearchParams({
-    action: "query",
-    prop: "revisions",
-    titles: query,
-    rvslots: "main",
-    rvprop: "content",
-    format: "json",
-    formatversion: "2",
-    origin: "*"
-  });
+  if (!url) {
+    return null;
+  }
 
-  const response = await fetch(`https://en.wiktionary.org/w/api.php?${params.toString()}`);
+  const response = await fetch(url);
   if (!response.ok) {
     return null;
   }
@@ -171,8 +170,29 @@ export async function resolveWithWiktionaryLookup(selectedText, lookupWord, opti
   }
 
   return buildWiktionaryResult(selected, page.title || query, wikitext, {
-    preferredLanguage: options.language
+    preferredLanguage: options.language || options.preferredLanguage || sourceLanguage,
+    sourceLanguage
   });
+}
+
+export async function resolveWithWiktionarySources(selectedText, lookupWord, options = {}) {
+  let result = null;
+  for (const sourceLanguage of wiktionarySourceLanguages(options)) {
+    const wiktionaryResult = await resolveSafely(resolveWithWiktionaryLookup, selectedText, lookupWord, {
+      ...options,
+      sourceLanguage
+    });
+    if (!wiktionaryResult) {
+      continue;
+    }
+
+    result = mergeRemoteResult(result, wiktionaryResult);
+    if (result?.sourceStatus === "verified-audio") {
+      return result;
+    }
+  }
+
+  return result;
 }
 
 export async function resolveWithWiktionaryCandidates(text, structuredResult) {
@@ -183,8 +203,9 @@ export async function resolveWithWiktionaryCandidates(text, structuredResult) {
 
   let result = null;
   for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
-    const wiktionaryResult = await resolveSafely(resolveWithWiktionaryLookup, query, candidate.word, {
-      language: candidate.language
+    const wiktionaryResult = await resolveSafely(resolveWithWiktionarySources, query, candidate.word, {
+      language: candidate.language,
+      languageHints: [candidate.language]
     });
     if (!wiktionaryResult) {
       continue;

@@ -77,6 +77,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Wiktionary section selection can use resolved language hints from earlier structured sources.
+- Hinted Wiktionary edition retries after English Wiktionary for dictionary entries missing from English Wiktionary.
 - Wiktionary enPR and respelling templates parsed into simple pronunciation guides.
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
@@ -123,7 +124,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 3. Check local cache and community-confirmed entries.
 4. Resolve known entities and terms through structured sources:
    - knowledge graphs and aliases
-   - dictionaries and pronunciation databases
+   - dictionaries, hinted Wiktionary editions, and pronunciation databases
    - gazetteers and map databases
    - domain-specific term sources
 5. Resolve native/source form and candidate languages.

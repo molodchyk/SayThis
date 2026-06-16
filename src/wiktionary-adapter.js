@@ -49,9 +49,10 @@ export function buildWiktionaryResult(query, pageTitle, wikitext, options = {}) 
     return null;
   }
 
-  const result = createWiktionaryRemoteResult(query, pageTitle, parsed);
+  const sourceLanguage = normalizeWiktionarySourceLanguage(options.sourceLanguage || "en") || "en";
+  const result = createWiktionaryRemoteResult(query, pageTitle, parsed, { sourceLanguage });
   const alternateResults = (parsed.alternateEntries || [])
-    .map((entry) => createWiktionaryRemoteResult(query, pageTitle, entry))
+    .map((entry) => createWiktionaryRemoteResult(query, pageTitle, entry, { sourceLanguage }))
     .filter(Boolean);
 
   return alternateResults.length
@@ -62,8 +63,10 @@ export function buildWiktionaryResult(query, pageTitle, wikitext, options = {}) 
 export function parseWiktionaryPronunciation(wikitext = "", options = {}) {
   const text = String(wikitext || "");
   const preferredLanguage = normalizeLanguageHint(options.preferredLanguage || options.language);
+  const fallbackLanguage = normalizeLanguageHint(options.sourceLanguage || options.fallbackLanguage);
   const entries = languageEntries(text)
     .map(parseLanguageEntry)
+    .map((entry) => applyFallbackLanguage(entry, fallbackLanguage))
     .filter(entryHasLookupData);
   const primary = choosePrimaryEntry(entries, preferredLanguage);
 
@@ -88,10 +91,11 @@ export function parseWiktionaryPronunciation(wikitext = "", options = {}) {
   };
 }
 
-function createWiktionaryRemoteResult(query, pageTitle, parsed) {
+function createWiktionaryRemoteResult(query, pageTitle, parsed, options = {}) {
   const audioFiles = normalizedAudioFiles(parsed);
+  const sourceLanguage = normalizeWiktionarySourceLanguage(options.sourceLanguage || parsed.sourceLanguage || "en") || "en";
   return createRemoteStructuredResult(query, {
-    id: `wiktionary:${createLookupKey(pageTitle || query)}`,
+    id: wiktionaryResultId(pageTitle || query, sourceLanguage),
     display: pageTitle || query,
     sourceForm: pageTitle || query,
     language: parsed.language || "",
@@ -112,14 +116,68 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed) {
     confidence: audioFiles.length ? "high" : parsed.ipa ? "medium" : "low",
     evidence: [
       "Wiktionary pronunciation entry",
+      sourceLanguage !== "en" ? `Wiktionary edition: ${sourceLanguage}` : "",
       parsed.languageName ? `Language section: ${parsed.languageName}` : "",
       parsed.ipa ? "IPA from Wiktionary" : "",
       audioFiles.length ? "Pronunciation audio from Wiktionary" : "",
       audioFiles.length > 1 ? `Additional Wiktionary pronunciation audio: ${audioFiles.length - 1}` : "",
       parsed.origin ? "Origin note from Wiktionary" : ""
     ].filter(Boolean),
-    sources: [{ label: "Wiktionary", url: `https://en.wiktionary.org/wiki/${encodeURIComponent(pageTitle || query)}` }]
+    sources: [{ label: sourceLanguage === "en" ? "Wiktionary" : `Wiktionary (${sourceLanguage})`, url: wiktionaryPageUrl(pageTitle || query, sourceLanguage) }]
   });
+}
+
+export function wiktionarySourceLanguages(options = {}) {
+  const values = [
+    "en",
+    options.sourceLanguage,
+    options.language,
+    options.preferredLanguage,
+    ...(Array.isArray(options.languageHints) ? options.languageHints : String(options.languageHints || "").split(/[\s,;]+/))
+  ];
+  const seen = new Set();
+  const languages = [];
+
+  for (const value of values) {
+    const language = normalizeWiktionarySourceLanguage(value);
+    if (!language || seen.has(language)) {
+      continue;
+    }
+
+    seen.add(language);
+    languages.push(language);
+    if (languages.length >= 4) {
+      break;
+    }
+  }
+
+  return languages;
+}
+
+export function buildWiktionaryApiUrl(query, sourceLanguage = "en") {
+  const language = normalizeWiktionarySourceLanguage(sourceLanguage);
+  const title = normalizeSelection(query);
+  if (!language || !title) {
+    return "";
+  }
+
+  const params = new URLSearchParams({
+    action: "query",
+    prop: "revisions",
+    titles: title,
+    rvslots: "main",
+    rvprop: "content",
+    format: "json",
+    formatversion: "2",
+    origin: "*"
+  });
+
+  return `https://${language}.wiktionary.org/w/api.php?${params.toString()}`;
+}
+
+export function wiktionaryPageUrl(pageTitle, sourceLanguage = "en") {
+  const language = normalizeWiktionarySourceLanguage(sourceLanguage) || "en";
+  return `https://${language}.wiktionary.org/wiki/${encodeURIComponent(normalizeSelection(pageTitle))}`;
 }
 
 function parseLanguageEntry(section) {
@@ -135,6 +193,19 @@ function parseLanguageEntry(section) {
     audioFile: audioFiles[0] || "",
     audioFiles,
     origin: firstEtymologyLine(body)
+  };
+}
+
+function applyFallbackLanguage(entry, fallbackLanguage) {
+  if (!fallbackLanguage || entry.language || !entryHasPronunciationData(entry)) {
+    return entry;
+  }
+
+  return {
+    ...entry,
+    language: fallbackLanguage,
+    languageName: "",
+    sourceLanguage: fallbackLanguage
   };
 }
 
@@ -309,6 +380,15 @@ function normalizeLanguageHint(value) {
     .toLowerCase()
     .replace(/_/g, "-")
     .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0] || "";
+}
+
+function normalizeWiktionarySourceLanguage(value) {
+  return normalizeLanguageHint(value).split("-")[0];
+}
+
+function wiktionaryResultId(value, sourceLanguage) {
+  const key = createLookupKey(value);
+  return sourceLanguage === "en" ? `wiktionary:${key}` : `wiktionary:${key}:${sourceLanguage}`;
 }
 
 function baseLanguage(language) {
