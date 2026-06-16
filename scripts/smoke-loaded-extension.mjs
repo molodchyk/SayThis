@@ -41,7 +41,7 @@ export async function runLoadedExtensionSmoke(options = {}) {
   const profileDir = await mkdtemp(join(tmpdir(), "saythis-chrome-"));
   const timeoutMs = Number(options.timeoutMs || DEFAULT_TIMEOUT_MS);
   const required = options.required ?? process.env.SAYTHIS_SMOKE_REQUIRED === "1";
-  const closeLaunchedBrowser = options.closeLaunchedBrowser ?? process.env.SAYTHIS_SMOKE_CLOSE === "1";
+  const closeLaunchedBrowser = shouldCloseLaunchedBrowser(options);
   const child = spawn(executable, chromeArgs(root, profileDir, port, options), {
     stdio: "ignore"
   });
@@ -108,6 +108,10 @@ export async function runLoadedExtensionSmoke(options = {}) {
       child.unref();
     }
   }
+}
+
+export function shouldCloseLaunchedBrowser(options = {}) {
+  return options.closeLaunchedBrowser === true;
 }
 
 function chromeArgs(root, profileDir, port, options) {
