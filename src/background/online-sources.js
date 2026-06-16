@@ -25,6 +25,9 @@ import {
   pronunciationLookupCandidates
 } from "../pronunciation-source-plan.js";
 import {
+  transliterationLookupCandidates
+} from "../resolver/transliteration.js";
+import {
   buildCustomSourceResult,
   buildCustomSourceUrl
 } from "../custom-source-adapter.js";
@@ -99,11 +102,17 @@ export async function resolveWithWikidata(text, options = {}) {
     return null;
   }
 
-  const searchResults = await Promise.all(wikidataSearchLanguages(query, {
-    languageHints: options.languageHints
-  }).map(async (language) => {
+  const lookupCandidates = wikidataLookupCandidates(query, options);
+  const languageHints = wikidataLookupLanguageHints(options.languageHints, lookupCandidates);
+  const requests = lookupCandidates.flatMap((candidate) => wikidataSearchLanguages(candidate.sourceForm, {
+    languageHints
+  }).map((language) => ({
+    query: candidate.sourceForm,
+    language
+  })));
+  const searchResults = await Promise.all(requests.map(async ({ query: lookupQuery, language }) => {
     try {
-      return await fetchWikidataSearch(query, language);
+      return await fetchWikidataSearch(lookupQuery, language);
     } catch {
       return [];
     }
@@ -115,8 +124,22 @@ export async function resolveWithWikidata(text, options = {}) {
 
   const entityById = await fetchWikidataEntities(matches.slice(0, 5));
   return selectBestWikidataResult(query, matches, entityById, {
-    languageHints: options.languageHints
+    languageHints
   });
+}
+
+export function wikidataLookupCandidates(query, options = {}) {
+  const selectedText = normalizeSelection(query);
+  if (!selectedText) {
+    return [];
+  }
+
+  return [{
+    sourceForm: selectedText,
+    language: ""
+  }, ...transliterationLookupCandidates(selectedText, {
+    languageHints: options.languageHints
+  })].slice(0, 4);
 }
 
 export async function fetchWikidataSearch(query, language) {
@@ -409,6 +432,13 @@ function normalizedLanguageHints(value) {
   }
 
   return hints;
+}
+
+function wikidataLookupLanguageHints(configuredHints = [], candidates = []) {
+  return normalizedLanguageHints([
+    ...normalizedLanguageHints(configuredHints),
+    ...candidates.map((candidate) => candidate.language)
+  ]);
 }
 
 function normalizeLanguageHint(value) {

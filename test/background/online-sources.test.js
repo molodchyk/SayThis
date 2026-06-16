@@ -5,6 +5,7 @@ import {
 } from "../../src/resolver-core.js";
 import {
   onlineLookupLanguageHints,
+  resolveWithWikidata,
   resolveWithOnlineSources
 } from "../../src/background/online-sources.js";
 
@@ -74,6 +75,78 @@ test("uses local fallback language hints for Forvo lookup candidates", async () 
     assert.equal(result.language, "pl");
     assert.equal(result.sourceStatus, "verified-audio");
     assert.equal(result.pronunciation.audio[0].url, "https://audio.example/lodz.ogg");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("tries transliterated Wikidata lookup candidates", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedSearches = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+
+      if (parsed.host === "www.wikidata.org" && parsed.pathname === "/w/api.php") {
+        requestedSearches.push({
+          search: parsed.searchParams.get("search"),
+          language: parsed.searchParams.get("language")
+        });
+        return jsonResponse({
+          search: parsed.searchParams.get("search") === "Москва" && parsed.searchParams.get("language") === "ru"
+            ? [{
+              id: "Qmoskva",
+              label: "Москва",
+              language: "ru",
+              description: "capital city",
+              match: { text: "Москва" }
+            }]
+            : []
+        });
+      }
+
+      if (parsed.host === "www.wikidata.org" && parsed.pathname.includes("/wiki/Special:EntityData/")) {
+        return jsonResponse({
+          entities: {
+            Qmoskva: {
+              id: "Qmoskva",
+              labels: {
+                en: { language: "en", value: "Moscow" },
+                ru: { language: "ru", value: "Москва" }
+              },
+              descriptions: {
+                en: { language: "en", value: "capital city" }
+              },
+              claims: {
+                P31: [{
+                  mainsnak: {
+                    datavalue: {
+                      value: { id: "Q515", "numeric-id": 515 }
+                    }
+                  }
+                }]
+              },
+              aliases: {
+                en: [{ language: "en", value: "Moskva" }]
+              }
+            }
+          }
+        });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const result = await resolveWithWikidata("Moskva", {
+      languageHints: ["ru"]
+    });
+
+    assert.ok(requestedSearches.some((item) => item.search === "Москва" && item.language === "ru"));
+    assert.equal(result.sourceForm, "Москва");
+    assert.equal(result.language, "ru");
+    assert.equal(result.category, "place");
+    assert.ok(result.aliases.includes("Moskva"));
   } finally {
     globalThis.fetch = originalFetch;
   }

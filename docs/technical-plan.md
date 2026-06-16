@@ -15,6 +15,7 @@ Chrome Manifest V3 components:
 - `resolver/orthography.js`: pure Latin orthography hints for fallback language and audio lookup when structured sources are absent.
 - `resolver/status.js`: pure source-status labels, confidence ranking, and status normalization helpers used by resolver results.
 - `resolver/text.js`: pure selected-text normalization, lookup-key generation, and script detection helpers re-exported by `resolver-core.js`.
+- `resolver/transliteration.js`: pure Latin-to-Cyrillic lookup candidate generation for bounded source-form retries.
 - `resolver/values.js`: pure URL, count, alias, trust-signal, and long-field normalization helpers used by resolver data.
 - `wikidata-adapter.js`: extracts source forms, native-name style claims, sitelink titles, aliases, IPA, and pronunciation audio from Wikidata entities.
 - `wikidata/search-languages.js`: plans bounded Wikidata search languages from selected script and explicit user hints.
@@ -66,6 +67,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local community-memory normalization and summaries have a narrow pure module.
 - Script-sensitive fallback for non-Latin selected text.
 - Latin orthography hints can guide fallback TTS and optional pronunciation-audio lookup when structured sources are absent.
+- Latin-to-Cyrillic transliteration candidates can broaden Wikidata lookup for romanized terms without adding a chat surface.
 - Optional Wikidata lookup from the popup `Online` action.
 - Online source orchestration has a background-owned module outside the service-worker entry point.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
