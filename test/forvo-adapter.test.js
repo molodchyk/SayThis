@@ -89,6 +89,51 @@ test("builds a verified-audio result from Forvo payload", () => {
   assert.ok(result.sources.some((source) => source.label === "Pronunciations by Forvo"));
 });
 
+test("preserves additional same-language Forvo recordings", () => {
+  const result = buildForvoResult("chiaroscuro", {
+    items: [{
+      id: 1,
+      word: "chiaroscuro",
+      code: "it",
+      langname: "Italian",
+      country: "Italy",
+      username: "primary",
+      pathogg: "https://audio.example/chiaroscuro-1.ogg",
+      rate: 5
+    }, {
+      id: 2,
+      word: "chiaroscuro",
+      code: "it",
+      langname: "Italian",
+      country: "Switzerland",
+      username: "alternate",
+      pathogg: "https://audio.example/chiaroscuro-2.ogg",
+      rate: 4
+    }, {
+      id: 3,
+      word: "chiaroscuro",
+      code: "en",
+      langname: "English",
+      pathogg: "https://audio.example/chiaroscuro-en.ogg",
+      rate: 4
+    }, {
+      id: 4,
+      word: "sfumato",
+      code: "it",
+      langname: "Italian",
+      pathogg: "https://audio.example/sfumato.ogg",
+      rate: 4
+    }]
+  });
+
+  assert.deepEqual(result.pronunciation.audio.map((item) => item.url), [
+    "https://audio.example/chiaroscuro-1.ogg",
+    "https://audio.example/chiaroscuro-2.ogg"
+  ]);
+  assert.match(result.pronunciation.audio[1].label, /alternate/);
+  assert.ok(result.evidence.includes("Additional Forvo recordings: 1"));
+});
+
 test("keeps selected query when Forvo returns a resolved source word", () => {
   const result = buildForvoResult("Quixote", {
     items: [{

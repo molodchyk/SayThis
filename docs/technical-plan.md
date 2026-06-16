@@ -56,6 +56,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
+- Forvo lookup preserves additional same-word, same-language recordings on the resolved result.
 - Source-form and alias-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
 - Forvo candidate planning can retry configured-language lookups with resolved source-language hints.
 - Matching verified audio is merged onto structured results so source context, IPA, and origin are preserved.

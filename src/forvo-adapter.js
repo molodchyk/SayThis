@@ -1,4 +1,5 @@
 import {
+  createLookupKey,
   createRemoteStructuredResult,
   normalizeSelection
 } from "./resolver-core.js";
@@ -36,13 +37,14 @@ export function buildForvoWordPronunciationsUrl(query, apiKey, options = {}) {
 
 export function buildForvoResult(query, payload = {}) {
   const selectedText = normalizeSelection(query);
-  const item = selectBestForvoItem(payload);
+  const rankedItems = rankedForvoItems(payload);
+  const item = rankedItems[0]?.item;
   if (!selectedText || !item) {
     return null;
   }
 
-  const audioUrl = normalizeLongValue(item.pathogg || item.pathmp3);
-  if (!audioUrl) {
+  const primaryAudio = forvoAudioItem(item);
+  if (!primaryAudio) {
     return null;
   }
 
@@ -52,6 +54,7 @@ export function buildForvoResult(query, payload = {}) {
   const username = normalizeSelection(item.username);
   const country = normalizeSelection(item.country);
   const rate = normalizeNumber(item.rate);
+  const additionalAudio = additionalForvoAudioItems(item, rankedItems.slice(1));
 
   return createRemoteStructuredResult(selectedText, {
     id: `forvo:${normalizeSelection(item.id || word || selectedText)}`,
@@ -64,12 +67,7 @@ export function buildForvoResult(query, payload = {}) {
     pronunciation: {
       ipa: "",
       simple: "",
-      audio: [{
-        url: audioUrl,
-        label: languageName ? `${languageName} pronunciation` : "Pronunciation audio",
-        source: "Forvo",
-        quality: "verified"
-      }]
+      audio: [primaryAudio, ...additionalAudio]
     },
     sourceStatus: "verified-audio",
     confidence: "high",
@@ -78,7 +76,8 @@ export function buildForvoResult(query, payload = {}) {
       languageName ? `Language: ${languageName}` : "",
       country ? `Speaker country: ${country}` : "",
       username ? `Speaker: ${username}` : "",
-      Number.isFinite(rate) ? `Forvo rating: ${rate}` : ""
+      Number.isFinite(rate) ? `Forvo rating: ${rate}` : "",
+      additionalAudio.length ? `Additional Forvo recordings: ${additionalAudio.length}` : ""
     ].filter(Boolean),
     sources: [
       { label: "Pronunciations by Forvo", url: "https://forvo.com/" },
@@ -88,6 +87,10 @@ export function buildForvoResult(query, payload = {}) {
 }
 
 export function selectBestForvoItem(payload = {}) {
+  return rankedForvoItems(payload)[0]?.item || null;
+}
+
+function rankedForvoItems(payload = {}) {
   const items = normalizeForvoItems(payload);
   return items
     .map((item, index) => ({
@@ -95,7 +98,7 @@ export function selectBestForvoItem(payload = {}) {
       score: scoreForvoItem(item, index)
     }))
     .filter((candidate) => candidate.score > 0)
-    .sort((left, right) => right.score - left.score)[0]?.item || null;
+    .sort((left, right) => right.score - left.score);
 }
 
 function normalizeForvoItems(payload = {}) {
@@ -141,6 +144,68 @@ function scoreForvoItem(item = {}, index) {
   }
 
   return score;
+}
+
+function additionalForvoAudioItems(primaryItem, rankedItems) {
+  const primaryWordKey = forvoItemWordKey(primaryItem);
+  const primaryLanguage = forvoItemLanguage(primaryItem);
+  if (!primaryWordKey) {
+    return [];
+  }
+
+  const seen = new Set([forvoAudioItem(primaryItem)?.url].filter(Boolean));
+  const audio = [];
+
+  for (const { item } of rankedItems) {
+    if (forvoItemWordKey(item) !== primaryWordKey || forvoItemLanguage(item) !== primaryLanguage) {
+      continue;
+    }
+
+    const candidate = forvoAudioItem(item);
+    if (!candidate?.url || seen.has(candidate.url)) {
+      continue;
+    }
+
+    seen.add(candidate.url);
+    audio.push(candidate);
+
+    if (audio.length >= 3) {
+      break;
+    }
+  }
+
+  return audio;
+}
+
+function forvoAudioItem(item = {}) {
+  const audioUrl = normalizeLongValue(item.pathogg || item.pathmp3);
+  if (!audioUrl) {
+    return null;
+  }
+
+  const languageName = normalizeSelection(item.langname || item.languageName);
+  const username = normalizeSelection(item.username);
+  const country = normalizeSelection(item.country);
+  const speaker = [username, country].filter(Boolean).join(", ");
+  const label = [
+    languageName ? `${languageName} pronunciation` : "Pronunciation audio",
+    speaker ? `(${speaker})` : ""
+  ].filter(Boolean).join(" ");
+
+  return {
+    url: audioUrl,
+    label: normalizeSelection(label),
+    source: "Forvo",
+    quality: "verified"
+  };
+}
+
+function forvoItemWordKey(item = {}) {
+  return createLookupKey(item.word || item.original);
+}
+
+function forvoItemLanguage(item = {}) {
+  return normalizeLanguageCode(item.code || item.lang_code || item.language);
 }
 
 function forvoWordUrl(word, language) {
