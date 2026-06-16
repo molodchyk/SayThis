@@ -30,6 +30,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym claims as source-form and alias signals.
 - Wikidata native-script aliases can be promoted to source forms when stronger name fields are missing.
 - Wikidata instance/subclass claims inform result categories and candidate ranking.
+- Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata lookup preserves useful alternate entity candidates for ambiguity review and follow-up audio lookup.
 - Wikidata pronunciation-audio lookup preserves multiple Commons recordings when an entity provides them.
 - Optional Wikidata lookup language hints for rare Latin-script terms and competing source forms.
@@ -139,6 +140,7 @@ The first useful version should be narrow and trusted:
 
 - Resolve unfamiliar terms through structured sources before falling back to generated speech.
 - Let users add lookup language hints when a Latin spelling is ambiguous, keeping the resolver explicit instead of chat-based.
+- Use structured source language claims to guide audio lookup when a term's spelling alone is ambiguous.
 - Store native-script forms, romanized variants, source confidence, and native audio.
 - Treat each useful lookup as a reusable pronunciation-graph entry, not a chat response or a closed-list item.
 - Treat community submissions as structured pronunciation knowledge: source form, root, audio, guide, variant, source, and trust signal.

@@ -17,6 +17,7 @@ Chrome Manifest V3 components:
 - `resolver/values.js`: pure URL, count, alias, trust-signal, and long-field normalization helpers used by resolver data.
 - `wikidata-adapter.js`: extracts source forms, native-name style claims, sitelink titles, aliases, IPA, and pronunciation audio from Wikidata entities.
 - `wikidata/search-languages.js`: plans bounded Wikidata search languages from selected script and explicit user hints.
+- `wikidata/language-claims.js`: maps selected Wikidata language and country claims into bounded result-language hints.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
 - `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
@@ -73,6 +74,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym source-form scoring for proper nouns and research terms.
 - Wikidata native-script alias scoring when stronger source-form claims are absent.
 - Wikidata instance/subclass claim mapping for result categories and candidate ranking.
+- Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata selection preserves useful alternate entity candidates for result ambiguity and follow-up audio lookup.
 - Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.

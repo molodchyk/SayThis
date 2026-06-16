@@ -7,6 +7,10 @@ import {
 import {
   normalizeSearchLanguageHints as normalizeWikidataSearchLanguageHints
 } from "./wikidata/search-languages.js";
+import {
+  wikidataClaimedLanguage,
+  wikidataResultLanguage
+} from "./wikidata/language-claims.js";
 
 export {
   normalizeSearchLanguageHints,
@@ -87,6 +91,8 @@ export function buildWikidataResult(query, match, entity, options = {}) {
   const audioFiles = stringClaimValues(entity, PRONUNCIATION_AUDIO).slice(0, 4);
   const ipa = firstStringClaimValue(entity, IPA_TRANSCRIPTION);
   const sourceForm = sourceCandidate?.value || match.label || query;
+  const claimedLanguage = wikidataClaimedLanguage(entity, options);
+  const language = wikidataResultLanguage(sourceCandidate, claimedLanguage, match);
   const aliases = wikidataAliases(entity, [match.label, sourceForm]).slice(0, 8);
 
   return createRemoteStructuredResult(query, {
@@ -94,7 +100,7 @@ export function buildWikidataResult(query, match, entity, options = {}) {
     display: match.label || query,
     aliases,
     sourceForm,
-    language: sourceCandidate?.language || match.language || "en",
+    language,
     languageName: "",
     category: entityType.category || description || "structured source match",
     origin: description,
@@ -115,6 +121,7 @@ export function buildWikidataResult(query, match, entity, options = {}) {
       entityType.label ? `Entity type: ${entityType.label}` : "",
       sourceCandidate?.source ? `Source form from ${sourceCandidate.source}` : "",
       sourceCandidate?.languageHint ? `Source form matched lookup language hint: ${sourceCandidate.language}` : "",
+      claimedLanguage?.code === language ? `Language from ${claimedLanguage.source}: ${claimedLanguage.code}` : "",
       audioFiles.length ? "Pronunciation audio from Wikidata" : "",
       audioFiles.length > 1 ? `Additional Wikidata pronunciation audio: ${audioFiles.length - 1}` : "",
       ipa ? "IPA from Wikidata" : "",
