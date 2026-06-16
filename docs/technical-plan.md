@@ -62,6 +62,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
 - Result card with source form, aliases, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - Local confirmation, wrong-result, missing-term, correction, aliases, audio-source, source-link, variant-note storage, and import/export normalization.
+- Variant-only local corrections are treated as lookup data so valid variants stay visible.
 - Opt-in community sync endpoint with queued retry behavior.
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.

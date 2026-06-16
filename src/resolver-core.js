@@ -528,7 +528,7 @@ function withCommunitySummary(result, communityEntry) {
 }
 
 function hasCommunityPronunciationData(entry) {
-  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl);
+  return Boolean(entry.sourceForm || entry.language || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
 }
 
 function communitySummary(entry) {

@@ -28,6 +28,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, audio sources, and variant notes.
+- Variant-only local corrections are surfaced on later lookup results.
 - Correction audio and source links are normalized before local storage or shared submission.
 - Import and export cleanup for local and approved shared pronunciation memory.
 - Sparse keyed memory imports preserve selected-term lookup keys while keeping source-form pronunciation data.

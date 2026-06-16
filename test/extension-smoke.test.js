@@ -120,6 +120,12 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(source, /wrong-result flags/);
 });
 
+test("background treats variant notes as pronunciation data", async () => {
+  const source = await readText("src/background.js");
+
+  assert.match(source, /entry\.variantNote/);
+});
+
 test("popup quick feedback labels match their feedback kinds", async () => {
   const html = await readText("src/popup.html");
   const source = await readText("src/popup.js");

@@ -89,6 +89,21 @@ test("uses local community correction before fallback", () => {
   assert.equal(aliasResult.sourceForm, "Exampleterm");
 });
 
+test("uses variant-only local community corrections", () => {
+  const entries = updateCommunityEntries({}, "Exampleterm", {
+    kind: "correction",
+    variantNote: "Regional pronunciation variant"
+  });
+  const result = resolveTerm("Exampleterm", {
+    entries: [],
+    communityEntries: entries
+  });
+
+  assert.equal(result.id, "community:exampleterm");
+  assert.equal(result.notes, "Regional pronunciation variant");
+  assert.equal(result.community.corrections, 1);
+});
+
 test("normalizes imported local community entries", () => {
   const entries = normalizeCommunityEntries({
     raw: {
