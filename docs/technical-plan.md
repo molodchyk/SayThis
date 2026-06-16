@@ -48,6 +48,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Script-based Wikidata search languages for non-Latin selections.
 - Structured source aliases preserved for resolver results and correction prefill.
 - Wikidata native-label, native-name, official-name, birth-name, generic-name, short-name, and sitelink-title source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
+- Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym source-form scoring for proper nouns and research terms.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.

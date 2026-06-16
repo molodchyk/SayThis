@@ -118,6 +118,77 @@ test("uses native sitelink titles when name claims are sparse", () => {
   assert.ok(result.evidence.some((item) => item.includes("sitelink title")));
 });
 
+test("uses translated title claims as source-form candidates", () => {
+  const result = buildWikidataResult("Totoro", {
+    id: "Q3",
+    label: "My Neighbor Totoro",
+    language: "en",
+    description: "animated film"
+  }, {
+    id: "Q3",
+    labels: {
+      en: { language: "en", value: "My Neighbor Totoro" }
+    },
+    descriptions: {
+      en: { language: "en", value: "animated film" }
+    },
+    claims: {
+      P1476: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "ja", text: "となりのトトロ" }
+          }
+        }
+      }]
+    },
+    aliases: {}
+  });
+
+  assert.equal(result.sourceForm, "となりのトトロ");
+  assert.equal(result.language, "ja");
+  assert.equal(result.confidence, "medium");
+  assert.ok(result.evidence.some((item) => item.includes("title")));
+});
+
+test("uses taxon names as source-form candidates", () => {
+  const result = buildWikidataResult("yellow fever mosquito", {
+    id: "Q4",
+    label: "yellow fever mosquito",
+    language: "en",
+    description: "species of insect"
+  }, {
+    id: "Q4",
+    labels: {
+      en: { language: "en", value: "yellow fever mosquito" }
+    },
+    descriptions: {
+      en: { language: "en", value: "species of insect" }
+    },
+    claims: {
+      P225: [{
+        mainsnak: {
+          datavalue: {
+            value: "Aedes aegypti"
+          }
+        }
+      }],
+      P1843: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "en", text: "yellow fever mosquito" }
+          }
+        }
+      }]
+    },
+    aliases: {}
+  });
+
+  assert.equal(result.sourceForm, "Aedes aegypti");
+  assert.equal(result.language, "la");
+  assert.equal(result.languageName, "Latin");
+  assert.ok(result.evidence.some((item) => item.includes("taxon name")));
+});
+
 test("extracts pronunciation audio and IPA claims", () => {
   const result = buildWikidataResult("Example", {
     id: "Q1",

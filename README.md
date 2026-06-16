@@ -23,6 +23,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Alternate candidate display when structured sources disagree or a stronger source displaces another useful match.
 - Alias capture from structured sources and community corrections.
 - Wikidata name-variant aliases from labels, sitelink titles, and native, native-name, official, birth-name, generic-name, and short-name claims.
+- Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym claims as source-form and alias signals.
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, audio sources, and variant notes.

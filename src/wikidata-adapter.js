@@ -11,6 +11,11 @@ const OFFICIAL_NAME = "P1448";
 const SHORT_NAME = "P1813";
 const BIRTH_NAME = "P1477";
 const NAME = "P2561";
+const NICKNAME = "P1449";
+const TITLE = "P1476";
+const TAXON_NAME = "P225";
+const TAXON_COMMON_NAME = "P1843";
+const PSEUDONYM = "P742";
 const PRONUNCIATION_AUDIO = "P443";
 const IPA_TRANSCRIPTION = "P898";
 const SCRIPT_SEARCH_LANGUAGES = {
@@ -154,6 +159,11 @@ function chooseSourceCandidate(query, match, entity) {
     ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name"),
     ...monolingualClaimCandidates(entity, NAME, "name"),
     ...monolingualClaimCandidates(entity, SHORT_NAME, "short name"),
+    ...monolingualClaimCandidates(entity, NICKNAME, "nickname"),
+    ...monolingualClaimCandidates(entity, TITLE, "title"),
+    ...monolingualClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name"),
+    ...stringClaimCandidates(entity, TAXON_NAME, "taxon name", { language: "la" }),
+    ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym"),
     ...sitelinkCandidates(entity, "sitelink title"),
     ...labelCandidates(entity, "label")
   ].filter((candidate) => candidate.value);
@@ -238,6 +248,12 @@ function scoreCandidate(candidate, selectedScript) {
     score += 6;
   } else if (candidate.source === "birth name" || candidate.source === "name") {
     score += 5;
+  } else if (candidate.source === "title") {
+    score += 5;
+  } else if (candidate.source === "nickname" || candidate.source === "taxon common name") {
+    score += 4;
+  } else if (candidate.source === "taxon name" || candidate.source === "pseudonym") {
+    score += 3;
   } else if (candidate.source === "short name") {
     score += 3;
   } else if (candidate.source === "sitelink title") {
@@ -272,6 +288,10 @@ function confidenceForCandidate(query, candidate) {
     return "medium";
   }
 
+  if (["title", "nickname", "taxon common name"].includes(candidate.source) && candidate.language && candidate.language !== "en") {
+    return "medium";
+  }
+
   if (candidate.source === "sitelink title" && detectScript(candidate.value).script !== detectScript(query).script) {
     return "medium";
   }
@@ -287,6 +307,18 @@ function monolingualClaimCandidates(entity, propertyId, source) {
     .map((value) => ({
       value: value.text,
       language: value.language || "",
+      source
+    }));
+}
+
+function stringClaimCandidates(entity, propertyId, source, options = {}) {
+  const claims = entity.claims?.[propertyId] || [];
+  return claims
+    .map((claim) => claim?.mainsnak?.datavalue?.value)
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => ({
+      value: normalizeSelection(value),
+      language: options.language || "",
       source
     }));
 }
@@ -333,6 +365,11 @@ function wikidataAliases(entity, excludedValues = []) {
     ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name").map((candidate) => candidate.value),
     ...monolingualClaimCandidates(entity, NAME, "name").map((candidate) => candidate.value),
     ...monolingualClaimCandidates(entity, SHORT_NAME, "short name").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, NICKNAME, "nickname").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, TITLE, "title").map((candidate) => candidate.value),
+    ...monolingualClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name").map((candidate) => candidate.value),
+    ...stringClaimCandidates(entity, TAXON_NAME, "taxon name").map((candidate) => candidate.value),
+    ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym").map((candidate) => candidate.value),
     ...sitelinkCandidates(entity, "sitelink title").map((candidate) => candidate.value),
     ...Object.values(entity.labels || {}).map((label) => label.value)
   ];
