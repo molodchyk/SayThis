@@ -274,6 +274,47 @@ test("promotes remote results with verified audio", () => {
   assert.equal(getBestAudio(result).quality, "verified");
 });
 
+test("merges verified audio into a matching structured result", () => {
+  const structured = createRemoteStructuredResult("Chiaroscuro", {
+    id: "wiktionary:chiaroscuro",
+    display: "chiaroscuro",
+    sourceForm: "chiaroscuro",
+    language: "it",
+    category: "dictionary term",
+    origin: "Italian root",
+    pronunciation: { ipa: "/kja.roˈsku.ro/" },
+    evidence: ["IPA from Wiktionary"],
+    sources: [{ label: "Wiktionary", url: "https://en.wiktionary.org/wiki/chiaroscuro" }]
+  });
+  const audio = createRemoteStructuredResult("Chiaroscuro", {
+    id: "forvo:chiaroscuro",
+    display: "chiaroscuro",
+    sourceForm: "chiaroscuro",
+    language: "it",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/chiaroscuro.ogg",
+        label: "Pronunciation audio",
+        quality: "verified"
+      }]
+    },
+    evidence: ["Pronunciation audio from Forvo"],
+    sources: [{ label: "Forvo word page", url: "https://forvo.com/word/chiaroscuro/#it" }]
+  });
+  const merged = mergeRemoteResult(structured, audio);
+
+  assert.equal(merged.id, "wiktionary:chiaroscuro");
+  assert.equal(merged.sourceStatus, "verified-audio");
+  assert.equal(merged.confidence, "high");
+  assert.equal(merged.origin, "Italian root");
+  assert.equal(merged.pronunciation.ipa, "/kja.roˈsku.ro/");
+  assert.equal(merged.pronunciation.audio[0].url, "https://example.com/chiaroscuro.ogg");
+  assert.ok(merged.evidence.includes("IPA from Wiktionary"));
+  assert.ok(merged.evidence.includes("Pronunciation audio from Forvo"));
+  assert.ok(merged.sources.some((source) => source.label === "Forvo word page"));
+  assert.deepEqual(merged.alternateResults, []);
+});
+
 test("preserves useful displaced remote candidates", () => {
   const structured = createRemoteStructuredResult("Exampleterm", {
     id: "wikidata:exampleterm",

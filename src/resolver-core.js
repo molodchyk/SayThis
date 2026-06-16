@@ -159,6 +159,10 @@ export function mergeRemoteResult(localResult, remoteResult) {
     return withAlternateResults(remoteResult, [localResult]);
   }
 
+  if (shouldMergeAudioIntoResult(localResult, remoteResult)) {
+    return withAlternateResults(mergeAudioIntoResult(localResult, remoteResult), remoteResult.alternateResults || []);
+  }
+
   if (remoteRank > localRank) {
     return withAlternateResults(remoteResult, [localResult]);
   }
@@ -552,6 +556,126 @@ function communitySourceLinks(entry = {}) {
     entry.sourceUrl ? { label: "Community source", url: entry.sourceUrl } : null,
     entry.audioUrl ? { label: "Community audio source", url: entry.audioUrl } : null
   ].filter(Boolean);
+}
+
+function shouldMergeAudioIntoResult(primary, audioResult) {
+  return Boolean(
+    primary?.sourceStatus &&
+    !["unknown", "best-effort-fallback"].includes(primary.sourceStatus) &&
+    hasAudioResult(audioResult) &&
+    hasCompatibleLanguage(primary, audioResult) &&
+    sharesPronunciationTarget(primary, audioResult)
+  );
+}
+
+function mergeAudioIntoResult(primary, audioResult) {
+  const sourceStatus = "verified-audio";
+  const pronunciation = {
+    ipa: primary.pronunciation?.ipa || audioResult.pronunciation?.ipa || "",
+    simple: primary.pronunciation?.simple || audioResult.pronunciation?.simple || "",
+    audio: mergeAudioItems(primary.pronunciation?.audio, audioResult.pronunciation?.audio)
+  };
+
+  return normalizeResult({
+    ...primary,
+    pronunciation,
+    confidence: strongerConfidence(primary.confidence, audioResult.confidence),
+    sourceStatus,
+    sourceLabel: sourceLabelForStatus(sourceStatus),
+    evidence: mergeTextItems(primary.evidence, audioResult.evidence),
+    sources: mergeSourceItems(primary.sources, audioResult.sources)
+  });
+}
+
+function hasAudioResult(result = {}) {
+  return result.sourceStatus === "verified-audio" && Boolean(result.pronunciation?.audio?.some((item) => item?.url));
+}
+
+function hasCompatibleLanguage(primary = {}, candidate = {}) {
+  const primaryLanguage = baseLanguage(primary.language);
+  const candidateLanguage = baseLanguage(candidate.language);
+  return !primaryLanguage || !candidateLanguage || primaryLanguage === candidateLanguage;
+}
+
+function sharesPronunciationTarget(primary = {}, candidate = {}) {
+  const primaryKeys = new Set(pronunciationTargetKeys(primary));
+  return pronunciationTargetKeys(candidate).some((key) => primaryKeys.has(key));
+}
+
+function pronunciationTargetKeys(result = {}) {
+  return [
+    result.sourceForm,
+    result.display,
+    result.query,
+    ...(Array.isArray(result.aliases) ? result.aliases : [])
+  ]
+    .map(createLookupKey)
+    .filter(Boolean);
+}
+
+function baseLanguage(language) {
+  return normalizeLanguage(language).toLowerCase().split(/[-_]/)[0];
+}
+
+function strongerConfidence(left, right) {
+  return (CONFIDENCE_RANK[right] || 0) > (CONFIDENCE_RANK[left] || 0) ? right : left;
+}
+
+function mergeAudioItems(...groups) {
+  const seen = new Set();
+  const audio = [];
+
+  for (const item of groups.flatMap((group) => Array.isArray(group) ? group : [])) {
+    const url = normalizeLongValue(item?.url);
+    if (!url || seen.has(url)) {
+      continue;
+    }
+
+    seen.add(url);
+    audio.push(item);
+  }
+
+  return audio;
+}
+
+function mergeTextItems(...groups) {
+  const seen = new Set();
+  const items = [];
+
+  for (const value of groups.flatMap((group) => Array.isArray(group) ? group : [])) {
+    const item = normalizeSelection(value);
+    if (!item || seen.has(item)) {
+      continue;
+    }
+
+    seen.add(item);
+    items.push(item);
+  }
+
+  return items;
+}
+
+function mergeSourceItems(...groups) {
+  const seen = new Set();
+  const items = [];
+
+  for (const source of groups.flatMap((group) => Array.isArray(group) ? group : [])) {
+    const label = normalizeSelection(source?.label);
+    const url = normalizeLongValue(source?.url);
+    if (!label && !url) {
+      continue;
+    }
+
+    const key = [label, url].join("|");
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    items.push(source);
+  }
+
+  return items;
 }
 
 function withAlternateResults(primary, candidates = []) {

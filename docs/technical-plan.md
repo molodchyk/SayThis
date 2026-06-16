@@ -53,6 +53,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Source-form and alias-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
+- Matching verified audio is merged onto structured results so source context, IPA, and origin are preserved.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary and clearing.
 - Result card with source form, aliases, language, category, origin, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
