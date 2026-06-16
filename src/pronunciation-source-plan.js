@@ -7,20 +7,29 @@ export function pronunciationLookupCandidates(selection, result, options = {}) {
   const selectedText = normalizeSelection(selection);
   const configuredLanguage = normalizeLanguageHint(options.language || options.forvoLanguage);
   const primaryLanguage = normalizeLanguageHint(result?.language);
+  const includeResolvedLanguageFallback = Boolean(options.includeResolvedLanguageFallback);
   const candidates = [];
 
   addCandidate(candidates, result?.sourceForm, configuredLanguage || primaryLanguage);
+  addLanguageFallback(candidates, result?.sourceForm, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
   addCandidate(candidates, result?.display, configuredLanguage || primaryLanguage);
+  addLanguageFallback(candidates, result?.display, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
   addAliasCandidates(candidates, result?.aliases, configuredLanguage || primaryLanguage);
+  addAliasLanguageFallbacks(candidates, result?.aliases, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
 
   for (const alternate of Array.isArray(result?.alternateResults) ? result.alternateResults : []) {
-    const language = configuredLanguage || normalizeLanguageHint(alternate.language) || primaryLanguage;
+    const alternateLanguage = normalizeLanguageHint(alternate.language) || primaryLanguage;
+    const language = configuredLanguage || alternateLanguage;
     addCandidate(candidates, alternate.sourceForm, language);
+    addLanguageFallback(candidates, alternate.sourceForm, configuredLanguage, alternateLanguage, includeResolvedLanguageFallback);
     addCandidate(candidates, alternate.display, language);
+    addLanguageFallback(candidates, alternate.display, configuredLanguage, alternateLanguage, includeResolvedLanguageFallback);
     addAliasCandidates(candidates, alternate.aliases, language);
+    addAliasLanguageFallbacks(candidates, alternate.aliases, configuredLanguage, alternateLanguage, includeResolvedLanguageFallback);
   }
 
   addCandidate(candidates, selectedText, configuredLanguage || primaryLanguage);
+  addLanguageFallback(candidates, selectedText, configuredLanguage, primaryLanguage, includeResolvedLanguageFallback);
 
   return uniqueCandidates(candidates).slice(0, 5);
 }
@@ -53,6 +62,24 @@ function addAliasCandidates(candidates, aliases, language) {
 
   for (const alias of values) {
     addCandidate(candidates, alias, language);
+  }
+}
+
+function addLanguageFallback(candidates, word, configuredLanguage, resolvedLanguage, includeFallback) {
+  if (!includeFallback || !configuredLanguage || !resolvedLanguage || configuredLanguage === resolvedLanguage) {
+    return;
+  }
+
+  addCandidate(candidates, word, resolvedLanguage);
+}
+
+function addAliasLanguageFallbacks(candidates, aliases, configuredLanguage, resolvedLanguage, includeFallback) {
+  const values = Array.isArray(aliases)
+    ? aliases
+    : String(aliases || "").split(/[;,\n]/);
+
+  for (const alias of values) {
+    addLanguageFallback(candidates, alias, configuredLanguage, resolvedLanguage, includeFallback);
   }
 }
 

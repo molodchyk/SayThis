@@ -815,7 +815,8 @@ async function resolveWithForvoLookup(selectedText, lookupWord, apiKey, language
 async function resolveWithForvoCandidates(text, structuredResult, apiKey, settings = {}) {
   let result = null;
   for (const candidate of pronunciationLookupCandidates(text, structuredResult, {
-    language: settings.forvoLanguage
+    language: settings.forvoLanguage,
+    includeResolvedLanguageFallback: true
   })) {
     const forvoResult = await resolveSafely(resolveWithForvoLookup, text, candidate.word, apiKey, candidate.language);
     if (!forvoResult) {

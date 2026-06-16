@@ -100,6 +100,7 @@ test("background retries Wiktionary with resolved source forms", async () => {
   assert.match(source, /resolveWithWiktionaryCandidates/);
   assert.match(source, /refinedStructuredResult/);
   assert.match(source, /resolveWithForvoCandidates\(text, refinedStructuredResult/);
+  assert.match(source, /includeResolvedLanguageFallback: true/);
 });
 
 test("options page exposes shared-entry data controls", async () => {

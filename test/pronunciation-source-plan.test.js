@@ -111,6 +111,25 @@ test("uses configured pronunciation language over resolved hints", () => {
   }]);
 });
 
+test("can retry configured pronunciation language with resolved hints", () => {
+  const candidates = pronunciationLookupCandidates("gnocchi", {
+    display: "Gnocchi",
+    sourceForm: "gnocchi",
+    language: "it"
+  }, {
+    language: "en",
+    includeResolvedLanguageFallback: true
+  });
+
+  assert.deepEqual(candidates, [{
+    word: "gnocchi",
+    language: "en"
+  }, {
+    word: "gnocchi",
+    language: "it"
+  }]);
+});
+
 test("falls back to selected text when no structured result exists", () => {
   assert.deepEqual(pronunciationLookupCandidates("  chiaroscuro  ", null), [{
     word: "chiaroscuro",
