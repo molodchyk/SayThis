@@ -62,10 +62,12 @@ test("static extension module imports resolve inside the runtime package", async
 
 test("overlay exposes playback and feedback actions", async () => {
   const background = await readText("src/background.js");
+  const playbackSurface = await readText("src/background/playback-surface-flow.js");
   const styles = await readText("src/content/overlay-style.js");
   const source = await readText("src/content-overlay.js");
 
-  assert.match(background, /src\/content\/overlay-style\.js/);
+  assert.match(background, /createPlaybackSurface/);
+  assert.match(playbackSurface, /src\/content\/overlay-style\.js/);
   assert.match(styles, /__sayThisOverlayStyles/);
   assert.match(source, /__sayThisOverlayStyles/);
   for (const action of ["speak", "online", "slow", "correct", "confirm", "missing", "wrong"]) {
@@ -104,6 +106,7 @@ test("overlay exposes playback and feedback actions", async () => {
 
 test("background routes local and online keyboard commands", async () => {
   const source = await readText("src/background.js");
+  const playbackSurface = await readText("src/background/playback-surface-flow.js");
 
   assert.match(source, /resolveSelectionFlow\(text, options, \{/);
   assert.match(source, /handleContextMenuClick\(info, tab, \{/);
@@ -111,7 +114,11 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /handleActiveSelectionCommand\(\{/);
   assert.match(source, /activeSelectionDependencies\(\)/);
   assert.match(source, /handleRuntimeMessage\(message, sendResponse, runtimeMessageDependencies\(\)\)/);
-  assert.match(source, /playResolvedResultFlow\(result, tabId, \{/);
+  assert.match(source, /createPlaybackSurface\(\{/);
+  assert.match(source, /playbackSurface\.playResolvedResult\(result, tabId\)/);
+  assert.match(playbackSurface, /playResolvedResultFlow\(result, tabId, \{/);
+  assert.match(playbackSurface, /createOffscreenPlayAudioMessage/);
+  assert.match(playbackSurface, /createShowResultMessage/);
   assert.match(source, /command === "pronounce-selection"/);
   assert.match(source, /command === "pronounce-selection-online"/);
   assert.match(source, /source: "keyboard-online"/);

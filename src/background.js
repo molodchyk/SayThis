@@ -1,20 +1,10 @@
 import {
-  getBestAudio,
-  normalizeSelection,
-  resultToSpeechOptions
+  normalizeSelection
 } from "./resolver-core.js";
 import {
   contextMenuDefinitions,
   resolveOptionsForMenuId
 } from "./extension-actions.js";
-import {
-  createOffscreenPlayAudioMessage,
-  createOffscreenStopAudioMessage,
-  createShowResultMessage
-} from "./message-contracts.js";
-import {
-  normalizeSettings
-} from "./shared/settings.js";
 import {
   handleContextMenuClick
 } from "./background/context-menu-flow.js";
@@ -25,10 +15,6 @@ import {
   handleRuntimeMessage
 } from "./background/runtime-message-flow.js";
 import {
-  playAudioOffscreen as playAudioOffscreenFlow,
-  playResolvedResult as playResolvedResultFlow
-} from "./background/result-playback-flow.js";
-import {
   resolveSelection as resolveSelectionFlow
 } from "./background/selection-resolver-flow.js";
 import {
@@ -36,6 +22,9 @@ import {
   pullApprovedCommunityEntries as pullApprovedCommunityEntriesFlow,
   saveFeedback as saveFeedbackFlow
 } from "./background/community-feedback-flow.js";
+import {
+  createPlaybackSurface
+} from "./background/playback-surface-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -52,7 +41,25 @@ const STORAGE_KEYS = {
   settings: "settings"
 };
 let seedPromise;
-let offscreenCreatePromise;
+const playbackSurface = createPlaybackSurface({
+  offscreenAudioUrl: OFFSCREEN_AUDIO_URL,
+  getStorage: (keys) => chrome.storage.local.get(keys),
+  stopTts: () => chrome.tts.stop(),
+  speakTts: (text, options) => chrome.tts.speak(text, options),
+  hasOffscreenAudioSupport: () => Boolean(chrome.offscreen),
+  hasOffscreenDocument: typeof chrome.offscreen?.hasDocument === "function"
+    ? () => chrome.offscreen.hasDocument()
+    : null,
+  createOffscreenDocument: (options) => chrome.offscreen.createDocument(options),
+  sendRuntimeMessage: (message) => chrome.runtime.sendMessage(message),
+  executeScript: (details) => chrome.scripting.executeScript(details),
+  sendTabMessage: (tabId, message) => chrome.tabs.sendMessage(tabId, message),
+  getRuntimeUrl: (url) => chrome.runtime.getURL(url),
+  matchClients: () => typeof clients !== "undefined" && typeof clients.matchAll === "function"
+    ? clients.matchAll()
+    : [],
+  storageKeys: STORAGE_KEYS
+});
 
 chrome.runtime.onInstalled.addListener(() => {
   for (const item of contextMenuDefinitions()) {
@@ -135,21 +142,11 @@ async function loadSeedData() {
 }
 
 function speakResult(result, overrides = {}) {
-  const speech = resultToSpeechOptions(result, overrides);
-  if (!speech.text) {
-    return;
-  }
-
-  chrome.tts.stop();
-  chrome.tts.speak(speech.text, speech.options);
+  return playbackSurface.speakResult(result, overrides);
 }
 
 function speakFallback(text) {
-  chrome.tts.stop();
-  chrome.tts.speak(text, {
-    enqueue: false,
-    rate: 0.82
-  });
+  return playbackSurface.speakFallback(text);
 }
 
 async function readSelectionFromTab(tabId) {
@@ -182,101 +179,11 @@ function activeSelectionDependencies() {
 }
 
 async function playResolvedResult(result, tabId) {
-  return playResolvedResultFlow(result, tabId, {
-    getBestAudio,
-    showResultOnTab,
-    playAudioOffscreen,
-    speakResult
-  });
-}
-
-async function playAudioOffscreen(result, rate = 0.82) {
-  return playAudioOffscreenFlow(result, {
-    getBestAudio,
-    hasOffscreenAudioSupport: () => Boolean(chrome.offscreen),
-    ensureOffscreenAudioDocument,
-    sendOffscreenPlayAudioMessage: (audio, playbackRate) =>
-      chrome.runtime.sendMessage(createOffscreenPlayAudioMessage(audio, playbackRate))
-  }, rate);
-}
-
-async function stopOffscreenAudio() {
-  if (!chrome.offscreen) {
-    return;
-  }
-
-  try {
-    await chrome.runtime.sendMessage(createOffscreenStopAudioMessage());
-  } catch {
-    // The offscreen document may not exist yet.
-  }
+  return playbackSurface.playResolvedResult(result, tabId);
 }
 
 async function stopPlayback() {
-  chrome.tts.stop();
-  await stopOffscreenAudio();
-}
-
-async function ensureOffscreenAudioDocument() {
-  if (await hasOffscreenAudioDocument()) {
-    return;
-  }
-
-  if (!offscreenCreatePromise) {
-    offscreenCreatePromise = chrome.offscreen.createDocument({
-      url: OFFSCREEN_AUDIO_URL,
-      reasons: ["AUDIO_PLAYBACK"],
-      justification: "Play pronunciation audio when a page overlay is unavailable."
-    }).finally(() => {
-      offscreenCreatePromise = null;
-    });
-  }
-
-  await offscreenCreatePromise;
-}
-
-async function hasOffscreenAudioDocument() {
-  if (typeof chrome.offscreen.hasDocument === "function") {
-    return chrome.offscreen.hasDocument();
-  }
-
-  if (typeof clients === "undefined" || typeof clients.matchAll !== "function") {
-    return false;
-  }
-
-  const offscreenUrl = chrome.runtime.getURL(OFFSCREEN_AUDIO_URL);
-  const matchedClients = await clients.matchAll();
-  return matchedClients.some((client) => client.url === offscreenUrl);
-}
-
-async function showResultOnTab(tabId, result, options = {}) {
-  if (!tabId || !result) {
-    return false;
-  }
-
-  try {
-    const settings = await getSettings();
-    if (!settings.showOverlay) {
-      return false;
-    }
-
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ["src/content/overlay-style.js", "src/content-overlay.js"]
-    });
-    await chrome.tabs.sendMessage(tabId, createShowResultMessage(result, {
-      autoPlay: Boolean(options.autoPlay)
-    }));
-    return true;
-  } catch {
-    // Some pages do not allow extension script injection.
-    return false;
-  }
-}
-
-async function getSettings() {
-  const stored = await chrome.storage.local.get([STORAGE_KEYS.settings]);
-  return normalizeSettings(stored[STORAGE_KEYS.settings]);
+  return playbackSurface.stopPlayback();
 }
 
 function runtimeMessageDependencies() {

@@ -1,0 +1,137 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  MESSAGE_TYPES
+} from "../../src/message-contracts.js";
+import {
+  createPlaybackSurface
+} from "../../src/background/playback-surface-flow.js";
+
+const AUDIO_RESULT = {
+  display: "Gnocchi",
+  sourceForm: "gnocchi",
+  ttsLang: "it-IT",
+  pronunciation: {
+    audio: [{ url: "https://example.test/gnocchi.ogg" }]
+  }
+};
+
+test("speaks resolved results and fallback text through TTS adapters", () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  surface.speakResult(AUDIO_RESULT, { rate: 0.7 });
+  surface.speakFallback("Gnocchi");
+
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "gnocchi", { enqueue: false, rate: 0.7, lang: "it-IT" }],
+    ["stopTts"],
+    ["speakTts", "Gnocchi", { enqueue: false, rate: 0.82 }]
+  ]);
+});
+
+test("injects the overlay and sends result messages when enabled", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getStorage: async () => ({
+      settings: { showOverlay: true }
+    }),
+    executeScript: async (details) => calls.push(["executeScript", details]),
+    sendTabMessage: async (tabId, message) => calls.push(["sendTabMessage", tabId, message])
+  });
+
+  const shown = await surface.showResultOnTab(7, AUDIO_RESULT, { autoPlay: true });
+
+  assert.equal(shown, true);
+  assert.deepEqual(calls[0], ["executeScript", {
+    target: { tabId: 7 },
+    files: ["src/content/overlay-style.js", "src/content-overlay.js"]
+  }]);
+  assert.equal(calls[1][0], "sendTabMessage");
+  assert.equal(calls[1][1], 7);
+  assert.equal(calls[1][2].type, MESSAGE_TYPES.showResult);
+  assert.equal(calls[1][2].autoPlay, true);
+  assert.equal(calls[1][2].result.display, "Gnocchi");
+});
+
+test("does not inject the overlay when disabled or target data is missing", async () => {
+  const surface = createPlaybackSurface({
+    getStorage: async () => ({
+      settings: { showOverlay: false }
+    }),
+    executeScript: async () => {
+      throw new Error("should not inject");
+    }
+  });
+
+  assert.equal(await surface.showResultOnTab(7, AUDIO_RESULT), false);
+  assert.equal(await surface.showResultOnTab(0, AUDIO_RESULT), false);
+  assert.equal(await surface.showResultOnTab(7, null), false);
+});
+
+test("plays verified audio through the offscreen document", async () => {
+  const calls = [];
+  let hasDocument = false;
+  const surface = createPlaybackSurface({
+    hasOffscreenAudioSupport: () => true,
+    hasOffscreenDocument: () => hasDocument,
+    createOffscreenDocument: async (options) => {
+      calls.push(["createOffscreenDocument", options]);
+      hasDocument = true;
+    },
+    sendRuntimeMessage: async (message) => {
+      calls.push(["sendRuntimeMessage", message]);
+      return { ok: true };
+    }
+  });
+
+  assert.equal(await surface.playAudioOffscreen(AUDIO_RESULT, 0.5), true);
+  await surface.ensureOffscreenAudioDocument();
+
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], ["createOffscreenDocument", {
+    url: "src/offscreen-audio.html",
+    reasons: ["AUDIO_PLAYBACK"],
+    justification: "Play pronunciation audio when a page overlay is unavailable."
+  }]);
+  assert.equal(calls[1][0], "sendRuntimeMessage");
+  assert.equal(calls[1][1].type, MESSAGE_TYPES.offscreenPlayAudio);
+  assert.equal(calls[1][1].audio.url, "https://example.test/gnocchi.ogg");
+  assert.equal(calls[1][1].playbackRate, 0.75);
+});
+
+test("can detect an offscreen document through matched clients", async () => {
+  const surface = createPlaybackSurface({
+    offscreenAudioUrl: "src/offscreen-audio.html",
+    getRuntimeUrl: (url) => `chrome-extension://saythis/${url}`,
+    matchClients: async () => [
+      { url: "https://example.test/page" },
+      { url: "chrome-extension://saythis/src/offscreen-audio.html" }
+    ]
+  });
+
+  assert.equal(await surface.hasOffscreenAudioDocument(), true);
+});
+
+test("stops TTS and offscreen audio, ignoring missing offscreen documents", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    hasOffscreenAudioSupport: () => true,
+    stopTts: () => calls.push(["stopTts"]),
+    sendRuntimeMessage: async (message) => {
+      calls.push(["sendRuntimeMessage", message]);
+      throw new Error("missing offscreen document");
+    }
+  });
+
+  await surface.stopPlayback();
+
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["sendRuntimeMessage", { type: MESSAGE_TYPES.offscreenStopAudio }]
+  ]);
+});
