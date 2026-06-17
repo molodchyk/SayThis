@@ -45,6 +45,9 @@ import {
 import {
   handleContextMenuClick
 } from "./background/context-menu-flow.js";
+import {
+  handleActiveSelectionCommand
+} from "./background/active-selection-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -83,16 +86,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 chrome.commands.onCommand.addListener((command) => {
   if (command === "pronounce-selection") {
-    pronounceActiveSelection({
+    handleActiveSelectionCommand({
       source: "keyboard"
-    });
+    }, activeSelectionDependencies());
   }
 
   if (command === "pronounce-selection-online") {
-    pronounceActiveSelection({
+    handleActiveSelectionCommand({
       source: "keyboard-online",
       useOnline: true
-    });
+    }, activeSelectionDependencies());
   }
 });
 
@@ -397,28 +400,6 @@ function speakFallback(text) {
   });
 }
 
-async function pronounceActiveSelection(options = {}) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) {
-    return;
-  }
-
-  const selectedText = await readSelectionFromTab(tab.id);
-  if (!selectedText) {
-    return;
-  }
-
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.lastSelection]: selectedText,
-    [STORAGE_KEYS.lastSource]: options.source || "keyboard"
-  });
-
-  const result = await resolveSelection(selectedText, {
-    useOnline: options.useOnline
-  });
-  await playResolvedResult(result, tab.id);
-}
-
 async function readSelectionFromTab(tabId) {
   try {
     const [result] = await chrome.scripting.executeScript({
@@ -430,6 +411,22 @@ async function readSelectionFromTab(tabId) {
   } catch {
     return "";
   }
+}
+
+function activeSelectionDependencies() {
+  return {
+    getActiveTab: async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      return tab;
+    },
+    readSelectionFromTab,
+    setStorage: (value) => chrome.storage.local.set(value),
+    resolveSelection,
+    playResolvedResult,
+    speakFallback,
+    lastSelectionKey: STORAGE_KEYS.lastSelection,
+    lastSourceKey: STORAGE_KEYS.lastSource
+  };
 }
 
 async function playResolvedResult(result, tabId) {

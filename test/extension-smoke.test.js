@@ -107,6 +107,8 @@ test("background routes local and online keyboard commands", async () => {
 
   assert.match(source, /handleContextMenuClick\(info, tab, \{/);
   assert.match(source, /lastResultKey: STORAGE_KEYS\.lastResult/);
+  assert.match(source, /handleActiveSelectionCommand\(\{/);
+  assert.match(source, /activeSelectionDependencies\(\)/);
   assert.match(source, /command === "pronounce-selection"/);
   assert.match(source, /command === "pronounce-selection-online"/);
   assert.match(source, /source: "keyboard-online"/);
