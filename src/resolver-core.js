@@ -215,7 +215,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     aliases: normalizeAliases(entry.aliases),
     trustSignals: normalizeTrustSignals(entry.trustSignals),
     sourceForm,
-    speakText: sourceForm || query,
+    speakText: communitySpeakText(entry, sourceForm, query),
     script: detectScript(sourceForm || query).script,
     queryScript: scriptInfo.script,
     language,
@@ -237,6 +237,12 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     notes: entry.variantNote || "",
     community: communitySummary(entry)
   });
+}
+
+function communitySpeakText(entry = {}, sourceForm, query) {
+  return entry.audioUrl
+    ? sourceForm || query
+    : normalizeSelection(entry.simple || sourceForm || query);
 }
 
 function createFallbackResult(query, lookupKey, scriptInfo) {

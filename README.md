@@ -42,6 +42,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, roots, audio sources, and variant notes.
 - Missing-entry requests can carry candidate source forms, aliases, roots, guides, and source links for later moderation.
 - Variant-only local corrections are surfaced on later lookup results.
+- Guide-only local corrections can drive fallback speech when no community audio source is present.
 - Local community memory preserves and derives trust signals from confirmations, corrections, source links, audio links, and variant notes.
 - Result and correction views accept root and variant-note metadata from cached and shared result payloads.
 - Correction audio and source links are normalized before local storage or shared submission.

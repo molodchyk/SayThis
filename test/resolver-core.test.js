@@ -210,6 +210,7 @@ test("uses local community correction before fallback", () => {
   assert.ok(result.sources.some((source) => source.url === "https://example.com/exampleterm"));
   assert.deepEqual(result.trustSignals, ["local-correction", "source-backed", "root-noted", "local-confirmed"]);
   assert.equal(result.community.confirmations, 1);
+  assert.equal(resultToSpeechOptions(result).text, "eg-ZAM-pluh-term");
 
   const aliasResult = resolveTerm("Sampleterm", {
     entries: [],
@@ -217,6 +218,23 @@ test("uses local community correction before fallback", () => {
   });
   assert.equal(aliasResult.id, "community:sampleterm");
   assert.equal(aliasResult.sourceForm, "Exampleterm");
+});
+
+test("keeps community audio corrections on source-form fallback speech", () => {
+  const entries = updateCommunityEntries({}, "Exampleterm", {
+    kind: "correction",
+    sourceForm: "Exampleterm",
+    simple: "eg-ZAM-pluh-term",
+    audioUrl: "https://example.com/exampleterm.ogg"
+  });
+  const result = resolveTerm("Exampleterm", {
+    entries: [],
+    communityEntries: entries
+  });
+
+  assert.equal(result.pronunciation.simple, "eg-ZAM-pluh-term");
+  assert.equal(result.pronunciation.audio[0].url, "https://example.com/exampleterm.ogg");
+  assert.equal(resultToSpeechOptions(result).text, "Exampleterm");
 });
 
 test("uses variant-only local community corrections", () => {
