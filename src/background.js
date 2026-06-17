@@ -2,19 +2,11 @@ import {
   applyCommunitySummary,
   createLookupKey,
   getBestAudio,
-  mapResultAudioUrls,
-  mergeRemoteResult,
   normalizeSelection,
   resultToSpeechOptions,
-  resolveTerm,
   hasCommunityPronunciationData,
   updateCommunityEntries
 } from "./resolver-core.js";
-import {
-  isCacheableResult,
-  readCachedResult,
-  upsertCachedResult
-} from "./result-cache.js";
 import {
   contextMenuDefinitions,
   resolveOptionsForMenuId
@@ -33,14 +25,8 @@ import {
   syncSummary
 } from "./community-sync.js";
 import {
-  normalizeCredentials,
-  normalizeLanguageHints,
-  normalizeSettings,
-  onlineCacheScope
+  normalizeSettings
 } from "./shared/settings.js";
-import {
-  resolveWithOnlineSources
-} from "./background/online-sources.js";
 import {
   handleContextMenuClick
 } from "./background/context-menu-flow.js";
@@ -54,6 +40,9 @@ import {
   playAudioOffscreen as playAudioOffscreenFlow,
   playResolvedResult as playResolvedResultFlow
 } from "./background/result-playback-flow.js";
+import {
+  resolveSelection as resolveSelectionFlow
+} from "./background/selection-resolver-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -109,67 +98,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) =>
   handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
 
 async function resolveSelection(text, options = {}) {
-  const selectedText = normalizeSelection(text);
-  const data = await loadSeedData();
-  const stored = await chrome.storage.local.get([
-    STORAGE_KEYS.approvedCommunityEntries,
-    STORAGE_KEYS.communityEntries,
-    STORAGE_KEYS.credentials,
-    STORAGE_KEYS.resultCache,
-    STORAGE_KEYS.settings
-  ]);
-  const communityEntries = {
-    ...(stored[STORAGE_KEYS.approvedCommunityEntries] || {}),
-    ...(stored[STORAGE_KEYS.communityEntries] || {})
-  };
-  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
-  const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
-  const hasRequestHints = normalizeLanguageHints(options.languageHints).length > 0;
-  const onlineSettings = onlineSettingsForRequest(settings, options);
-  const localResult = resolveTerm(selectedText, {
-    entries: data.entries,
-    communityEntries
+  return resolveSelectionFlow(text, options, {
+    getStorage: (keys) => chrome.storage.local.get(keys),
+    setStorage: (value) => chrome.storage.local.set(value),
+    loadSeedData,
+    getRuntimeUrl: (url) => chrome.runtime.getURL(url),
+    storageKeys: STORAGE_KEYS
   });
-
-  let result = localResult;
-  const shouldUseOnline = options.useOnline ?? (hasRequestHints || onlineSettings.onlineByDefault);
-  let resultCache = stored[STORAGE_KEYS.resultCache];
-  if (shouldUseOnline) {
-    const cacheOptions = { cacheScope: onlineCacheScope(onlineSettings, credentials) };
-    const cached = readCachedResult(resultCache, selectedText, cacheOptions);
-    resultCache = cached.cache;
-
-    try {
-      const remoteResult = cached.hit
-        ? cached.result
-        : await resolveWithOnlineSources(selectedText, onlineSettings, credentials, {
-          localResult
-        });
-      if (!cached.hit && isCacheableResult(remoteResult)) {
-        resultCache = upsertCachedResult(resultCache, selectedText, remoteResult, cacheOptions);
-      }
-      result = mergeRemoteResult(localResult, remoteResult);
-    } catch {
-      result = {
-        ...localResult,
-        evidence: [...(localResult.evidence || []), "Online lookup unavailable"]
-      };
-    }
-  }
-
-  result = mapResultAudioUrls(result, (url) => chrome.runtime.getURL(url));
-
-  const updates = {
-    [STORAGE_KEYS.lastSelection]: selectedText,
-    [STORAGE_KEYS.lastResult]: result
-  };
-  if (shouldUseOnline) {
-    updates[STORAGE_KEYS.resultCache] = resultCache;
-  }
-
-  await chrome.storage.local.set(updates);
-
-  return result;
 }
 
 async function saveFeedback(text, feedback) {
@@ -452,21 +387,6 @@ async function showResultOnTab(tabId, result, options = {}) {
 async function getSettings() {
   const stored = await chrome.storage.local.get([STORAGE_KEYS.settings]);
   return normalizeSettings(stored[STORAGE_KEYS.settings]);
-}
-
-function onlineSettingsForRequest(settings, options = {}) {
-  const requestHints = normalizeLanguageHints(options.languageHints);
-  if (!requestHints.length) {
-    return settings;
-  }
-
-  return {
-    ...settings,
-    lookupLanguageHints: normalizeLanguageHints([
-      ...settings.lookupLanguageHints,
-      ...requestHints
-    ])
-  };
 }
 
 function runtimeMessageDependencies() {

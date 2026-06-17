@@ -105,6 +105,7 @@ test("overlay exposes playback and feedback actions", async () => {
 test("background routes local and online keyboard commands", async () => {
   const source = await readText("src/background.js");
 
+  assert.match(source, /resolveSelectionFlow\(text, options, \{/);
   assert.match(source, /handleContextMenuClick\(info, tab, \{/);
   assert.match(source, /lastResultKey: STORAGE_KEYS\.lastResult/);
   assert.match(source, /handleActiveSelectionCommand\(\{/);
@@ -119,9 +120,11 @@ test("background routes local and online keyboard commands", async () => {
 
 test("online source resolver retries Wiktionary with resolved source forms", async () => {
   const background = await readText("src/background.js");
+  const selectionResolver = await readText("src/background/selection-resolver-flow.js");
   const source = await readText("src/background/online-sources.js");
 
-  assert.match(background, /resolveWithOnlineSources/);
+  assert.match(background, /resolveSelectionFlow/);
+  assert.match(selectionResolver, /resolveWithOnlineSources/);
   assert.match(source, /additionalPronunciationLookupCandidates/);
   assert.match(source, /resolveWithNominatimCandidates/);
   assert.match(source, /resolveWithDbpediaCandidates/);
@@ -377,7 +380,7 @@ test("popup quick feedback labels match their feedback kinds", async () => {
 });
 
 test("background includes per-lookup hints in online settings", async () => {
-  const source = await readText("src/background.js");
+  const source = await readText("src/background/selection-resolver-flow.js");
 
   assert.match(source, /normalizeLanguageHints/);
   assert.match(source, /const hasRequestHints = normalizeLanguageHints\(options\.languageHints\)\.length > 0/);
