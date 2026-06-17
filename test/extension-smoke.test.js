@@ -65,16 +65,20 @@ test("overlay exposes playback and feedback actions", async () => {
   const playbackSurface = await readText("src/background/playback-surface-flow.js");
   const styles = await readText("src/content/overlay-style.js");
   const runtimeAdapters = await readText("src/content/overlay-runtime-adapters.js");
+  const resultView = await readText("src/content/overlay-result-view.js");
   const source = await readText("src/content-overlay.js");
 
   assert.match(background, /createPlaybackSurface/);
   assert.match(playbackSurface, /src\/content\/overlay-style\.js/);
   assert.match(playbackSurface, /src\/content\/overlay-runtime-adapters\.js/);
+  assert.match(playbackSurface, /src\/content\/overlay-result-view\.js/);
   assert.match(styles, /__sayThisOverlayStyles/);
   assert.match(runtimeAdapters, /__sayThisOverlayRuntimeAdapters/);
   assert.match(runtimeAdapters, /SAYTHIS_SHOW_RESULT/);
+  assert.match(resultView, /__sayThisOverlayResultView/);
   assert.match(source, /__sayThisOverlayStyles/);
   assert.match(source, /__sayThisOverlayRuntimeAdapters/);
+  assert.match(source, /__sayThisOverlayResultView/);
   for (const action of ["speak", "online", "slow", "correct", "confirm", "missing", "wrong"]) {
     assert.match(source, new RegExp(`data-action="${action}"`));
   }
@@ -95,7 +99,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /data-lookup-hints/);
   assert.match(source, /languageHints/);
   assert.match(source, /lookupHints\(\)/);
-  assert.match(source, /normalizeLanguageHints/);
+  assert.match(resultView, /normalizeLanguageHints/);
   assert.match(source, /speakCandidate\(result\.alternateResults\?\.\[index\], 0\.82\)/);
   assert.match(source, /playAudioItem\(recordings\[index\], result, 0\.82\)/);
 

@@ -140,7 +140,7 @@ export function createPlaybackSurface(dependencies = {}) {
 
       await dependencies.executeScript?.({
         target: { tabId },
-        files: ["src/content/overlay-style.js", "src/content/overlay-runtime-adapters.js", "src/content-overlay.js"]
+        files: ["src/content/overlay-style.js", "src/content/overlay-runtime-adapters.js", "src/content/overlay-result-view.js", "src/content-overlay.js"]
       });
       await dependencies.sendTabMessage?.(tabId, createShowResultMessage(result, {
         autoPlay: Boolean(options.autoPlay)

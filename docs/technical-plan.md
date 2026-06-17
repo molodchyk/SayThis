@@ -43,6 +43,7 @@ Chrome Manifest V3 components:
 - `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.
 - `content/overlay-style.js`: owns the classic-script style payload injected before the on-page card.
 - `content/overlay-runtime-adapters.js`: owns classic content-script runtime message listener and send-message wrappers for the on-page card.
+- `content/overlay-result-view.js`: owns classic content-script result formatting, URL filtering, HTML escaping, lookup-hint parsing, and correction-field markup helpers.
 - `offscreen-audio.html/js`: wires the offscreen audio runtime modules for service-worker playback messages.
 - `offscreen/audio-playback-flow.js`: owns offscreen `Audio` element lifecycle and playback-rate bounds.
 - `offscreen/runtime-message-flow.js`: owns offscreen play/stop message routing and response shaping.
@@ -140,6 +141,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Result card with source form, aliases, language, category, origin, root, domain hint, variants, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - On-page overlay styles are split into a companion injected content script, keeping the overlay controller below the file-size soft limit.
 - On-page overlay runtime messaging is split into a companion injected content script with deterministic listener and message tests.
+- On-page overlay result formatting is split into a companion injected content script with deterministic formatting and escaping tests.
 - Alternate candidate summaries preserve speech-locale hints and can be spoken directly from popup or on-page result cards.
 - Local confirmation, wrong-result, missing-term, correction, aliases, root, domain-hint, audio-source, source-link, variant-note storage, and import/export normalization.
 - Missing-entry requests can carry candidate source forms, aliases, roots, domain hints, guides, and source links without promoting them to local pronunciation answers.
