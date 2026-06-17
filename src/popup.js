@@ -16,6 +16,12 @@ import {
   createSpeakMessage,
   createStopMessage
 } from "./message-contracts.js";
+import {
+  lookupHintsFromValue,
+  readActiveTabSelection,
+  readPopupSettings,
+  sendRuntimeMessage
+} from "./popup/runtime-adapters.js";
 
 const selectionInput = document.getElementById("selection");
 const lookupHintsInput = document.getElementById("lookup-hints");
@@ -60,10 +66,6 @@ const correctionVariants = document.getElementById("correction-variants");
 const correctionAudio = document.getElementById("correction-audio");
 const correctionSourceUrl = document.getElementById("correction-source-url");
 const correctionVariant = document.getElementById("correction-variant");
-
-const DEFAULT_POPUP_SETTINGS = {
-  autoSpeakPopup: true
-};
 
 let currentResult = null;
 let audioPlayer = null;
@@ -135,7 +137,7 @@ async function speakSelection(rate) {
 }
 
 async function init() {
-  const activeSelection = await readActiveTabSelection();
+  const activeSelection = await readActiveTabSelection(popupRuntimeAdapters());
 
   if (activeSelection) {
     selectionInput.value = activeSelection;
@@ -144,7 +146,7 @@ async function init() {
       lastSource: "active-tab"
     });
     const result = await resolveSelection();
-    const settings = await readPopupSettings();
+    const settings = await readPopupSettings(popupRuntimeAdapters());
     if (settings.autoSpeakPopup && result) {
       await speakSelection(0.82);
     }
@@ -159,15 +161,6 @@ async function init() {
   }
 
   updateButtonState();
-}
-
-async function readPopupSettings() {
-  const stored = await chrome.storage.local.get(["settings"]);
-  return {
-    ...DEFAULT_POPUP_SETTINGS,
-    ...(stored.settings || {}),
-    autoSpeakPopup: stored.settings?.autoSpeakPopup !== false
-  };
 }
 
 async function resolveSelection(useOnline) {
@@ -194,24 +187,6 @@ async function resolveSelection(useOnline) {
   renderResult(currentResult);
   setStatus("Ready.");
   return currentResult;
-}
-
-async function readActiveTabSelection() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) {
-      return "";
-    }
-
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => window.getSelection()?.toString() || ""
-    });
-
-    return normalizeSelection(result?.result);
-  } catch {
-    return "";
-  }
 }
 
 async function saveFeedback(feedback) {
@@ -435,16 +410,7 @@ function stopAudio() {
 }
 
 function sendMessage(message) {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(message, (response) => {
-      if (chrome.runtime.lastError) {
-        resolve({ ok: false, error: chrome.runtime.lastError.message });
-        return;
-      }
-
-      resolve(response || { ok: false, error: "No response." });
-    });
-  });
+  return sendRuntimeMessage(message, popupRuntimeAdapters());
 }
 
 function setStatus(value) {
@@ -452,11 +418,7 @@ function setStatus(value) {
 }
 
 function lookupHints() {
-  return lookupHintsInput.value
-    .split(/[\s,;]+/)
-    .map((value) => value.trim().toLowerCase().replace(/_/g, "-").split("-")[0])
-    .filter((value, index, values) => /^[a-z]{2,3}$/.test(value) && values.indexOf(value) === index)
-    .slice(0, 8);
+  return lookupHintsFromValue(lookupHintsInput.value);
 }
 
 function updateButtonState() {
@@ -465,4 +427,14 @@ function updateButtonState() {
   onlineButton.disabled = !hasText;
   speakButton.disabled = !hasText;
   slowButton.disabled = !hasText;
+}
+
+function popupRuntimeAdapters() {
+  return {
+    getStorage: (keys) => chrome.storage.local.get(keys),
+    queryTabs: (query) => chrome.tabs.query(query),
+    executeScript: (details) => chrome.scripting.executeScript(details),
+    sendMessage: (message, callback) => chrome.runtime.sendMessage(message, callback),
+    lastError: () => chrome.runtime.lastError
+  };
 }

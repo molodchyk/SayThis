@@ -35,6 +35,7 @@ Chrome Manifest V3 components:
 - `custom-source-adapter.js`: extracts domain-specific pronunciation entries from a configured structured JSON endpoint.
 - `pronunciation-source-plan.js`: orders pronunciation-audio lookup candidates from resolved source forms, aliases, alternates, and raw selected text.
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
+- `popup/runtime-adapters.js`: owns popup active-tab selection reads, settings reads, runtime-message responses, and lookup-hint normalization.
 - `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
 - `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.
@@ -70,6 +71,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Selection resolution has a narrow background module with tests for local lookup, online cache hits, remote cache writes, and online fallback evidence.
 - Community feedback and sync handling has a narrow background module with tests for local memory, queue updates, sync flush, approved-entry refresh, and HTTP wrappers.
 - Popup active-selection flow can auto-speak after resolving, with a user setting to disable it.
+- Popup runtime adapters have deterministic tests for active-tab selection, settings reads, runtime-message errors, and lookup hints.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
 - Shared settings and credential normalization for the background worker and options page.
 - Static smoke tests for popup/options DOM bindings, manifest-linked files, extension page scripts, and runtime import resolution.
