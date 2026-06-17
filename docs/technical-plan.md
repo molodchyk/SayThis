@@ -112,6 +112,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local confirmation, wrong-result, missing-term, correction, aliases, root, audio-source, source-link, variant-note storage, and import/export normalization.
 - Missing-entry requests can carry candidate source forms, aliases, roots, guides, and source links without promoting them to local pronunciation answers.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
+- Remote structured results can preserve bounded variant lists for result evidence and cache storage.
 - Guide-only local corrections can drive fallback speech when no community audio source is present.
 - Local community entries preserve and derive trust signals from local actions and source evidence.
 - Remote structured results derive bounded trust signals from source, audio, and root evidence.

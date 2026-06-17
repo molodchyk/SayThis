@@ -44,10 +44,12 @@ test("builds evidence items with wrong-result flag context", () => {
 
 test("builds evidence items with variant note aliases", () => {
   const items = evidenceItemsForResult({
+    variants: ["Studio pronunciation", "Studio pronunciation"],
     variantNote: "Regional pronunciation variant"
   });
 
   assert.deepEqual(items, [
+    "Variant: Studio pronunciation",
     "Regional pronunciation variant"
   ]);
 });

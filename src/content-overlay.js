@@ -29,6 +29,7 @@
       ...trustSignalItems(result.trustSignals),
       ...(result.evidence || []),
       result.root ? `Root: ${result.root}` : "",
+      ...variantItems(result.variants),
       result.notes || result.variantNote || ""
     ].filter(Boolean).slice(0, 2);
     const sources = sourceItems(result).slice(0, 2);
@@ -428,6 +429,11 @@
   function trustSignalItems(value) {
     return normalizeTrustSignals(value)
       .map((item) => `Trust: ${item}`);
+  }
+
+  function variantItems(value) {
+    return normalizeTrustSignals(value)
+      .map((item) => `Variant: ${item}`);
   }
 
   function alternateItems(result) {

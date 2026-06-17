@@ -75,6 +75,7 @@ Or multiple entries:
 - `audioUrl`: HTTPS pronunciation audio.
 - `sourceUrl`: HTTPS source page.
 - `sources`: extra source links as `{ "label": "...", "url": "https://..." }`.
+- `variants`: regional, professional, historical, or source-specific pronunciation variants.
 - `confidence`: `high`, `medium`, `low`, or `unknown`.
 - `sourceStatus`: `verified-audio`, `community-confirmed`, `structured-source`, `generated-from-source`, or `unknown`.
 - `evidence`: short source-backed notes.

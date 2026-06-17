@@ -132,6 +132,7 @@ test("sanitizes imported cached result payloads", () => {
           display: "Dirty",
           sourceForm: "Dirty",
           root: "source root",
+          variants: "studio variant; regional variant; studio variant",
           trustSignals: "source-backed; source-backed; moderator-reviewed",
           sourceStatus: "verified-audio",
           confidence: "high",
@@ -160,6 +161,7 @@ test("sanitizes imported cached result payloads", () => {
             display: "Alternate",
             sourceForm: "Alternate",
             root: "alternate root",
+            variants: ["alternate variant"],
             ttsLang: "it-IT",
             pronunciation: { simple: "ALL-ter-nate" },
             pageUrl: "https://private.example/alternate"
@@ -175,7 +177,9 @@ test("sanitizes imported cached result payloads", () => {
   assert.equal(result.alternateResults.length, 1);
   assert.equal(result.alternateResults[0].ttsLang, "it-IT");
   assert.equal(result.root, "source root");
+  assert.deepEqual(result.variants, ["studio variant", "regional variant"]);
   assert.equal(result.alternateResults[0].root, "alternate root");
+  assert.deepEqual(result.alternateResults[0].variants, ["alternate variant"]);
   assert.deepEqual(result.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(result.notes, "Regional pronunciation variant");
   assert.equal(Object.hasOwn(result, "pageUrl"), false);

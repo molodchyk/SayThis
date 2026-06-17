@@ -61,6 +61,7 @@ test("builds a structured custom source result", () => {
       sourceForm: "chiaroscuro",
       aliases: ["light-dark"],
       trustSignals: ["domain-reviewed"],
+      variants: ["studio variant", "regional variant"],
       language: "it",
       languageName: "Italian",
       category: "art-term",
@@ -79,6 +80,7 @@ test("builds a structured custom source result", () => {
   assert.equal(result.sourceForm, "chiaroscuro");
   assert.deepEqual(result.aliases, ["light-dark"]);
   assert.deepEqual(result.trustSignals, ["domain-reviewed", "source-backed", "audio-backed", "root-noted"]);
+  assert.deepEqual(result.variants, ["studio variant", "regional variant"]);
   assert.equal(result.language, "it");
   assert.equal(result.category, "art-term");
   assert.equal(result.root, "chiaro + scuro");

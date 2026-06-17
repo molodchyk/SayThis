@@ -72,6 +72,7 @@ function createCustomSourceEntryResult(selectedText, entry, payload, label) {
     display,
     aliases: normalizeAliases(entry.aliases),
     trustSignals: entry.trustSignals || [],
+    variants: normalizeAliases(entry.variants),
     sourceForm,
     language: normalizeSelection(entry.language),
     languageName: normalizeSelection(entry.languageName),

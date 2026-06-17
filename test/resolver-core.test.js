@@ -471,10 +471,12 @@ test("uses remote simple guides for no-audio speech", () => {
     display: "Exampleterm",
     sourceForm: "Exampleterm",
     language: "en",
+    variants: ["Regional form", "Regional form"],
     pronunciation: { simple: "eg-ZAM-pluh-term" }
   });
 
   assert.equal(resultToSpeechOptions(result).text, "eg-ZAM-pluh-term");
+  assert.deepEqual(result.variants, ["Regional form"]);
 });
 
 test("merges verified audio into a matching structured result", () => {

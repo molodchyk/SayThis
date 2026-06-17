@@ -80,6 +80,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /<dt>Aliases<\/dt>/);
   assert.match(source, /aliasesTextFromResult\(result\) \|\| "None"/);
   assert.match(source, /result\.notes \|\| result\.variantNote/);
+  assert.match(source, /variantItems\(result\.variants\)/);
   assert.match(source, /\.filter\(Boolean\)\.slice\(0, 2\)/);
   assert.match(source, /class="recordings"/);
   assert.match(source, /data-action="alternate"/);
