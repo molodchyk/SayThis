@@ -32,6 +32,7 @@ Chrome Manifest V3 components:
 - `wikidata/language-claims.js`: maps selected Wikidata language and country claims into bounded result-language hints.
 - `wikidata/entity-types.js`: maps selected Wikidata instance, subclass, field, and main-subject claims into bounded result categories and ranking signals.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, pronunciation-relevant etymology, and alternative written forms from Wiktionary wikitext.
+- `wiktionary/variants.js`: pure parser for bounded Wiktionary alternative-form and variant-section entries.
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
 - `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
 - `custom-source-adapter.js`: extracts domain-specific pronunciation entries from a configured structured JSON endpoint.
