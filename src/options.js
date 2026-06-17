@@ -2,8 +2,7 @@ import {
   normalizeCommunityEntries
 } from "./resolver-core.js";
 import {
-  normalizeResultCache,
-  resultCacheSummary
+  normalizeResultCache
 } from "./result-cache.js";
 import {
   normalizeApprovedEntries,
@@ -25,6 +24,14 @@ import {
   sendRuntimeMessage,
   writeOptionsStorage
 } from "./options/runtime-adapters.js";
+import {
+  approvedSummaryText as approvedSummaryLabel,
+  cacheSummaryText as cacheSummaryLabel,
+  isPlainObject,
+  memorySummaryText,
+  summarizeQueue,
+  syncSummaryText as syncSummaryLabel
+} from "./options/summary-view.js";
 import {
   normalizeApiKey,
   normalizeCredentials,
@@ -327,45 +334,19 @@ async function clearApprovedEntries() {
 }
 
 function renderSummary(entries) {
-  const values = Object.values(entries || {});
-  const confirmations = values.reduce((sum, entry) => sum + Number(entry.confirmations || 0), 0);
-  const corrections = values.reduce((sum, entry) => sum + Number(entry.corrections || 0), 0);
-  const requests = values.reduce((sum, entry) => sum + Number(entry.requests || 0), 0);
-  const flags = values.reduce((sum, entry) => sum + Number(entry.flags || 0), 0);
-
-  memorySummary.textContent = values.length
-    ? `${values.length} local entries · ${confirmations} confirmations · ${corrections} corrections · ${requests} requests · ${flags} wrong-result flags`
-    : "No local entries.";
+  memorySummary.textContent = memorySummaryText(entries);
 }
 
 function renderCacheSummary(cache) {
-  const summary = resultCacheSummary(cache);
-  cacheSummaryText.textContent = summary.count
-    ? `${summary.count} cached lookup${summary.count === 1 ? "" : "s"}${summary.newestAt ? ` · updated ${new Date(summary.newestAt).toLocaleString()}` : ""}`
-    : "No cached lookups.";
+  cacheSummaryText.textContent = cacheSummaryLabel(cache);
 }
 
 function renderSyncSummary(summary, queue) {
-  const safe = summary || summarizeQueue(queue);
-
-  syncSummaryText.textContent = safe.queued
-    ? `${safe.queued} queued · ${safe.failed || 0} failed · ${safe.exhausted || 0} exhausted`
-    : "No queued submissions.";
+  syncSummaryText.textContent = syncSummaryLabel(summary, queue);
 }
 
 function renderApprovedSummary(entries = {}, state = {}) {
-  const count = Object.keys(entries || {}).length;
-  approvedSummary.textContent = count
-    ? `${count} approved shared entries${state?.pulledAt ? ` · updated ${new Date(state.pulledAt).toLocaleString()}` : ""}`
-    : "No approved shared entries.";
-}
-
-function summarizeQueue(queue) {
-  return {
-    queued: Array.isArray(queue) ? queue.length : 0,
-    failed: Array.isArray(queue) ? queue.filter((item) => item.lastError).length : 0,
-    exhausted: Array.isArray(queue) ? queue.filter((item) => item.attempts >= 5).length : 0
-  };
+  approvedSummary.textContent = approvedSummaryLabel(entries, state);
 }
 
 function credentialsFromControls() {
@@ -443,10 +424,6 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   }
 
   return settings;
-}
-
-function isPlainObject(value) {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
 function setStatus(value) {

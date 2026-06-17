@@ -355,6 +355,7 @@ test("online source resolver tries hinted Wiktionary editions", async () => {
 test("options page exposes shared-entry data controls", async () => {
   const html = await readText("src/options.html");
   const source = await readText("src/options.js");
+  const summarySource = await readText("src/options/summary-view.js");
 
   assert.match(html, /id="auto-speak-popup"/);
   assert.match(source, /autoSpeakPopup/);
@@ -375,7 +376,8 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(source, /normalizeCommunityEntries/);
   assert.match(source, /normalizeSubmissionQueue/);
   assert.match(source, /Approved shared entries cleared/);
-  assert.match(source, /wrong-result flags/);
+  assert.match(source, /summary-view/);
+  assert.match(summarySource, /wrong-result flags/);
 });
 
 test("background uses shared community pronunciation-data policy", async () => {
