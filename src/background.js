@@ -25,6 +25,9 @@ import {
 import {
   createPlaybackSurface
 } from "./background/playback-surface-flow.js";
+import {
+  createRuntimeAdapters
+} from "./background/runtime-adapters-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -40,7 +43,6 @@ const STORAGE_KEYS = {
   syncSummary: "syncSummary",
   settings: "settings"
 };
-let seedPromise;
 const playbackSurface = createPlaybackSurface({
   offscreenAudioUrl: OFFSCREEN_AUDIO_URL,
   getStorage: (keys) => chrome.storage.local.get(keys),
@@ -58,6 +60,14 @@ const playbackSurface = createPlaybackSurface({
   matchClients: () => typeof clients !== "undefined" && typeof clients.matchAll === "function"
     ? clients.matchAll()
     : [],
+  storageKeys: STORAGE_KEYS
+});
+const runtimeAdapters = createRuntimeAdapters({
+  getRuntimeUrl: (url) => chrome.runtime.getURL(url),
+  fetch: (url) => fetch(url),
+  queryTabs: (query) => chrome.tabs.query(query),
+  executeScript: (details) => chrome.scripting.executeScript(details),
+  setStorage: (value) => chrome.storage.local.set(value),
   storageKeys: STORAGE_KEYS
 });
 
@@ -83,14 +93,22 @@ chrome.commands.onCommand.addListener((command) => {
   if (command === "pronounce-selection") {
     handleActiveSelectionCommand({
       source: "keyboard"
-    }, activeSelectionDependencies());
+    }, runtimeAdapters.activeSelectionDependencies({
+      resolveSelection,
+      playResolvedResult,
+      speakFallback
+    }));
   }
 
   if (command === "pronounce-selection-online") {
     handleActiveSelectionCommand({
       source: "keyboard-online",
       useOnline: true
-    }, activeSelectionDependencies());
+    }, runtimeAdapters.activeSelectionDependencies({
+      resolveSelection,
+      playResolvedResult,
+      speakFallback
+    }));
   }
 });
 
@@ -101,7 +119,7 @@ async function resolveSelection(text, options = {}) {
   return resolveSelectionFlow(text, options, {
     getStorage: (keys) => chrome.storage.local.get(keys),
     setStorage: (value) => chrome.storage.local.set(value),
-    loadSeedData,
+    loadSeedData: runtimeAdapters.loadSeedData,
     getRuntimeUrl: (url) => chrome.runtime.getURL(url),
     storageKeys: STORAGE_KEYS
   });
@@ -133,49 +151,12 @@ async function pullApprovedCommunityEntries() {
   });
 }
 
-async function loadSeedData() {
-  if (!seedPromise) {
-    seedPromise = fetch(chrome.runtime.getURL("data/pronunciation-seed.json")).then((response) => response.json());
-  }
-
-  return seedPromise;
-}
-
 function speakResult(result, overrides = {}) {
   return playbackSurface.speakResult(result, overrides);
 }
 
 function speakFallback(text) {
   return playbackSurface.speakFallback(text);
-}
-
-async function readSelectionFromTab(tabId) {
-  try {
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId },
-      func: () => window.getSelection()?.toString() || ""
-    });
-
-    return normalizeSelection(result?.result);
-  } catch {
-    return "";
-  }
-}
-
-function activeSelectionDependencies() {
-  return {
-    getActiveTab: async () => {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      return tab;
-    },
-    readSelectionFromTab,
-    setStorage: (value) => chrome.storage.local.set(value),
-    resolveSelection,
-    playResolvedResult,
-    speakFallback,
-    lastSelectionKey: STORAGE_KEYS.lastSelection,
-    lastSourceKey: STORAGE_KEYS.lastSource
-  };
 }
 
 async function playResolvedResult(result, tabId) {

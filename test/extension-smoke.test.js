@@ -107,18 +107,22 @@ test("overlay exposes playback and feedback actions", async () => {
 test("background routes local and online keyboard commands", async () => {
   const source = await readText("src/background.js");
   const playbackSurface = await readText("src/background/playback-surface-flow.js");
+  const runtimeAdapters = await readText("src/background/runtime-adapters-flow.js");
 
   assert.match(source, /resolveSelectionFlow\(text, options, \{/);
   assert.match(source, /handleContextMenuClick\(info, tab, \{/);
   assert.match(source, /lastResultKey: STORAGE_KEYS\.lastResult/);
   assert.match(source, /handleActiveSelectionCommand\(\{/);
-  assert.match(source, /activeSelectionDependencies\(\)/);
+  assert.match(source, /createRuntimeAdapters\(\{/);
+  assert.match(source, /runtimeAdapters\.activeSelectionDependencies\(\{/);
   assert.match(source, /handleRuntimeMessage\(message, sendResponse, runtimeMessageDependencies\(\)\)/);
   assert.match(source, /createPlaybackSurface\(\{/);
   assert.match(source, /playbackSurface\.playResolvedResult\(result, tabId\)/);
   assert.match(playbackSurface, /playResolvedResultFlow\(result, tabId, \{/);
   assert.match(playbackSurface, /createOffscreenPlayAudioMessage/);
   assert.match(playbackSurface, /createShowResultMessage/);
+  assert.match(runtimeAdapters, /window\.getSelection\(\)\?\.toString\(\)/);
+  assert.match(runtimeAdapters, /data\/pronunciation-seed\.json/);
   assert.match(source, /command === "pronounce-selection"/);
   assert.match(source, /command === "pronounce-selection-online"/);
   assert.match(source, /source: "keyboard-online"/);

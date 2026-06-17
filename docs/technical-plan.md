@@ -8,6 +8,7 @@ Chrome Manifest V3 components:
 - `background/active-selection-flow.js`: owns keyboard-command selected-text resolution, storage updates, result playback, and fallback behavior.
 - `background/context-menu-flow.js`: owns context-menu selection resolution, storage updates, result playback, and fallback behavior.
 - `background/runtime-message-flow.js`: owns service-worker runtime message routing, validation, response shaping, and error handling.
+- `background/runtime-adapters-flow.js`: owns seed-data fetch caching, active-tab lookup, selected-text extraction, and keyboard dependency wiring.
 - `background/result-playback-flow.js`: owns result playback order across page overlay audio, offscreen audio, and TTS fallback.
 - `background/playback-surface-flow.js`: owns TTS calls, offscreen audio document lifecycle, page overlay injection, and playback-surface settings reads.
 - `background/selection-resolver-flow.js`: owns local lookup, online lookup, cache use, packaged audio URL mapping, and result storage updates.
@@ -63,6 +64,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Keyboard command handling has a narrow background module with deterministic fallback tests.
 - Context-menu click handling has a narrow background module with deterministic fallback tests.
 - Runtime message handling has a narrow background router with deterministic validation and error-response tests.
+- Runtime browser adapters have a narrow background module with tests for seed-data caching, tab selection extraction, and keyboard dependency wiring.
 - Result playback order has a narrow background module with deterministic overlay, offscreen, and TTS fallback tests.
 - Playback surface wiring has a narrow background module with tests for TTS, overlay injection, offscreen audio lifecycle, client detection, and stop handling.
 - Selection resolution has a narrow background module with tests for local lookup, online cache hits, remote cache writes, and online fallback evidence.
