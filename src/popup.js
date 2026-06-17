@@ -1,13 +1,6 @@
 import { getBestAudio, normalizeSelection } from "./resolver-core.js";
 import {
-  alternateItemsForResult,
-  audioItemsForResult,
-  evidenceItemsForResult,
-  sourceItemsForResult
-} from "./result-view.js";
-import {
   correctionFeedbackFromValues,
-  correctionValuesFromResult,
   hasCorrectionDetail
 } from "./correction-form.js";
 import {
@@ -27,6 +20,9 @@ import {
 import {
   createPopupAudioPlayback
 } from "./popup/audio-playback.js";
+import {
+  renderPopupResult
+} from "./popup/result-renderer.js";
 
 const selectionInput = document.getElementById("selection");
 const lookupHintsInput = document.getElementById("lookup-hints");
@@ -210,95 +206,44 @@ async function saveFeedback(feedback) {
 }
 
 function renderResult(result) {
-  if (!result) {
-    resultCard.hidden = true;
-    return;
-  }
-
-  resultCard.hidden = false;
-  resultDisplay.textContent = result.display || result.query || "Unknown";
-  confidenceBadge.textContent = result.confidence || "unknown";
-  sourceBadge.textContent = result.sourceLabel || result.sourceStatus || "Unknown";
-
-  const correctionValues = correctionValuesFromResult(result);
-  sourceForm.textContent = result.sourceForm || "No source form";
-  aliasesDisplay.textContent = correctionValues.aliases || "None";
-  language.textContent = result.languageName || result.language || "Unknown";
-  category.textContent = result.category || "Unknown";
-  origin.textContent = result.origin || "Unknown";
-  root.textContent = result.root || "Unknown";
-  domainHint.textContent = result.domainHint || "Unknown";
-  variants.textContent = correctionValues.variants || "None";
-  ipa.textContent = result.pronunciation?.ipa || "Not available";
-  simpleGuide.textContent = result.pronunciation?.simple || "Not available";
-
-  correctionSource.value = correctionValues.sourceForm;
-  correctionAliases.value = correctionValues.aliases;
-  correctionLanguage.value = correctionValues.language;
-  correctionLanguageName.value = correctionValues.languageName;
-  correctionSimple.value = correctionValues.simple;
-  correctionIpa.value = correctionValues.ipa;
-  correctionOrigin.value = correctionValues.origin;
-  correctionRoot.value = correctionValues.root;
-  correctionDomain.value = correctionValues.domainHint;
-  correctionVariants.value = correctionValues.variants;
-  correctionAudio.value = correctionValues.audioUrl;
-  correctionSourceUrl.value = correctionValues.sourceUrl;
-  correctionVariant.value = correctionValues.variantNote;
-
-  alternates.replaceChildren();
-  for (const item of alternateItemsForResult(result)) {
-    const li = document.createElement("li");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "small secondary";
-    button.textContent = "Speak";
-    button.addEventListener("click", () => speakAlternate(item.index, 0.82));
-    const label = document.createElement("span");
-    label.className = "alternate-label";
-    label.textContent = item.display || "Alternate";
-    const summary = document.createElement("span");
-    summary.textContent = item.summary;
-    li.append(button, label, summary);
-    alternates.append(li);
-  }
-
-  audioList.replaceChildren();
-  for (const item of audioItemsForResult(result)) {
-    const li = document.createElement("li");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "small secondary";
-    button.textContent = "Play";
-    button.addEventListener("click", () => {
-      if (playAudioItem(item, currentResult, 0.82)) {
-        setStatus("Playing recording.");
-      }
-    });
-    const label = document.createElement("span");
-    label.textContent = item.label || "Pronunciation audio";
-    li.append(button, label);
-    audioList.append(li);
-  }
-
-  evidence.replaceChildren();
-  for (const item of evidenceItemsForResult(result)) {
-    const li = document.createElement("li");
-    li.textContent = item;
-    evidence.append(li);
-  }
-
-  sources.replaceChildren();
-  for (const item of sourceItemsForResult(result)) {
-    const li = document.createElement("li");
-    const anchor = document.createElement("a");
-    anchor.href = item.url;
-    anchor.target = "_blank";
-    anchor.rel = "noreferrer";
-    anchor.textContent = item.label;
-    li.append(anchor);
-    sources.append(li);
-  }
+  renderPopupResult(result, {
+    resultCard,
+    resultDisplay,
+    confidenceBadge,
+    sourceBadge,
+    sourceForm,
+    aliasesDisplay,
+    language,
+    category,
+    origin,
+    root,
+    domainHint,
+    variants,
+    ipa,
+    simpleGuide,
+    alternates,
+    audioList,
+    evidence,
+    sources,
+    correctionSource,
+    correctionAliases,
+    correctionLanguage,
+    correctionLanguageName,
+    correctionSimple,
+    correctionIpa,
+    correctionOrigin,
+    correctionRoot,
+    correctionDomain,
+    correctionVariants,
+    correctionAudio,
+    correctionSourceUrl,
+    correctionVariant
+  }, {
+    document,
+    speakAlternate,
+    playAudioItem,
+    setStatus
+  });
 }
 
 function feedbackFromCorrectionFields(kind) {

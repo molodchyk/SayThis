@@ -423,16 +423,17 @@ test("background includes per-lookup hints in online settings", async () => {
 test("popup source-audio failure falls back to TTS", async () => {
   const source = await readText("src/popup.js");
   const audioSource = await readText("src/popup/audio-playback.js");
+  const resultSource = await readText("src/popup/result-renderer.js");
   const html = await readText("src/popup.html");
 
   assert.match(html, /id="audio-list"/);
   assert.match(source, /autoSpeakPopup/);
   assert.match(source, /await speakSelection\(0\.82\)/);
   assert.match(source, /createPopupAudioPlayback/);
-  assert.match(source, /audioItemsForResult/);
-  assert.match(source, /speakAlternate\(item\.index, 0\.82\)/);
+  assert.match(resultSource, /audioItemsForResult/);
+  assert.match(resultSource, /speakAlternate\(item\.index, 0\.82\)/);
   assert.match(source, /replaceCurrent: false/);
-  assert.match(source, /playAudioItem\(item, currentResult, 0\.82\)/);
+  assert.match(resultSource, /playAudioItem\(item, result, 0\.82\)/);
   assert.match(source, /Audio failed\. Using TTS fallback\./);
   assert.match(source, /const fallbackToSpeech = async \(\) =>/);
   assert.match(source, /createSpeakMessage\(text, \{/);
