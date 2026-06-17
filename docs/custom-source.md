@@ -4,6 +4,8 @@ SayThis can query a user-configured HTTPS endpoint for structured pronunciation 
 
 This is for domain packs and community-maintained term sets that are too specific for broad public dictionaries. The endpoint must return pronunciation data, not free-form text.
 
+SayThis also supports a separate DBpedia Lookup-compatible endpoint for entity context. That source is configured in options, stays disabled by default, and is treated as structured context rather than native pronunciation audio.
+
 ## Request
 
 SayThis sends a user-triggered `GET` request and appends the selected term as `q`:

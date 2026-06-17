@@ -11,6 +11,8 @@ export const DEFAULT_SETTINGS = {
   customSourceEnabled: false,
   customSourceEndpoint: "",
   customSourceLabel: "",
+  dbpediaEnabled: false,
+  dbpediaEndpoint: "",
   forvoEnabled: false,
   forvoLanguage: "",
   gazetteerEnabled: false,
@@ -25,6 +27,7 @@ export const DEFAULT_CREDENTIALS = {
 export function normalizeSettings(settings = {}) {
   const syncSettings = normalizeSyncSettings(settings);
   const customSourceEndpoint = normalizeHttpsEndpoint(settings.customSourceEndpoint);
+  const dbpediaEndpoint = normalizeHttpsEndpoint(settings.dbpediaEndpoint);
   const gazetteerEndpoint = normalizeHttpsEndpoint(settings.gazetteerEndpoint);
   const forvoLanguage = normalizeLanguageCode(settings.forvoLanguage);
   const lookupLanguageHints = normalizeLanguageHints(settings.lookupLanguageHints);
@@ -39,6 +42,8 @@ export function normalizeSettings(settings = {}) {
     customSourceEndpoint,
     customSourceLabel: normalizeShortText(settings.customSourceLabel),
     customSourceEnabled: Boolean(settings.customSourceEnabled && customSourceEndpoint),
+    dbpediaEndpoint,
+    dbpediaEnabled: Boolean(settings.dbpediaEnabled && dbpediaEndpoint),
     forvoLanguage,
     forvoEnabled: Boolean(settings.forvoEnabled),
     gazetteerEndpoint,
@@ -61,6 +66,7 @@ export function onlineCacheScope(settings, credentials = {}) {
   return [
     safeSettings.lookupLanguageHints.length ? `wikidata ${safeSettings.lookupLanguageHints.join(",")}` : "",
     safeSettings.customSourceEnabled && safeSettings.customSourceEndpoint ? `custom ${safeSettings.customSourceEndpoint}` : "",
+    safeSettings.dbpediaEnabled && safeSettings.dbpediaEndpoint ? `dbpedia ${safeSettings.dbpediaEndpoint}` : "",
     safeSettings.gazetteerEnabled && safeSettings.gazetteerEndpoint ? `gazetteer ${safeSettings.gazetteerEndpoint}` : "",
     safeSettings.forvoEnabled && safeCredentials.forvoApiKey ? `forvo ${safeSettings.forvoLanguage || "all"}` : ""
   ].filter(Boolean).join(" ");

@@ -48,6 +48,8 @@ const lookupLanguageHints = document.getElementById("lookup-language-hints");
 const customSourceEnabled = document.getElementById("custom-source-enabled");
 const customSourceEndpoint = document.getElementById("custom-source-endpoint");
 const customSourceLabel = document.getElementById("custom-source-label");
+const dbpediaEnabled = document.getElementById("dbpedia-enabled");
+const dbpediaEndpoint = document.getElementById("dbpedia-endpoint");
 const forvoEnabled = document.getElementById("forvo-enabled");
 const forvoApiKey = document.getElementById("forvo-api-key");
 const forvoLanguage = document.getElementById("forvo-language");
@@ -79,6 +81,8 @@ lookupLanguageHints.addEventListener("change", saveSettings);
 customSourceEnabled.addEventListener("change", saveSettings);
 customSourceEndpoint.addEventListener("change", saveSettings);
 customSourceLabel.addEventListener("change", saveSettings);
+dbpediaEnabled.addEventListener("change", saveSettings);
+dbpediaEndpoint.addEventListener("change", saveSettings);
 forvoEnabled.addEventListener("change", saveSettings);
 forvoApiKey.addEventListener("change", saveSettings);
 forvoLanguage.addEventListener("change", saveSettings);
@@ -116,6 +120,8 @@ async function init() {
   customSourceEnabled.checked = settings.customSourceEnabled;
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
+  dbpediaEnabled.checked = settings.dbpediaEnabled;
+  dbpediaEndpoint.value = settings.dbpediaEndpoint;
   forvoEnabled.checked = settings.forvoEnabled;
   forvoApiKey.value = credentials.forvoApiKey;
   forvoLanguage.value = settings.forvoLanguage;
@@ -141,6 +147,7 @@ async function saveSettings() {
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
   const wantedPull = pullEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
   const wantedCustomSource = customSourceEnabled.checked && Boolean(normalizeEndpoint(customSourceEndpoint.value));
+  const wantedDbpedia = dbpediaEnabled.checked && Boolean(normalizeEndpoint(dbpediaEndpoint.value));
   const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
   const credentials = credentialsFromControls();
@@ -155,6 +162,8 @@ async function saveSettings() {
   lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
+  dbpediaEnabled.checked = settings.dbpediaEnabled;
+  dbpediaEndpoint.value = settings.dbpediaEndpoint;
   forvoEnabled.checked = settings.forvoEnabled;
   forvoApiKey.value = credentials.forvoApiKey;
   forvoLanguage.value = settings.forvoLanguage;
@@ -166,6 +175,7 @@ async function saveSettings() {
   setStatus((settings.communitySyncEnabled || !wantedSync) &&
       (settings.communityPullEnabled || !wantedPull) &&
       (settings.customSourceEnabled || !wantedCustomSource) &&
+      (settings.dbpediaEnabled || !wantedDbpedia) &&
       (settings.gazetteerEnabled || !wantedGazetteer) &&
       (settings.forvoEnabled || !wantedForvo)
     ? "Settings saved."
@@ -243,6 +253,8 @@ async function importData() {
   customSourceEnabled.checked = settings.customSourceEnabled;
   customSourceEndpoint.value = settings.customSourceEndpoint;
   customSourceLabel.value = settings.customSourceLabel;
+  dbpediaEnabled.checked = settings.dbpediaEnabled;
+  dbpediaEndpoint.value = settings.dbpediaEndpoint;
   forvoEnabled.checked = settings.forvoEnabled;
   forvoApiKey.value = credentials.forvoApiKey;
   forvoLanguage.value = settings.forvoLanguage;
@@ -376,6 +388,8 @@ async function settingsFromControls(credentials) {
     customSourceEnabled: customSourceEnabled.checked,
     customSourceEndpoint: normalizeEndpoint(customSourceEndpoint.value),
     customSourceLabel: normalizeShortText(customSourceLabel.value),
+    dbpediaEnabled: dbpediaEnabled.checked,
+    dbpediaEndpoint: normalizeEndpoint(dbpediaEndpoint.value),
     forvoEnabled: forvoEnabled.checked,
     forvoLanguage: normalizeLanguageCode(forvoLanguage.value),
     gazetteerEnabled: gazetteerEnabled.checked,
@@ -405,6 +419,14 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
     settings = {
       ...settings,
       forvoEnabled: Boolean(granted)
+    };
+  }
+
+  if (settings.dbpediaEnabled) {
+    const granted = await requestEndpointPermission(settings.dbpediaEndpoint);
+    settings = {
+      ...settings,
+      dbpediaEnabled: Boolean(granted)
     };
   }
 

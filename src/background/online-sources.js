@@ -31,16 +31,23 @@ import {
   buildCustomSourceResult,
   buildCustomSourceUrl
 } from "../custom-source-adapter.js";
+import {
+  buildDbpediaLookupUrl,
+  buildDbpediaResult
+} from "./dbpedia-source.js";
 
 export async function resolveWithOnlineSources(text, settings = {}, credentials = {}, context = {}) {
   const languageHints = onlineLookupLanguageHints(settings.lookupLanguageHints, context.localResult);
-  const [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult] = await Promise.all([
+  const [customSourceResult, wikidataResult, dbpediaResult, wiktionaryResult, nominatimResult] = await Promise.all([
     settings.customSourceEnabled
       ? resolveSafely(resolveWithCustomSource, text, settings.customSourceEndpoint, settings.customSourceLabel)
       : Promise.resolve(null),
     resolveSafely(resolveWithWikidata, text, {
       languageHints
     }),
+    settings.dbpediaEnabled
+      ? resolveSafely(resolveWithDbpedia, text, settings.dbpediaEndpoint)
+      : Promise.resolve(null),
     resolveSafely(resolveWithWiktionary, text, {
       languageHints
     }),
@@ -51,7 +58,7 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
       : Promise.resolve(null)
   ]);
 
-  const structuredResult = [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult]
+  const structuredResult = [customSourceResult, wikidataResult, dbpediaResult, wiktionaryResult, nominatimResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const customSourceCandidateResult = settings.customSourceEnabled && structuredResult
@@ -62,10 +69,13 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
       languageHints
     })
     : null;
+  const dbpediaCandidateResult = settings.dbpediaEnabled && structuredResult
+    ? await resolveWithDbpediaCandidates(text, structuredResult, settings.dbpediaEndpoint)
+    : null;
   const wiktionaryCandidateResult = structuredResult
     ? await resolveWithWiktionaryCandidates(text, structuredResult)
     : null;
-  const refinedStructuredResult = [structuredResult, customSourceCandidateResult, nominatimCandidateResult, wiktionaryCandidateResult]
+  const refinedStructuredResult = [structuredResult, customSourceCandidateResult, nominatimCandidateResult, dbpediaCandidateResult, wiktionaryCandidateResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const forvoResult = settings.forvoEnabled
@@ -364,6 +374,49 @@ export async function resolveWithCustomSourceCandidates(text, structuredResult, 
     if (result?.sourceStatus === "verified-audio") {
       return result;
     }
+  }
+
+  return result;
+}
+
+export async function resolveWithDbpedia(text, endpoint, options = {}) {
+  const query = normalizeSelection(text);
+  const lookupWord = normalizeSelection(options.lookupWord || query);
+  const url = buildDbpediaLookupUrl(lookupWord, endpoint, { limit: 5 });
+  if (!query || !lookupWord || !url) {
+    return null;
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await response.json();
+  return buildDbpediaResult(query, data);
+}
+
+export async function resolveWithDbpediaCandidates(text, structuredResult, endpoint) {
+  const query = normalizeSelection(text);
+  if (!query) {
+    return null;
+  }
+
+  let result = null;
+  for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
+    const dbpediaResult = await resolveSafely(resolveWithDbpedia, query, endpoint, {
+      lookupWord: candidate.word
+    });
+    if (!dbpediaResult) {
+      continue;
+    }
+
+    result = mergeRemoteResult(result, dbpediaResult);
   }
 
   return result;

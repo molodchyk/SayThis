@@ -55,10 +55,12 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Latin orthography hints can guide fallback TTS and optional pronunciation-audio lookup when structured sources are absent.
 - Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
+- Optional DBpedia-compatible knowledge graph lookup for entity context and source-form candidates.
 - Custom source lookup can retry resolved source forms and aliases from structured results.
 - Wikidata lookup adds script-based search languages for non-Latin selections.
 - Custom sources can provide array or text aliases and keyed entry maps.
 - Custom sources preserve matching alternate entries for variants or language-specific pronunciations.
+- DBpedia-compatible lookup can retry resolved source forms and aliases from other structured results.
 - Source-form and alias-guided Wiktionary lookup after structured resolution.
 - Wiktionary language-section selection can use resolved language hints from structured sources.
 - Wiktionary lookup can try hinted Wiktionary editions after English Wiktionary.
@@ -161,7 +163,7 @@ The first useful version should be narrow and trusted:
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 
-Community sync, approved-entry refresh, custom source lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Lookup language hints only alter Wikidata API language parameters, local source-form ranking, hinted Wiktionary editions, gazetteer language parameters, and Forvo language filters. Community sync submits only the selected term, feedback type, correction or missing-request candidate fields, and resolver metadata. Feedback is not queued for sync until community sync is enabled. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata. SayThis does not submit page URLs or browsing history. Custom source lookup sends the selected term or a resolved pronunciation candidate. Forvo API keys are stored locally and are not included in data exports.
+Community sync, approved-entry refresh, custom source lookup, DBpedia-compatible lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Lookup language hints only alter Wikidata API language parameters, local source-form ranking, hinted Wiktionary editions, gazetteer language parameters, and Forvo language filters. Community sync submits only the selected term, feedback type, correction or missing-request candidate fields, and resolver metadata. Feedback is not queued for sync until community sync is enabled. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata. SayThis does not submit page URLs or browsing history. Custom source and DBpedia-compatible lookup send only the selected term or a resolved pronunciation candidate. Forvo API keys are stored locally and are not included in data exports.
 
 ## Development
 

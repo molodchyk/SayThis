@@ -8,6 +8,7 @@ import {
 export function remotePermissionOrigins(settings = {}, credentials = {}) {
   const origins = [];
   addOrigin(origins, settings.customSourceEnabled, settings.customSourceEndpoint);
+  addOrigin(origins, settings.dbpediaEnabled, settings.dbpediaEndpoint);
   addOrigin(origins, settings.forvoEnabled && credentials.forvoApiKey, FORVO_API_ORIGIN);
   addOrigin(origins, settings.gazetteerEnabled, settings.gazetteerEndpoint);
   addOrigin(origins, settings.communitySyncEnabled || settings.communityPullEnabled, settings.communityEndpoint);

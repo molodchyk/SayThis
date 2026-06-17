@@ -19,6 +19,8 @@ test("collects optional remote permission origins", () => {
   assert.deepEqual(remotePermissionOrigins({
     customSourceEnabled: true,
     customSourceEndpoint: "https://packs.example/search?set=terms",
+    dbpediaEnabled: true,
+    dbpediaEndpoint: "https://lookup.example/api/search",
     forvoEnabled: true,
     gazetteerEnabled: true,
     gazetteerEndpoint: "http://maps.example/search",
@@ -28,6 +30,7 @@ test("collects optional remote permission origins", () => {
     forvoApiKey: "key"
   }), [
     "https://packs.example/*",
+    "https://lookup.example/*",
     "https://apifree.forvo.com/*",
     "https://community.example/*"
   ]);
@@ -37,6 +40,8 @@ test("finds stale optional remote permission origins", () => {
   const previousSettings = {
     customSourceEnabled: true,
     customSourceEndpoint: "https://packs.example/old",
+    dbpediaEnabled: true,
+    dbpediaEndpoint: "https://lookup.example/old",
     forvoEnabled: true,
     gazetteerEnabled: true,
     gazetteerEndpoint: "https://maps.example/search",
@@ -46,6 +51,8 @@ test("finds stale optional remote permission origins", () => {
   const nextSettings = {
     customSourceEnabled: true,
     customSourceEndpoint: "https://packs.example/new",
+    dbpediaEnabled: true,
+    dbpediaEndpoint: "https://lookup.example/new",
     forvoEnabled: false,
     gazetteerEnabled: false,
     communityPullEnabled: true,
@@ -71,6 +78,8 @@ test("normalizes extension settings and credentials from one module", () => {
     customSourceEnabled: true,
     customSourceEndpoint: " https://packs.example/search?set=terms ",
     customSourceLabel: " Curated   terms ",
+    dbpediaEnabled: true,
+    dbpediaEndpoint: " https://lookup.example/api/search ",
     forvoEnabled: true,
     forvoLanguage: "PT_BR",
     gazetteerEnabled: true,
@@ -90,6 +99,8 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(settings.customSourceEnabled, true);
   assert.equal(settings.customSourceEndpoint, "https://packs.example/search?set=terms");
   assert.equal(settings.customSourceLabel, "Curated terms");
+  assert.equal(settings.dbpediaEnabled, true);
+  assert.equal(settings.dbpediaEndpoint, "https://lookup.example/api/search");
   assert.equal(settings.forvoEnabled, true);
   assert.equal(settings.forvoLanguage, "pt-br");
   assert.equal(settings.gazetteerEnabled, false);
@@ -101,5 +112,5 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(normalizeShortText(` ${"a".repeat(90)} `).length, 80);
   assert.equal(normalizeLanguageCode("EN_us"), "en-us");
   assert.deepEqual(normalizeLanguageHints(["EN-us", "pl", "en", "bad!"]), ["en", "pl"]);
-  assert.equal(onlineCacheScope(settings, credentials), "wikidata pl,pt,ja custom https://packs.example/search?set=terms forvo pt-br");
+  assert.equal(onlineCacheScope(settings, credentials), "wikidata pl,pt,ja custom https://packs.example/search?set=terms dbpedia https://lookup.example/api/search forvo pt-br");
 });

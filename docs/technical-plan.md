@@ -6,6 +6,7 @@ Chrome Manifest V3 components:
 
 - `background.js`: creates the context menu and handles text-to-speech messages.
 - `background/online-sources.js`: orchestrates optional online source lookups, source-form retries, and pronunciation-audio fallback candidates.
+- `background/dbpedia-source.js`: extracts source-form, entity-context, and source-link signals from DBpedia Lookup-compatible JSON.
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
@@ -94,6 +95,8 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Source-form and alias-guided custom source retries after other structured sources resolve a better lookup form.
+- Optional DBpedia-compatible knowledge graph lookup for entity context and source-form candidates.
+- Source-form and alias-guided DBpedia-compatible retries after other structured sources resolve a better lookup form.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Forvo lookup preserves additional same-word, same-language recordings on the resolved result.
 - Forvo lookup can use lookup language hints when no dedicated Forvo language filter is set.
@@ -219,6 +222,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 8. Gazetteer lookup accepts only HTTPS endpoints, is disabled until a user configures one, and uses lookup language hints only as request/source-form hints.
 9. Forvo lookup is disabled until a user enables it and stores a local API key; the key is not included in exports, and lookup hints only shape language filters.
 10. Custom source lookup accepts only HTTPS endpoints and sends only the selected term or resolved pronunciation candidates.
+11. DBpedia-compatible lookup accepts only HTTPS endpoints and sends only the selected term or resolved pronunciation candidates.
 
 ## Technical Risks
 

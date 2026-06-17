@@ -25,10 +25,13 @@ Remote lookup is user-triggered or opt-in. SayThis can send the selected term to
 - Wikimedia Commons audio URLs when audio is played
 - Forvo lookup, only after the user enables Forvo and stores an API key; lookup language hints may be sent as Forvo language filters
 - a user-configured custom source endpoint
+- a user-configured DBpedia-compatible knowledge graph endpoint
 - a user-configured Nominatim-compatible place-name endpoint; lookup language hints may be sent as request language parameters
 - a user-configured community endpoint, only after community submission or approved-entry refresh is enabled
 
 Community sync submits only the selected term, feedback type, correction or missing-request candidate fields, and resolver metadata. It does not submit page URLs or browsing history.
+
+Custom source and DBpedia-compatible lookup send only the selected term or a resolved pronunciation candidate to the configured endpoint.
 
 ## Data SayThis Does Not Collect
 
@@ -52,7 +55,7 @@ Users can:
 - clear cached lookup results
 - clear the community sync queue
 - clear approved shared entries
-- disable community submission, approved-entry refresh, custom source lookup, Forvo lookup, and place-name lookup
+- disable community submission, approved-entry refresh, custom source lookup, DBpedia-compatible lookup, Forvo lookup, and place-name lookup
 
 When optional remote features are disabled or their endpoints change, SayThis removes no-longer-used optional endpoint permissions where Chrome allows it.
 
