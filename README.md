@@ -45,6 +45,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Variant-only local corrections are surfaced on later lookup results.
 - Guide-only local corrections can drive fallback speech when no community audio source is present.
 - Local community memory preserves and derives trust signals from confirmations, corrections, source links, audio links, and variant notes.
+- Remote structured results derive bounded trust signals from source, audio, and root evidence.
 - Result and correction views accept root and variant-note metadata from cached and shared result payloads.
 - Correction audio and source links are normalized before local storage or shared submission.
 - Import and export cleanup for local and approved shared pronunciation memory.

@@ -125,7 +125,7 @@ export function createRemoteStructuredResult(selection, source) {
     lookupKey,
     display: source.display || query,
     aliases: source.aliases || [],
-    trustSignals: source.trustSignals || [],
+    trustSignals: remoteTrustSignals(source, sourceStatus, hasAudio),
     sourceForm,
     speakText: remoteSpeakText(source, sourceForm, query, hasAudio),
     script: detectScript(sourceForm || query).script,
@@ -167,6 +167,24 @@ function remoteSpeakText(source = {}, sourceForm, query, hasAudio) {
   return hasAudio
     ? sourceForm || query
     : normalizeSelection(source.speakText || source.pronunciation?.simple || sourceForm || query);
+}
+
+function remoteTrustSignals(source = {}, sourceStatus, hasAudio) {
+  const signals = [...normalizeTrustSignals(source.trustSignals)];
+
+  if (["verified-audio", "structured-source", "community-confirmed"].includes(sourceStatus)) {
+    signals.push("source-backed");
+  }
+
+  if (hasAudio || sourceStatus === "verified-audio") {
+    signals.push("audio-backed");
+  }
+
+  if (normalizeSelection(source.root)) {
+    signals.push("root-noted");
+  }
+
+  return normalizeTrustSignals(signals);
 }
 
 function findSeedEntry(lookupKey, entries = []) {

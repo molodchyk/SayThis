@@ -440,6 +440,7 @@ test("prefers remote structured result over best-effort fallback", () => {
 
   assert.equal(merged.id, "remote:example");
   assert.equal(merged.language, "la");
+  assert.deepEqual(merged.trustSignals, ["source-backed"]);
 });
 
 test("promotes remote results with verified audio", () => {
@@ -461,6 +462,7 @@ test("promotes remote results with verified audio", () => {
   assert.equal(result.confidence, "high");
   assert.equal(getBestAudio(result).quality, "verified");
   assert.equal(resultToSpeechOptions(result).text, "AudioTerm");
+  assert.deepEqual(result.trustSignals, ["source-backed", "audio-backed"]);
 });
 
 test("uses remote simple guides for no-audio speech", () => {

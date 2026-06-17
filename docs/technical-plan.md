@@ -114,6 +114,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
 - Guide-only local corrections can drive fallback speech when no community audio source is present.
 - Local community entries preserve and derive trust signals from local actions and source evidence.
+- Remote structured results derive bounded trust signals from source, audio, and root evidence.
 - Result and correction views accept root and variant-note metadata from cached and shared payloads.
 - Opt-in community sync endpoint with queued retry behavior.
 - Community submissions preserve result trust signals and variant notes through moderation.
