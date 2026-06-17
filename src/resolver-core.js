@@ -127,7 +127,7 @@ export function createRemoteStructuredResult(selection, source) {
     aliases: source.aliases || [],
     trustSignals: source.trustSignals || [],
     sourceForm,
-    speakText: sourceForm || query,
+    speakText: remoteSpeakText(source, sourceForm, query, hasAudio),
     script: detectScript(sourceForm || query).script,
     queryScript: scriptInfo.script,
     language,
@@ -161,6 +161,12 @@ export function resultToSpeechOptions(result, overrides = {}) {
   }
 
   return { text, options };
+}
+
+function remoteSpeakText(source = {}, sourceForm, query, hasAudio) {
+  return hasAudio
+    ? sourceForm || query
+    : normalizeSelection(source.speakText || source.pronunciation?.simple || sourceForm || query);
 }
 
 function findSeedEntry(lookupKey, entries = []) {

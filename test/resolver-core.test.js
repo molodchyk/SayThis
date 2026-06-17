@@ -460,6 +460,19 @@ test("promotes remote results with verified audio", () => {
   assert.equal(result.sourceStatus, "verified-audio");
   assert.equal(result.confidence, "high");
   assert.equal(getBestAudio(result).quality, "verified");
+  assert.equal(resultToSpeechOptions(result).text, "AudioTerm");
+});
+
+test("uses remote simple guides for no-audio speech", () => {
+  const result = createRemoteStructuredResult("Exampleterm", {
+    id: "remote:simple",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    pronunciation: { simple: "eg-ZAM-pluh-term" }
+  });
+
+  assert.equal(resultToSpeechOptions(result).text, "eg-ZAM-pluh-term");
 });
 
 test("merges verified audio into a matching structured result", () => {

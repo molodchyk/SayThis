@@ -59,6 +59,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wiktionary language-section selection can use resolved language hints from structured sources.
 - Wiktionary lookup can try hinted Wiktionary editions after English Wiktionary.
 - Wiktionary enPR and respelling guides are surfaced as simple pronunciation guides.
+- Source-provided simple guides can drive fallback speech when no verified audio is available.
 - Wiktionary pronunciation-audio lookup preserves multiple Commons recordings from one language section.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
 - Forvo audio paths are preserved as long source URLs for playback.

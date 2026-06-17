@@ -87,6 +87,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wiktionary section selection can use resolved language hints from earlier structured sources.
 - Hinted Wiktionary edition retries after English Wiktionary for dictionary entries missing from English Wiktionary.
 - Wiktionary enPR and respelling templates parsed into simple pronunciation guides.
+- Source-provided simple guides can drive fallback speech when no verified audio is available.
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
