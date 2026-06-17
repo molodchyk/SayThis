@@ -82,6 +82,7 @@ test("parses IPA, audio, language, and etymology from Wiktionary wikitext", () =
   assert.equal(parsed.audioFile, "En-us-chiaroscuro.ogg");
   assert.deepEqual(parsed.audioFiles, ["En-us-chiaroscuro.ogg", "En-uk-chiaroscuro.ogg"]);
   assert.equal(parsed.origin, "Borrowed from chiaroscuro, from chiaro + oscuro.");
+  assert.equal(parsed.root, "chiaro + oscuro");
 });
 
 test("builds a verified-audio pronunciation result from Wiktionary", () => {
@@ -97,6 +98,8 @@ test("builds a verified-audio pronunciation result from Wiktionary", () => {
   assert.equal(result.pronunciation.audio[1].label, "Pronunciation audio 2");
   assert.ok(result.evidence.includes("Additional Wiktionary pronunciation audio: 1"));
   assert.ok(result.origin.includes("chiaro"));
+  assert.equal(result.root, "chiaro + oscuro");
+  assert.ok(result.evidence.includes("Root from Wiktionary"));
   assert.equal(result.sources[0].url, "https://en.wiktionary.org/wiki/chiaroscuro");
 });
 
@@ -109,6 +112,7 @@ test("uses the language section that carries pronunciation data", () => {
   assert.equal(parsed.audioFile, "It-lume.ogg");
   assert.deepEqual(parsed.audioFiles, ["It-lume.ogg"]);
   assert.equal(parsed.origin, "From lume.");
+  assert.equal(parsed.root, "lume");
 });
 
 test("builds alternate results for other pronunciation sections", () => {

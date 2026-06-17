@@ -79,6 +79,7 @@ export function parseWiktionaryPronunciation(wikitext = "", options = {}) {
       audioFile: "",
       audioFiles: [],
       origin: "",
+      root: "",
       alternateEntries: []
     };
   }
@@ -102,6 +103,7 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed, options = {}) {
     languageName: parsed.languageName || "",
     category: "dictionary term",
     origin: parsed.origin,
+    root: parsed.root,
     pronunciation: {
       ipa: parsed.ipa,
       simple: parsed.simple,
@@ -121,7 +123,8 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed, options = {}) {
       parsed.ipa ? "IPA from Wiktionary" : "",
       audioFiles.length ? "Pronunciation audio from Wiktionary" : "",
       audioFiles.length > 1 ? `Additional Wiktionary pronunciation audio: ${audioFiles.length - 1}` : "",
-      parsed.origin ? "Origin note from Wiktionary" : ""
+      parsed.origin ? "Origin note from Wiktionary" : "",
+      parsed.root ? "Root from Wiktionary" : ""
     ].filter(Boolean),
     sources: [{ label: sourceLanguage === "en" ? "Wiktionary" : `Wiktionary (${sourceLanguage})`, url: wiktionaryPageUrl(pageTitle || query, sourceLanguage) }]
   });
@@ -184,6 +187,7 @@ function parseLanguageEntry(section) {
   const languageName = normalizeSelection(section.languageName);
   const body = section.body || "";
   const audioFiles = audioFilesFromText(body);
+  const origin = firstEtymologyLine(body);
 
   return {
     language: LANGUAGE_CODES[languageName] || "",
@@ -192,7 +196,8 @@ function parseLanguageEntry(section) {
     simple: firstSimpleGuide(body),
     audioFile: audioFiles[0] || "",
     audioFiles,
-    origin: firstEtymologyLine(body)
+    origin,
+    root: rootFromEtymology(origin)
   };
 }
 
@@ -407,6 +412,25 @@ function firstEtymologyLine(text) {
     .find((value) => value && !value.startsWith("*") && !value.startsWith("#"));
 
   return normalizeSelection(line).slice(0, 180);
+}
+
+function rootFromEtymology(origin) {
+  const text = normalizeSelection(origin).replace(/[.;:,]+$/g, "");
+  if (!text) {
+    return "";
+  }
+
+  const compound = text.match(/\b(?:compound|composed) of\s+(.+?)(?:[.;]|$)/i)?.[1];
+  const root = compound || text.split(/\bfrom\s+/i).map(normalizeSelection).filter(Boolean).at(-1) || "";
+  return cleanEtymologyRoot(root);
+}
+
+function cleanEtymologyRoot(value) {
+  return normalizeSelection(value)
+    .replace(/^[,;:]+/, "")
+    .replace(/[.;:,]+$/g, "")
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
 }
 
 function stripWikitext(value) {
