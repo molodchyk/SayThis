@@ -30,6 +30,7 @@ Chrome Manifest V3 components:
 - `wikidata-adapter.js`: extracts source forms, native-name style claims, string-valued name claims, sitelink titles, aliases, IPA, and pronunciation audio from Wikidata entities.
 - `wikidata/search-languages.js`: plans bounded Wikidata search languages from selected script and explicit user hints.
 - `wikidata/language-claims.js`: maps selected Wikidata language and country claims into bounded result-language hints.
+- `wikidata/entity-types.js`: maps selected Wikidata instance, subclass, field, and main-subject claims into bounded result categories and ranking signals.
 - `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
 - `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
@@ -116,6 +117,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wikidata native-script alias scoring when stronger source-form claims are absent.
 - Wikidata instance/subclass claim mapping for result categories and candidate ranking.
 - Wikidata entity-type scoring covers additional scientific, medical, academic, and technical term classes.
+- Wikidata field and main-subject domain claims can specialize generic concepts for rare term ranking.
 - Wikidata candidate ranking uses bounded description relevance when explicit entity-type claims are sparse.
 - Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata selection preserves useful alternate entity candidates for result ambiguity and follow-up audio lookup.

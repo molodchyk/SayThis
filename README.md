@@ -46,6 +46,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wikidata native-script aliases can be promoted to source forms when stronger name fields are missing.
 - Wikidata instance/subclass claims inform result categories and candidate ranking.
 - Wikidata entity-type scoring covers additional scientific, medical, academic, and technical term classes.
+- Wikidata field and main-subject domain claims can specialize generic concepts for rare term ranking.
 - Wikidata candidate ranking uses bounded description relevance when explicit entity-type claims are sparse.
 - Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata lookup preserves useful alternate entity candidates for ambiguity review and follow-up audio lookup.

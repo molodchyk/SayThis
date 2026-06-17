@@ -71,7 +71,7 @@ export function buildWikidataResult(query, match, entity, options = {}) {
     confidence: audioFiles.length ? "high" : confidenceForCandidate(query, sourceCandidate),
     evidence: [
       `Wikidata entity ${entity.id || match.id}`,
-      entityType.label ? `Entity type: ${entityType.label}` : "",
+      entityEvidenceItem(entityType),
       sourceCandidate?.source ? `Source form from ${sourceCandidate.source}` : "",
       sourceCandidate?.languageHint ? `Source form matched lookup language hint: ${sourceCandidate.language}` : "",
       claimedLanguage?.code === language ? `Language from ${claimedLanguage.source}: ${claimedLanguage.code}` : "",
@@ -263,6 +263,16 @@ function scoreWikidataResult(query, match, entity, result, index, options = {}) 
   score += descriptionRelevanceScore(description);
 
   return score;
+}
+
+function entityEvidenceItem(entityType = {}) {
+  if (!entityType.label) {
+    return "";
+  }
+
+  return entityType.source
+    ? `Entity signal from ${entityType.source}: ${entityType.label}`
+    : `Entity type: ${entityType.label}`;
 }
 
 function descriptionRelevanceScore(description) {

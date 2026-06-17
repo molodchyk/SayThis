@@ -38,6 +38,16 @@ const ENTITY_TYPE_BY_ID = {
   Q202444: { category: "name", label: "given name", score: 4 },
   Q1969448: { category: "concept", label: "term", score: 4 }
 };
+const ENTITY_DOMAIN_BY_ID = {
+  Q395: { category: "academic term", label: "mathematics", score: 7 },
+  Q21198: { category: "technical term", label: "computer science", score: 7 },
+  Q420: { category: "scientific term", label: "biology", score: 6 },
+  Q2329: { category: "scientific term", label: "chemistry", score: 6 },
+  Q413: { category: "scientific term", label: "physics", score: 6 },
+  Q11190: { category: "medical term", label: "medicine", score: 6 },
+  Q1071: { category: "place", label: "geography", score: 5 },
+  Q8162: { category: "academic term", label: "linguistics", score: 5 }
+};
 const ENTITY_TYPE_PRIORITY = [
   "Q4167410", "Q4167836", "Q5", "Q515", "Q532", "Q3957", "Q486972",
   "Q6256", "Q56061", "Q82794", "Q8502", "Q4022", "Q23442", "Q16521",
@@ -46,9 +56,28 @@ const ENTITY_TYPE_PRIORITY = [
   "Q11862829", "Q43229", "Q4830453", "Q3918", "Q11424", "Q5398426",
   "Q7725634", "Q101352", "Q202444", "Q1969448"
 ];
+const ENTITY_DOMAIN_PROPERTIES = {
+  P101: "field of work",
+  P921: "main subject",
+  P2579: "studied by"
+};
 const EMPTY_ENTITY_TYPE = { category: "", label: "", score: 0 };
 
 export function wikidataEntityType(entity) {
+  const type = wikidataTypeSignal(entity);
+  if (["disambiguation", "metadata"].includes(type.category)) {
+    return type;
+  }
+
+  const domain = wikidataDomainSignal(entity);
+  if (!type.label || type.category === "concept") {
+    return domain || type;
+  }
+
+  return type;
+}
+
+function wikidataTypeSignal(entity) {
   const ids = entityClaimIds(entity, "P31", "P279");
   for (const id of ENTITY_TYPE_PRIORITY) {
     if (ids.includes(id)) {
@@ -57,6 +86,21 @@ export function wikidataEntityType(entity) {
   }
 
   return EMPTY_ENTITY_TYPE;
+}
+
+function wikidataDomainSignal(entity) {
+  const signals = [];
+
+  for (const [propertyId, source] of Object.entries(ENTITY_DOMAIN_PROPERTIES)) {
+    for (const id of entityClaimIds(entity, propertyId)) {
+      const signal = ENTITY_DOMAIN_BY_ID[id];
+      if (signal) {
+        signals.push({ ...signal, source });
+      }
+    }
+  }
+
+  return signals.sort((left, right) => right.score - left.score)[0] || null;
 }
 
 function entityClaimIds(entity, ...propertyIds) {
