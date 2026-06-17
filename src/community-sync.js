@@ -200,6 +200,7 @@ function normalizeResultMetadata(result = null) {
     languageName: normalizeSelection(result.languageName),
     origin: normalizeSelection(result.origin),
     root: normalizeSelection(result.root),
+    variants: normalizeVariants(result.variants),
     ipa: normalizeSelection(result.pronunciation?.ipa),
     simple: normalizeSelection(result.pronunciation?.simple),
     audioUrl: firstResultAudioUrl(result),
@@ -254,6 +255,7 @@ function normalizeCorrection(value = {}) {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
@@ -286,6 +288,7 @@ function normalizeApprovedEntry(entry = {}, fallbackLookupKey = "") {
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
     root: normalizeSelection(entry.root),
+    variants: normalizeVariants(entry.variants),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
     audioUrl: normalizeHttpsUrl(entry.audioUrl),
@@ -301,6 +304,7 @@ function hasApprovedEntryContent(entry = {}) {
   return Boolean(
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
+    normalizeVariants(entry.variants).length ||
     normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.variantNote) ||
     normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl) ||
     normalizeTrustSignals(entry.trustSignals).length ||
@@ -334,7 +338,8 @@ function normalizeStoredFeedbackKind(kind) {
 function hasCorrectionDetail(correction = {}) {
   return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field])) ||
-    Boolean(normalizeAliases(correction.aliases).length);
+    Boolean(normalizeAliases(correction.aliases).length) ||
+    Boolean(normalizeVariants(correction.variants).length);
 }
 
 function normalizeAliases(value) {
@@ -343,6 +348,10 @@ function normalizeAliases(value) {
     : String(value || "").split(/[;,\n]/);
 
   return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeVariants(value) {
+  return normalizeAliases(value);
 }
 
 function normalizeTrustSignals(value) {

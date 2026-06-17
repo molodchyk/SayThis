@@ -140,6 +140,7 @@ test("maps resolver community helpers from a narrow module", () => {
     sourceForm: " Exampleterm ",
     aliases: "Alias; Alias",
     root: "example root",
+    variants: "studio variant; studio variant",
     simple: "eg-ZAM-pluh-term",
     audioUrl: "https://example.com/audio.ogg",
     sourceUrl: "https://example.com/source",
@@ -153,6 +154,7 @@ test("maps resolver community helpers from a narrow module", () => {
   assert.equal(found.sourceForm, "Exampleterm");
   assert.equal(found.root, "example root");
   assert.deepEqual(found.aliases, ["Alias"]);
+  assert.deepEqual(found.variants, ["studio variant"]);
   assert.deepEqual(found.trustSignals, ["local-correction", "source-backed", "audio-backed", "variant-noted", "root-noted", "local-confirmed"]);
   assert.equal(summarized.community.confirmations, 1);
   assert.deepEqual(communitySummary(found), summarized.community);
@@ -240,7 +242,7 @@ test("keeps community audio corrections on source-form fallback speech", () => {
 test("uses variant-only local community corrections", () => {
   const entries = updateCommunityEntries({}, "Exampleterm", {
     kind: "correction",
-    variantNote: "Regional pronunciation variant"
+    variants: "studio variant; regional variant"
   });
   const result = resolveTerm("Exampleterm", {
     entries: [],
@@ -248,7 +250,8 @@ test("uses variant-only local community corrections", () => {
   });
 
   assert.equal(result.id, "community:exampleterm");
-  assert.equal(result.notes, "Regional pronunciation variant");
+  assert.deepEqual(result.variants, ["studio variant", "regional variant"]);
+  assert.deepEqual(result.trustSignals, ["local-correction", "variant-noted"]);
   assert.equal(result.community.corrections, 1);
 });
 
@@ -364,6 +367,7 @@ test("keeps trust signals on approved community entries", () => {
       chiaroscuro: {
         term: "Chiaroscuro",
         sourceForm: "chiaroscuro",
+        variants: ["studio pronunciation"],
         simple: "kee-ah-roh-SKOO-roh",
         trustSignals: ["moderator-reviewed", "source-backed"]
       }
@@ -371,6 +375,7 @@ test("keeps trust signals on approved community entries", () => {
   });
 
   assert.deepEqual(result.trustSignals, ["moderator-reviewed", "source-backed"]);
+  assert.deepEqual(result.variants, ["studio pronunciation"]);
   assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
 });
 

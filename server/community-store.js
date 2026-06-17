@@ -186,6 +186,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     languageName: override.languageName || correction.languageName || result.languageName,
     origin: override.origin || correction.origin || result.origin,
     root: override.root || correction.root || result.root,
+    variants: firstAliasSet(override.variants, correction.variants, result.variants),
     ipa: override.ipa || correction.ipa || result.ipa,
     simple: override.simple || correction.simple || result.simple,
     audioUrl: override.audioUrl || correction.audioUrl || result.audioUrl,
@@ -245,6 +246,7 @@ function normalizeCorrection(value = {}) {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
@@ -267,6 +269,7 @@ function normalizeResultMetadata(value = {}) {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
@@ -312,6 +315,7 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
@@ -327,6 +331,7 @@ function hasApprovedEntryContent(value = {}) {
   return Boolean(
     normalizeSelection(value.lookupKey || value.term || value.display || value.sourceForm) ||
     normalizeAliases(value.aliases).length ||
+    normalizeVariants(value.variants).length ||
     normalizeSelection(value.language || value.languageName || value.origin || value.root || value.ipa || value.simple || value.variantNote) ||
     normalizeHttpsUrl(value.audioUrl || value.sourceUrl) ||
     normalizeTrustSignals(value.trustSignals).length ||
@@ -343,6 +348,7 @@ function hasApprovedPronunciationData(entry = {}) {
   return Boolean(
     (sourceFormKey && sourceFormKey !== termKey) ||
     normalizeAliases(entry.aliases).length ||
+    normalizeVariants(entry.variants).length ||
     normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.variantNote) ||
     normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl)
   );
@@ -370,7 +376,8 @@ function normalizeKind(kind) {
 function hasCorrectionDetail(correction = {}) {
   return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field])) ||
-    Boolean(normalizeAliases(correction.aliases).length);
+    Boolean(normalizeAliases(correction.aliases).length) ||
+    Boolean(normalizeVariants(correction.variants).length);
 }
 
 function normalizeAliases(value) {
@@ -379,6 +386,10 @@ function normalizeAliases(value) {
     : String(value || "").split(/[;,\n]/);
 
   return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeVariants(value) {
+  return normalizeAliases(value);
 }
 
 function defaultTrustSignals(submission = {}, correction = {}, result = {}, override = {}) {

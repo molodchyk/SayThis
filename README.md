@@ -40,14 +40,14 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - Split on-page overlay style payload so the overlay controller stays narrow.
 - An offscreen audio player for verified audio when the page card cannot be injected.
-- Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, roots, audio sources, and variant notes.
+- Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, roots, audio sources, variant lists, and variant notes.
 - Missing-entry requests can carry candidate source forms, aliases, roots, guides, and source links for later moderation.
 - Variant-only local corrections are surfaced on later lookup results.
 - Remote structured results can preserve bounded variant lists for result evidence and cache storage.
 - Guide-only local corrections can drive fallback speech when no community audio source is present.
 - Local community memory preserves and derives trust signals from confirmations, corrections, source links, audio links, and variant notes.
 - Remote structured results derive bounded trust signals from source, audio, and root evidence.
-- Result and correction views accept root and variant-note metadata from cached and shared result payloads.
+- Result and correction views accept root, variant-list, and variant-note metadata from cached and shared result payloads.
 - Correction audio and source links are normalized before local storage or shared submission.
 - Import and export cleanup for local and approved shared pronunciation memory.
 - Sparse keyed memory imports preserve selected-term lookup keys while keeping source-form pronunciation data.
@@ -83,8 +83,8 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Popup source-audio playback falls back to TTS automatically if the audio cannot start.
 - Options for default online lookup, on-page card display, and local/shared community-memory data management.
 - Opt-in community sync endpoint with a local retry queue for correction submissions.
-- Privacy-scoped community submissions can carry resolver aliases, origin, root, guides, audio, and source links for moderator review.
-- Community submissions preserve result trust signals and variant notes for moderator review.
+- Privacy-scoped community submissions can carry resolver aliases, origin, root, guides, audio, variants, and source links for moderator review.
+- Community submissions preserve result trust signals, variant lists, and variant notes for moderator review.
 - Sync retry queues are normalized on import and export so queued submissions stay scoped to pronunciation fields.
 - Optional host permission request for the configured community sync endpoint.
 - No-longer-used optional endpoint permissions are removed when remote features are disabled or endpoints change.

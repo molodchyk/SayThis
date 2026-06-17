@@ -459,6 +459,7 @@ test("approves confirmed resolver metadata into shared entries", async () => {
         languageName: "Irish",
         origin: "given name",
         root: "Saoirse",
+        variants: ["studio variant", "studio variant", "regional variant"],
         ipa: "ˈsˠiːɾʲʃə",
         simple: "SEER-sha",
         audioUrl: "https://example.com/saoirse.ogg",
@@ -484,6 +485,7 @@ test("approves confirmed resolver metadata into shared entries", async () => {
   assert.equal(response.body.entry.language, "ga");
   assert.equal(response.body.entry.origin, "given name");
   assert.equal(response.body.entry.root, "Saoirse");
+  assert.deepEqual(response.body.entry.variants, ["studio variant", "regional variant"]);
   assert.equal(response.body.entry.ipa, "ˈsˠiːɾʲʃə");
   assert.equal(response.body.entry.simple, "SEER-sha");
   assert.equal(response.body.entry.audioUrl, "https://example.com/saoirse.ogg");
@@ -560,6 +562,7 @@ test("approves structured missing requests after review", async () => {
         aliases: ["Example term"],
         language: "la",
         root: "example root",
+        variants: ["field variant", "field variant"],
         simple: "eg-ZAM-pluh-term",
         sourceUrl: "https://example.com/exampleterm"
       }
@@ -568,6 +571,7 @@ test("approves structured missing requests after review", async () => {
 
   assert.equal(response.status, 202);
   assert.equal(response.store.pending[0].correction.root, "example root");
+  assert.deepEqual(response.store.pending[0].correction.variants, ["field variant"]);
 
   response = await handleCommunityRequest({
     method: "POST",
@@ -580,6 +584,7 @@ test("approves structured missing requests after review", async () => {
   assert.equal(response.body.entry.requests, 1);
   assert.equal(response.body.entry.simple, "eg-ZAM-pluh-term");
   assert.equal(response.body.entry.root, "example root");
+  assert.deepEqual(response.body.entry.variants, ["field variant"]);
   assert.deepEqual(response.body.entry.aliases, ["Example term"]);
   assert.deepEqual(response.body.entry.trustSignals, [
     "moderator-reviewed",

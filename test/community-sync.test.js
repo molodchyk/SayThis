@@ -60,6 +60,7 @@ test("creates privacy-scoped community submissions", () => {
     display: "chiaroscuro",
     sourceForm: "chiaroscuro",
     aliases: ["chiaro scuro"],
+    variants: ["studio variant", "studio variant", "regional variant"],
     language: "it",
     languageName: "Italian",
     origin: "Italian art term",
@@ -85,6 +86,7 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(submission.correction.sourceUrl, "https://example.com/source");
   assert.equal(submission.result.id, "wiktionary:chiaroscuro");
   assert.deepEqual(submission.result.aliases, ["chiaro scuro"]);
+  assert.deepEqual(submission.result.variants, ["studio variant", "regional variant"]);
   assert.equal(submission.result.origin, "Italian art term");
   assert.equal(submission.result.root, "chiaro + oscuro");
   assert.equal(submission.result.ipa, "kjaroˈskuːro");
@@ -112,6 +114,7 @@ test("keeps structured missing request metadata for moderation", () => {
     aliases: "Unknown term; Unknownterm",
     language: "la",
     root: "unknown root",
+    variants: "research variant; field variant",
     simple: "un-NOHN-term",
     sourceUrl: "https://example.com/unknownterm"
   });
@@ -121,6 +124,7 @@ test("keeps structured missing request metadata for moderation", () => {
   assert.equal(submission.correction.sourceForm, "Unknownterm");
   assert.deepEqual(submission.correction.aliases, ["Unknown term", "Unknownterm"]);
   assert.equal(submission.correction.root, "unknown root");
+  assert.deepEqual(submission.correction.variants, ["research variant", "field variant"]);
   assert.equal(queue[0].correction.simple, "un-NOHN-term");
   assert.equal(queue[0].correction.sourceUrl, "https://example.com/unknownterm");
 });
@@ -218,6 +222,7 @@ test("normalizes queued submissions without request metadata", () => {
       sourceForm: " chiaroscuro ",
       aliases: "light-dark; light-dark",
       root: " chiaro + oscuro ",
+      variants: "studio variant; studio variant",
       simple: "kee-ah-roh-SKOO-roh",
       sourceUrl: " https://example.com/source "
     },
@@ -227,6 +232,7 @@ test("normalizes queued submissions without request metadata", () => {
       sourceForm: "chiaroscuro",
       language: "it",
       root: "chiaro + oscuro",
+      variants: ["regional variant", "regional variant"],
       variantNote: "Regional studio variant",
       trustSignals: ["source-backed", "source-backed"],
       sourceStatus: "verified-audio",
@@ -252,9 +258,11 @@ test("normalizes queued submissions without request metadata", () => {
   assert.equal(queue[0].attempts, 2);
   assert.deepEqual(queue[0].correction.aliases, ["light-dark"]);
   assert.equal(queue[0].correction.root, "chiaro + oscuro");
+  assert.deepEqual(queue[0].correction.variants, ["studio variant"]);
   assert.equal(queue[0].correction.sourceUrl, "https://example.com/source");
   assert.equal(queue[0].result.id, "wiktionary:chiaroscuro");
   assert.equal(queue[0].result.root, "chiaro + oscuro");
+  assert.deepEqual(queue[0].result.variants, ["regional variant"]);
   assert.equal(queue[0].result.variantNote, "Regional studio variant");
   assert.deepEqual(queue[0].result.trustSignals, ["source-backed"]);
   assert.equal(Object.hasOwn(queue[0], "pageUrl"), false);
@@ -271,6 +279,7 @@ test("normalizes approved community entries", () => {
       sourceForm: "chiaroscuro",
       language: "it",
       root: "chiaro + oscuro",
+      variants: "studio variant; regional variant; studio variant",
       confirmations: 8,
       corrections: 2,
       ipa: "kjaroˈskuːro",
@@ -286,6 +295,7 @@ test("normalizes approved community entries", () => {
   assert.deepEqual(entries.chiaroscuro.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(entries.chiaroscuro.language, "it");
   assert.equal(entries.chiaroscuro.root, "chiaro + oscuro");
+  assert.deepEqual(entries.chiaroscuro.variants, ["studio variant", "regional variant"]);
   assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");
 });

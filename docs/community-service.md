@@ -62,11 +62,11 @@ When the pending moderation queue reaches `SAYTHIS_MAX_PENDING_SUBMISSIONS`, new
 
 Rejected submission summaries are capped by `SAYTHIS_MAX_REJECTED_SUBMISSIONS`; the newest summaries are kept.
 
-Correction submissions must include at least one structured pronunciation field, such as source form, aliases, language, origin, root, IPA, simple guide, audio URL, source URL, or variant note. Empty correction submissions are rejected as invalid.
+Correction submissions must include at least one structured pronunciation field, such as source form, aliases, language, origin, root, variants, IPA, simple guide, audio URL, source URL, or variant note. Empty correction submissions are rejected as invalid.
 
 Missing requests may also carry structured candidate fields, such as source form, aliases, root, guide, and source URL. They remain pending until a moderator approves, edits, or rejects them.
 
-Approving a pending submission publishes it only when the final entry includes pronunciation data such as a distinct source form, aliases, language, origin, root, IPA, simple guide, audio URL, source URL, or variant note. Bare missing requests can remain pending until a moderator adds that data or rejects them.
+Approving a pending submission publishes it only when the final entry includes pronunciation data such as a distinct source form, aliases, language, origin, root, variants, IPA, simple guide, audio URL, source URL, or variant note. Bare missing requests can remain pending until a moderator adds that data or rejects them.
 
 For a production deployment, set `SAYTHIS_ALLOWED_ORIGINS` to a comma-separated list of trusted origins, such as `https://example.com,chrome-extension://<extension-id>`. The default `*` keeps local and early public testing simple.
 
@@ -109,6 +109,7 @@ Content-Type: application/json
     "sourceForm": "chiaroscuro",
     "aliases": ["light-dark"],
     "root": "chiaro + oscuro",
+    "variants": ["studio pronunciation", "regional pronunciation"],
     "trustSignals": ["moderator-reviewed", "source-backed"],
     "language": "it",
     "simple": "kee-ah-roh-SKOO-roh",
@@ -129,7 +130,7 @@ Content-Type: application/json
 }
 ```
 
-The `/admin` page uses these same endpoints. It can approve submissions with edited source form, aliases, language, origin, root, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields.
+The `/admin` page uses these same endpoints. It can approve submissions with edited source form, aliases, language, origin, root, variants, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields.
 
 ## Storage
 

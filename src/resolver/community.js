@@ -44,6 +44,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     languageName: existing.languageName || "",
     origin: existing.origin || "",
     root: existing.root || "",
+    variants: normalizeAliases(existing.variants),
     ipa: existing.ipa || "",
     simple: existing.simple || "",
     audioUrl: existing.audioUrl || "",
@@ -67,8 +68,8 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     }
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
-    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
-      const value = field === "aliases"
+    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+      const value = field === "aliases" || field === "variants"
         ? normalizeAliases(feedback[field])
         : field === "audioUrl" || field === "sourceUrl"
           ? normalizeUrl(feedback[field])
@@ -104,7 +105,7 @@ export function findCommunityEntry(lookupKey, entries = {}) {
 }
 
 export function hasCommunityPronunciationData(entry = {}) {
-  return Boolean(entry.sourceForm || entry.language || entry.root || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
+  return Boolean(entry.sourceForm || entry.language || entry.root || normalizeAliases(entry.variants).length || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
 }
 
 export function withCommunitySummary(result, communityEntry) {
@@ -165,6 +166,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
     root: normalizeSelection(entry.root),
+    variants: normalizeAliases(entry.variants),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
     audioUrl: normalizeUrl(entry.audioUrl),
@@ -181,6 +183,7 @@ function hasCommunityEntryContent(entry = {}) {
   return Boolean(
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
+    normalizeAliases(entry.variants).length ||
     normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
     hasRequestDetail(normalizeRequest(entry.request)) ||
     normalizeTrustSignals(entry.trustSignals).length ||
@@ -206,7 +209,7 @@ function communityTrustSignals(existingSignals, feedback = {}, entry = {}) {
   if (entry.audioUrl) {
     signals.push("audio-backed");
   }
-  if (entry.variantNote) {
+  if (entry.variantNote || normalizeAliases(entry.variants).length) {
     signals.push("variant-noted");
   }
   if (entry.root) {
@@ -227,6 +230,7 @@ function normalizeRequest(value = {}) {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    variants: normalizeAliases(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     sourceUrl: normalizeUrl(value.sourceUrl),
@@ -237,6 +241,8 @@ function normalizeRequest(value = {}) {
 function mergeRequest(existing = {}, incoming = {}) {
   const existingAliases = normalizeAliases(existing.aliases);
   const incomingAliases = normalizeAliases(incoming.aliases);
+  const existingVariants = normalizeAliases(existing.variants);
+  const incomingVariants = normalizeAliases(incoming.variants);
   return {
     sourceForm: incoming.sourceForm || existing.sourceForm || "",
     aliases: normalizeAliases([...existingAliases, ...incomingAliases]),
@@ -244,6 +250,7 @@ function mergeRequest(existing = {}, incoming = {}) {
     languageName: incoming.languageName || existing.languageName || "",
     origin: incoming.origin || existing.origin || "",
     root: incoming.root || existing.root || "",
+    variants: normalizeAliases([...existingVariants, ...incomingVariants]),
     ipa: incoming.ipa || existing.ipa || "",
     simple: incoming.simple || existing.simple || "",
     sourceUrl: incoming.sourceUrl || existing.sourceUrl || "",
@@ -259,6 +266,7 @@ function hasRequestDetail(request = {}) {
     request.languageName ||
     request.origin ||
     request.root ||
+    normalizeAliases(request.variants).length ||
     request.ipa ||
     request.simple ||
     request.sourceUrl ||

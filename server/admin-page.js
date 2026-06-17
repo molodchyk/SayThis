@@ -302,6 +302,10 @@ export function renderAdminPage() {
           <input data-input="root">
         </label>
         <label>
+          Variants
+          <input data-input="variants">
+        </label>
+        <label>
           IPA
           <input data-input="ipa">
         </label>
@@ -396,6 +400,7 @@ export function renderAdminPage() {
         languageName: entry.correction?.languageName || entry.result?.languageName || "",
         origin: entry.correction?.origin || "",
         root: entry.correction?.root || entry.result?.root || "",
+        variants: variantsText(entry.correction?.variants || entry.result?.variants),
         ipa: entry.correction?.ipa || "",
         simple: entry.correction?.simple || "",
         audioUrl: entry.correction?.audioUrl || "",
@@ -461,7 +466,7 @@ export function renderAdminPage() {
 
     function collectFields(article) {
       const entry = {};
-      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
+      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
         const value = article.querySelector(\`[data-input="\${name}"]\`)?.value.trim();
         if (value) {
           entry[name] = value;
@@ -498,10 +503,14 @@ export function renderAdminPage() {
       return Array.isArray(value) ? value.filter(Boolean).join("; ") : "";
     }
 
+    function variantsText(value) {
+      return Array.isArray(value) ? value.filter(Boolean).join("; ") : "";
+    }
+
     function trustSignalsText(entry) {
       const correction = entry.correction || {};
       const result = entry.result || {};
-      const signals = ["moderator-reviewed"];
+      const signals = ["moderator-reviewed", ...(Array.isArray(result.trustSignals) ? result.trustSignals : [])];
 
       if (correction.sourceUrl) {
         signals.push("source-backed");

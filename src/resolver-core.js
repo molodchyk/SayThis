@@ -250,6 +250,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     category: "community-entry",
     origin: entry.origin || "",
     root: normalizeSelection(entry.root),
+    variants: normalizeAliases(entry.variants),
     pronunciation: {
       ipa: entry.ipa || "",
       simple: entry.simple || "",
