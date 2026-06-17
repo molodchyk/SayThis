@@ -287,6 +287,31 @@ test("uses entity type claims for category evidence", () => {
   assert.ok(result.evidence.includes("Entity type: city"));
 });
 
+test("uses broader entity type claims and filters category pages", () => {
+  for (const [query, id, type, category, label] of [
+    ["Dijkstra", "Qalgorithm", "Q8366", "technical term", "algorithm"],
+    ["amyloid beta", "Qprotein", "Q8054", "scientific term", "protein"],
+    ["topology", "Qmath", "Q1936384", "academic term", "branch of mathematics"],
+    ["flu", "Qdisease", "Q12136", "medical term", "disease"]
+  ]) {
+    const result = buildWikidataResult(query, typedMatch(id, query, category), typedEntity(id, query, category, type));
+    assert.equal(result.category, category);
+    assert.ok(result.evidence.includes(`Entity type: ${label}`));
+  }
+
+  const result = selectBestWikidataResult("Mori", [
+    typedMatch("Qcategory", "Mori", "Wikimedia category page"),
+    typedMatch("Qfamily", "Mori", "family name")
+  ], {
+    Qcategory: typedEntity("Qcategory", "Mori", "Wikimedia category page", "Q4167836"),
+    Qfamily: typedEntity("Qfamily", "Mori", "family name", "Q101352")
+  });
+  assert.equal(result.id, "wikidata:Qfamily");
+  assert.equal(result.category, "name");
+  assert.ok(result.evidence.includes("Entity type: family name"));
+  assert.equal(result.alternateResults, undefined);
+});
+
 test("extracts pronunciation audio and IPA claims", () => {
   const result = buildWikidataResult("Example", {
     id: "Q1",
@@ -563,3 +588,12 @@ test("plans bounded Wikidata search languages from selected script", () => {
   }), ["en", "ru", "bg", "sr", "pl", "tr", "ja", "ko"]);
   assert.deepEqual(normalizeSearchLanguageHints([" PT_BR ", "bad!", "tr", "pt"]), ["pt", "tr"]);
 });
+
+function typedMatch(id, label, description) {
+  return { id, label, language: "en", description, match: { text: label } };
+}
+
+function typedEntity(id, label, description, type) {
+  const language = "en";
+  return { id, labels: { en: { language, value: label } }, descriptions: { en: { language, value: description } }, claims: { P31: [{ mainsnak: { datavalue: { value: { id: type } } } }] }, aliases: {} };
+}

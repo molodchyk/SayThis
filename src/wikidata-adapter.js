@@ -11,6 +11,9 @@ import {
   wikidataClaimedLanguage,
   wikidataResultLanguage
 } from "./wikidata/language-claims.js";
+import {
+  wikidataEntityType
+} from "./wikidata/entity-types.js";
 
 export {
   normalizeSearchLanguageHints,
@@ -30,56 +33,6 @@ const TAXON_COMMON_NAME = "P1843";
 const PSEUDONYM = "P742";
 const PRONUNCIATION_AUDIO = "P443";
 const IPA_TRANSCRIPTION = "P898";
-const INSTANCE_OF = "P31";
-const SUBCLASS_OF = "P279";
-const ENTITY_TYPE_BY_ID = {
-  Q5: { category: "person", label: "person", score: 10 },
-  Q4167410: { category: "disambiguation", label: "disambiguation", score: -60 },
-  Q16521: { category: "scientific term", label: "taxon", score: 9 },
-  Q515: { category: "place", label: "city", score: 10 },
-  Q532: { category: "place", label: "village", score: 10 },
-  Q3957: { category: "place", label: "town", score: 10 },
-  Q486972: { category: "place", label: "human settlement", score: 9 },
-  Q6256: { category: "place", label: "country", score: 9 },
-  Q56061: { category: "place", label: "administrative area", score: 8 },
-  Q82794: { category: "place", label: "geographic region", score: 8 },
-  Q8502: { category: "place", label: "mountain", score: 8 },
-  Q4022: { category: "place", label: "river", score: 8 },
-  Q23442: { category: "place", label: "island", score: 8 },
-  Q43229: { category: "organization", label: "organization", score: 7 },
-  Q4830453: { category: "organization", label: "business", score: 7 },
-  Q3918: { category: "organization", label: "university", score: 7 },
-  Q11424: { category: "creative title", label: "film", score: 5 },
-  Q5398426: { category: "creative title", label: "series", score: 5 },
-  Q7725634: { category: "creative title", label: "literary title", score: 5 },
-  Q4167836: { category: "name", label: "family name", score: 4 },
-  Q202444: { category: "name", label: "given name", score: 4 },
-  Q1969448: { category: "concept", label: "term", score: 4 }
-};
-const ENTITY_TYPE_PRIORITY = [
-  "Q4167410",
-  "Q5",
-  "Q515",
-  "Q532",
-  "Q3957",
-  "Q486972",
-  "Q6256",
-  "Q56061",
-  "Q82794",
-  "Q8502",
-  "Q4022",
-  "Q23442",
-  "Q16521",
-  "Q43229",
-  "Q4830453",
-  "Q3918",
-  "Q11424",
-  "Q5398426",
-  "Q7725634",
-  "Q4167836",
-  "Q202444",
-  "Q1969448"
-];
 export function buildWikidataResult(query, match, entity, options = {}) {
   if (!match?.id || !entity) {
     return null;
@@ -301,6 +254,10 @@ function scoreWikidataResult(query, match, entity, result, index, options = {}) 
     score -= 50;
   }
 
+  if (description.includes("wikimedia category") || description.includes("category page")) {
+    score -= 35;
+  }
+
   score += entityType.score || 0;
 
   if (description.includes("family name") || description.includes("given name") || description.includes("place") || description.includes("city")) {
@@ -345,7 +302,10 @@ function isUsefulWikidataAlternate(result = {}) {
   return Boolean(
     result.sourceForm &&
     result.sourceStatus &&
-    !category.includes("disambiguation")
+    !category.includes("disambiguation") &&
+    !category.includes("metadata") &&
+    !category.includes("wikimedia category") &&
+    !category.includes("category page")
   );
 }
 
@@ -479,43 +439,6 @@ function sitelinkCandidates(entity, source) {
 
 function firstStringClaimValue(entity, propertyId) {
   return stringClaimValues(entity, propertyId)[0] || "";
-}
-
-function wikidataEntityType(entity) {
-  const ids = entityClaimIds(entity, INSTANCE_OF, SUBCLASS_OF);
-  for (const id of ENTITY_TYPE_PRIORITY) {
-    if (ids.includes(id)) {
-      return ENTITY_TYPE_BY_ID[id];
-    }
-  }
-
-  return { category: "", label: "", score: 0 };
-}
-
-function entityClaimIds(entity, ...propertyIds) {
-  const ids = [];
-  const seen = new Set();
-
-  for (const propertyId of propertyIds) {
-    for (const claim of entity?.claims?.[propertyId] || []) {
-      const id = entityIdFromClaimValue(claim?.mainsnak?.datavalue?.value);
-      if (id && !seen.has(id)) {
-        seen.add(id);
-        ids.push(id);
-      }
-    }
-  }
-
-  return ids;
-}
-
-function entityIdFromClaimValue(value) {
-  if (typeof value?.id === "string" && /^Q\d+$/.test(value.id)) {
-    return value.id;
-  }
-
-  const numericId = Number(value?.["numeric-id"]);
-  return Number.isInteger(numericId) && numericId > 0 ? `Q${numericId}` : "";
 }
 
 function stringClaimValues(entity, propertyId) {

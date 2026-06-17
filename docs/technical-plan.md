@@ -78,6 +78,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym source-form scoring for proper nouns and research terms.
 - Wikidata native-script alias scoring when stronger source-form claims are absent.
 - Wikidata instance/subclass claim mapping for result categories and candidate ranking.
+- Wikidata entity-type scoring covers additional scientific, medical, academic, and technical term classes.
 - Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata selection preserves useful alternate entity candidates for result ambiguity and follow-up audio lookup.
 - Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity.
@@ -224,6 +225,6 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 
 ## Near-Term Tasks
 
-- Broaden online entity scoring with additional structured sources.
+- Keep broadening online entity scoring with more structured-source signals.
 - Add actual curated public audio files after source/license review.
 - Add loaded-extension smoke coverage for the context-menu flow.
