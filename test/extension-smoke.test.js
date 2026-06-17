@@ -64,12 +64,17 @@ test("overlay exposes playback and feedback actions", async () => {
   const background = await readText("src/background.js");
   const playbackSurface = await readText("src/background/playback-surface-flow.js");
   const styles = await readText("src/content/overlay-style.js");
+  const runtimeAdapters = await readText("src/content/overlay-runtime-adapters.js");
   const source = await readText("src/content-overlay.js");
 
   assert.match(background, /createPlaybackSurface/);
   assert.match(playbackSurface, /src\/content\/overlay-style\.js/);
+  assert.match(playbackSurface, /src\/content\/overlay-runtime-adapters\.js/);
   assert.match(styles, /__sayThisOverlayStyles/);
+  assert.match(runtimeAdapters, /__sayThisOverlayRuntimeAdapters/);
+  assert.match(runtimeAdapters, /SAYTHIS_SHOW_RESULT/);
   assert.match(source, /__sayThisOverlayStyles/);
+  assert.match(source, /__sayThisOverlayRuntimeAdapters/);
   for (const action of ["speak", "online", "slow", "correct", "confirm", "missing", "wrong"]) {
     assert.match(source, new RegExp(`data-action="${action}"`));
   }

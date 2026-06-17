@@ -41,6 +41,7 @@ Chrome Manifest V3 components:
 - `options/runtime-adapters.js`: owns options-page storage calls, optional endpoint permission requests, stale permission cleanup, and runtime-message responses.
 - `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.
 - `content/overlay-style.js`: owns the classic-script style payload injected before the on-page card.
+- `content/overlay-runtime-adapters.js`: owns classic content-script runtime message listener and send-message wrappers for the on-page card.
 - `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
@@ -132,6 +133,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.
 - Result card with source form, aliases, language, category, origin, root, domain hint, variants, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - On-page overlay styles are split into a companion injected content script, keeping the overlay controller below the file-size soft limit.
+- On-page overlay runtime messaging is split into a companion injected content script with deterministic listener and message tests.
 - Alternate candidate summaries preserve speech-locale hints and can be spoken directly from popup or on-page result cards.
 - Local confirmation, wrong-result, missing-term, correction, aliases, root, domain-hint, audio-source, source-link, variant-note storage, and import/export normalization.
 - Missing-entry requests can carry candidate source forms, aliases, roots, domain hints, guides, and source links without promoting them to local pronunciation answers.

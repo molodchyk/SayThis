@@ -49,7 +49,7 @@ test("injects the overlay and sends result messages when enabled", async () => {
   assert.equal(shown, true);
   assert.deepEqual(calls[0], ["executeScript", {
     target: { tabId: 7 },
-    files: ["src/content/overlay-style.js", "src/content-overlay.js"]
+    files: ["src/content/overlay-style.js", "src/content/overlay-runtime-adapters.js", "src/content-overlay.js"]
   }]);
   assert.equal(calls[1][0], "sendTabMessage");
   assert.equal(calls[1][1], 7);

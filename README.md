@@ -50,6 +50,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Popup and on-page one-off lookup language hints can guide a single online resolve without changing saved defaults.
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - Split on-page overlay style payload so the overlay controller stays narrow.
+- Split on-page overlay runtime messaging into a companion content adapter.
 - An offscreen audio player for verified audio when the page card cannot be injected.
 - Local community-memory controls for confirmations, wrong results, missing terms, richer corrections, aliases, roots, domain hints, audio sources, variant lists, and variant notes.
 - Missing-entry requests can carry candidate source forms, aliases, roots, domain hints, guides, and source links for later moderation.

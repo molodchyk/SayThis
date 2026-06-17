@@ -8,16 +8,12 @@
   let root;
   let audioPlayer;
   const overlayStyles = globalThis.__sayThisOverlayStyles || "";
+  const overlayRuntime = globalThis.__sayThisOverlayRuntimeAdapters || {};
+  const runtimeAdapters = overlayRuntime.createOverlayRuntimeAdapters?.() || {};
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== "SAYTHIS_SHOW_RESULT") {
-      return false;
-    }
-
-    renderOverlay(message.result, { autoPlay: Boolean(message.autoPlay) });
-    sendResponse({ ok: true });
-    return true;
-  });
+  overlayRuntime.addShowResultListener?.((result, options) => {
+    renderOverlay(result, options);
+  }, runtimeAdapters);
 
   function renderOverlay(result, options = {}) {
     if (!result) {
@@ -188,14 +184,14 @@
   function resolveOnline(result) {
     const languageHints = lookupHints();
     setStatus("Checking online sources.");
-    chrome.runtime.sendMessage({
+    sendOverlayMessage({
       type: "SAYTHIS_RESOLVE",
       text: result.query || result.display,
       useOnline: true,
       languageHints
-    }, (response) => {
-      if (chrome.runtime.lastError || !response?.ok) {
-        setStatus(response?.error || chrome.runtime.lastError?.message || "Online lookup failed.");
+    }).then((response) => {
+      if (!response?.ok) {
+        setStatus(response?.error || "Online lookup failed.");
         return;
       }
 
@@ -207,13 +203,13 @@
   function sendFeedback(result, kind, feedback = { kind }) {
     setStatus("Saving.");
 
-    chrome.runtime.sendMessage({
+    sendOverlayMessage({
       type: "SAYTHIS_FEEDBACK",
       text: result.query || result.display,
       feedback
-    }, (response) => {
-      if (chrome.runtime.lastError || !response?.ok) {
-        setStatus(response?.error || chrome.runtime.lastError?.message || "Could not save.");
+    }).then((response) => {
+      if (!response?.ok) {
+        setStatus(response?.error || "Could not save.");
         return;
       }
 
@@ -242,13 +238,13 @@
     }
 
     setStatus("Saving.");
-    chrome.runtime.sendMessage({
+    sendOverlayMessage({
       type: "SAYTHIS_FEEDBACK",
       text: result.query || result.display,
       feedback
-    }, (response) => {
-      if (chrome.runtime.lastError || !response?.ok) {
-        setStatus(response?.error || chrome.runtime.lastError?.message || "Could not save.");
+    }).then((response) => {
+      if (!response?.ok) {
+        setStatus(response?.error || "Could not save.");
         return;
       }
 
@@ -316,7 +312,7 @@
       return;
     }
 
-    chrome.runtime.sendMessage({
+    sendOverlayMessage({
       type: "SAYTHIS_SPEAK",
       text: result.query || result.sourceForm || result.display,
       result,
@@ -342,7 +338,7 @@
 
       fallbackStarted = true;
       setStatus("Audio failed. Using TTS fallback.");
-      chrome.runtime.sendMessage({
+      sendOverlayMessage({
         type: "SAYTHIS_SPEAK",
         text: result.query || result.display,
         result,
@@ -370,6 +366,14 @@
     audioPlayer.pause();
     audioPlayer.currentTime = 0;
     audioPlayer = null;
+  }
+
+  function sendOverlayMessage(message) {
+    if (typeof overlayRuntime.sendRuntimeMessage !== "function") {
+      return Promise.resolve({ ok: false, error: "Runtime messaging unavailable." });
+    }
+
+    return overlayRuntime.sendRuntimeMessage(message, runtimeAdapters);
   }
 
   function getBestAudio(result) {
