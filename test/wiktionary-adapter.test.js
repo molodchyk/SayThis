@@ -66,6 +66,32 @@ const RESPELL_WIKITEXT = `
 # A term with a simple guide.
 `;
 
+const ALTERNATIVE_FORMS_WIKITEXT = `
+==English==
+
+===Alternative forms===
+* {{alter|en|chiaro scuro|chiar'oscuro}}
+* {{l|en|chiaroscuro variant}}
+* plain form (field note)
+* [[brightdark|bright-dark]]
+
+===Pronunciation===
+* {{IPA|en|/kiˌɑːɹəˈskʊəɹoʊ/}}
+
+===Noun===
+# A term with related written forms.
+`;
+
+const VARIANT_ONLY_WIKITEXT = `
+==English==
+
+===Alternative spellings===
+* {{alt|en|colour form}}
+
+===Noun===
+# A term with a related written form.
+`;
+
 const LOCAL_EDITION_WIKITEXT = `
 ==Wymowa==
 * {{IPA|pl|/ˈpʂɨ.kwat/}}
@@ -193,4 +219,28 @@ test("captures Wiktionary respelling guides", () => {
   assert.equal(parsed.simple, "kee-AH-roh-SKOOR-oh");
   assert.equal(result.pronunciation.simple, "kee-AH-roh-SKOOR-oh");
   assert.equal(result.confidence, "low");
+});
+
+test("captures Wiktionary alternative forms as variants", () => {
+  const parsed = parseWiktionaryPronunciation(ALTERNATIVE_FORMS_WIKITEXT);
+  const result = buildWiktionaryResult("chiaroscuro", "chiaroscuro", ALTERNATIVE_FORMS_WIKITEXT);
+
+  assert.deepEqual(parsed.variants, [
+    "chiaro scuro",
+    "chiar'oscuro",
+    "chiaroscuro variant",
+    "plain form",
+    "bright-dark"
+  ]);
+  assert.deepEqual(result.variants, parsed.variants);
+  assert.ok(result.evidence.includes("Wiktionary alternative forms: 5"));
+});
+
+test("builds a structured Wiktionary result from variant-only entries", () => {
+  const result = buildWiktionaryResult("color form", "color form", VARIANT_ONLY_WIKITEXT);
+
+  assert.equal(result.sourceStatus, "structured-source");
+  assert.equal(result.confidence, "low");
+  assert.deepEqual(result.variants, ["colour form"]);
+  assert.ok(result.evidence.includes("Wiktionary alternative forms: 1"));
 });

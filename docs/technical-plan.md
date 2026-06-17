@@ -31,7 +31,7 @@ Chrome Manifest V3 components:
 - `wikidata/search-languages.js`: plans bounded Wikidata search languages from selected script and explicit user hints.
 - `wikidata/language-claims.js`: maps selected Wikidata language and country claims into bounded result-language hints.
 - `wikidata/entity-types.js`: maps selected Wikidata instance, subclass, field, and main-subject claims into bounded result categories and ranking signals.
-- `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, and pronunciation-relevant etymology from Wiktionary wikitext.
+- `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, pronunciation-relevant etymology, and alternative written forms from Wiktionary wikitext.
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
 - `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
 - `custom-source-adapter.js`: extracts domain-specific pronunciation entries from a configured structured JSON endpoint.
@@ -127,6 +127,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Hinted Wiktionary edition retries after English Wiktionary for dictionary entries missing from English Wiktionary.
 - Wiktionary etymology lines can populate pronunciation-relevant root fields.
 - Wiktionary enPR and respelling templates parsed into simple pronunciation guides.
+- Wiktionary alternative-form sections can populate variant spellings for later pronunciation-audio lookup.
 - Source-provided simple guides can drive fallback speech when no verified audio is available.
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
