@@ -34,6 +34,7 @@ import {
 } from "./community-sync.js";
 import {
   normalizeCredentials,
+  normalizeLanguageHints,
   normalizeSettings,
   onlineCacheScope
 } from "./shared/settings.js";
@@ -203,23 +204,25 @@ async function resolveSelection(text, options = {}) {
   };
   const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
+  const hasRequestHints = normalizeLanguageHints(options.languageHints).length > 0;
+  const onlineSettings = onlineSettingsForRequest(settings, options);
   const localResult = resolveTerm(selectedText, {
     entries: data.entries,
     communityEntries
   });
 
   let result = localResult;
-  const shouldUseOnline = options.useOnline ?? settings.onlineByDefault;
+  const shouldUseOnline = options.useOnline ?? (hasRequestHints || onlineSettings.onlineByDefault);
   let resultCache = stored[STORAGE_KEYS.resultCache];
   if (shouldUseOnline) {
-    const cacheOptions = { cacheScope: onlineCacheScope(settings, credentials) };
+    const cacheOptions = { cacheScope: onlineCacheScope(onlineSettings, credentials) };
     const cached = readCachedResult(resultCache, selectedText, cacheOptions);
     resultCache = cached.cache;
 
     try {
       const remoteResult = cached.hit
         ? cached.result
-        : await resolveWithOnlineSources(selectedText, settings, credentials, {
+        : await resolveWithOnlineSources(selectedText, onlineSettings, credentials, {
           localResult
         });
       if (!cached.hit && isCacheableResult(remoteResult)) {
@@ -555,9 +558,28 @@ async function getSettings() {
 }
 
 function useOnlineMessageOptions(message = {}) {
+  const languageHints = normalizeLanguageHints(message.languageHints);
   if (!Object.prototype.hasOwnProperty.call(message, "useOnline")) {
-    return {};
+    return languageHints.length ? { languageHints } : {};
   }
 
-  return { useOnline: Boolean(message.useOnline) };
+  return {
+    useOnline: Boolean(message.useOnline),
+    ...(languageHints.length ? { languageHints } : {})
+  };
+}
+
+function onlineSettingsForRequest(settings, options = {}) {
+  const requestHints = normalizeLanguageHints(options.languageHints);
+  if (!requestHints.length) {
+    return settings;
+  }
+
+  return {
+    ...settings,
+    lookupLanguageHints: normalizeLanguageHints([
+      ...settings.lookupLanguageHints,
+      ...requestHints
+    ])
+  };
 }

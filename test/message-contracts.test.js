@@ -30,6 +30,15 @@ test("builds a normalized resolve message", () => {
     text: "chiaroscuro",
     useOnline: true
   });
+  assert.deepEqual(createResolveMessage("  chiaroscuro  ", {
+    useOnline: true,
+    languageHints: " it, pt-BR, bad!, it "
+  }), {
+    type: MESSAGE_TYPES.resolve,
+    text: "chiaroscuro",
+    useOnline: true,
+    languageHints: ["it", "pt"]
+  });
   assert.deepEqual(createResolveMessage("  chiaroscuro  ", { useOnline: false }), {
     type: MESSAGE_TYPES.resolve,
     text: "chiaroscuro",

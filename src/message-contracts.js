@@ -25,7 +25,8 @@ export function createResolveMessage(text, options = {}) {
   return compactMessage({
     type: MESSAGE_TYPES.resolve,
     text: normalizeSelection(text),
-    useOnline: normalizeOptionalBoolean(options, "useOnline")
+    useOnline: normalizeOptionalBoolean(options, "useOnline"),
+    languageHints: normalizeLanguageHints(options.languageHints)
   });
 }
 
@@ -36,7 +37,8 @@ export function createSpeakMessage(text, options = {}) {
     result: options.result && typeof options.result === "object" ? options.result : undefined,
     rate: normalizeRate(options.rate),
     lang: normalizeLanguageOption(options.lang),
-    useOnline: normalizeOptionalBoolean(options, "useOnline")
+    useOnline: normalizeOptionalBoolean(options, "useOnline"),
+    languageHints: normalizeLanguageHints(options.languageHints)
   });
 }
 
@@ -107,6 +109,32 @@ function normalizeLanguageOption(value) {
     .trim()
     .replace(/_/g, "-")
     .slice(0, 32);
+}
+
+function normalizeLanguageHints(value) {
+  const values = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[\s,;]+/);
+  const seen = new Set();
+  const hints = [];
+
+  for (const item of values) {
+    const code = normalizeLanguageOption(item)
+      .toLowerCase()
+      .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0]
+      ?.split("-")[0] || "";
+    if (!code || seen.has(code)) {
+      continue;
+    }
+
+    seen.add(code);
+    hints.push(code);
+    if (hints.length >= 8) {
+      break;
+    }
+  }
+
+  return hints;
 }
 
 function normalizeRate(value) {

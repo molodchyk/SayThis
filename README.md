@@ -35,6 +35,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wikidata lookup preserves useful alternate entity candidates for ambiguity review and follow-up audio lookup.
 - Wikidata pronunciation-audio lookup preserves multiple Commons recordings when an entity provides them.
 - Optional Wikidata lookup language hints for rare Latin-script terms and competing source forms.
+- Popup one-off lookup language hints can guide a single online resolve without changing saved defaults.
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - Split on-page overlay style payload so the overlay controller stays narrow.
 - An offscreen audio player for verified audio when the page card cannot be injected.
@@ -144,6 +145,7 @@ The first useful version should be narrow and trusted:
 
 - Resolve unfamiliar terms through structured sources before falling back to generated speech.
 - Let users add lookup language hints when a Latin spelling is ambiguous, keeping the resolver explicit instead of chat-based.
+- Let popup users add one-off lookup hints for a single term without changing their default resolver settings.
 - Use structured source language claims to guide audio lookup when a term's spelling alone is ambiguous.
 - Store native-script forms, romanized variants, source confidence, and native audio.
 - Treat each useful lookup as a reusable pronunciation-graph entry, not a chat response or a closed-list item.

@@ -18,6 +18,7 @@ import {
 } from "./message-contracts.js";
 
 const selectionInput = document.getElementById("selection");
+const lookupHintsInput = document.getElementById("lookup-hints");
 const resolveButton = document.getElementById("resolve");
 const onlineButton = document.getElementById("resolve-online");
 const speakButton = document.getElementById("speak");
@@ -167,15 +168,17 @@ async function readPopupSettings() {
 
 async function resolveSelection(useOnline) {
   const text = normalizeSelection(selectionInput.value);
+  const languageHints = lookupHints();
   if (!text) {
     setStatus("No selected text.");
     updateButtonState();
     return;
   }
 
-  setStatus(useOnline ? "Checking online sources." : "Resolving.");
+  setStatus(useOnline || languageHints.length ? "Checking online sources." : "Resolving.");
   const response = await sendMessage(createResolveMessage(text, {
-    useOnline
+    useOnline: useOnline || languageHints.length ? true : useOnline,
+    languageHints
   }));
 
   if (!response.ok) {
@@ -436,6 +439,14 @@ function sendMessage(message) {
 
 function setStatus(value) {
   statusText.textContent = value;
+}
+
+function lookupHints() {
+  return lookupHintsInput.value
+    .split(/[\s,;]+/)
+    .map((value) => value.trim().toLowerCase().replace(/_/g, "-").split("-")[0])
+    .filter((value, index, values) => /^[a-z]{2,3}$/.test(value) && values.indexOf(value) === index)
+    .slice(0, 8);
 }
 
 function updateButtonState() {

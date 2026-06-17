@@ -348,9 +348,25 @@ test("popup quick feedback labels match their feedback kinds", async () => {
   const html = await readText("src/popup.html");
   const source = await readText("src/popup.js");
 
+  assert.match(html, /id="lookup-hints"/);
+  assert.match(source, /lookupHintsInput/);
+  assert.match(source, /languageHints/);
+  assert.match(source, /useOnline: useOnline \|\| languageHints\.length \? true : useOnline/);
   assert.match(html, /id="confirm"[^>]*>Confirm<\/button>/);
   assert.match(source, /confirmButton\.addEventListener\("click", \(\) => saveFeedback\(\{ kind: "confirm" \}\)\)/);
   assert.match(source, /missingButton\.addEventListener\("click", \(\) => saveFeedback\(feedbackFromCorrectionFields\("missing"\)\)\)/);
+});
+
+test("background includes per-lookup hints in online settings", async () => {
+  const source = await readText("src/background.js");
+
+  assert.match(source, /normalizeLanguageHints/);
+  assert.match(source, /const hasRequestHints = normalizeLanguageHints\(options\.languageHints\)\.length > 0/);
+  assert.match(source, /const shouldUseOnline = options\.useOnline \?\? \(hasRequestHints \|\| onlineSettings\.onlineByDefault\)/);
+  assert.match(source, /onlineSettingsForRequest/);
+  assert.match(source, /\.\.\.settings\.lookupLanguageHints/);
+  assert.match(source, /\.\.\.requestHints/);
+  assert.match(source, /onlineCacheScope\(onlineSettings, credentials\)/);
 });
 
 test("popup source-audio failure falls back to TTS", async () => {
