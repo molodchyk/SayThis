@@ -166,15 +166,15 @@ function chooseSourceCandidate(query, match, entity, options = {}) {
   const selectedScript = detectScript(query).script;
   const languageHints = languageHintSet(options.languageHints);
   const candidates = [
-    ...monolingualClaimCandidates(entity, NATIVE_LABEL, "native label"),
-    ...monolingualClaimCandidates(entity, NATIVE_NAME, "native name"),
-    ...monolingualClaimCandidates(entity, OFFICIAL_NAME, "official name"),
-    ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name"),
-    ...monolingualClaimCandidates(entity, NAME, "name"),
-    ...monolingualClaimCandidates(entity, SHORT_NAME, "short name"),
-    ...monolingualClaimCandidates(entity, NICKNAME, "nickname"),
-    ...monolingualClaimCandidates(entity, TITLE, "title"),
-    ...monolingualClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name"),
+    ...textClaimCandidates(entity, NATIVE_LABEL, "native label"),
+    ...textClaimCandidates(entity, NATIVE_NAME, "native name"),
+    ...textClaimCandidates(entity, OFFICIAL_NAME, "official name"),
+    ...textClaimCandidates(entity, BIRTH_NAME, "birth name"),
+    ...textClaimCandidates(entity, NAME, "name"),
+    ...textClaimCandidates(entity, SHORT_NAME, "short name"),
+    ...textClaimCandidates(entity, NICKNAME, "nickname"),
+    ...textClaimCandidates(entity, TITLE, "title"),
+    ...textClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name"),
     ...stringClaimCandidates(entity, TAXON_NAME, "taxon name", { language: "la" }),
     ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym"),
     ...aliasCandidates(entity, "alias"),
@@ -415,16 +415,16 @@ function confidenceForCandidate(query, candidate) {
   return "low";
 }
 
-function monolingualClaimCandidates(entity, propertyId, source) {
+function textClaimCandidates(entity, propertyId, source, options = {}) {
   const claims = entity.claims?.[propertyId] || [];
   return claims
     .map((claim) => claim?.mainsnak?.datavalue?.value)
-    .filter((value) => value?.text)
     .map((value) => ({
-      value: value.text,
-      language: value.language || "",
+      value: normalizeSelection(value?.text || (typeof value === "string" ? value : "")),
+      language: value?.language || options.language || "",
       source
-    }));
+    }))
+    .filter((candidate) => candidate.value);
 }
 
 function stringClaimCandidates(entity, propertyId, source, options = {}) {
@@ -498,15 +498,15 @@ function wikidataAliases(entity, excludedValues = []) {
   const excluded = new Set(excludedValues.map(createLookupKey).filter(Boolean));
   const values = [
     ...Object.values(entity.aliases || {}).flat().map((alias) => alias.value),
-    ...monolingualClaimCandidates(entity, NATIVE_LABEL, "native label").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, NATIVE_NAME, "native name").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, OFFICIAL_NAME, "official name").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, BIRTH_NAME, "birth name").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, NAME, "name").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, SHORT_NAME, "short name").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, NICKNAME, "nickname").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, TITLE, "title").map((candidate) => candidate.value),
-    ...monolingualClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, NATIVE_LABEL, "native label").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, NATIVE_NAME, "native name").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, OFFICIAL_NAME, "official name").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, BIRTH_NAME, "birth name").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, NAME, "name").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, SHORT_NAME, "short name").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, NICKNAME, "nickname").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, TITLE, "title").map((candidate) => candidate.value),
+    ...textClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name").map((candidate) => candidate.value),
     ...stringClaimCandidates(entity, TAXON_NAME, "taxon name").map((candidate) => candidate.value),
     ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym").map((candidate) => candidate.value),
     ...sitelinkCandidates(entity, "sitelink title").map((candidate) => candidate.value),
