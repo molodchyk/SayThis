@@ -9,7 +9,7 @@ import {
   handleContextMenuClick
 } from "./background/context-menu-flow.js";
 import {
-  handleActiveSelectionCommand
+  handleActiveSelectionCommandName
 } from "./background/active-selection-flow.js";
 import {
   handleRuntimeMessage
@@ -90,30 +90,14 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 chrome.commands.onCommand.addListener((command) => {
-  if (command === "pronounce-selection") {
-    handleActiveSelectionCommand({
-      source: "keyboard"
-    }, runtimeAdapters.activeSelectionDependencies({
-      resolveSelection,
-      playResolvedResult,
-      speakFallback
-    }));
-  }
-
-  if (command === "pronounce-selection-online") {
-    handleActiveSelectionCommand({
-      source: "keyboard-online",
-      useOnline: true
-    }, runtimeAdapters.activeSelectionDependencies({
-      resolveSelection,
-      playResolvedResult,
-      speakFallback
-    }));
-  }
+  handleActiveSelectionCommandName(command, runtimeAdapters.activeSelectionDependencies({
+    resolveSelection,
+    playResolvedResult,
+    speakFallback
+  }));
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) =>
-  handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
 
 async function resolveSelection(text, options = {}) {
   return resolveSelectionFlow(text, options, {

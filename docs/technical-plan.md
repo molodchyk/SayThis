@@ -5,7 +5,7 @@
 Chrome Manifest V3 components:
 
 - `background.js`: creates the context menu and handles text-to-speech messages.
-- `background/active-selection-flow.js`: owns keyboard-command selected-text resolution, storage updates, result playback, and fallback behavior.
+- `background/active-selection-flow.js`: owns keyboard-command name routing, selected-text resolution, storage updates, result playback, and fallback behavior.
 - `background/context-menu-flow.js`: owns context-menu selection resolution, storage updates, result playback, and fallback behavior.
 - `background/runtime-message-flow.js`: owns service-worker runtime message routing, validation, response shaping, and error handling.
 - `background/runtime-adapters-flow.js`: owns seed-data fetch caching, active-tab lookup, selected-text extraction, and keyboard dependency wiring.
@@ -61,7 +61,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 ## Implemented MVP
 
 - Selection capture from popup, privacy-first context menu, explicit online context menu, `Alt+Shift+S`, and online lookup with `Alt+Shift+O`.
-- Keyboard command handling has a narrow background module with deterministic fallback tests.
+- Keyboard command routing and handling has a narrow background module with deterministic mapping and fallback tests.
 - Context-menu click handling has a narrow background module with deterministic fallback tests.
 - Runtime message handling has a narrow background router with deterministic validation and error-response tests.
 - Runtime browser adapters have a narrow background module with tests for seed-data caching, tab selection extraction, and keyboard dependency wiring.

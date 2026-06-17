@@ -1,8 +1,59 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  activeSelectionOptionsForCommand,
+  handleActiveSelectionCommandName,
   handleActiveSelectionCommand
 } from "../../src/background/active-selection-flow.js";
+
+test("maps keyboard command names to active-selection options", () => {
+  assert.deepEqual(activeSelectionOptionsForCommand("pronounce-selection"), {
+    source: "keyboard"
+  });
+  assert.deepEqual(activeSelectionOptionsForCommand("pronounce-selection-online"), {
+    source: "keyboard-online",
+    useOnline: true
+  });
+  assert.equal(activeSelectionOptionsForCommand("unknown"), null);
+});
+
+test("ignores unknown keyboard command names", async () => {
+  const result = await handleActiveSelectionCommandName("unknown", {
+    getActiveTab: async () => {
+      throw new Error("should not inspect tabs");
+    }
+  });
+
+  assert.deepEqual(result, { handled: false, reason: "unknown-command" });
+});
+
+test("routes online keyboard command names through active-selection handling", async () => {
+  const calls = [];
+  const resolved = { display: "Gnocchi", sourceStatus: "structured-source" };
+  const result = await handleActiveSelectionCommandName("pronounce-selection-online", {
+    getActiveTab: async () => ({ id: 7 }),
+    readSelectionFromTab: async (tabId) => {
+      calls.push(["readSelectionFromTab", tabId]);
+      return "Gnocchi";
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    lastSelectionKey: "lastSelection",
+    lastSourceKey: "lastSource"
+  });
+
+  assert.equal(result.handled, true);
+  assert.deepEqual(calls, [
+    ["readSelectionFromTab", 7],
+    ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard-online" }],
+    ["resolveSelection", "Gnocchi", { useOnline: true }],
+    ["playResolvedResult", resolved, 7]
+  ]);
+});
 
 test("ignores keyboard commands without an active tab", async () => {
   const result = await handleActiveSelectionCommand({ source: "keyboard" }, {

@@ -14,7 +14,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 
 - Context-menu actions for selected text, including an explicit online lookup action.
 - Background-owned context-menu workflow coverage with deterministic fallback behavior.
-- Background-owned keyboard selection workflow coverage with deterministic fallback behavior.
+- Background-owned keyboard command routing and selection workflow coverage with deterministic fallback behavior.
 - Background-owned runtime message routing with deterministic validation and error responses.
 - Background-owned result playback flow for overlay audio, offscreen audio, and TTS fallback.
 - Background-owned playback surface wiring for TTS, offscreen audio lifecycle, and overlay injection.
