@@ -9,6 +9,7 @@ export function evidenceItemsForResult(result, limit = 6) {
     ...trustSignalItems(result?.trustSignals),
     ...(Array.isArray(result?.evidence) ? result.evidence : []),
     result?.root ? `Root: ${result.root}` : "",
+    result?.domainHint ? `Domain: ${result.domainHint}` : "",
     ...variantItems(result?.variants),
     result?.notes || result?.variantNote || "",
     community.confirmations ? `${community.confirmations} local confirmation${community.confirmations === 1 ? "" : "s"}` : "",

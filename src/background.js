@@ -7,6 +7,7 @@ import {
   normalizeSelection,
   resultToSpeechOptions,
   resolveTerm,
+  hasCommunityPronunciationData,
   updateCommunityEntries
 } from "./resolver-core.js";
 import {
@@ -305,10 +306,6 @@ function resultMatchesSelection(result, lookupKey) {
     result.query,
     result.display
   ].some((value) => createLookupKey(value) === lookupKey);
-}
-
-function hasCommunityPronunciationData(entry = {}) {
-  return Boolean(entry.sourceForm || entry.language || entry.root || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
 }
 
 async function flushCommunitySync() {

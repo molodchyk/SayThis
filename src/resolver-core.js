@@ -49,6 +49,7 @@ export { sourceLabelForStatus } from "./resolver/status.js";
 export { getBestAudio, mapResultAudioUrls } from "./resolver/audio.js";
 export {
   applyCommunitySummary,
+  hasCommunityPronunciationData,
   normalizeCommunityEntries,
   updateCommunityEntries
 } from "./resolver/community.js";
@@ -137,6 +138,7 @@ export function createRemoteStructuredResult(selection, source) {
     category: source.category || "term",
     origin: source.origin || "",
     root: normalizeSelection(source.root),
+    domainHint: normalizeSelection(source.domainHint || source.domain),
     pronunciation: source.pronunciation || {},
     confidence: source.confidence || (hasAudio ? "high" : "medium"),
     sourceStatus,
@@ -213,6 +215,7 @@ function createEntryResult(query, lookupKey, scriptInfo, entry) {
     category: entry.category || "term",
     origin: normalizeOrigin(entry.origin),
     root: normalizeSelection(entry.root),
+    domainHint: normalizeSelection(entry.domainHint || entry.domain),
     variants: entry.variants || [],
     pronunciation,
     confidence: normalizeConfidence(entry.confidence || "medium"),
@@ -250,6 +253,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     category: "community-entry",
     origin: entry.origin || "",
     root: normalizeSelection(entry.root),
+    domainHint: normalizeSelection(entry.domainHint),
     variants: normalizeAliases(entry.variants),
     pronunciation: {
       ipa: entry.ipa || "",
@@ -294,6 +298,7 @@ function createFallbackResult(query, lookupKey, scriptInfo) {
     ttsLang: hint.ttsLang || ttsLangFromLanguage(language),
     category: "unresolved",
     origin: "",
+    domainHint: "",
     pronunciation: {},
     confidence: isLatin ? orthographyHint?.confidence || "low" : "medium",
     sourceStatus,
@@ -323,6 +328,7 @@ function createUnknownResult(query, lookupKey, scriptInfo) {
     ttsLang: "",
     category: "unknown",
     origin: "",
+    domainHint: "",
     pronunciation: {},
     confidence: "unknown",
     sourceStatus: "unknown",
@@ -482,6 +488,7 @@ function alternateResultSummary(result = {}) {
     ttsLang: normalizeSelection(result.ttsLang || ttsLangFromLanguage(language)),
     category: normalizeSelection(result.category),
     root: normalizeSelection(result.root),
+    domainHint: normalizeSelection(result.domainHint),
     variants: normalizeAliases(result.variants),
     confidence: normalizeConfidence(result.confidence),
     sourceStatus,
@@ -513,6 +520,7 @@ function normalizeResult(result) {
   return {
     ...result,
     root: normalizeSelection(result.root),
+    domainHint: normalizeSelection(result.domainHint),
     variants: normalizeAliases(result.variants),
     aliases: normalizeAliases(result.aliases),
     confidence: normalizeConfidence(result.confidence),

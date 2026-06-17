@@ -65,6 +65,16 @@ test("builds evidence items with pronunciation roots", () => {
   ]);
 });
 
+test("builds evidence items with pronunciation domain hints", () => {
+  const items = evidenceItemsForResult({
+    domainHint: "art history"
+  });
+
+  assert.deepEqual(items, [
+    "Domain: art history"
+  ]);
+});
+
 test("builds safe unique source links from result sources and audio", () => {
   const items = sourceItemsForResult({
     sources: [{

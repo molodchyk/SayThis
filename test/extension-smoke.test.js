@@ -92,7 +92,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /speakCandidate\(result\.alternateResults\?\.\[index\], 0\.82\)/);
   assert.match(source, /playAudioItem\(recordings\[index\], result, 0\.82\)/);
 
-  for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "root", "audioUrl", "sourceUrl", "variantNote"]) {
+  for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "root", "domainHint", "variants", "audioUrl", "sourceUrl", "variantNote"]) {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));
   }
 
@@ -343,10 +343,13 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(source, /wrong-result flags/);
 });
 
-test("background treats variant notes as pronunciation data", async () => {
-  const source = await readText("src/background.js");
+test("background uses shared community pronunciation-data policy", async () => {
+  const background = await readText("src/background.js");
+  const source = await readText("src/resolver/community.js");
 
+  assert.match(background, /hasCommunityPronunciationData/);
   assert.match(source, /entry\.variantNote/);
+  assert.match(source, /normalizeAliases\(entry\.variants\)\.length/);
 });
 
 test("popup quick feedback labels match their feedback kinds", async () => {

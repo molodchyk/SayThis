@@ -35,6 +35,8 @@ const language = document.getElementById("language");
 const category = document.getElementById("category");
 const origin = document.getElementById("origin");
 const root = document.getElementById("root");
+const domainHint = document.getElementById("domain-hint");
+const variants = document.getElementById("variants");
 const ipa = document.getElementById("ipa");
 const simpleGuide = document.getElementById("simple-guide");
 const alternates = document.getElementById("alternates");
@@ -53,6 +55,8 @@ const correctionSimple = document.getElementById("correction-simple");
 const correctionIpa = document.getElementById("correction-ipa");
 const correctionOrigin = document.getElementById("correction-origin");
 const correctionRoot = document.getElementById("correction-root");
+const correctionDomain = document.getElementById("correction-domain");
+const correctionVariants = document.getElementById("correction-variants");
 const correctionAudio = document.getElementById("correction-audio");
 const correctionSourceUrl = document.getElementById("correction-source-url");
 const correctionVariant = document.getElementById("correction-variant");
@@ -246,6 +250,8 @@ function renderResult(result) {
   category.textContent = result.category || "Unknown";
   origin.textContent = result.origin || "Unknown";
   root.textContent = result.root || "Unknown";
+  domainHint.textContent = result.domainHint || "Unknown";
+  variants.textContent = correctionValues.variants || "None";
   ipa.textContent = result.pronunciation?.ipa || "Not available";
   simpleGuide.textContent = result.pronunciation?.simple || "Not available";
 
@@ -257,6 +263,8 @@ function renderResult(result) {
   correctionIpa.value = correctionValues.ipa;
   correctionOrigin.value = correctionValues.origin;
   correctionRoot.value = correctionValues.root;
+  correctionDomain.value = correctionValues.domainHint;
+  correctionVariants.value = correctionValues.variants;
   correctionAudio.value = correctionValues.audioUrl;
   correctionSourceUrl.value = correctionValues.sourceUrl;
   correctionVariant.value = correctionValues.variantNote;
@@ -327,6 +335,8 @@ function feedbackFromCorrectionFields(kind) {
       ipa: correctionIpa.value,
       origin: correctionOrigin.value,
       root: correctionRoot.value,
+      domainHint: correctionDomain.value,
+      variants: correctionVariants.value,
       audioUrl: correctionAudio.value,
       sourceUrl: correctionSourceUrl.value,
       variantNote: correctionVariant.value

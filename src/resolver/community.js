@@ -44,6 +44,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     languageName: existing.languageName || "",
     origin: existing.origin || "",
     root: existing.root || "",
+    domainHint: existing.domainHint || "",
     variants: normalizeAliases(existing.variants),
     ipa: existing.ipa || "",
     simple: existing.simple || "",
@@ -68,7 +69,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     }
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
-    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "domainHint", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
       const value = field === "aliases" || field === "variants"
         ? normalizeAliases(feedback[field])
         : field === "audioUrl" || field === "sourceUrl"
@@ -166,6 +167,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
     root: normalizeSelection(entry.root),
+    domainHint: normalizeSelection(entry.domainHint),
     variants: normalizeAliases(entry.variants),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
@@ -184,7 +186,7 @@ function hasCommunityEntryContent(entry = {}) {
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
     normalizeAliases(entry.variants).length ||
-    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.domainHint || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
     hasRequestDetail(normalizeRequest(entry.request)) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     normalizeCount(entry.confirmations) ||
@@ -230,6 +232,7 @@ function normalizeRequest(value = {}) {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    domainHint: normalizeSelection(value.domainHint),
     variants: normalizeAliases(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
@@ -250,6 +253,7 @@ function mergeRequest(existing = {}, incoming = {}) {
     languageName: incoming.languageName || existing.languageName || "",
     origin: incoming.origin || existing.origin || "",
     root: incoming.root || existing.root || "",
+    domainHint: incoming.domainHint || existing.domainHint || "",
     variants: normalizeAliases([...existingVariants, ...incomingVariants]),
     ipa: incoming.ipa || existing.ipa || "",
     simple: incoming.simple || existing.simple || "",
@@ -266,6 +270,7 @@ function hasRequestDetail(request = {}) {
     request.languageName ||
     request.origin ||
     request.root ||
+    request.domainHint ||
     normalizeAliases(request.variants).length ||
     request.ipa ||
     request.simple ||

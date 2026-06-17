@@ -52,6 +52,7 @@ test("creates privacy-scoped community submissions", () => {
     aliases: ["light-dark", "chiaro scuro"],
     language: "it",
     root: "chiaro + oscuro",
+    domainHint: "art history",
     simple: "kee-ah-roh-SKOO-roh",
     audioUrl: "https://example.com/audio.ogg",
     sourceUrl: "https://example.com/source"
@@ -65,6 +66,7 @@ test("creates privacy-scoped community submissions", () => {
     languageName: "Italian",
     origin: "Italian art term",
     root: "chiaro + oscuro",
+    domainHint: "visual arts",
     pronunciation: {
       ipa: "kjaroˈskuːro",
       simple: "kee-ah-roh-SKOO-roh",
@@ -83,12 +85,14 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(submission.correction.language, "it");
   assert.deepEqual(submission.correction.aliases, ["light-dark", "chiaro scuro"]);
   assert.equal(submission.correction.root, "chiaro + oscuro");
+  assert.equal(submission.correction.domainHint, "art history");
   assert.equal(submission.correction.sourceUrl, "https://example.com/source");
   assert.equal(submission.result.id, "wiktionary:chiaroscuro");
   assert.deepEqual(submission.result.aliases, ["chiaro scuro"]);
   assert.deepEqual(submission.result.variants, ["studio variant", "regional variant"]);
   assert.equal(submission.result.origin, "Italian art term");
   assert.equal(submission.result.root, "chiaro + oscuro");
+  assert.equal(submission.result.domainHint, "visual arts");
   assert.equal(submission.result.ipa, "kjaroˈskuːro");
   assert.equal(submission.result.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(submission.result.audioUrl, "https://example.com/audio.ogg");
@@ -114,6 +118,7 @@ test("keeps structured missing request metadata for moderation", () => {
     aliases: "Unknown term; Unknownterm",
     language: "la",
     root: "unknown root",
+    domainHint: "research",
     variants: "research variant; field variant",
     simple: "un-NOHN-term",
     sourceUrl: "https://example.com/unknownterm"
@@ -124,6 +129,7 @@ test("keeps structured missing request metadata for moderation", () => {
   assert.equal(submission.correction.sourceForm, "Unknownterm");
   assert.deepEqual(submission.correction.aliases, ["Unknown term", "Unknownterm"]);
   assert.equal(submission.correction.root, "unknown root");
+  assert.equal(submission.correction.domainHint, "research");
   assert.deepEqual(submission.correction.variants, ["research variant", "field variant"]);
   assert.equal(queue[0].correction.simple, "un-NOHN-term");
   assert.equal(queue[0].correction.sourceUrl, "https://example.com/unknownterm");
@@ -222,6 +228,7 @@ test("normalizes queued submissions without request metadata", () => {
       sourceForm: " chiaroscuro ",
       aliases: "light-dark; light-dark",
       root: " chiaro + oscuro ",
+      domainHint: " art history ",
       variants: "studio variant; studio variant",
       simple: "kee-ah-roh-SKOO-roh",
       sourceUrl: " https://example.com/source "
@@ -232,6 +239,7 @@ test("normalizes queued submissions without request metadata", () => {
       sourceForm: "chiaroscuro",
       language: "it",
       root: "chiaro + oscuro",
+      domainHint: "visual arts",
       variants: ["regional variant", "regional variant"],
       variantNote: "Regional studio variant",
       trustSignals: ["source-backed", "source-backed"],
@@ -258,10 +266,12 @@ test("normalizes queued submissions without request metadata", () => {
   assert.equal(queue[0].attempts, 2);
   assert.deepEqual(queue[0].correction.aliases, ["light-dark"]);
   assert.equal(queue[0].correction.root, "chiaro + oscuro");
+  assert.equal(queue[0].correction.domainHint, "art history");
   assert.deepEqual(queue[0].correction.variants, ["studio variant"]);
   assert.equal(queue[0].correction.sourceUrl, "https://example.com/source");
   assert.equal(queue[0].result.id, "wiktionary:chiaroscuro");
   assert.equal(queue[0].result.root, "chiaro + oscuro");
+  assert.equal(queue[0].result.domainHint, "visual arts");
   assert.deepEqual(queue[0].result.variants, ["regional variant"]);
   assert.equal(queue[0].result.variantNote, "Regional studio variant");
   assert.deepEqual(queue[0].result.trustSignals, ["source-backed"]);
@@ -279,6 +289,7 @@ test("normalizes approved community entries", () => {
       sourceForm: "chiaroscuro",
       language: "it",
       root: "chiaro + oscuro",
+      domainHint: "art history",
       variants: "studio variant; regional variant; studio variant",
       confirmations: 8,
       corrections: 2,
@@ -295,6 +306,7 @@ test("normalizes approved community entries", () => {
   assert.deepEqual(entries.chiaroscuro.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(entries.chiaroscuro.language, "it");
   assert.equal(entries.chiaroscuro.root, "chiaro + oscuro");
+  assert.equal(entries.chiaroscuro.domainHint, "art history");
   assert.deepEqual(entries.chiaroscuro.variants, ["studio variant", "regional variant"]);
   assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");

@@ -186,6 +186,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     languageName: override.languageName || correction.languageName || result.languageName,
     origin: override.origin || correction.origin || result.origin,
     root: override.root || correction.root || result.root,
+    domainHint: override.domainHint || correction.domainHint || result.domainHint,
     variants: firstAliasSet(override.variants, correction.variants, result.variants),
     ipa: override.ipa || correction.ipa || result.ipa,
     simple: override.simple || correction.simple || result.simple,
@@ -246,6 +247,7 @@ function normalizeCorrection(value = {}) {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    domainHint: normalizeSelection(value.domainHint),
     variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
@@ -269,6 +271,7 @@ function normalizeResultMetadata(value = {}) {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    domainHint: normalizeSelection(value.domainHint),
     variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
@@ -315,6 +318,7 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
+    domainHint: normalizeSelection(value.domainHint),
     variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
@@ -332,7 +336,7 @@ function hasApprovedEntryContent(value = {}) {
     normalizeSelection(value.lookupKey || value.term || value.display || value.sourceForm) ||
     normalizeAliases(value.aliases).length ||
     normalizeVariants(value.variants).length ||
-    normalizeSelection(value.language || value.languageName || value.origin || value.root || value.ipa || value.simple || value.variantNote) ||
+    normalizeSelection(value.language || value.languageName || value.origin || value.root || value.domainHint || value.ipa || value.simple || value.variantNote) ||
     normalizeHttpsUrl(value.audioUrl || value.sourceUrl) ||
     normalizeTrustSignals(value.trustSignals).length ||
     clampNumber(value.confirmations, 0, 100000) ||
@@ -374,7 +378,7 @@ function normalizeKind(kind) {
 }
 
 function hasCorrectionDetail(correction = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+  return ["sourceForm", "language", "languageName", "origin", "root", "domainHint", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field])) ||
     Boolean(normalizeAliases(correction.aliases).length) ||
     Boolean(normalizeVariants(correction.variants).length);

@@ -143,6 +143,7 @@ test("accepts submissions without storing request metadata", async () => {
       aliases: ["light-dark"],
       language: "it",
       root: "chiaro + oscuro",
+      domainHint: "art history",
       simple: "kee-ah-roh-SKOO-roh",
       sourceUrl: "https://example.com/chiaroscuro"
     }
@@ -163,6 +164,7 @@ test("accepts submissions without storing request metadata", async () => {
   assert.equal(Object.hasOwn(result.store.pending[0], "headers"), false);
   assert.deepEqual(result.store.pending[0].correction.aliases, ["light-dark"]);
   assert.equal(result.store.pending[0].correction.root, "chiaro + oscuro");
+  assert.equal(result.store.pending[0].correction.domainHint, "art history");
   assert.equal(result.store.pending[0].correction.sourceUrl, "https://example.com/chiaroscuro");
 });
 
@@ -459,6 +461,7 @@ test("approves confirmed resolver metadata into shared entries", async () => {
         languageName: "Irish",
         origin: "given name",
         root: "Saoirse",
+        domainHint: "given names",
         variants: ["studio variant", "studio variant", "regional variant"],
         ipa: "ˈsˠiːɾʲʃə",
         simple: "SEER-sha",
@@ -485,6 +488,7 @@ test("approves confirmed resolver metadata into shared entries", async () => {
   assert.equal(response.body.entry.language, "ga");
   assert.equal(response.body.entry.origin, "given name");
   assert.equal(response.body.entry.root, "Saoirse");
+  assert.equal(response.body.entry.domainHint, "given names");
   assert.deepEqual(response.body.entry.variants, ["studio variant", "regional variant"]);
   assert.equal(response.body.entry.ipa, "ˈsˠiːɾʲʃə");
   assert.equal(response.body.entry.simple, "SEER-sha");
@@ -534,6 +538,22 @@ test("does not publish approved entries without pronunciation data", async () =>
     body: JSON.stringify({
       id: "sub_missing_only",
       entry: {
+        domainHint: "research"
+      }
+    })
+  }, response.store, { adminToken: "secret" });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.reason, "insufficient-entry-data");
+  assert.equal(response.store.pending.length, 1);
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/admin/approve",
+    headers: { authorization: "Bearer secret" },
+    body: JSON.stringify({
+      id: "sub_missing_only",
+      entry: {
         language: "it",
         simple: "NYOH-kee"
       }
@@ -562,6 +582,7 @@ test("approves structured missing requests after review", async () => {
         aliases: ["Example term"],
         language: "la",
         root: "example root",
+        domainHint: "research",
         variants: ["field variant", "field variant"],
         simple: "eg-ZAM-pluh-term",
         sourceUrl: "https://example.com/exampleterm"
@@ -571,6 +592,7 @@ test("approves structured missing requests after review", async () => {
 
   assert.equal(response.status, 202);
   assert.equal(response.store.pending[0].correction.root, "example root");
+  assert.equal(response.store.pending[0].correction.domainHint, "research");
   assert.deepEqual(response.store.pending[0].correction.variants, ["field variant"]);
 
   response = await handleCommunityRequest({
@@ -584,6 +606,7 @@ test("approves structured missing requests after review", async () => {
   assert.equal(response.body.entry.requests, 1);
   assert.equal(response.body.entry.simple, "eg-ZAM-pluh-term");
   assert.equal(response.body.entry.root, "example root");
+  assert.equal(response.body.entry.domainHint, "research");
   assert.deepEqual(response.body.entry.variants, ["field variant"]);
   assert.deepEqual(response.body.entry.aliases, ["Example term"]);
   assert.deepEqual(response.body.entry.trustSignals, [

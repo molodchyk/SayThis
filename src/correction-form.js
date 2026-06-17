@@ -15,6 +15,8 @@ export function correctionValuesFromResult(result = {}) {
     ipa: normalizeSelection(result.pronunciation?.ipa),
     origin: normalizeSelection(result.origin),
     root: normalizeSelection(result.root),
+    domainHint: normalizeSelection(result.domainHint),
+    variants: variantsTextFromResult(result),
     audioUrl: normalizeUrl(bestAudio?.url),
     sourceUrl,
     variantNote: normalizeSelection(result.notes || result.variantNote)
@@ -32,6 +34,8 @@ export function correctionFeedbackFromValues(values = {}) {
     ipa: normalizeSelection(values.ipa),
     origin: normalizeSelection(values.origin),
     root: normalizeSelection(values.root),
+    domainHint: normalizeSelection(values.domainHint),
+    variants: normalizeAliases(values.variants),
     audioUrl: normalizeUrl(values.audioUrl),
     sourceUrl: normalizeUrl(values.sourceUrl),
     variantNote: normalizeSelection(values.variantNote)
@@ -39,9 +43,10 @@ export function correctionFeedbackFromValues(values = {}) {
 }
 
 export function hasCorrectionDetail(feedback = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+  return ["sourceForm", "language", "languageName", "origin", "root", "domainHint", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(feedback[field])) ||
-    Boolean(normalizeAliases(feedback.aliases).length);
+    Boolean(normalizeAliases(feedback.aliases).length) ||
+    Boolean(normalizeAliases(feedback.variants).length);
 }
 
 function firstSourceUrl(result = {}) {
@@ -59,6 +64,10 @@ function aliasesTextFromResult(result = {}) {
   }
 
   return [...new Set(aliases)].join("; ");
+}
+
+function variantsTextFromResult(result = {}) {
+  return normalizeAliases(result.variants).join("; ");
 }
 
 function normalizeAliases(value) {

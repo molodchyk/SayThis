@@ -302,6 +302,10 @@ export function renderAdminPage() {
           <input data-input="root">
         </label>
         <label>
+          Domain hint
+          <input data-input="domainHint">
+        </label>
+        <label>
           Variants
           <input data-input="variants">
         </label>
@@ -400,6 +404,7 @@ export function renderAdminPage() {
         languageName: entry.correction?.languageName || entry.result?.languageName || "",
         origin: entry.correction?.origin || "",
         root: entry.correction?.root || entry.result?.root || "",
+        domainHint: entry.correction?.domainHint || entry.result?.domainHint || "",
         variants: variantsText(entry.correction?.variants || entry.result?.variants),
         ipa: entry.correction?.ipa || "",
         simple: entry.correction?.simple || "",
@@ -466,7 +471,7 @@ export function renderAdminPage() {
 
     function collectFields(article) {
       const entry = {};
-      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
+      for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "domainHint", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
         const value = article.querySelector(\`[data-input="\${name}"]\`)?.value.trim();
         if (value) {
           entry[name] = value;

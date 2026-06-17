@@ -14,6 +14,8 @@ test("prefills correction values from resolver result", () => {
     languageName: "Italian",
     origin: "Italian",
     root: "chiaro + oscuro",
+    domainHint: "art history",
+    variants: ["studio variant", "regional variant"],
     notes: "regional studio pronunciation",
     pronunciation: {
       ipa: "kjaroˈskuːro",
@@ -39,6 +41,8 @@ test("prefills correction values from resolver result", () => {
     ipa: "kjaroˈskuːro",
     origin: "Italian",
     root: "chiaro + oscuro",
+    domainHint: "art history",
+    variants: "studio variant; regional variant",
     audioUrl: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.ogg",
     sourceUrl: "https://en.wiktionary.org/wiki/chiaroscuro",
     variantNote: "regional studio pronunciation"
@@ -64,6 +68,8 @@ test("builds correction feedback with audio source and variant note", () => {
     ipa: "ˈɲɔkki",
     origin: "Italian",
     root: "gnocco",
+    domainHint: "food",
+    variants: "Northern Italian; studio",
     audioUrl: " https://example.com/audio.ogg ",
     sourceUrl: " https://example.com/source ",
     variantNote: "Northern Italian variant"
@@ -79,6 +85,8 @@ test("builds correction feedback with audio source and variant note", () => {
     ipa: "ˈɲɔkki",
     origin: "Italian",
     root: "gnocco",
+    domainHint: "food",
+    variants: ["Northern Italian", "studio"],
     audioUrl: "https://example.com/audio.ogg",
     sourceUrl: "https://example.com/source",
     variantNote: "Northern Italian variant"
@@ -101,4 +109,6 @@ test("detects whether a correction carries pronunciation data", () => {
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({})), false);
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ aliases: "alternate" })), true);
   assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ root: "source root" })), true);
+  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ domainHint: "medicine" })), true);
+  assert.equal(hasCorrectionDetail(correctionFeedbackFromValues({ variants: "field variant" })), true);
 });

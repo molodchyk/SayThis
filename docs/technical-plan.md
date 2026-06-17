@@ -106,19 +106,19 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Nominatim-compatible lookup keeps language-tagged alternate place names as alternate results, so audio lookup can retry the same spelling with the right language hint.
 - Source-form and alias-guided gazetteer retries after other structured sources resolve a better lookup form.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.
-- Result card with source form, aliases, language, category, origin, root, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
+- Result card with source form, aliases, language, category, origin, root, domain hint, variants, IPA/simple guide, confidence, source label, evidence, source links, alternate candidate summaries, quick feedback actions, and structured correction capture.
 - On-page overlay styles are split into a companion injected content script, keeping the overlay controller below the file-size soft limit.
 - Alternate candidate summaries preserve speech-locale hints and can be spoken directly from popup or on-page result cards.
-- Local confirmation, wrong-result, missing-term, correction, aliases, root, audio-source, source-link, variant-note storage, and import/export normalization.
-- Missing-entry requests can carry candidate source forms, aliases, roots, guides, and source links without promoting them to local pronunciation answers.
+- Local confirmation, wrong-result, missing-term, correction, aliases, root, domain-hint, audio-source, source-link, variant-note storage, and import/export normalization.
+- Missing-entry requests can carry candidate source forms, aliases, roots, domain hints, guides, and source links without promoting them to local pronunciation answers.
 - Variant-only local corrections are treated as lookup data so valid variants stay visible.
 - Remote structured results can preserve bounded variant lists for result evidence and cache storage.
 - Guide-only local corrections can drive fallback speech when no community audio source is present.
 - Local community entries preserve and derive trust signals from local actions and source evidence.
 - Remote structured results derive bounded trust signals from source, audio, and root evidence.
-- Result and correction views accept root, variant-list, and variant-note metadata from cached and shared payloads.
+- Result and correction views accept root, domain-hint, variant-list, and variant-note metadata from cached and shared payloads.
 - Opt-in community sync endpoint with queued retry behavior.
-- Community submissions preserve result trust signals, variant lists, and variant notes through moderation.
+- Community submissions preserve result trust signals, domain hints, variant lists, and variant notes through moderation.
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
@@ -168,6 +168,7 @@ Core fields:
 - `category`: place, person, organization, term, loanword, scientific-term, technical-term, other.
 - `origin`: source language, etymological root, or domain where known.
 - `root`: pronunciation-relevant root, stem, component word, or etymological cue when distinct from origin.
+- `domainHint`: pronunciation-relevant topical or professional context for review and disambiguation.
 - `pronunciation`: IPA, simple guide, and audio references.
 - `priority`: high, medium, low.
 - `sourceStatus`: verified-audio, community-confirmed, structured-source, generated-fallback, unknown.
@@ -198,7 +199,7 @@ Community entries should be promoted only when they are source-backed, repeated,
 
 Approved shared entries are stored separately from local feedback. During lookup, approved entries are merged under local entries, so a user's correction keeps priority on that user's machine.
 
-Community memory should produce a structured pronunciation graph, not a discussion feed. Accepted entries should capture source form, aliases, language, origin or root, IPA, simple guide, audio source, source links, variants, and trust signals.
+Community memory should produce a structured pronunciation graph, not a discussion feed. Accepted entries should capture source form, aliases, language, origin or root, domain hint, IPA, simple guide, audio source, source links, variants, and trust signals.
 
 Missing or low-confidence lookups should use the same shape. A request for an unfamiliar term can record the selected spelling, candidate aliases, suggested source form, domain hint, requested guide, and optional source link so later moderation can promote it without inventing a second data model.
 

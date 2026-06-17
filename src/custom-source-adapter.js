@@ -79,6 +79,7 @@ function createCustomSourceEntryResult(selectedText, entry, payload, label) {
     category: normalizeSelection(entry.category || "domain-term"),
     origin: normalizeSelection(entry.origin || entry.root || entry.domain),
     root: normalizeSelection(entry.root),
+    domainHint: normalizeSelection(entry.domainHint || entry.domain),
     pronunciation: {
       ipa,
       simple,

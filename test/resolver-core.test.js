@@ -140,6 +140,7 @@ test("maps resolver community helpers from a narrow module", () => {
     sourceForm: " Exampleterm ",
     aliases: "Alias; Alias",
     root: "example root",
+    domainHint: "research",
     variants: "studio variant; studio variant",
     simple: "eg-ZAM-pluh-term",
     audioUrl: "https://example.com/audio.ogg",
@@ -153,18 +154,13 @@ test("maps resolver community helpers from a narrow module", () => {
 
   assert.equal(found.sourceForm, "Exampleterm");
   assert.equal(found.root, "example root");
+  assert.equal(found.domainHint, "research");
   assert.deepEqual(found.aliases, ["Alias"]);
   assert.deepEqual(found.variants, ["studio variant"]);
   assert.deepEqual(found.trustSignals, ["local-correction", "source-backed", "audio-backed", "variant-noted", "root-noted", "local-confirmed"]);
   assert.equal(summarized.community.confirmations, 1);
   assert.deepEqual(communitySummary(found), summarized.community);
-  assert.deepEqual(emptyCommunityDirect(), {
-    confirmations: 0,
-    flags: 0,
-    requests: 0,
-    corrections: 0,
-    updatedAt: ""
-  });
+  assert.deepEqual(emptyCommunityDirect(), { confirmations: 0, flags: 0, requests: 0, corrections: 0, updatedAt: "" });
   assert.deepEqual(normalizeCommunityEntries(confirmed), normalized);
   assert.deepEqual(applyCommunitySummary({ id: "result" }, found), summarized);
 });
@@ -195,6 +191,7 @@ test("uses local community correction before fallback", () => {
     aliases: "Sampleterm; Example term",
     language: "it",
     root: "example root",
+    domainHint: "research",
     simple: "eg-ZAM-pluh-term",
     sourceUrl: "https://example.com/exampleterm"
   });
@@ -208,6 +205,7 @@ test("uses local community correction before fallback", () => {
   assert.deepEqual(result.aliases, ["Sampleterm", "Example term"]);
   assert.equal(result.language, "it");
   assert.equal(result.root, "example root");
+  assert.equal(result.domainHint, "research");
   assert.equal(result.pronunciation.simple, "eg-ZAM-pluh-term");
   assert.ok(result.sources.some((source) => source.url === "https://example.com/exampleterm"));
   assert.deepEqual(result.trustSignals, ["local-correction", "source-backed", "root-noted", "local-confirmed"]);
@@ -262,6 +260,7 @@ test("captures structured missing requests without promoting them to answers", (
     aliases: "Example term",
     language: "la",
     root: "example root",
+    domainHint: "research",
     simple: "eg-ZAM-pluh-term",
     sourceUrl: "https://example.com/exampleterm"
   });
@@ -272,6 +271,7 @@ test("captures structured missing requests without promoting them to answers", (
 
   assert.equal(entries.exampleterm.requests, 1);
   assert.equal(entries.exampleterm.request.root, "example root");
+  assert.equal(entries.exampleterm.request.domainHint, "research");
   assert.deepEqual(entries.exampleterm.request.aliases, ["Example term"]);
   assert.deepEqual(entries.exampleterm.trustSignals, ["source-backed", "requested"]);
   assert.equal(result.id, "fallback:exampleterm");
@@ -367,6 +367,7 @@ test("keeps trust signals on approved community entries", () => {
       chiaroscuro: {
         term: "Chiaroscuro",
         sourceForm: "chiaroscuro",
+        domainHint: "art history",
         variants: ["studio pronunciation"],
         simple: "kee-ah-roh-SKOO-roh",
         trustSignals: ["moderator-reviewed", "source-backed"]
@@ -375,6 +376,7 @@ test("keeps trust signals on approved community entries", () => {
   });
 
   assert.deepEqual(result.trustSignals, ["moderator-reviewed", "source-backed"]);
+  assert.equal(result.domainHint, "art history");
   assert.deepEqual(result.variants, ["studio pronunciation"]);
   assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
 });

@@ -69,7 +69,7 @@ Or multiple entries:
 - `language`: BCP-47 or short language code.
 - `languageName`: display language name.
 - `category`: term category such as `art-term`, `medical-term`, or `person`.
-- `origin`, `root`, or `domain`: pronunciation-relevant context.
+- `origin`, `root`, `domain`, or `domainHint`: pronunciation-relevant context.
 - `ipa`: IPA guide.
 - `simple`: plain phonetic guide.
 - `audioUrl`: HTTPS pronunciation audio.

@@ -84,6 +84,8 @@ test("builds correction feedback payloads", () => {
     aliases: "alias one; alias two",
     language: "en-US",
     root: "term root",
+    domainHint: "science",
+    variants: "studio; field",
     simple: "TERM",
     audioUrl: " https://example.com/audio.ogg ",
     sourceUrl: " https://example.com/source ",
@@ -97,6 +99,8 @@ test("builds correction feedback payloads", () => {
       aliases: ["alias one", "alias two"],
       language: "en-US",
       root: "term root",
+      domainHint: "science",
+      variants: ["studio", "field"],
       simple: "TERM",
       audioUrl: "https://example.com/audio.ogg",
       sourceUrl: "https://example.com/source",
@@ -112,6 +116,7 @@ test("builds structured missing feedback payloads", () => {
     aliases: "alias one; alias two",
     language: "en-US",
     root: "term root",
+    domainHint: "science",
     sourceUrl: " https://example.com/source "
   }), {
     type: MESSAGE_TYPES.feedback,
@@ -122,6 +127,7 @@ test("builds structured missing feedback payloads", () => {
       aliases: ["alias one", "alias two"],
       language: "en-US",
       root: "term root",
+      domainHint: "science",
       sourceUrl: "https://example.com/source"
     }
   });

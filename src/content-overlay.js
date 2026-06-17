@@ -29,6 +29,7 @@
       ...trustSignalItems(result.trustSignals),
       ...(result.evidence || []),
       result.root ? `Root: ${result.root}` : "",
+      result.domainHint ? `Domain: ${result.domainHint}` : "",
       ...variantItems(result.variants),
       result.notes || result.variantNote || ""
     ].filter(Boolean).slice(0, 2);
@@ -75,6 +76,14 @@
             <dd>${escapeHtml(result.root || "Unknown")}</dd>
           </div>
           <div>
+            <dt>Domain</dt>
+            <dd>${escapeHtml(result.domainHint || "Unknown")}</dd>
+          </div>
+          <div>
+            <dt>Variants</dt>
+            <dd>${escapeHtml(variantsTextFromResult(result) || "None")}</dd>
+          </div>
+          <div>
             <dt>IPA</dt>
             <dd>${escapeHtml(result.pronunciation?.ipa || "Not available")}</dd>
           </div>
@@ -113,6 +122,8 @@
             ${correctionInput("IPA", "ipa", result.pronunciation?.ipa, 120)}
             ${correctionInput("Origin", "origin", result.origin, 160, "full")}
             ${correctionInput("Root", "root", result.root, 160, "full")}
+            ${correctionInput("Domain hint", "domainHint", result.domainHint, 160, "full")}
+            ${correctionInput("Variants", "variants", variantsTextFromResult(result), 240, "full")}
             ${correctionInput("Audio source", "audioUrl", getBestAudio(result)?.url, 2048, "full", "url")}
             ${correctionInput("Source link", "sourceUrl", firstSourceUrl(result), 2048, "full", "url")}
             ${correctionInput("Variant note", "variantNote", result.notes || result.variantNote, 160, "full")}
@@ -252,6 +263,8 @@
       const field = input.dataset.correctionField;
       if (field === "aliases") {
         feedback[field] = normalizeAliases(input.value);
+      } else if (field === "variants") {
+        feedback[field] = normalizeAliases(input.value);
       } else if (field === "audioUrl" || field === "sourceUrl") {
         feedback[field] = normalizeLongText(input.value);
       } else {
@@ -262,9 +275,10 @@
   }
 
   function hasCorrectionDetail(feedback) {
-    return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+    return ["sourceForm", "language", "languageName", "origin", "root", "domainHint", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
       .some((field) => Boolean(feedback[field])) ||
-      Boolean(normalizeAliases(feedback.aliases).length);
+      Boolean(normalizeAliases(feedback.aliases).length) ||
+      Boolean(normalizeAliases(feedback.variants).length);
   }
 
   function lookupHints() {
@@ -424,6 +438,10 @@
     }
 
     return [...new Set(aliases)].join("; ");
+  }
+
+  function variantsTextFromResult(result = {}) {
+    return normalizeAliases(result.variants).join("; ");
   }
 
   function trustSignalItems(value) {

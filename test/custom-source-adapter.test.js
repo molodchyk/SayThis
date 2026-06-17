@@ -84,6 +84,7 @@ test("builds a structured custom source result", () => {
   assert.equal(result.language, "it");
   assert.equal(result.category, "art-term");
   assert.equal(result.root, "chiaro + scuro");
+  assert.equal(result.domainHint, "painting");
   assert.equal(result.sourceStatus, "verified-audio");
   assert.equal(result.confidence, "high");
   assert.equal(result.pronunciation.ipa, "kjaroˈskuːro");
