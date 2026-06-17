@@ -143,6 +143,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Matching verified audio is merged onto structured results so source context, IPA, and origin are preserved.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Gazetteer lookup accepts language hints for request language order and source-form scoring.
+- Gazetteer lookup can preserve alternate and historical place names as variants for audio lookup and review.
 - Nominatim-compatible lookup keeps language-tagged alternate place names as alternate results, so audio lookup can retry the same spelling with the right language hint.
 - Source-form and alias-guided gazetteer retries after other structured sources resolve a better lookup form.
 - Local TTL-bounded cache for successful online lookup results, with options-page summary, clearing, and trust/variant metadata preservation.

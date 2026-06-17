@@ -97,6 +97,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Verified audio from matching sources is merged onto structured results so IPA, origin, and source context stay visible.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
 - Gazetteer lookup can use language hints for `accept-language` and source-form ranking.
+- Gazetteer lookup can preserve alternate and historical place names as variants for audio lookup and review.
 - Source-form and alias-guided gazetteer retries after structured lookup.
 - Local cache for successful online lookup results.
 - Imported lookup-cache results are allowlisted to pronunciation result fields while preserving trust and variant metadata.

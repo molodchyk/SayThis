@@ -7,6 +7,7 @@ import {
 
 const DEFAULT_LIMIT = 5;
 const LOCAL_NAME_KEYS = new Set(["name", "official_name", "loc_name", "short_name"]);
+const VARIANT_NAME_KEYS = new Set(["alt_name", "old_name"]);
 const PLACE_TYPES = new Set([
   "administrative",
   "borough",
@@ -58,6 +59,7 @@ export function buildNominatimResult(query, places = [], options = {}) {
   const sourceCandidate = chooseSourceCandidate(selectedText, place, { languageHints });
   const sourceForm = sourceCandidate?.value || normalizeSelection(place.name || selectedText);
   const aliases = aliasCandidatesFromPlace(place, [selectedText, sourceForm]);
+  const variants = variantCandidatesFromPlace(place, [selectedText, sourceForm]);
   const osmUrl = osmUrlFromPlace(place);
   const placeType = placeTypeLabel(place);
   const country = normalizeSelection(place.address?.country);
@@ -75,10 +77,11 @@ export function buildNominatimResult(query, places = [], options = {}) {
     languageName: "",
     category: "place",
     origin,
+    variants,
     pronunciation: {},
     sourceStatus: "structured-source",
     confidence: sourceCandidate?.confidence || "medium",
-    evidence: placeEvidence(osmId, placeType, sourceCandidate?.source),
+    evidence: placeEvidence(osmId, placeType, sourceCandidate?.source, variants.length),
     sources: placeSources(osmUrl)
   });
 
@@ -201,6 +204,25 @@ function aliasCandidatesFromPlace(place, excludedValues = []) {
   return aliases.slice(0, 12);
 }
 
+function variantCandidatesFromPlace(place, excludedValues = []) {
+  const excluded = new Set(excludedValues.map(createLookupKey).filter(Boolean));
+  const variants = [];
+  const seen = new Set();
+
+  for (const candidate of nameCandidates(place)) {
+    const base = String(candidate.key || "").split(":")[0];
+    const key = createLookupKey(candidate.value);
+    if (!VARIANT_NAME_KEYS.has(base) || !key || excluded.has(key) || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    variants.push(candidate.value);
+  }
+
+  return variants.slice(0, 8);
+}
+
 function alternateResultsFromPlace(query, place, primaryCandidate, context) {
   const selectedScript = detectScript(query).script;
   const seen = new Set([nameCandidateKey(primaryCandidate)].filter(Boolean));
@@ -250,12 +272,13 @@ function nameCandidateKey(candidate = {}) {
   return key ? `${key}:${candidate.language || ""}` : "";
 }
 
-function placeEvidence(osmId, placeType, source) {
+function placeEvidence(osmId, placeType, source, variantCount = 0) {
   return [
     "Gazetteer match from Nominatim-compatible search",
     osmId ? `OpenStreetMap object ${osmId}` : "",
     placeType ? `Place type: ${placeType}` : "",
     source ? `Source form from ${source}` : "",
+    variantCount ? `Gazetteer variants: ${variantCount}` : "",
     "Data attribution: OpenStreetMap contributors"
   ].filter(Boolean);
 }

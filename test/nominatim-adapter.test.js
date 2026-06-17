@@ -113,3 +113,30 @@ test("uses language hints for gazetteer source forms", () => {
   assert.equal(result.language, "pl");
   assert.equal(result.alternateResults.some((item) => item.language === "de"), true);
 });
+
+test("preserves alternate and historical place names as variants", () => {
+  const result = buildNominatimResult("Exampletown", [{
+    osm_type: "relation",
+    osm_id: "778",
+    name: "Exampletown",
+    display_name: "Exampletown, Exampleland",
+    category: "place",
+    type: "town",
+    importance: 0.6,
+    address: {
+      country: "Exampleland"
+    },
+    namedetails: {
+      name: "Exampletown",
+      "name:pl": "Przykladowo",
+      alt_name: "Exampleton; Sampletown",
+      "old_name:pl": "Stare Przykladowo"
+    }
+  }], {
+    languageHints: ["pl"]
+  });
+
+  assert.equal(result.sourceForm, "Przykladowo");
+  assert.deepEqual(result.variants, ["Exampleton", "Sampletown", "Stare Przykladowo"]);
+  assert.ok(result.evidence.includes("Gazetteer variants: 3"));
+});
