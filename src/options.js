@@ -6,7 +6,6 @@ import {
   resultCacheSummary
 } from "./result-cache.js";
 import {
-  endpointOriginPattern,
   normalizeApprovedEntries,
   normalizeSubmissionQueue
 } from "./community-sync.js";
@@ -14,12 +13,18 @@ import {
   FORVO_API_ORIGIN
 } from "./forvo-adapter.js";
 import {
-  staleRemotePermissionOrigins
-} from "./permission-origins.js";
-import {
   createFlushSyncMessage,
   createPullApprovedMessage
 } from "./message-contracts.js";
+import {
+  createOptionsRuntimeAdapters,
+  OPTIONS_STORAGE_KEYS as STORAGE_KEYS,
+  readOptionsStorage,
+  removeUnusedRemotePermissions,
+  requestEndpointPermission,
+  sendRuntimeMessage,
+  writeOptionsStorage
+} from "./options/runtime-adapters.js";
 import {
   normalizeApiKey,
   normalizeCredentials,
@@ -30,16 +35,6 @@ import {
   normalizeShortText
 } from "./shared/settings.js";
 
-const STORAGE_KEYS = {
-  approvedCommunityEntries: "approvedCommunityEntries",
-  communityEntries: "communityEntries",
-  communityPullState: "communityPullState",
-  credentials: "credentials",
-  resultCache: "resultCache",
-  syncQueue: "syncQueue",
-  syncSummary: "syncSummary",
-  settings: "settings"
-};
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
@@ -101,7 +96,7 @@ clearApprovedButton.addEventListener("click", clearApprovedEntries);
 clearSyncButton.addEventListener("click", clearSyncQueue);
 
 async function init() {
-  const stored = await chrome.storage.local.get([
+  const stored = await readOptionsStorage([
     STORAGE_KEYS.settings,
     STORAGE_KEYS.credentials,
     STORAGE_KEYS.approvedCommunityEntries,
@@ -110,7 +105,7 @@ async function init() {
     STORAGE_KEYS.resultCache,
     STORAGE_KEYS.syncQueue,
     STORAGE_KEYS.syncSummary
-  ]);
+  ], optionsRuntimeAdapters());
   const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   onlineDefault.checked = settings.onlineByDefault;
@@ -138,10 +133,10 @@ async function init() {
 }
 
 async function saveSettings() {
-  const stored = await chrome.storage.local.get([
+  const stored = await readOptionsStorage([
     STORAGE_KEYS.settings,
     STORAGE_KEYS.credentials
-  ]);
+  ], optionsRuntimeAdapters());
   const previousSettings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const previousCredentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
@@ -152,11 +147,11 @@ async function saveSettings() {
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
   const credentials = credentialsFromControls();
   const settings = await settingsFromControls(credentials);
-  await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials);
-  await chrome.storage.local.set({
+  await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials, optionsRuntimeAdapters());
+  await writeOptionsStorage({
     [STORAGE_KEYS.settings]: settings,
     [STORAGE_KEYS.credentials]: credentials
-  });
+  }, optionsRuntimeAdapters());
   customSourceEnabled.checked = settings.customSourceEnabled;
   autoSpeakPopup.checked = settings.autoSpeakPopup;
   lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
@@ -183,7 +178,7 @@ async function saveSettings() {
 }
 
 async function exportData() {
-  const stored = await chrome.storage.local.get([
+  const stored = await readOptionsStorage([
     STORAGE_KEYS.settings,
     STORAGE_KEYS.approvedCommunityEntries,
     STORAGE_KEYS.communityPullState,
@@ -191,7 +186,7 @@ async function exportData() {
     STORAGE_KEYS.resultCache,
     STORAGE_KEYS.syncQueue,
     STORAGE_KEYS.syncSummary
-  ]);
+  ], optionsRuntimeAdapters());
   const payload = {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
@@ -221,10 +216,10 @@ async function importData() {
     return;
   }
 
-  const stored = await chrome.storage.local.get([
+  const stored = await readOptionsStorage([
     STORAGE_KEYS.settings,
     STORAGE_KEYS.credentials
-  ]);
+  ], optionsRuntimeAdapters());
   const previousSettings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const previousCredentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const credentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
@@ -235,8 +230,8 @@ async function importData() {
   const syncQueue = normalizeSubmissionQueue(payload.syncQueue);
   const importedSyncSummary = summarizeQueue(syncQueue);
   const communityPullState = isPlainObject(payload.communityPullState) ? payload.communityPullState : {};
-  await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials);
-  await chrome.storage.local.set({
+  await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials, optionsRuntimeAdapters());
+  await writeOptionsStorage({
     [STORAGE_KEYS.settings]: settings,
     [STORAGE_KEYS.approvedCommunityEntries]: approvedCommunityEntries,
     [STORAGE_KEYS.communityPullState]: communityPullState,
@@ -244,7 +239,7 @@ async function importData() {
     [STORAGE_KEYS.resultCache]: resultCache,
     [STORAGE_KEYS.syncQueue]: syncQueue,
     [STORAGE_KEYS.syncSummary]: importedSyncSummary
-  });
+  }, optionsRuntimeAdapters());
 
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
@@ -271,18 +266,18 @@ async function importData() {
 }
 
 async function clearMemory() {
-  await chrome.storage.local.set({
+  await writeOptionsStorage({
     [STORAGE_KEYS.communityEntries]: {}
-  });
+  }, optionsRuntimeAdapters());
   dataBox.value = "";
   renderSummary({});
   setStatus("Community memory cleared.");
 }
 
 async function clearLookupCache() {
-  await chrome.storage.local.set({
+  await writeOptionsStorage({
     [STORAGE_KEYS.resultCache]: normalizeResultCache({})
-  });
+  }, optionsRuntimeAdapters());
   renderCacheSummary({});
   setStatus("Lookup cache cleared.");
 }
@@ -305,28 +300,28 @@ async function pullApproved() {
     return;
   }
 
-  const stored = await chrome.storage.local.get([
+  const stored = await readOptionsStorage([
     STORAGE_KEYS.approvedCommunityEntries,
     STORAGE_KEYS.communityPullState
-  ]);
+  ], optionsRuntimeAdapters());
   renderApprovedSummary(stored[STORAGE_KEYS.approvedCommunityEntries], stored[STORAGE_KEYS.communityPullState]);
   setStatus(response.summary.skipped ? "Approved refresh is disabled." : `Refreshed ${response.summary.received || 0}.`);
 }
 
 async function clearSyncQueue() {
-  await chrome.storage.local.set({
+  await writeOptionsStorage({
     [STORAGE_KEYS.syncQueue]: [],
     [STORAGE_KEYS.syncSummary]: { queued: 0, failed: 0, exhausted: 0 }
-  });
+  }, optionsRuntimeAdapters());
   renderSyncSummary({ queued: 0, failed: 0, exhausted: 0 });
   setStatus("Sync queue cleared.");
 }
 
 async function clearApprovedEntries() {
-  await chrome.storage.local.set({
+  await writeOptionsStorage({
     [STORAGE_KEYS.approvedCommunityEntries]: {},
     [STORAGE_KEYS.communityPullState]: {}
-  });
+  }, optionsRuntimeAdapters());
   renderApprovedSummary({}, {});
   setStatus("Approved shared entries cleared.");
 }
@@ -405,7 +400,7 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   const normalizedCredentials = normalizeCredentials(credentials);
 
   if (settings.customSourceEnabled) {
-    const granted = await requestEndpointPermission(settings.customSourceEndpoint);
+    const granted = await requestEndpointPermission(settings.customSourceEndpoint, optionsRuntimeAdapters());
     settings = {
       ...settings,
       customSourceEnabled: Boolean(granted)
@@ -414,7 +409,7 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
 
   if (settings.forvoEnabled) {
     const granted = normalizedCredentials.forvoApiKey
-      ? await requestEndpointPermission(FORVO_API_ORIGIN)
+      ? await requestEndpointPermission(FORVO_API_ORIGIN, optionsRuntimeAdapters())
       : false;
     settings = {
       ...settings,
@@ -423,7 +418,7 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   }
 
   if (settings.dbpediaEnabled) {
-    const granted = await requestEndpointPermission(settings.dbpediaEndpoint);
+    const granted = await requestEndpointPermission(settings.dbpediaEndpoint, optionsRuntimeAdapters());
     settings = {
       ...settings,
       dbpediaEnabled: Boolean(granted)
@@ -431,7 +426,7 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   }
 
   if (settings.gazetteerEnabled) {
-    const granted = await requestEndpointPermission(settings.gazetteerEndpoint);
+    const granted = await requestEndpointPermission(settings.gazetteerEndpoint, optionsRuntimeAdapters());
     settings = {
       ...settings,
       gazetteerEnabled: Boolean(granted)
@@ -439,7 +434,7 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   }
 
   if (settings.communitySyncEnabled || settings.communityPullEnabled) {
-    const granted = await requestEndpointPermission(settings.communityEndpoint);
+    const granted = await requestEndpointPermission(settings.communityEndpoint, optionsRuntimeAdapters());
     settings = {
       ...settings,
       communitySyncEnabled: Boolean(settings.communitySyncEnabled && granted),
@@ -448,33 +443,6 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
   }
 
   return settings;
-}
-
-async function requestEndpointPermission(endpoint) {
-  const origin = endpointOriginPattern(endpoint);
-  if (!origin || !chrome.permissions) {
-    return Boolean(origin);
-  }
-
-  if (await chrome.permissions.contains({ origins: [origin] })) {
-    return true;
-  }
-
-  return chrome.permissions.request({ origins: [origin] });
-}
-
-async function removeUnusedRemotePermissions(previousSettings, nextSettings, previousCredentials, nextCredentials) {
-  if (!chrome.permissions?.remove) {
-    return;
-  }
-
-  for (const origin of staleRemotePermissionOrigins(previousSettings, nextSettings, previousCredentials, nextCredentials)) {
-    try {
-      await chrome.permissions.remove({ origins: [origin] });
-    } catch {
-      // Permission cleanup is best-effort; saving settings should still finish.
-    }
-  }
 }
 
 function isPlainObject(value) {
@@ -486,14 +454,9 @@ function setStatus(value) {
 }
 
 function sendMessage(message) {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(message, (response) => {
-      if (chrome.runtime.lastError) {
-        resolve({ ok: false, error: chrome.runtime.lastError.message });
-        return;
-      }
+  return sendRuntimeMessage(message, optionsRuntimeAdapters());
+}
 
-      resolve(response || { ok: false, error: "No response." });
-    });
-  });
+function optionsRuntimeAdapters() {
+  return createOptionsRuntimeAdapters();
 }

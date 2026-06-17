@@ -38,6 +38,7 @@ Chrome Manifest V3 components:
 - `popup/runtime-adapters.js`: owns popup active-tab selection reads, settings reads, runtime-message responses, and lookup-hint normalization.
 - `correction-form.js`: normalizes correction-form prefill and submission data.
 - `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
+- `options/runtime-adapters.js`: owns options-page storage calls, optional endpoint permission requests, stale permission cleanup, and runtime-message responses.
 - `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.
 - `content/overlay-style.js`: owns the classic-script style payload injected before the on-page card.
 - `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
@@ -72,6 +73,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Community feedback and sync handling has a narrow background module with tests for local memory, queue updates, sync flush, approved-entry refresh, and HTTP wrappers.
 - Popup active-selection flow can auto-speak after resolving, with a user setting to disable it.
 - Popup runtime adapters have deterministic tests for active-tab selection, settings reads, runtime-message errors, and lookup hints.
+- Options runtime adapters have deterministic tests for storage calls, optional endpoint permissions, stale permission cleanup, and runtime-message errors.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
 - Shared settings and credential normalization for the background worker and options page.
 - Static smoke tests for popup/options DOM bindings, manifest-linked files, extension page scripts, and runtime import resolution.
