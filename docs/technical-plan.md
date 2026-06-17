@@ -27,7 +27,7 @@ Chrome Manifest V3 components:
 - `resolver/text.js`: pure selected-text normalization, lookup-key generation, and script detection helpers re-exported by `resolver-core.js`.
 - `resolver/transliteration.js`: pure Latin-to-Cyrillic lookup candidate generation for bounded source-form retries.
 - `resolver/values.js`: pure URL, count, alias, trust-signal, and long-field normalization helpers used by resolver data.
-- `wikidata-adapter.js`: extracts source forms, native-name style claims, string-valued name claims, sitelink titles, aliases, IPA, and pronunciation audio from Wikidata entities.
+- `wikidata-adapter.js`: extracts source forms, native-name style claims, string-valued name claims, sitelink titles, aliases, variants, IPA, and pronunciation audio from Wikidata entities.
 - `wikidata/search-languages.js`: plans bounded Wikidata search languages from selected script and explicit user hints.
 - `wikidata/language-claims.js`: maps selected Wikidata language and country claims into bounded result-language hints.
 - `wikidata/entity-types.js`: maps selected Wikidata instance, subclass, field, and main-subject claims into bounded result categories and ranking signals.
@@ -114,6 +114,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Structured source aliases preserved for resolver results and correction prefill.
 - Wikidata native-label, native-name, official-name, birth-name, generic-name, short-name, and sitelink-title source-form scoring, IPA extraction, and pronunciation-audio extraction where available.
 - Wikidata source-form extraction handles both monolingual and string-valued name claims.
+- Wikidata preserves non-primary source-form claims and sitelinks as variants for later pronunciation-audio lookup.
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym source-form scoring for proper nouns and research terms.
 - Wikidata native-script alias scoring when stronger source-form claims are absent.
 - Wikidata instance/subclass claim mapping for result categories and candidate ranking.

@@ -47,11 +47,13 @@ export function buildWikidataResult(query, match, entity, options = {}) {
   const claimedLanguage = wikidataClaimedLanguage(entity, options);
   const language = wikidataResultLanguage(sourceCandidate, claimedLanguage, match);
   const aliases = wikidataAliases(entity, [match.label, sourceForm]).slice(0, 8);
+  const variants = wikidataVariants(entity, [query, match.label, sourceForm]).slice(0, 8);
 
   return createRemoteStructuredResult(query, {
     id: `wikidata:${entity.id || match.id}`,
     display: match.label || query,
     aliases,
+    variants,
     sourceForm,
     language,
     languageName: "",
@@ -78,6 +80,7 @@ export function buildWikidataResult(query, match, entity, options = {}) {
       audioFiles.length ? "Pronunciation audio from Wikidata" : "",
       audioFiles.length > 1 ? `Additional Wikidata pronunciation audio: ${audioFiles.length - 1}` : "",
       ipa ? "IPA from Wikidata" : "",
+      variants.length ? `Wikidata source-form variants: ${variants.length}` : "",
       aliases.length ? `Aliases: ${aliases.join(", ")}` : ""
     ].filter(Boolean),
     sources: [
@@ -165,22 +168,7 @@ function searchOnlyAliases(query, match = {}) {
 function chooseSourceCandidate(query, match, entity, options = {}) {
   const selectedScript = detectScript(query).script;
   const languageHints = languageHintSet(options.languageHints);
-  const candidates = [
-    ...textClaimCandidates(entity, NATIVE_LABEL, "native label"),
-    ...textClaimCandidates(entity, NATIVE_NAME, "native name"),
-    ...textClaimCandidates(entity, OFFICIAL_NAME, "official name"),
-    ...textClaimCandidates(entity, BIRTH_NAME, "birth name"),
-    ...textClaimCandidates(entity, NAME, "name"),
-    ...textClaimCandidates(entity, SHORT_NAME, "short name"),
-    ...textClaimCandidates(entity, NICKNAME, "nickname"),
-    ...textClaimCandidates(entity, TITLE, "title"),
-    ...textClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name"),
-    ...stringClaimCandidates(entity, TAXON_NAME, "taxon name", { language: "la" }),
-    ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym"),
-    ...aliasCandidates(entity, "alias"),
-    ...sitelinkCandidates(entity, "sitelink title"),
-    ...labelCandidates(entity, "label")
-  ].filter((candidate) => candidate.value);
+  const candidates = sourceFormCandidates(entity);
 
   if (!candidates.length) {
     return {
@@ -480,6 +468,25 @@ function sitelinkCandidates(entity, source) {
     .filter(Boolean);
 }
 
+function sourceFormCandidates(entity) {
+  return [
+    ...textClaimCandidates(entity, NATIVE_LABEL, "native label"),
+    ...textClaimCandidates(entity, NATIVE_NAME, "native name"),
+    ...textClaimCandidates(entity, OFFICIAL_NAME, "official name"),
+    ...textClaimCandidates(entity, BIRTH_NAME, "birth name"),
+    ...textClaimCandidates(entity, NAME, "name"),
+    ...textClaimCandidates(entity, SHORT_NAME, "short name"),
+    ...textClaimCandidates(entity, NICKNAME, "nickname"),
+    ...textClaimCandidates(entity, TITLE, "title"),
+    ...textClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name"),
+    ...stringClaimCandidates(entity, TAXON_NAME, "taxon name", { language: "la" }),
+    ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym"),
+    ...aliasCandidates(entity, "alias"),
+    ...sitelinkCandidates(entity, "sitelink title"),
+    ...labelCandidates(entity, "label")
+  ].filter((candidate) => candidate.value);
+}
+
 function firstStringClaimValue(entity, propertyId) {
   return stringClaimValues(entity, propertyId)[0] || "";
 }
@@ -506,25 +513,44 @@ function stringClaimValues(entity, propertyId) {
 
 function wikidataAliases(entity, excludedValues = []) {
   const excluded = new Set(excludedValues.map(createLookupKey).filter(Boolean));
-  const values = [
-    ...Object.values(entity.aliases || {}).flat().map((alias) => alias.value),
-    ...textClaimCandidates(entity, NATIVE_LABEL, "native label").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, NATIVE_NAME, "native name").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, OFFICIAL_NAME, "official name").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, BIRTH_NAME, "birth name").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, NAME, "name").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, SHORT_NAME, "short name").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, NICKNAME, "nickname").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, TITLE, "title").map((candidate) => candidate.value),
-    ...textClaimCandidates(entity, TAXON_COMMON_NAME, "taxon common name").map((candidate) => candidate.value),
-    ...stringClaimCandidates(entity, TAXON_NAME, "taxon name").map((candidate) => candidate.value),
-    ...stringClaimCandidates(entity, PSEUDONYM, "pseudonym").map((candidate) => candidate.value),
-    ...sitelinkCandidates(entity, "sitelink title").map((candidate) => candidate.value),
-    ...Object.values(entity.labels || {}).map((label) => label.value)
-  ];
+  const values = sourceFormCandidates(entity).map((candidate) => candidate.value);
   const seen = new Set();
 
   return values
+    .map(normalizeSelection)
+    .filter((value) => {
+      const key = createLookupKey(value);
+      if (!key || excluded.has(key) || seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+}
+
+function wikidataVariants(entity, excludedValues = []) {
+  const excluded = new Set(excludedValues.map(createLookupKey).filter(Boolean));
+  const seen = new Set();
+  const variantSources = new Set([
+    "native label",
+    "native name",
+    "official name",
+    "birth name",
+    "name",
+    "short name",
+    "nickname",
+    "title",
+    "taxon common name",
+    "taxon name",
+    "pseudonym",
+    "sitelink title",
+    "label"
+  ]);
+
+  return sourceFormCandidates(entity)
+    .filter((candidate) => variantSources.has(candidate.source))
+    .map((candidate) => candidate.value)
     .map(normalizeSelection)
     .filter((value) => {
       const key = createLookupKey(value);

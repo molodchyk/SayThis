@@ -42,6 +42,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Alias capture from structured sources and community corrections.
 - Wikidata name-variant aliases from labels, sitelink titles, and native, native-name, official, birth-name, generic-name, and short-name claims.
 - Wikidata source-form extraction handles both monolingual and string-valued name claims.
+- Wikidata preserves non-primary source-form claims and sitelinks as variants for review and audio lookup.
 - Wikidata title, nickname, taxon-name, taxon common-name, and pseudonym claims as source-form and alias signals.
 - Wikidata native-script aliases can be promoted to source forms when stronger name fields are missing.
 - Wikidata instance/subclass claims inform result categories and candidate ranking.

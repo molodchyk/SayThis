@@ -45,9 +45,11 @@ test("prefers native label claims over English labels", () => {
 
   assert.equal(result.sourceForm, "Αθήνα");
   assert.deepEqual(result.aliases, ["City of Athens", "Athenae"]);
+  assert.deepEqual(result.variants, ["City of Athens", "Athenae"]);
   assert.equal(result.language, "el");
   assert.equal(result.confidence, "medium");
   assert.ok(result.evidence.some((item) => item.includes("native label")));
+  assert.ok(result.evidence.includes("Wikidata source-form variants: 2"));
 });
 
 test("uses native name claims as source-form candidates", () => {
@@ -215,6 +217,7 @@ test("uses lookup language hints when source forms compete", () => {
 
   assert.equal(result.sourceForm, "Przyklad");
   assert.equal(result.language, "pl");
+  assert.deepEqual(result.variants, ["Beispielstadt"]);
   assert.ok(result.evidence.includes("Source form matched lookup language hint: pl"));
 });
 
