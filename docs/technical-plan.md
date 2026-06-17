@@ -92,6 +92,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
+- Source-form and alias-guided custom source retries after other structured sources resolve a better lookup form.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Forvo lookup preserves additional same-word, same-language recordings on the resolved result.
 - Forvo lookup can use lookup language hints when no dedicated Forvo language filter is set.
@@ -213,7 +214,7 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 7. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata.
 8. Gazetteer lookup accepts only HTTPS endpoints, is disabled until a user configures one, and uses lookup language hints only as request/source-form hints.
 9. Forvo lookup is disabled until a user enables it and stores a local API key; the key is not included in exports, and lookup hints only shape language filters.
-10. Custom source lookup accepts only HTTPS endpoints and sends only the selected term.
+10. Custom source lookup accepts only HTTPS endpoints and sends only the selected term or resolved pronunciation candidates.
 
 ## Technical Risks
 

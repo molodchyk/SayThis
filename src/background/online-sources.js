@@ -54,6 +54,9 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
   const structuredResult = [customSourceResult, wikidataResult, wiktionaryResult, nominatimResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
+  const customSourceCandidateResult = settings.customSourceEnabled && structuredResult
+    ? await resolveWithCustomSourceCandidates(text, structuredResult, settings.customSourceEndpoint, settings.customSourceLabel)
+    : null;
   const nominatimCandidateResult = settings.gazetteerEnabled && structuredResult
     ? await resolveWithNominatimCandidates(text, structuredResult, settings.gazetteerEndpoint, {
       languageHints
@@ -62,7 +65,7 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
   const wiktionaryCandidateResult = structuredResult
     ? await resolveWithWiktionaryCandidates(text, structuredResult)
     : null;
-  const refinedStructuredResult = [structuredResult, nominatimCandidateResult, wiktionaryCandidateResult]
+  const refinedStructuredResult = [structuredResult, customSourceCandidateResult, nominatimCandidateResult, wiktionaryCandidateResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const forvoResult = settings.forvoEnabled
@@ -320,10 +323,11 @@ export async function resolveWithNominatimCandidates(text, structuredResult, end
   return result;
 }
 
-export async function resolveWithCustomSource(text, endpoint, label) {
+export async function resolveWithCustomSource(text, endpoint, label, options = {}) {
   const query = normalizeSelection(text);
-  const url = buildCustomSourceUrl(query, endpoint);
-  if (!query || !url) {
+  const lookupWord = normalizeSelection(options.lookupWord || query);
+  const url = buildCustomSourceUrl(lookupWord, endpoint);
+  if (!query || !lookupWord || !url) {
     return null;
   }
 
@@ -338,7 +342,31 @@ export async function resolveWithCustomSource(text, endpoint, label) {
   }
 
   const data = await response.json();
-  return buildCustomSourceResult(query, data, { label });
+  return buildCustomSourceResult(query, data, { label, lookupWord });
+}
+
+export async function resolveWithCustomSourceCandidates(text, structuredResult, endpoint, label) {
+  const query = normalizeSelection(text);
+  if (!query) {
+    return null;
+  }
+
+  let result = null;
+  for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
+    const customResult = await resolveSafely(resolveWithCustomSource, query, endpoint, label, {
+      lookupWord: candidate.word
+    });
+    if (!customResult) {
+      continue;
+    }
+
+    result = mergeRemoteResult(result, customResult);
+    if (result?.sourceStatus === "verified-audio") {
+      return result;
+    }
+  }
+
+  return result;
 }
 
 export async function resolveWithForvo(text, apiKey, language) {

@@ -109,6 +109,24 @@ test("preserves custom source string aliases on results", () => {
   assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
 });
 
+test("matches a resolved lookup word while preserving selected text", () => {
+  const result = buildCustomSourceResult("bright-dark", {
+    entries: [{
+      term: "chiaroscuro",
+      sourceForm: "chiaroscuro",
+      language: "it",
+      simple: "kee-ah-roh-SKOO-roh"
+    }]
+  }, {
+    lookupWord: "chiaroscuro"
+  });
+
+  assert.equal(result.query, "bright-dark");
+  assert.equal(result.lookupKey, "bright dark");
+  assert.equal(result.sourceForm, "chiaroscuro");
+  assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
+});
+
 test("preserves alternate custom source matches", () => {
   const result = buildCustomSourceResult("lume", {
     sourceName: "Research pack",

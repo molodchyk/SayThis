@@ -26,9 +26,10 @@ export function buildCustomSourceUrl(query, endpoint) {
 
 export function buildCustomSourceResult(query, payload = {}, options = {}) {
   const selectedText = normalizeSelection(query);
-  const rankedEntries = rankedCustomEntries(selectedText, payload);
+  const lookupText = normalizeSelection(options.lookupWord || selectedText);
+  const rankedEntries = rankedCustomEntries(lookupText, payload);
   const entry = rankedEntries[0]?.entry;
-  if (!selectedText || !entry) {
+  if (!selectedText || !lookupText || !entry) {
     return null;
   }
 

@@ -5,6 +5,7 @@ import {
 } from "../../src/resolver-core.js";
 import {
   onlineLookupLanguageHints,
+  resolveWithCustomSourceCandidates,
   resolveWithWikidata,
   resolveWithOnlineSources
 } from "../../src/background/online-sources.js";
@@ -214,6 +215,46 @@ test("tries bounded suffix transliteration candidates without explicit hints", a
     assert.equal(result.sourceForm, "Калинине");
     assert.equal(result.language, "uk");
     assert.equal(result.category, "place");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("retries custom source with resolved source-form candidates", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedQueries = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      requestedQueries.push(parsed.searchParams.get("q"));
+      assert.equal(parsed.origin, "https://packs.example");
+
+      return jsonResponse(parsed.searchParams.get("q") === "chiaroscuro"
+        ? {
+          sourceName: "Art terms",
+          entries: [{
+            term: "chiaroscuro",
+            sourceForm: "chiaroscuro",
+            language: "it",
+            simple: "kee-ah-roh-SKOO-roh"
+          }]
+        }
+        : { entries: [] });
+    };
+
+    const result = await resolveWithCustomSourceCandidates("bright-dark", {
+      display: "bright-dark",
+      sourceForm: "chiaroscuro",
+      language: "it",
+      sourceStatus: "structured-source",
+      confidence: "medium"
+    }, "https://packs.example/search", "Art terms");
+
+    assert.deepEqual(requestedQueries, ["chiaroscuro"]);
+    assert.equal(result.query, "bright-dark");
+    assert.equal(result.sourceForm, "chiaroscuro");
+    assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
   } finally {
     globalThis.fetch = originalFetch;
   }

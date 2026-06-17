@@ -84,6 +84,8 @@ SayThis ranks returned entries by exact alias/source-form match, pronunciation e
 
 When several returned entries match the selected term, SayThis keeps the strongest entry as the primary result and preserves the next matching entries as alternate candidates. This lets a domain pack represent variants, roots, or language-specific pronunciations without forcing them into one entry.
 
+After other structured sources resolve a better source form or alias, SayThis can retry the custom endpoint with those candidate spellings while preserving the user's original selected term in the result. This lets a pack serve canonical entries even when the selected text is a romanized alias, alternate spelling, or short form.
+
 ## Privacy
 
-Custom sources are disabled by default. SayThis sends only the selected term to the configured endpoint. It does not send page URLs or browsing history.
+Custom sources are disabled by default. SayThis sends only the selected term or resolved pronunciation candidate to the configured endpoint. It does not send page URLs or browsing history.
