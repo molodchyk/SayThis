@@ -22,8 +22,7 @@ import {
 import {
   createOffscreenPlayAudioMessage,
   createOffscreenStopAudioMessage,
-  createShowResultMessage,
-  MESSAGE_TYPES
+  createShowResultMessage
 } from "./message-contracts.js";
 import {
   createCommunitySubmission,
@@ -48,6 +47,9 @@ import {
 import {
   handleActiveSelectionCommand
 } from "./background/active-selection-flow.js";
+import {
+  handleRuntimeMessage
+} from "./background/runtime-message-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -99,87 +101,8 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === MESSAGE_TYPES.resolve) {
-    resolveSelection(message.text, useOnlineMessageOptions(message))
-      .then((result) => {
-        sendResponse({ ok: true, result });
-      })
-      .catch((error) => {
-        sendResponse({ ok: false, error: error.message || "Resolve failed." });
-      });
-    return true;
-  }
-
-  if (message?.type === MESSAGE_TYPES.speak) {
-    const selectedText = normalizeSelection(message.text);
-    if (!selectedText) {
-      sendResponse({ ok: false, error: "No text selected." });
-      return true;
-    }
-
-    const resultPromise = message.result
-      ? Promise.resolve(message.result)
-      : resolveSelection(selectedText, useOnlineMessageOptions(message));
-
-    resultPromise
-      .then((result) => {
-        speakResult(result, { rate: message.rate, lang: message.lang });
-        sendResponse({ ok: true, result });
-      })
-      .catch((error) => {
-        sendResponse({ ok: false, error: error.message || "Speech failed." });
-      });
-    return true;
-  }
-
-  if (message?.type === MESSAGE_TYPES.stop) {
-    chrome.tts.stop();
-    stopOffscreenAudio()
-      .then(() => {
-        sendResponse({ ok: true });
-      })
-      .catch(() => {
-        sendResponse({ ok: true });
-      });
-    return true;
-  }
-
-  if (message?.type === MESSAGE_TYPES.feedback) {
-    saveFeedback(message.text, message.feedback || {})
-      .then((result) => {
-        sendResponse({ ok: true, result });
-      })
-      .catch((error) => {
-        sendResponse({ ok: false, error: error.message || "Feedback failed." });
-      });
-    return true;
-  }
-
-  if (message?.type === MESSAGE_TYPES.flushSync) {
-    flushCommunitySync()
-      .then((summary) => {
-        sendResponse({ ok: true, summary });
-      })
-      .catch((error) => {
-        sendResponse({ ok: false, error: error.message || "Sync failed." });
-      });
-    return true;
-  }
-
-  if (message?.type === MESSAGE_TYPES.pullApproved) {
-    pullApprovedCommunityEntries()
-      .then((summary) => {
-        sendResponse({ ok: true, summary });
-      })
-      .catch((error) => {
-        sendResponse({ ok: false, error: error.message || "Refresh failed." });
-      });
-    return true;
-  }
-
-  return false;
-});
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) =>
+  handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
 
 async function resolveSelection(text, options = {}) {
   const selectedText = normalizeSelection(text);
@@ -478,6 +401,11 @@ async function stopOffscreenAudio() {
   }
 }
 
+async function stopPlayback() {
+  chrome.tts.stop();
+  await stopOffscreenAudio();
+}
+
 async function ensureOffscreenAudioDocument() {
   if (await hasOffscreenAudioDocument()) {
     return;
@@ -540,18 +468,6 @@ async function getSettings() {
   return normalizeSettings(stored[STORAGE_KEYS.settings]);
 }
 
-function useOnlineMessageOptions(message = {}) {
-  const languageHints = normalizeLanguageHints(message.languageHints);
-  if (!Object.prototype.hasOwnProperty.call(message, "useOnline")) {
-    return languageHints.length ? { languageHints } : {};
-  }
-
-  return {
-    useOnline: Boolean(message.useOnline),
-    ...(languageHints.length ? { languageHints } : {})
-  };
-}
-
 function onlineSettingsForRequest(settings, options = {}) {
   const requestHints = normalizeLanguageHints(options.languageHints);
   if (!requestHints.length) {
@@ -564,5 +480,16 @@ function onlineSettingsForRequest(settings, options = {}) {
       ...settings.lookupLanguageHints,
       ...requestHints
     ])
+  };
+}
+
+function runtimeMessageDependencies() {
+  return {
+    resolveSelection,
+    speakResult,
+    stopPlayback,
+    saveFeedback,
+    flushCommunitySync,
+    pullApprovedCommunityEntries
   };
 }
