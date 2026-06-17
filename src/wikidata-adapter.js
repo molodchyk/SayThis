@@ -260,11 +260,44 @@ function scoreWikidataResult(query, match, entity, result, index, options = {}) 
 
   score += entityType.score || 0;
 
-  if (description.includes("family name") || description.includes("given name") || description.includes("place") || description.includes("city")) {
+  score += descriptionRelevanceScore(description);
+
+  return score;
+}
+
+function descriptionRelevanceScore(description) {
+  const text = String(description || "").toLowerCase();
+  let score = 0;
+
+  if (hasAnyDescription(text, ["family name", "given name", "surname"])) {
     score += 4;
   }
 
+  if (hasAnyDescription(text, ["place", "city", "town", "village", "settlement", "municipality", "commune", "river", "mountain", "island", "region"])) {
+    score += 4;
+  }
+
+  if (hasAnyDescription(text, ["species", "taxon", "protein", "gene", "enzyme", "chemical", "compound", "disease", "medical", "anatomical", "syndrome", "virus", "bacterium", "bacteria"])) {
+    score += 5;
+  }
+
+  if (hasAnyDescription(text, ["algorithm", "programming language", "computer program", "computer science", "protocol", "data structure"])) {
+    score += 5;
+  }
+
+  if (hasAnyDescription(text, ["mathematical", "mathematics", "theorem", "academic discipline", "scientific discipline", "field of study"])) {
+    score += 5;
+  }
+
+  if (hasAnyDescription(text, ["index entry", "set index", "list of"])) {
+    score -= 12;
+  }
+
   return score;
+}
+
+function hasAnyDescription(text, phrases) {
+  return phrases.some((phrase) => text.includes(phrase));
 }
 
 function alternateWikidataResults(results, best) {

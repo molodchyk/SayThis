@@ -80,6 +80,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wikidata native-script alias scoring when stronger source-form claims are absent.
 - Wikidata instance/subclass claim mapping for result categories and candidate ranking.
 - Wikidata entity-type scoring covers additional scientific, medical, academic, and technical term classes.
+- Wikidata candidate ranking uses bounded description relevance when explicit entity-type claims are sparse.
 - Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata selection preserves useful alternate entity candidates for result ambiguity and follow-up audio lookup.
 - Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity.

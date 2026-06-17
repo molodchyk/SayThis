@@ -522,57 +522,28 @@ test("uses alias matches to outrank weaker search order", () => {
 });
 
 test("uses entity type claims to deprioritize disambiguation candidates", () => {
-  const matches = [{
-    id: "Qfirst",
-    label: "Springfield",
-    language: "en",
-    description: "index entry",
-    match: { text: "Springfield" }
-  }, {
-    id: "Qplace",
-    label: "Springfield",
-    language: "en",
-    description: "settlement",
-    match: { text: "Springfield" }
-  }];
-  const result = selectBestWikidataResult("Springfield", matches, {
-    Qfirst: {
-      id: "Qfirst",
-      labels: {
-        en: { language: "en", value: "Springfield" }
-      },
-      claims: {
-        P31: [{
-          mainsnak: {
-            datavalue: {
-              value: { id: "Q4167410", "numeric-id": 4167410 }
-            }
-          }
-        }]
-      },
-      aliases: {}
-    },
-    Qplace: {
-      id: "Qplace",
-      labels: {
-        en: { language: "en", value: "Springfield" }
-      },
-      claims: {
-        P31: [{
-          mainsnak: {
-            datavalue: {
-              value: { id: "Q515", "numeric-id": 515 }
-            }
-          }
-        }]
-      },
-      aliases: {}
-    }
+  const result = selectBestWikidataResult("Springfield", [
+    typedMatch("Qfirst", "Springfield", "index entry"),
+    typedMatch("Qplace", "Springfield", "settlement")
+  ], {
+    Qfirst: typedEntity("Qfirst", "Springfield", "index entry", "Q4167410"),
+    Qplace: typedEntity("Qplace", "Springfield", "settlement", "Q515")
   });
 
   assert.equal(result.id, "wikidata:Qplace");
   assert.equal(result.category, "place");
   assert.ok(result.evidence.includes("Entity type: city"));
+
+  const sparseResult = selectBestWikidataResult("Prometheus", [
+    typedMatch("Qindex", "Prometheus", "index entry"),
+    typedMatch("Qalgorithm", "Prometheus", "algorithm in computer science")
+  ], {
+    Qindex: typedEntity("Qindex", "Prometheus", "index entry"),
+    Qalgorithm: typedEntity("Qalgorithm", "Prometheus", "algorithm in computer science")
+  });
+
+  assert.equal(sparseResult.id, "wikidata:Qalgorithm");
+  assert.equal(sparseResult.category, "algorithm in computer science");
 });
 
 test("plans bounded Wikidata search languages from selected script", () => {
@@ -593,7 +564,8 @@ function typedMatch(id, label, description) {
   return { id, label, language: "en", description, match: { text: label } };
 }
 
-function typedEntity(id, label, description, type) {
+function typedEntity(id, label, description, type = "") {
   const language = "en";
-  return { id, labels: { en: { language, value: label } }, descriptions: { en: { language, value: description } }, claims: { P31: [{ mainsnak: { datavalue: { value: { id: type } } } }] }, aliases: {} };
+  const claims = type ? { P31: [{ mainsnak: { datavalue: { value: { id: type } } } }] } : {};
+  return { id, labels: { en: { language, value: label } }, descriptions: { en: { language, value: description } }, claims, aliases: {} };
 }
