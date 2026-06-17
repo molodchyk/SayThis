@@ -134,6 +134,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
+- Custom source matching uses term, source form, aliases, and variants from returned entries.
 - Source-form and alias-guided custom source retries after other structured sources resolve a better lookup form.
 - Optional DBpedia-compatible knowledge graph lookup for entity context and source-form candidates.
 - Source-form and alias-guided DBpedia-compatible retries after other structured sources resolve a better lookup form.

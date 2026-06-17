@@ -79,6 +79,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Custom source lookup can retry resolved source forms and aliases from structured results.
 - Wikidata lookup adds script-based search languages for non-Latin selections.
 - Custom sources can provide array or text aliases and keyed entry maps.
+- Custom sources can match selected text by variant spellings as well as aliases and source forms.
 - Custom sources preserve matching alternate entries for variants or language-specific pronunciations.
 - DBpedia-compatible lookup can retry resolved source forms and aliases from other structured results.
 - DBpedia-compatible lookup preserves redirect labels as variants for later audio lookup and review.

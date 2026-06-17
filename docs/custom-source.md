@@ -83,7 +83,7 @@ Or multiple entries:
 - `evidence`: short source-backed notes.
 - `notes`: regional or usage note.
 
-SayThis ranks returned entries by exact alias/source-form match, pronunciation evidence, audio, and confidence. A configured custom source is queried before generic online sources, so domain-reviewed data can take priority when confidence is equal.
+SayThis ranks returned entries by exact term, source-form, alias, or variant match, pronunciation evidence, audio, and confidence. A configured custom source is queried before generic online sources, so domain-reviewed data can take priority when confidence is equal.
 
 When several returned entries match the selected term, SayThis keeps the strongest entry as the primary result and preserves the next matching entries as alternate candidates. This lets a domain pack represent variants, roots, or language-specific pronunciations without forcing them into one entry.
 

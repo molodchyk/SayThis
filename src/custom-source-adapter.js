@@ -210,7 +210,8 @@ function entryKeys(entry = {}) {
     entry.display,
     entry.sourceForm,
     entry.native,
-    ...normalizeAliases(entry.aliases)
+    ...normalizeAliases(entry.aliases),
+    ...normalizeAliases(entry.variants)
   ]
     .map(createLookupKey)
     .filter(Boolean);
