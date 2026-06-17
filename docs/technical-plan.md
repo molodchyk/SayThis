@@ -15,7 +15,7 @@ Chrome Manifest V3 components:
 - `background/selection-resolver-flow.js`: owns local lookup, online lookup, cache use, packaged audio URL mapping, and result storage updates.
 - `background/community-feedback-flow.js`: owns local feedback storage, sync queue updates, approved-entry refresh, and feedback-triggered result updates.
 - `background/online-sources.js`: orchestrates optional online source lookups, source-form retries, and pronunciation-audio fallback candidates.
-- `background/dbpedia-source.js`: extracts source-form, entity-context, and source-link signals from DBpedia Lookup-compatible JSON.
+- `background/dbpedia-source.js`: extracts source-form, entity-context, source-link, and redirect-label variant signals from DBpedia Lookup-compatible JSON.
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
@@ -135,6 +135,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Source-form and alias-guided custom source retries after other structured sources resolve a better lookup form.
 - Optional DBpedia-compatible knowledge graph lookup for entity context and source-form candidates.
 - Source-form and alias-guided DBpedia-compatible retries after other structured sources resolve a better lookup form.
+- DBpedia-compatible lookup preserves redirect labels as variants for later pronunciation-audio lookup.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Forvo lookup preserves additional same-word, same-language recordings on the resolved result.
 - Forvo lookup can use lookup language hints when no dedicated Forvo language filter is set.

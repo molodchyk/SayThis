@@ -54,12 +54,14 @@ function dbpediaCandidateResult(selectedText, item, label) {
     selectedText;
   const description = normalizeSelection(firstValue(item.description, item.Description, item.comment, item.Comment, item.abstract));
   const domainHint = domainHintFromCandidate(item);
+  const variants = variantsForCandidate(selectedText, item, uri, sourceForm);
 
   return createRemoteStructuredResult(selectedText, {
     id: `dbpedia:${createLookupKey(uri || sourceForm)}`,
     display: sourceForm,
     sourceForm,
     aliases: aliasesForCandidate(selectedText, item, uri),
+    variants,
     language: normalizeSelection(item.language || "en"),
     languageName: normalizeSelection(item.languageName || "English"),
     category: categoryFromCandidate(item),
@@ -69,6 +71,7 @@ function dbpediaCandidateResult(selectedText, item, label) {
     evidence: [
       `Structured result from ${label}`,
       domainHint ? `Domain: ${domainHint}` : "",
+      variants.length ? `${label} variants: ${variants.length}` : "",
       description
     ].filter(Boolean).slice(0, 4),
     sources: uri ? [{ label, url: uri }] : [],
@@ -97,7 +100,8 @@ function scoreCandidate(query, item, index) {
   const forms = [
     firstValue(item.label, item.Label, item.name, item.Name),
     labelFromUri(firstValue(item.uri, item.URI, item.resource, item.Resource)),
-    ...arrayValues(item.aliases, item.Aliases)
+    ...arrayValues(item.aliases, item.Aliases),
+    ...variantValuesForCandidate(item)
   ].map(createLookupKey).filter(Boolean);
   let score = Math.max(0, 80 - index);
 
@@ -126,6 +130,58 @@ function aliasesForCandidate(selectedText, item, uri) {
     labelFromUri(uri),
     ...arrayValues(item.aliases, item.Aliases)
   ]).filter((value) => createLookupKey(value) !== createLookupKey(firstValue(item.label, item.Label, item.name, item.Name)));
+}
+
+function variantsForCandidate(selectedText, item, uri, sourceForm) {
+  const excluded = new Set([
+    selectedText,
+    sourceForm,
+    labelFromUri(uri)
+  ].map(createLookupKey).filter(Boolean));
+  const seen = new Set();
+  const variants = [];
+
+  for (const value of variantValuesForCandidate(item)) {
+    const text = normalizeSelection(value);
+    const key = createLookupKey(text);
+    if (!key || excluded.has(key) || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    variants.push(text);
+    if (variants.length >= 12) {
+      break;
+    }
+  }
+
+  return variants;
+}
+
+function variantValuesForCandidate(item) {
+  return arrayValues(
+    item.variants,
+    item.Variants,
+    item.variant,
+    item.Variant,
+    item.variantLabels,
+    item.VariantLabels,
+    item.alternateLabels,
+    item.AlternateLabels,
+    item.altLabels,
+    item.AltLabels,
+    item.altLabel,
+    item.AltLabel,
+    item.redirectlabel,
+    item.redirectLabel,
+    item.RedirectLabel,
+    item.redirectLabels,
+    item.RedirectLabels,
+    item.redirect,
+    item.Redirect,
+    item.redirects,
+    item.Redirects
+  ).map((value) => labelFromUri(value) || value);
 }
 
 function categoryFromCandidate(item) {

@@ -30,7 +30,8 @@ test("builds a structured DBpedia result from lookup docs", () => {
       URI: ["http://dbpedia.org/resource/Chiaroscuro"],
       Description: ["Painting technique using strong contrast between light and dark."],
       Classes: ["http://dbpedia.org/ontology/Artwork"],
-      Categories: ["http://dbpedia.org/resource/Category:Art_techniques"]
+      Categories: ["http://dbpedia.org/resource/Category:Art_techniques"],
+      redirectlabel: ["Chiaro scuro", "Clair-obscur"]
     }]
   });
 
@@ -41,8 +42,28 @@ test("builds a structured DBpedia result from lookup docs", () => {
   assert.equal(result.language, "en");
   assert.equal(result.sourceStatus, "structured-source");
   assert.deepEqual(result.aliases, ["light-dark"]);
+  assert.deepEqual(result.variants, ["Chiaro scuro", "Clair-obscur"]);
   assert.equal(result.sources[0].url, "https://dbpedia.org/resource/Chiaroscuro");
   assert.ok(result.evidence.includes("Structured result from DBpedia"));
+  assert.ok(result.evidence.includes("DBpedia variants: 2"));
+});
+
+test("uses DBpedia redirect labels for candidate scoring", () => {
+  const result = buildDbpediaResult("light-dark technique", {
+    docs: [{
+      Label: ["Unrelated entry"],
+      URI: ["http://dbpedia.org/resource/Unrelated_entry"],
+      Description: ["Different topic."]
+    }, {
+      Label: ["Chiaroscuro"],
+      URI: ["http://dbpedia.org/resource/Chiaroscuro"],
+      Description: ["Painting technique using strong contrast."],
+      redirectlabel: ["light-dark technique", "chiaro scuro"]
+    }]
+  });
+
+  assert.equal(result.sourceForm, "Chiaroscuro");
+  assert.deepEqual(result.variants, ["chiaro scuro"]);
 });
 
 test("resolves DBpedia lookup data and retries source-form candidates", async () => {
