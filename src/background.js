@@ -28,60 +28,28 @@ import {
 import {
   createRuntimeAdapters
 } from "./background/runtime-adapters-flow.js";
+import {
+  BACKGROUND_STORAGE_KEYS as STORAGE_KEYS,
+  createBackgroundPlatformAdapters,
+  createPlaybackSurfacePlatformDependencies,
+  createRuntimeAdapterPlatformDependencies
+} from "./background/runtime-platform.js";
 
-const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
-const STORAGE_KEYS = {
-  approvedCommunityEntries: "approvedCommunityEntries",
-  communityEntries: "communityEntries",
-  communityPullState: "communityPullState",
-  credentials: "credentials",
-  lastResult: "lastResult",
-  lastSelection: "lastSelection",
-  lastSource: "lastSource",
-  resultCache: "resultCache",
-  syncQueue: "syncQueue",
-  syncSummary: "syncSummary",
-  settings: "settings"
-};
-const playbackSurface = createPlaybackSurface({
-  offscreenAudioUrl: OFFSCREEN_AUDIO_URL,
-  getStorage: (keys) => chrome.storage.local.get(keys),
-  stopTts: () => chrome.tts.stop(),
-  speakTts: (text, options) => chrome.tts.speak(text, options),
-  hasOffscreenAudioSupport: () => Boolean(chrome.offscreen),
-  hasOffscreenDocument: typeof chrome.offscreen?.hasDocument === "function"
-    ? () => chrome.offscreen.hasDocument()
-    : null,
-  createOffscreenDocument: (options) => chrome.offscreen.createDocument(options),
-  sendRuntimeMessage: (message) => chrome.runtime.sendMessage(message),
-  executeScript: (details) => chrome.scripting.executeScript(details),
-  sendTabMessage: (tabId, message) => chrome.tabs.sendMessage(tabId, message),
-  getRuntimeUrl: (url) => chrome.runtime.getURL(url),
-  matchClients: () => typeof clients !== "undefined" && typeof clients.matchAll === "function"
-    ? clients.matchAll()
-    : [],
-  storageKeys: STORAGE_KEYS
-});
-const runtimeAdapters = createRuntimeAdapters({
-  getRuntimeUrl: (url) => chrome.runtime.getURL(url),
-  fetch: (url) => fetch(url),
-  queryTabs: (query) => chrome.tabs.query(query),
-  executeScript: (details) => chrome.scripting.executeScript(details),
-  setStorage: (value) => chrome.storage.local.set(value),
-  storageKeys: STORAGE_KEYS
-});
+const platform = createBackgroundPlatformAdapters();
+const playbackSurface = createPlaybackSurface(createPlaybackSurfacePlatformDependencies(platform, STORAGE_KEYS));
+const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDependencies(platform, STORAGE_KEYS));
 
-chrome.runtime.onInstalled.addListener(() => {
+platform.addInstalledListener(() => {
   for (const item of contextMenuDefinitions()) {
-    chrome.contextMenus.create(item);
+    platform.createContextMenu(item);
   }
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+platform.addContextMenuClickedListener((info, tab) => {
   handleContextMenuClick(info, tab, {
     resolveOptionsForMenuId,
     normalizeSelection,
-    setStorage: (value) => chrome.storage.local.set(value),
+    setStorage: platform.setStorage,
     resolveSelection,
     playResolvedResult,
     speakFallback,
@@ -89,7 +57,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   });
 });
 
-chrome.commands.onCommand.addListener((command) => {
+platform.addCommandListener((command) => {
   handleActiveSelectionCommandName(command, runtimeAdapters.activeSelectionDependencies({
     resolveSelection,
     playResolvedResult,
@@ -97,22 +65,22 @@ chrome.commands.onCommand.addListener((command) => {
   }));
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
+platform.addMessageListener((message, _sender, sendResponse) => handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
 
 async function resolveSelection(text, options = {}) {
   return resolveSelectionFlow(text, options, {
-    getStorage: (keys) => chrome.storage.local.get(keys),
-    setStorage: (value) => chrome.storage.local.set(value),
+    getStorage: platform.getStorage,
+    setStorage: platform.setStorage,
     loadSeedData: runtimeAdapters.loadSeedData,
-    getRuntimeUrl: (url) => chrome.runtime.getURL(url),
+    getRuntimeUrl: platform.getRuntimeUrl,
     storageKeys: STORAGE_KEYS
   });
 }
 
 async function saveFeedback(text, feedback) {
   return saveFeedbackFlow(text, feedback, {
-    getStorage: (keys) => chrome.storage.local.get(keys),
-    setStorage: (value) => chrome.storage.local.set(value),
+    getStorage: platform.getStorage,
+    setStorage: platform.setStorage,
     resolveSelection,
     flushCommunitySync,
     storageKeys: STORAGE_KEYS
@@ -121,16 +89,16 @@ async function saveFeedback(text, feedback) {
 
 async function flushCommunitySync() {
   return flushCommunitySyncFlow({
-    getStorage: (keys) => chrome.storage.local.get(keys),
-    setStorage: (value) => chrome.storage.local.set(value),
+    getStorage: platform.getStorage,
+    setStorage: platform.setStorage,
     storageKeys: STORAGE_KEYS
   });
 }
 
 async function pullApprovedCommunityEntries() {
   return pullApprovedCommunityEntriesFlow({
-    getStorage: (keys) => chrome.storage.local.get(keys),
-    setStorage: (value) => chrome.storage.local.set(value),
+    getStorage: platform.getStorage,
+    setStorage: platform.setStorage,
     storageKeys: STORAGE_KEYS
   });
 }

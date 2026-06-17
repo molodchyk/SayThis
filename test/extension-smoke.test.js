@@ -119,10 +119,10 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /handleContextMenuClick\(info, tab, \{/);
   assert.match(source, /lastResultKey: STORAGE_KEYS\.lastResult/);
   assert.match(source, /handleActiveSelectionCommandName\(command, runtimeAdapters\.activeSelectionDependencies\(\{/);
-  assert.match(source, /createRuntimeAdapters\(\{/);
+  assert.match(source, /createRuntimeAdapters\(createRuntimeAdapterPlatformDependencies\(platform, STORAGE_KEYS\)\)/);
   assert.match(source, /runtimeAdapters\.activeSelectionDependencies\(\{/);
   assert.match(source, /handleRuntimeMessage\(message, sendResponse, runtimeMessageDependencies\(\)\)/);
-  assert.match(source, /createPlaybackSurface\(\{/);
+  assert.match(source, /createPlaybackSurface\(createPlaybackSurfacePlatformDependencies\(platform, STORAGE_KEYS\)\)/);
   assert.match(source, /playbackSurface\.playResolvedResult\(result, tabId\)/);
   assert.match(playbackSurface, /playResolvedResultFlow\(result, tabId, \{/);
   assert.match(playbackSurface, /createOffscreenPlayAudioMessage/);
