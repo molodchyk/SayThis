@@ -24,6 +24,9 @@ import {
   sendRuntimeMessage,
   writeActiveTabPopupState
 } from "./popup/runtime-adapters.js";
+import {
+  createPopupAudioPlayback
+} from "./popup/audio-playback.js";
 
 const selectionInput = document.getElementById("selection");
 const lookupHintsInput = document.getElementById("lookup-hints");
@@ -70,7 +73,7 @@ const correctionSourceUrl = document.getElementById("correction-source-url");
 const correctionVariant = document.getElementById("correction-variant");
 
 let currentResult = null;
-let audioPlayer = null;
+const audioPlayback = createPopupAudioPlayback();
 
 init();
 
@@ -362,14 +365,7 @@ function playAudioItem(audio, result, rate, options = {}) {
     return false;
   }
 
-  stopAudio();
-  let fallbackStarted = false;
   const fallbackToSpeech = async () => {
-    if (fallbackStarted) {
-      return;
-    }
-
-    fallbackStarted = true;
     setStatus("Audio failed. Using TTS fallback.");
     const text = normalizeSelection(selectionInput.value);
     const response = await sendMessage(createSpeakMessage(text, {
@@ -387,25 +383,11 @@ function playAudioItem(audio, result, rate, options = {}) {
     }
   };
 
-  audioPlayer = new Audio(audio.url);
-  audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
-  audioPlayer.addEventListener("error", () => {
-    fallbackToSpeech();
-  }, { once: true });
-  audioPlayer.play().catch(() => {
-    fallbackToSpeech();
-  });
-  return true;
+  return audioPlayback.playUrl(audio.url, rate, fallbackToSpeech);
 }
 
 function stopAudio() {
-  if (!audioPlayer) {
-    return;
-  }
-
-  audioPlayer.pause();
-  audioPlayer.currentTime = 0;
-  audioPlayer = null;
+  audioPlayback.stop();
 }
 
 function sendMessage(message) {

@@ -45,6 +45,7 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/offscreen/runtime-message-flow.js"));
   assert.ok(files.includes("src/options/runtime-adapters.js"));
   assert.ok(files.includes("src/options/summary-view.js"));
+  assert.ok(files.includes("src/popup/audio-playback.js"));
   assert.ok(files.includes("src/popup.html"));
   assert.ok(files.includes("src/offscreen-audio.html"));
   assert.ok(files.includes("data/public-audio-manifest.json"));
