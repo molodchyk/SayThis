@@ -50,6 +50,10 @@ import {
 import {
   handleRuntimeMessage
 } from "./background/runtime-message-flow.js";
+import {
+  playAudioOffscreen as playAudioOffscreenFlow,
+  playResolvedResult as playResolvedResultFlow
+} from "./background/result-playback-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -353,40 +357,22 @@ function activeSelectionDependencies() {
 }
 
 async function playResolvedResult(result, tabId) {
-  const audio = getBestAudio(result);
-  if (audio) {
-    const shown = await showResultOnTab(tabId, result, { autoPlay: true });
-    if (shown) {
-      return;
-    }
-
-    const played = await playAudioOffscreen(result);
-    if (played) {
-      showResultOnTab(tabId, result);
-      return;
-    }
-  }
-
-  speakResult(result);
-  showResultOnTab(tabId, result);
+  return playResolvedResultFlow(result, tabId, {
+    getBestAudio,
+    showResultOnTab,
+    playAudioOffscreen,
+    speakResult
+  });
 }
 
 async function playAudioOffscreen(result, rate = 0.82) {
-  const audio = getBestAudio(result);
-  if (!audio?.url || !chrome.offscreen) {
-    return false;
-  }
-
-  try {
-    await ensureOffscreenAudioDocument();
-    const response = await chrome.runtime.sendMessage(createOffscreenPlayAudioMessage(
-      audio,
-      rate < 0.7 ? 0.75 : 1
-    ));
-    return Boolean(response?.ok);
-  } catch {
-    return false;
-  }
+  return playAudioOffscreenFlow(result, {
+    getBestAudio,
+    hasOffscreenAudioSupport: () => Boolean(chrome.offscreen),
+    ensureOffscreenAudioDocument,
+    sendOffscreenPlayAudioMessage: (audio, playbackRate) =>
+      chrome.runtime.sendMessage(createOffscreenPlayAudioMessage(audio, playbackRate))
+  }, rate);
 }
 
 async function stopOffscreenAudio() {
