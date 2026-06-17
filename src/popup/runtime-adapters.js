@@ -8,6 +8,11 @@ import {
 const DEFAULT_POPUP_SETTINGS = {
   autoSpeakPopup: true
 };
+const POPUP_STATE_KEYS = {
+  lastResult: "lastResult",
+  lastSelection: "lastSelection",
+  lastSource: "lastSource"
+};
 
 export async function readActiveTabSelection(dependencies = {}) {
   try {
@@ -40,6 +45,31 @@ export async function readPopupSettings(dependencies = {}) {
   };
 }
 
+export async function writeActiveTabPopupState(selection, dependencies = {}) {
+  const normalized = normalizeSelection(selection);
+  if (!normalized) {
+    return;
+  }
+
+  await dependencies.setStorage?.({
+    [POPUP_STATE_KEYS.lastSelection]: normalized,
+    [POPUP_STATE_KEYS.lastSource]: "active-tab"
+  });
+}
+
+export async function readStoredPopupState(dependencies = {}) {
+  const stored = await dependencies.getStorage?.([
+    POPUP_STATE_KEYS.lastSelection,
+    POPUP_STATE_KEYS.lastResult
+  ]);
+  return {
+    lastSelection: normalizeSelection(stored?.[POPUP_STATE_KEYS.lastSelection]),
+    lastResult: isPlainObject(stored?.[POPUP_STATE_KEYS.lastResult])
+      ? stored[POPUP_STATE_KEYS.lastResult]
+      : null
+  };
+}
+
 export function sendRuntimeMessage(message, dependencies = {}) {
   return new Promise((resolve) => {
     if (typeof dependencies.sendMessage !== "function") {
@@ -61,4 +91,8 @@ export function sendRuntimeMessage(message, dependencies = {}) {
 
 export function lookupHintsFromValue(value) {
   return normalizeLanguageHints(value);
+}
+
+function isPlainObject(value) {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }

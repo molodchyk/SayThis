@@ -4,7 +4,9 @@ import {
   lookupHintsFromValue,
   readActiveTabSelection,
   readPopupSettings,
-  sendRuntimeMessage
+  readStoredPopupState,
+  sendRuntimeMessage,
+  writeActiveTabPopupState
 } from "../../src/popup/runtime-adapters.js";
 
 test("reads and normalizes active tab selection", async () => {
@@ -55,6 +57,52 @@ test("normalizes popup settings", async () => {
   }), {
     autoSpeakPopup: false,
     onlineByDefault: true
+  });
+});
+
+test("writes active-tab popup state", async () => {
+  const writes = [];
+  await writeActiveTabPopupState("  Gnocchi\nalla   romana ", {
+    setStorage: async (value) => writes.push(value)
+  });
+  await writeActiveTabPopupState("  ", {
+    setStorage: async () => {
+      throw new Error("empty selection should not be stored");
+    }
+  });
+
+  assert.deepEqual(writes, [{
+    lastSelection: "Gnocchi alla romana",
+    lastSource: "active-tab"
+  }]);
+});
+
+test("reads and normalizes stored popup state", async () => {
+  assert.deepEqual(await readStoredPopupState({
+    getStorage: async (keys) => {
+      assert.deepEqual(keys, ["lastSelection", "lastResult"]);
+      return {
+        lastSelection: "  Chiaroscuro\n ",
+        lastResult: {
+          display: "Chiaroscuro"
+        }
+      };
+    }
+  }), {
+    lastSelection: "Chiaroscuro",
+    lastResult: {
+      display: "Chiaroscuro"
+    }
+  });
+
+  assert.deepEqual(await readStoredPopupState({
+    getStorage: async () => ({
+      lastSelection: "  ",
+      lastResult: []
+    })
+  }), {
+    lastSelection: "",
+    lastResult: null
   });
 });
 

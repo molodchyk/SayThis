@@ -20,7 +20,9 @@ import {
   lookupHintsFromValue,
   readActiveTabSelection,
   readPopupSettings,
-  sendRuntimeMessage
+  readStoredPopupState,
+  sendRuntimeMessage,
+  writeActiveTabPopupState
 } from "./popup/runtime-adapters.js";
 
 const selectionInput = document.getElementById("selection");
@@ -141,17 +143,14 @@ async function init() {
 
   if (activeSelection) {
     selectionInput.value = activeSelection;
-    await chrome.storage.local.set({
-      lastSelection: activeSelection,
-      lastSource: "active-tab"
-    });
+    await writeActiveTabPopupState(activeSelection, popupRuntimeAdapters());
     const result = await resolveSelection();
     const settings = await readPopupSettings(popupRuntimeAdapters());
     if (settings.autoSpeakPopup && result) {
       await speakSelection(0.82);
     }
   } else {
-    const stored = await chrome.storage.local.get(["lastSelection", "lastResult"]);
+    const stored = await readStoredPopupState(popupRuntimeAdapters());
     selectionInput.value = stored.lastSelection || "";
     if (stored.lastResult) {
       currentResult = stored.lastResult;
@@ -432,6 +431,7 @@ function updateButtonState() {
 function popupRuntimeAdapters() {
   return {
     getStorage: (keys) => chrome.storage.local.get(keys),
+    setStorage: (value) => chrome.storage.local.set(value),
     queryTabs: (query) => chrome.tabs.query(query),
     executeScript: (details) => chrome.scripting.executeScript(details),
     sendMessage: (message, callback) => chrome.runtime.sendMessage(message, callback),

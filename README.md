@@ -29,7 +29,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Packaged extension icons for toolbar and install surfaces.
 - Keyboard commands for selected text: `Alt+Shift+S` and online lookup with `Alt+Shift+O`.
 - A popup with selected-text capture and speak/stop controls.
-- Popup runtime adapters for active-tab selection, settings, runtime messaging, and lookup hints.
+- Popup runtime adapters for active-tab selection, stored popup state, settings, runtime messaging, and lookup hints.
 - Options runtime adapters for storage, endpoint permissions, and background runtime messages.
 - Popup opens can auto-speak the active selection, with an options-page toggle.
 - A resolver result card with source form, aliases, language, origin, root, domain hint, variants, IPA/simple guide, confidence, evidence, and source links.
