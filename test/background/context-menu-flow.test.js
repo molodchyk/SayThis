@@ -1,0 +1,71 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  handleContextMenuClick
+} from "../../src/background/context-menu-flow.js";
+
+test("ignores unknown context menu actions", async () => {
+  const result = await handleContextMenuClick({ menuItemId: "unknown", selectionText: "Gnocchi" }, {}, {
+    resolveOptionsForMenuId: () => ({ ok: false }),
+    normalizeSelection: (value) => String(value || "").trim()
+  });
+
+  assert.deepEqual(result, { handled: false, reason: "unknown-menu" });
+});
+
+test("ignores context menu clicks without selected text", async () => {
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: "   " }, {}, {
+    resolveOptionsForMenuId: () => ({ ok: true, source: "context-menu", options: {} }),
+    normalizeSelection: (value) => String(value || "").trim()
+  });
+
+  assert.deepEqual(result, { handled: false, reason: "empty-selection" });
+});
+
+test("resolves, stores, and plays context menu selections", async () => {
+  const calls = [];
+  const resolved = { display: "Gnocchi", sourceStatus: "structured-source" };
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: " Gnocchi " }, { id: 42 }, {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    speakFallback: (text) => calls.push(["speakFallback", text]),
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, resolved);
+  assert.deepEqual(calls, [
+    ["setStorage", { lastSelection: "Gnocchi", lastSource: "context-menu" }],
+    ["resolveSelection", "Gnocchi", { useOnline: false }],
+    ["setStorage", { lastResult: resolved }],
+    ["playResolvedResult", resolved, 42]
+  ]);
+});
+
+test("falls back to speech when context menu resolution fails", async () => {
+  const calls = [];
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: "Gnocchi" }, {}, {
+    resolveOptionsForMenuId: () => ({ ok: true, source: "context-menu", options: {} }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    setStorage: async () => {},
+    resolveSelection: async () => {
+      throw new Error("offline");
+    },
+    speakFallback: (text) => calls.push(["speakFallback", text])
+  });
+
+  assert.equal(result.handled, false);
+  assert.equal(result.reason, "resolve-failed");
+  assert.equal(result.error.message, "offline");
+  assert.deepEqual(calls, [["speakFallback", "Gnocchi"]]);
+});

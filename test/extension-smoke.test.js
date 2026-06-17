@@ -105,6 +105,8 @@ test("overlay exposes playback and feedback actions", async () => {
 test("background routes local and online keyboard commands", async () => {
   const source = await readText("src/background.js");
 
+  assert.match(source, /handleContextMenuClick\(info, tab, \{/);
+  assert.match(source, /lastResultKey: STORAGE_KEYS\.lastResult/);
   assert.match(source, /command === "pronounce-selection"/);
   assert.match(source, /command === "pronounce-selection-online"/);
   assert.match(source, /source: "keyboard-online"/);

@@ -13,6 +13,7 @@ The initial audience is creators, journalists, educators, and professionals who 
 This repository is an early Manifest V3 Chrome extension implementation. It includes:
 
 - Context-menu actions for selected text, including an explicit online lookup action.
+- Background-owned context-menu workflow coverage with deterministic fallback behavior.
 - Background-owned online source orchestration outside the service-worker entry point.
 - Shared runtime message builders for popup, options, offscreen-audio, and background commands.
 - Shared settings and credential normalization for the background worker and options page.

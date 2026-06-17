@@ -42,6 +42,9 @@ import {
 import {
   resolveWithOnlineSources
 } from "./background/online-sources.js";
+import {
+  handleContextMenuClick
+} from "./background/context-menu-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -67,29 +70,15 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  const action = resolveOptionsForMenuId(info.menuItemId);
-  if (!action.ok) {
-    return;
-  }
-
-  const selectedText = normalizeSelection(info.selectionText);
-  if (!selectedText) {
-    return;
-  }
-
-  chrome.storage.local.set({
-    lastSelection: selectedText,
-    lastSource: action.source
+  handleContextMenuClick(info, tab, {
+    resolveOptionsForMenuId,
+    normalizeSelection,
+    setStorage: (value) => chrome.storage.local.set(value),
+    resolveSelection,
+    playResolvedResult,
+    speakFallback,
+    lastResultKey: STORAGE_KEYS.lastResult
   });
-
-  resolveSelection(selectedText, action.options)
-    .then(async (result) => {
-      await chrome.storage.local.set({
-        [STORAGE_KEYS.lastResult]: result
-      });
-      await playResolvedResult(result, tab?.id);
-    })
-    .catch(() => speakFallback(selectedText));
 });
 
 chrome.commands.onCommand.addListener((command) => {

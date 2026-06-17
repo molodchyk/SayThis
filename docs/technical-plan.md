@@ -5,6 +5,7 @@
 Chrome Manifest V3 components:
 
 - `background.js`: creates the context menu and handles text-to-speech messages.
+- `background/context-menu-flow.js`: owns context-menu selection resolution, storage updates, result playback, and fallback behavior.
 - `background/online-sources.js`: orchestrates optional online source lookups, source-form retries, and pronunciation-audio fallback candidates.
 - `background/dbpedia-source.js`: extracts source-form, entity-context, and source-link signals from DBpedia Lookup-compatible JSON.
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
@@ -53,6 +54,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 ## Implemented MVP
 
 - Selection capture from popup, privacy-first context menu, explicit online context menu, `Alt+Shift+S`, and online lookup with `Alt+Shift+O`.
+- Context-menu click handling has a narrow background module with deterministic fallback tests.
 - Popup active-selection flow can auto-speak after resolving, with a user setting to disable it.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
 - Shared settings and credential normalization for the background worker and options page.
