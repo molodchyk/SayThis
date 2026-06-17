@@ -84,6 +84,10 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /class="recordings"/);
   assert.match(source, /data-action="alternate"/);
   assert.match(source, /data-action="recording"/);
+  assert.match(source, /data-lookup-hints/);
+  assert.match(source, /languageHints/);
+  assert.match(source, /lookupHints\(\)/);
+  assert.match(source, /normalizeLanguageHints/);
   assert.match(source, /speakCandidate\(result\.alternateResults\?\.\[index\], 0\.82\)/);
   assert.match(source, /playAudioItem\(recordings\[index\], result, 0\.82\)/);
 

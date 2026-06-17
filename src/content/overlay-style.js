@@ -196,6 +196,31 @@
           gap: 8px;
         }
 
+        .hint-field {
+          display: grid;
+          gap: 4px;
+          margin: 0 0 8px;
+          color: #65726d;
+          font-size: 11px;
+          font-weight: 750;
+          text-transform: uppercase;
+        }
+
+        .hint-field input {
+          box-sizing: border-box;
+          min-width: 0;
+          width: 100%;
+          border: 1px solid #ccd6d1;
+          border-radius: 6px;
+          padding: 7px;
+          color: #16211f;
+          background: #ffffff;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 500;
+          text-transform: none;
+        }
+
         button.action {
           border: 1px solid #0f6b58;
           border-radius: 6px;

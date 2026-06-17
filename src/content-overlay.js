@@ -89,6 +89,10 @@
         ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><button type="button" data-action="alternate" data-alternate-index="${item.index}">Speak</button><strong>${escapeHtml(item.display || "Alternate")}</strong><span>${escapeHtml(item.summary)}</span></li>`).join("")}</ul>` : ""}
         ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation recordings">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">Play</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
+        <label class="hint-field">
+          <span>Lookup hints</span>
+          <input data-lookup-hints type="text" maxlength="80" value="${escapeAttribute(options.lookupHints || "")}" placeholder="pl, tr, ja" spellcheck="false">
+        </label>
         <div class="actions">
           <button class="action" type="button" data-action="speak">Speak</button>
           <button class="action secondary" type="button" data-action="online">Online</button>
@@ -170,18 +174,20 @@
   }
 
   function resolveOnline(result) {
+    const languageHints = lookupHints();
     setStatus("Checking online sources.");
     chrome.runtime.sendMessage({
       type: "SAYTHIS_RESOLVE",
       text: result.query || result.display,
-      useOnline: true
+      useOnline: true,
+      languageHints
     }, (response) => {
       if (chrome.runtime.lastError || !response?.ok) {
         setStatus(response?.error || chrome.runtime.lastError?.message || "Online lookup failed.");
         return;
       }
 
-      renderOverlay(response.result || result, { autoPlay: true });
+      renderOverlay(response.result || result, { autoPlay: true, lookupHints: languageHints.join(", ") });
       setStatus("Online result ready.");
     });
   }
@@ -258,6 +264,11 @@
     return ["sourceForm", "language", "languageName", "origin", "root", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
       .some((field) => Boolean(feedback[field])) ||
       Boolean(normalizeAliases(feedback.aliases).length);
+  }
+
+  function lookupHints() {
+    const input = root?.querySelector("[data-lookup-hints]");
+    return normalizeLanguageHints(input?.value);
   }
 
   function setStatus(value) {
@@ -474,6 +485,17 @@
       : String(value || "").split(/[;,\n]/);
 
     return [...new Set(raw.map(normalizeText).filter(Boolean))].slice(0, 12);
+  }
+
+  function normalizeLanguageHints(value) {
+    const raw = Array.isArray(value)
+      ? value
+      : String(value || "").split(/[\s,;]+/);
+
+    return [...new Set(raw
+      .map((item) => String(item || "").trim().toLowerCase().replace(/_/g, "-").split("-")[0])
+      .filter((item) => /^[a-z]{2,3}$/.test(item)))]
+      .slice(0, 8);
   }
 
   function normalizeUrl(value) {
