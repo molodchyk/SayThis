@@ -42,7 +42,10 @@ Chrome Manifest V3 components:
 - `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.
 - `content/overlay-style.js`: owns the classic-script style payload injected before the on-page card.
 - `content/overlay-runtime-adapters.js`: owns classic content-script runtime message listener and send-message wrappers for the on-page card.
-- `offscreen-audio.html/js`: plays verified audio from the service worker path when page injection is unavailable.
+- `offscreen-audio.html/js`: wires the offscreen audio runtime modules for service-worker playback messages.
+- `offscreen/audio-playback-flow.js`: owns offscreen `Audio` element lifecycle and playback-rate bounds.
+- `offscreen/runtime-message-flow.js`: owns offscreen play/stop message routing and response shaping.
+- `offscreen/runtime-adapters.js`: owns offscreen runtime listener registration.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, and approved-entry serving.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
@@ -70,6 +73,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Runtime browser adapters have a narrow background module with tests for seed-data caching, tab selection extraction, and keyboard dependency wiring.
 - Result playback order has a narrow background module with deterministic overlay, offscreen, and TTS fallback tests.
 - Playback surface wiring has a narrow background module with tests for TTS, overlay injection, offscreen audio lifecycle, client detection, and stop handling.
+- Offscreen audio playback has narrow modules with tests for playback-rate bounds, audio lifecycle, listener registration, and play/stop message responses.
 - Selection resolution has a narrow background module with tests for local lookup, online cache hits, remote cache writes, and online fallback evidence.
 - Community feedback and sync handling has a narrow background module with tests for local memory, queue updates, sync flush, approved-entry refresh, and HTTP wrappers.
 - Popup active-selection flow can auto-speak after resolving, with a user setting to disable it.
