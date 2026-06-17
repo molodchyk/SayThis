@@ -96,6 +96,39 @@ test("splits string aliases for pronunciation-audio candidates", () => {
   }]);
 });
 
+test("uses variant spellings as pronunciation-audio candidates", () => {
+  const candidates = pronunciationLookupCandidates("Exampleterm", {
+    display: "Exampleterm",
+    sourceForm: "Sourceform",
+    aliases: ["Alias one"],
+    variants: "Variant one; Variant two",
+    language: "la",
+    alternateResults: [{
+      display: "Other form",
+      sourceForm: "Other source",
+      variants: ["Other variant"],
+      language: "de"
+    }]
+  });
+
+  assert.deepEqual(candidates, [{
+    word: "Sourceform",
+    language: "la"
+  }, {
+    word: "Exampleterm",
+    language: "la"
+  }, {
+    word: "Alias one",
+    language: "la"
+  }, {
+    word: "Variant one",
+    language: "la"
+  }, {
+    word: "Variant two",
+    language: "la"
+  }]);
+});
+
 test("uses configured pronunciation language over resolved hints", () => {
   const candidates = pronunciationLookupCandidates("gnocchi", {
     display: "Gnocchi",
@@ -185,13 +218,14 @@ test("plans additional lookup candidates without repeating selected text", () =>
     sourceForm: "Αθήνα",
     language: "el",
     aliases: ["Athina", "Athens"],
+    variants: ["Athene"],
     alternateResults: [{
       display: "Athens",
       sourceForm: "Athenae",
       language: "la"
     }]
   }, {
-    limit: 2
+    limit: 3
   });
 
   assert.deepEqual(candidates, [{
@@ -199,6 +233,9 @@ test("plans additional lookup candidates without repeating selected text", () =>
     language: "el"
   }, {
     word: "Athina",
+    language: "el"
+  }, {
+    word: "Athene",
     language: "el"
   }]);
 });

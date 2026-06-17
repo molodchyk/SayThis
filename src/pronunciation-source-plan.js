@@ -13,14 +13,16 @@ export function pronunciationLookupCandidates(selection, result, options = {}) {
 
   addCandidateSet(candidates, result?.sourceForm, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
   addCandidateSet(candidates, result?.display, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
-  addAliasCandidates(candidates, result?.aliases, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
+  addTextCandidates(candidates, result?.aliases, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
+  addTextCandidates(candidates, result?.variants, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
 
   for (const alternate of Array.isArray(result?.alternateResults) ? result.alternateResults : []) {
     const alternateLanguage = normalizeLanguageHint(alternate.language) || primaryLanguage;
     const languages = candidateLanguages(configuredLanguage, alternateLanguage, languageHints, includeResolvedLanguageFallback);
     addCandidateSet(candidates, alternate.sourceForm, languages);
     addCandidateSet(candidates, alternate.display, languages);
-    addAliasCandidates(candidates, alternate.aliases, languages);
+    addTextCandidates(candidates, alternate.aliases, languages);
+    addTextCandidates(candidates, alternate.variants, languages);
   }
 
   addCandidateSet(candidates, selectedText, candidateLanguages(configuredLanguage, primaryLanguage, languageHints, includeResolvedLanguageFallback));
@@ -56,13 +58,13 @@ function addCandidateSet(candidates, word, languages) {
   }
 }
 
-function addAliasCandidates(candidates, aliases, languages) {
-  const values = Array.isArray(aliases)
-    ? aliases
-    : String(aliases || "").split(/[;,\n]/);
+function addTextCandidates(candidates, value, languages) {
+  const values = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
 
-  for (const alias of values) {
-    addCandidateSet(candidates, alias, languages);
+  for (const text of values) {
+    addCandidateSet(candidates, text, languages);
   }
 }
 

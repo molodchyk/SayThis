@@ -35,7 +35,7 @@ Chrome Manifest V3 components:
 - `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
 - `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
 - `custom-source-adapter.js`: extracts domain-specific pronunciation entries from a configured structured JSON endpoint.
-- `pronunciation-source-plan.js`: orders pronunciation-audio lookup candidates from resolved source forms, aliases, alternates, and raw selected text.
+- `pronunciation-source-plan.js`: orders pronunciation-audio lookup candidates from resolved source forms, aliases, variants, alternates, and raw selected text.
 - `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
 - `popup/audio-playback.js`: owns popup browser `Audio` element lifecycle, playback-rate mapping, stop handling, and single fallback trigger behavior.
 - `popup/result-renderer.js`: owns popup result field rendering, correction prefill, evidence lists, source links, alternate candidates, and audio choices.
@@ -138,7 +138,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Forvo lookup preserves additional same-word, same-language recordings on the resolved result.
 - Forvo lookup can use lookup language hints when no dedicated Forvo language filter is set.
 - Popup and on-page result cards expose playable recording choices when multiple audio sources are available.
-- Source-form and alias-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
+- Source-form, alias, and variant-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
 - Forvo candidate planning can retry configured-language lookups with resolved source-language hints.
 - Matching verified audio is merged onto structured results so source context, IPA, and origin are preserved.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.

@@ -92,7 +92,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Forvo results preserve additional same-word, same-language recordings for source-backed practice options.
 - Forvo lookup can use lookup language hints when no Forvo-specific language filter is set.
 - Popup and on-page cards expose playable recording choices when a result has multiple audio sources.
-- Source-form and alias-guided pronunciation-audio lookup that tries resolved spellings before raw selected text.
+- Source-form, alias, and variant-guided pronunciation-audio lookup that tries resolved spellings before raw selected text.
 - Forvo lookup retries configured-language candidates with resolved source-language hints when available.
 - Verified audio from matching sources is merged onto structured results so IPA, origin, and source context stay visible.
 - Optional Nominatim-compatible place-name lookup from a configured HTTPS endpoint.
