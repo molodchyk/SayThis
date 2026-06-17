@@ -5,6 +5,7 @@ import {
 
 const CYRILLIC_HINT_LANGUAGES = new Set(["ru", "bg", "sr", "uk"]);
 const STRONG_CYRILLIC_PATTERN = /(shch|zh|kh|ts|ch|sh|yu|ya|yo|ye)/i;
+const CYRILLIC_SUFFIX_PATTERN = /(?:ivka|ivske|ivskyi|skyi|yne)$/i;
 const COMMON_MULTI = [
   ["shch", "щ"],
   ["zh", "ж"],
@@ -79,6 +80,10 @@ function transliterationLanguages(text, languageHints = []) {
     .filter((language) => CYRILLIC_HINT_LANGUAGES.has(language));
   if (hinted.length) {
     return hinted;
+  }
+
+  if (CYRILLIC_SUFFIX_PATTERN.test(text)) {
+    return ["uk"];
   }
 
   return STRONG_CYRILLIC_PATTERN.test(text) ? ["ru"] : [];

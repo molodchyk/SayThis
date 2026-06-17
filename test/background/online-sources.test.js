@@ -152,6 +152,73 @@ test("tries transliterated Wikidata lookup candidates", async () => {
   }
 });
 
+test("tries bounded suffix transliteration candidates without explicit hints", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedSearches = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+
+      if (parsed.host === "www.wikidata.org" && parsed.pathname === "/w/api.php") {
+        requestedSearches.push({
+          search: parsed.searchParams.get("search"),
+          language: parsed.searchParams.get("language")
+        });
+        return jsonResponse({
+          search: parsed.searchParams.get("search") === "Калинине"
+            ? [{
+              id: "Qkalynyne",
+              label: "Калинине",
+              language: "uk",
+              description: "settlement",
+              match: { text: "Калинине" }
+            }]
+            : []
+        });
+      }
+
+      if (parsed.host === "www.wikidata.org" && parsed.pathname.includes("/wiki/Special:EntityData/")) {
+        return jsonResponse({
+          entities: {
+            Qkalynyne: {
+              id: "Qkalynyne",
+              labels: {
+                en: { language: "en", value: "Kalynyne" },
+                uk: { language: "uk", value: "Калинине" }
+              },
+              descriptions: {
+                en: { language: "en", value: "settlement" }
+              },
+              claims: {
+                P31: [{
+                  mainsnak: {
+                    datavalue: {
+                      value: { id: "Q486972", "numeric-id": 486972 }
+                    }
+                  }
+                }]
+              },
+              aliases: {}
+            }
+          }
+        });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const result = await resolveWithWikidata("Kalynyne");
+
+    assert.ok(requestedSearches.some((item) => item.search === "Калинине" && item.language === "uk"));
+    assert.equal(result.sourceForm, "Калинине");
+    assert.equal(result.language, "uk");
+    assert.equal(result.category, "place");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 function jsonResponse(payload) {
   return {
     ok: true,

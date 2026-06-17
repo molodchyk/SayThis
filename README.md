@@ -48,7 +48,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Sparse keyed memory imports preserve selected-term lookup keys while keeping source-form pronunciation data.
 - Optional Wikidata lookup from the popup when the user chooses `Online`.
 - Latin orthography hints can guide fallback TTS and optional pronunciation-audio lookup when structured sources are absent.
-- Latin-to-Cyrillic transliteration candidates can broaden Wikidata lookup for romanized terms without adding a chat surface.
+- Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Wikidata lookup adds script-based search languages for non-Latin selections.
 - Custom sources can provide array or text aliases and keyed entry maps.

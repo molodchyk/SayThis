@@ -22,8 +22,22 @@ test("uses strong Latin transliteration markers without explicit hints", () => {
   }]);
 });
 
+test("uses bounded Cyrillic suffix heuristics without explicit hints", () => {
+  assert.deepEqual(transliterationLookupCandidates("Kalynyne"), [{
+    sourceForm: "Калинине",
+    language: "uk",
+    script: "Cyrillic"
+  }]);
+  assert.deepEqual(transliterationLookupCandidates("Sosnivka"), [{
+    sourceForm: "Соснівка",
+    language: "uk",
+    script: "Cyrillic"
+  }]);
+});
+
 test("does not create noisy candidates for ordinary Latin text", () => {
   assert.deepEqual(transliterationLookupCandidates("Exampleterm"), []);
+  assert.deepEqual(transliterationLookupCandidates("Skyline"), []);
   assert.deepEqual(transliterationLookupCandidates("Exampleterm", {
     languageHints: ["pl", "tr"]
   }), []);
