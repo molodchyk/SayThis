@@ -359,9 +359,15 @@ test("options page exposes shared-entry data controls", async () => {
 
 test("background uses shared community pronunciation-data policy", async () => {
   const background = await readText("src/background.js");
+  const feedbackFlow = await readText("src/background/community-feedback-flow.js");
   const source = await readText("src/resolver/community.js");
 
-  assert.match(background, /hasCommunityPronunciationData/);
+  assert.match(background, /saveFeedbackFlow\(text, feedback, \{/);
+  assert.match(background, /flushCommunitySyncFlow\(\{/);
+  assert.match(background, /pullApprovedCommunityEntriesFlow\(\{/);
+  assert.match(feedbackFlow, /hasCommunityPronunciationData/);
+  assert.match(feedbackFlow, /createCommunitySubmission/);
+  assert.match(feedbackFlow, /pullApprovedEntries/);
   assert.match(source, /entry\.variantNote/);
   assert.match(source, /normalizeAliases\(entry\.variants\)\.length/);
 });

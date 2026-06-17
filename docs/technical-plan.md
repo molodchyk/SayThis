@@ -10,6 +10,7 @@ Chrome Manifest V3 components:
 - `background/runtime-message-flow.js`: owns service-worker runtime message routing, validation, response shaping, and error handling.
 - `background/result-playback-flow.js`: owns result playback order across page overlay audio, offscreen audio, and TTS fallback.
 - `background/selection-resolver-flow.js`: owns local lookup, online lookup, cache use, packaged audio URL mapping, and result storage updates.
+- `background/community-feedback-flow.js`: owns local feedback storage, sync queue updates, approved-entry refresh, and feedback-triggered result updates.
 - `background/online-sources.js`: orchestrates optional online source lookups, source-form retries, and pronunciation-audio fallback candidates.
 - `background/dbpedia-source.js`: extracts source-form, entity-context, and source-link signals from DBpedia Lookup-compatible JSON.
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
@@ -63,6 +64,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Runtime message handling has a narrow background router with deterministic validation and error-response tests.
 - Result playback order has a narrow background module with deterministic overlay, offscreen, and TTS fallback tests.
 - Selection resolution has a narrow background module with tests for local lookup, online cache hits, remote cache writes, and online fallback evidence.
+- Community feedback and sync handling has a narrow background module with tests for local memory, queue updates, sync flush, approved-entry refresh, and HTTP wrappers.
 - Popup active-selection flow can auto-speak after resolving, with a user setting to disable it.
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
 - Shared settings and credential normalization for the background worker and options page.

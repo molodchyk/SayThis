@@ -1,11 +1,7 @@
 import {
-  applyCommunitySummary,
-  createLookupKey,
   getBestAudio,
   normalizeSelection,
-  resultToSpeechOptions,
-  hasCommunityPronunciationData,
-  updateCommunityEntries
+  resultToSpeechOptions
 } from "./resolver-core.js";
 import {
   contextMenuDefinitions,
@@ -16,14 +12,6 @@ import {
   createOffscreenStopAudioMessage,
   createShowResultMessage
 } from "./message-contracts.js";
-import {
-  createCommunitySubmission,
-  enqueueSubmissionWhenEnabled,
-  flushSubmissionQueue,
-  mergeApprovedEntries,
-  pullApprovedEntries,
-  syncSummary
-} from "./community-sync.js";
 import {
   normalizeSettings
 } from "./shared/settings.js";
@@ -43,6 +31,11 @@ import {
 import {
   resolveSelection as resolveSelectionFlow
 } from "./background/selection-resolver-flow.js";
+import {
+  flushCommunitySync as flushCommunitySyncFlow,
+  pullApprovedCommunityEntries as pullApprovedCommunityEntriesFlow,
+  saveFeedback as saveFeedbackFlow
+} from "./background/community-feedback-flow.js";
 
 const OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const STORAGE_KEYS = {
@@ -108,132 +101,29 @@ async function resolveSelection(text, options = {}) {
 }
 
 async function saveFeedback(text, feedback) {
-  const selectedText = normalizeSelection(text);
-  const stored = await chrome.storage.local.get([
-    STORAGE_KEYS.communityEntries,
-    STORAGE_KEYS.settings,
-    STORAGE_KEYS.syncQueue,
-    STORAGE_KEYS.lastResult
-  ]);
-  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
-  const communityEntries = updateCommunityEntries(stored[STORAGE_KEYS.communityEntries], selectedText, feedback);
-  const submission = createCommunitySubmission(selectedText, feedback, stored[STORAGE_KEYS.lastResult]);
-  const syncQueue = enqueueSubmissionWhenEnabled(stored[STORAGE_KEYS.syncQueue], submission, settings);
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.communityEntries]: communityEntries,
-    [STORAGE_KEYS.syncQueue]: syncQueue,
-    [STORAGE_KEYS.syncSummary]: syncSummary(syncQueue)
+  return saveFeedbackFlow(text, feedback, {
+    getStorage: (keys) => chrome.storage.local.get(keys),
+    setStorage: (value) => chrome.storage.local.set(value),
+    resolveSelection,
+    flushCommunitySync,
+    storageKeys: STORAGE_KEYS
   });
-
-  if (settings.communitySyncEnabled) {
-    flushCommunitySync().catch(() => {});
-  }
-
-  const feedbackResult = await resultAfterFeedback(selectedText, stored[STORAGE_KEYS.lastResult], communityEntries);
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.lastSelection]: selectedText,
-    [STORAGE_KEYS.lastResult]: feedbackResult
-  });
-  return feedbackResult;
-}
-
-async function resultAfterFeedback(selectedText, lastResult, communityEntries) {
-  const lookupKey = createLookupKey(selectedText);
-  const communityEntry = communityEntries?.[lookupKey];
-  if (hasCommunityPronunciationData(communityEntry)) {
-    return resolveSelection(selectedText, { useOnline: false });
-  }
-
-  if (resultMatchesSelection(lastResult, lookupKey)) {
-    return applyCommunitySummary(lastResult, communityEntry);
-  }
-
-  return resolveSelection(selectedText, { useOnline: false });
-}
-
-function resultMatchesSelection(result, lookupKey) {
-  if (!result || !lookupKey) {
-    return false;
-  }
-
-  return [
-    result.query,
-    result.display
-  ].some((value) => createLookupKey(value) === lookupKey);
 }
 
 async function flushCommunitySync() {
-  const stored = await chrome.storage.local.get([STORAGE_KEYS.settings, STORAGE_KEYS.syncQueue]);
-  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
-  const result = await flushSubmissionQueue(stored[STORAGE_KEYS.syncQueue], settings, postCommunitySubmission);
-  const summary = syncSummary(result.queue);
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.syncQueue]: result.queue,
-    [STORAGE_KEYS.syncSummary]: summary
+  return flushCommunitySyncFlow({
+    getStorage: (keys) => chrome.storage.local.get(keys),
+    setStorage: (value) => chrome.storage.local.set(value),
+    storageKeys: STORAGE_KEYS
   });
-
-  return {
-    ...summary,
-    sent: result.sent,
-    failedThisRun: result.failed
-  };
 }
 
 async function pullApprovedCommunityEntries() {
-  const stored = await chrome.storage.local.get([
-    STORAGE_KEYS.approvedCommunityEntries,
-    STORAGE_KEYS.settings
-  ]);
-  const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
-  const result = await pullApprovedEntries(settings, fetchApprovedCommunityEntries);
-  const approvedCommunityEntries = mergeApprovedEntries(
-    stored[STORAGE_KEYS.approvedCommunityEntries],
-    result.entries
-  );
-  const summary = {
-    received: result.received,
-    total: Object.keys(approvedCommunityEntries).length,
-    pulledAt: result.pulledAt,
-    skipped: result.skipped
-  };
-
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.approvedCommunityEntries]: approvedCommunityEntries,
-    [STORAGE_KEYS.communityPullState]: summary
+  return pullApprovedCommunityEntriesFlow({
+    getStorage: (keys) => chrome.storage.local.get(keys),
+    setStorage: (value) => chrome.storage.local.set(value),
+    storageKeys: STORAGE_KEYS
   });
-
-  return summary;
-}
-
-async function postCommunitySubmission(endpoint, submission) {
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(submission)
-  });
-
-  if (!response.ok) {
-    throw new Error(`Community sync failed with ${response.status}`);
-  }
-}
-
-async function fetchApprovedCommunityEntries(endpoint) {
-  const url = new URL(endpoint);
-  url.searchParams.set("action", "approved");
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Accept": "application/json"
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`Community refresh failed with ${response.status}`);
-  }
-
-  return response.json();
 }
 
 async function loadSeedData() {

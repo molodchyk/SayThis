@@ -1,0 +1,215 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  fetchApprovedCommunityEntries,
+  flushCommunitySync,
+  postCommunitySubmission,
+  pullApprovedCommunityEntries,
+  saveFeedback
+} from "../../src/background/community-feedback-flow.js";
+
+test("stores feedback, queues sync, schedules flush, and refreshes pronunciation data", async () => {
+  const storage = storageHarness({
+    communityEntries: {},
+    settings: {
+      communitySyncEnabled: true,
+      communityEndpoint: "https://example.com/community"
+    },
+    syncQueue: [],
+    lastResult: {
+      id: "local:gnocchi",
+      query: "Gnocchi",
+      display: "Gnocchi",
+      sourceForm: "gnocchi",
+      language: "it",
+      pronunciation: { simple: "NYOH-kee" }
+    }
+  });
+  const calls = [];
+  const refreshed = {
+    id: "community:gnocchi",
+    display: "Gnocchi",
+    sourceStatus: "community-confirmed"
+  };
+
+  const result = await saveFeedback(" Gnocchi ", {
+    kind: "correction",
+    simple: "NYOH-kee"
+  }, {
+    ...storage.dependencies,
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    },
+    flushCommunitySync: async () => {
+      calls.push(["flushCommunitySync"]);
+    }
+  });
+
+  assert.equal(result, refreshed);
+  assert.deepEqual(calls, [
+    ["flushCommunitySync"],
+    ["resolveSelection", "Gnocchi", { useOnline: false }]
+  ]);
+  assert.equal(storage.updates.length, 2);
+  assert.equal(storage.state.communityEntries.gnocchi.simple, "NYOH-kee");
+  assert.equal(storage.state.syncQueue.length, 1);
+  assert.deepEqual(storage.state.syncSummary, { queued: 1, failed: 0, exhausted: 0 });
+  assert.equal(storage.state.lastSelection, "Gnocchi");
+  assert.equal(storage.state.lastResult.id, "community:gnocchi");
+});
+
+test("applies community summary when feedback has no pronunciation data", async () => {
+  const storage = storageHarness({
+    communityEntries: {},
+    settings: {},
+    syncQueue: [],
+    lastResult: {
+      id: "local:gnocchi",
+      query: "Gnocchi",
+      display: "Gnocchi",
+      sourceStatus: "structured-source"
+    }
+  });
+
+  const result = await saveFeedback("Gnocchi", { kind: "confirm" }, {
+    ...storage.dependencies,
+    resolveSelection: async () => {
+      throw new Error("should not resolve");
+    }
+  });
+
+  assert.equal(result.id, "local:gnocchi");
+  assert.equal(result.community.confirmations, 1);
+  assert.equal(storage.state.communityEntries.gnocchi.confirmations, 1);
+  assert.deepEqual(storage.state.syncQueue, []);
+});
+
+test("flushes queued community submissions and stores the summary", async () => {
+  const storage = storageHarness({
+    settings: {
+      communitySyncEnabled: true,
+      communityEndpoint: "https://example.com/community"
+    },
+    syncQueue: [{
+      schemaVersion: 1,
+      id: "sub_gnocchi",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      term: "Gnocchi",
+      lookupKey: "gnocchi",
+      kind: "confirm",
+      correction: {},
+      result: null,
+      attempts: 0,
+      lastAttemptAt: "",
+      lastError: ""
+    }]
+  });
+  const posted = [];
+
+  const summary = await flushCommunitySync({
+    ...storage.dependencies,
+    postCommunitySubmission: async (endpoint, item) => {
+      posted.push({ endpoint, item });
+    }
+  });
+
+  assert.equal(posted.length, 1);
+  assert.equal(posted[0].endpoint, "https://example.com/community");
+  assert.deepEqual(summary, { queued: 0, failed: 0, exhausted: 0, sent: 1, failedThisRun: 0 });
+  assert.deepEqual(storage.state.syncQueue, []);
+  assert.deepEqual(storage.state.syncSummary, { queued: 0, failed: 0, exhausted: 0 });
+});
+
+test("pulls and merges approved shared entries", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      gnocchi: {
+        lookupKey: "gnocchi",
+        term: "Gnocchi",
+        simple: "NYOH-kee",
+        confirmations: 2
+      }
+    },
+    settings: {
+      communityPullEnabled: true,
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+
+  const summary = await pullApprovedCommunityEntries({
+    ...storage.dependencies,
+    fetchApprovedCommunityEntries: async (endpoint) => {
+      assert.equal(endpoint, "https://example.com/community");
+      return {
+        entries: {
+          chiaroscuro: {
+            lookupKey: "chiaroscuro",
+            term: "Chiaroscuro",
+            sourceForm: "chiaroscuro",
+            language: "it",
+            simple: "kee-ah-roh-SKOO-roh"
+          }
+        }
+      };
+    }
+  });
+
+  assert.equal(summary.received, 1);
+  assert.equal(summary.total, 2);
+  assert.equal(summary.skipped, false);
+  assert.equal(storage.state.approvedCommunityEntries.gnocchi.simple, "NYOH-kee");
+  assert.equal(storage.state.approvedCommunityEntries.chiaroscuro.language, "it");
+  assert.deepEqual(storage.state.communityPullState, summary);
+});
+
+test("uses injected fetch for community HTTP helpers", async () => {
+  const requests = [];
+  await postCommunitySubmission("https://example.com/community", { id: "sub_1" }, {
+    fetch: async (url, options) => {
+      requests.push({ url, options });
+      return { ok: true };
+    }
+  });
+
+  const payload = await fetchApprovedCommunityEntries("https://example.com/community?token=abc", {
+    fetch: async (url, options) => {
+      requests.push({ url, options });
+      return {
+        ok: true,
+        async json() {
+          return { entries: {} };
+        }
+      };
+    }
+  });
+
+  assert.equal(requests[0].url, "https://example.com/community");
+  assert.equal(requests[0].options.method, "POST");
+  assert.equal(requests[0].options.headers["Content-Type"], "application/json");
+  assert.equal(JSON.parse(requests[0].options.body).id, "sub_1");
+  assert.equal(requests[1].url, "https://example.com/community?token=abc&action=approved");
+  assert.equal(requests[1].options.method, "GET");
+  assert.equal(requests[1].options.headers.Accept, "application/json");
+  assert.deepEqual(payload, { entries: {} });
+});
+
+function storageHarness(initial = {}) {
+  const updates = [];
+  const harness = {
+    state: { ...initial },
+    updates,
+    dependencies: {
+      getStorage: async (keys) => Object.fromEntries(keys.map((key) => [key, harness.state[key]])),
+      setStorage: async (value) => {
+        updates.push(value);
+        harness.state = {
+          ...harness.state,
+          ...value
+        };
+      }
+    }
+  };
+
+  return harness;
+}
