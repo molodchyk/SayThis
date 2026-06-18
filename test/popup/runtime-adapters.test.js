@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  createPopupRuntimeAdapters,
   lookupHintsFromValue,
   readActiveTabSelection,
   readPopupSettings,
@@ -8,6 +9,57 @@ import {
   sendRuntimeMessage,
   writeActiveTabPopupState
 } from "../../src/popup/runtime-adapters.js";
+
+test("creates popup runtime adapters from Chrome APIs", async () => {
+  const calls = [];
+  const chrome = {
+    storage: {
+      local: {
+        get: async (keys) => {
+          calls.push(["getStorage", keys]);
+          return { ok: true };
+        },
+        set: async (value) => {
+          calls.push(["setStorage", value]);
+        }
+      }
+    },
+    tabs: {
+      query: async (query) => {
+        calls.push(["queryTabs", query]);
+        return [{ id: 7 }];
+      }
+    },
+    scripting: {
+      executeScript: async (details) => {
+        calls.push(["executeScript", details.target]);
+        return [{ result: "Gnocchi" }];
+      }
+    },
+    runtime: {
+      lastError: null,
+      sendMessage: (message, callback) => {
+        calls.push(["sendMessage", message]);
+        callback({ ok: true });
+      }
+    }
+  };
+  const adapters = createPopupRuntimeAdapters(chrome);
+
+  assert.deepEqual(await adapters.getStorage(["settings"]), { ok: true });
+  await adapters.setStorage({ lastSelection: "Gnocchi" });
+  assert.deepEqual(await adapters.queryTabs({ active: true }), [{ id: 7 }]);
+  assert.deepEqual(await adapters.executeScript({ target: { tabId: 7 } }), [{ result: "Gnocchi" }]);
+  assert.deepEqual(await sendRuntimeMessage({ type: "SAYTHIS_STOP" }, adapters), { ok: true });
+  assert.equal(adapters.lastError(), null);
+  assert.deepEqual(calls, [
+    ["getStorage", ["settings"]],
+    ["setStorage", { lastSelection: "Gnocchi" }],
+    ["queryTabs", { active: true }],
+    ["executeScript", { tabId: 7 }],
+    ["sendMessage", { type: "SAYTHIS_STOP" }]
+  ]);
+});
 
 test("reads and normalizes active tab selection", async () => {
   const calls = [];

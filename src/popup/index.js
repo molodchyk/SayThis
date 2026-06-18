@@ -17,6 +17,7 @@ import {
   createStopMessage
 } from "../message-contracts.js";
 import {
+  createPopupRuntimeAdapters,
   lookupHintsFromValue,
   readActiveTabSelection,
   readPopupSettings,
@@ -80,6 +81,7 @@ const correctionVariant = document.getElementById("correction-variant");
 
 let currentResult = null;
 const audioPlayback = createPopupAudioPlayback();
+const runtimeAdapters = createPopupRuntimeAdapters();
 
 init();
 
@@ -157,18 +159,18 @@ async function speakSelection(rate) {
 }
 
 async function init() {
-  const activeSelection = await readActiveTabSelection(popupRuntimeAdapters());
+  const activeSelection = await readActiveTabSelection(runtimeAdapters);
 
   if (activeSelection) {
     selectionInput.value = activeSelection;
-    await writeActiveTabPopupState(activeSelection, popupRuntimeAdapters());
+    await writeActiveTabPopupState(activeSelection, runtimeAdapters);
     const result = await resolveSelection();
-    const settings = await readPopupSettings(popupRuntimeAdapters());
+    const settings = await readPopupSettings(runtimeAdapters);
     if (settings.autoSpeakPopup && result) {
       await speakSelection(0.82);
     }
   } else {
-    const stored = await readStoredPopupState(popupRuntimeAdapters());
+    const stored = await readStoredPopupState(runtimeAdapters);
     selectionInput.value = stored.lastSelection || "";
     if (stored.lastResult) {
       currentResult = stored.lastResult;
@@ -425,7 +427,7 @@ function stopAudio() {
 }
 
 function sendMessage(message) {
-  return sendRuntimeMessage(message, popupRuntimeAdapters());
+  return sendRuntimeMessage(message, runtimeAdapters);
 }
 
 function setStatus(value) {
@@ -455,15 +457,4 @@ function speakingStatus(response, rate, base = "Speaking") {
   }
 
   return rate < 0.7 ? `${base} slowly.` : `${base}.`;
-}
-
-function popupRuntimeAdapters() {
-  return {
-    getStorage: (keys) => chrome.storage.local.get(keys),
-    setStorage: (value) => chrome.storage.local.set(value),
-    queryTabs: (query) => chrome.tabs.query(query),
-    executeScript: (details) => chrome.scripting.executeScript(details),
-    sendMessage: (message, callback) => chrome.runtime.sendMessage(message, callback),
-    lastError: () => chrome.runtime.lastError
-  };
 }

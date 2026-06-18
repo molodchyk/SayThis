@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  chromeApiBoundaryFindings,
   countLines,
   createArchitectureAudit,
   fileSizeFindings,
@@ -55,4 +56,29 @@ test("tracks folder density with the same baseline rule", () => {
 
   assert.equal(insideBaseline[0].severity, "notice");
   assert.equal(pastBaseline[0].severity, "hard");
+});
+
+test("keeps Chrome APIs behind runtime adapter boundaries", () => {
+  const findings = chromeApiBoundaryFindings([{
+    path: "src/popup/index.js",
+    line: 12,
+    match: "chrome.runtime"
+  }, {
+    path: "src/popup/runtime-adapters.js",
+    line: 1,
+    match: "globalThis.chrome"
+  }, {
+    path: "test/popup/runtime-adapters.test.js",
+    line: 1,
+    match: "chrome.runtime"
+  }]);
+
+  assert.deepEqual(findings, [{
+    type: "chrome-api-boundary",
+    severity: "hard",
+    path: "src/popup/index.js",
+    line: 12,
+    match: "chrome.runtime",
+    message: "Chrome API access belongs in runtime adapter or platform modules."
+  }]);
 });

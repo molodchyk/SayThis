@@ -14,6 +14,17 @@ const POPUP_STATE_KEYS = {
   lastSource: "lastSource"
 };
 
+export function createPopupRuntimeAdapters(runtime = globalThis.chrome) {
+  return {
+    getStorage: (keys) => runtime?.storage?.local?.get(keys),
+    setStorage: (value) => runtime?.storage?.local?.set(value),
+    queryTabs: (query) => runtime?.tabs?.query(query),
+    executeScript: (details) => runtime?.scripting?.executeScript(details),
+    sendMessage: (message, callback) => runtime?.runtime?.sendMessage(message, callback),
+    lastError: () => runtime?.runtime?.lastError
+  };
+}
+
 export async function readActiveTabSelection(dependencies = {}) {
   try {
     const tabs = await dependencies.queryTabs?.({

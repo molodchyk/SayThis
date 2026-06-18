@@ -135,7 +135,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Generated fallback samples are labeled separately from source-backed recordings in popup and on-page playback rows.
 - Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
-- Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.
+- Architecture audit for file-size, folder-density, and browser API adapter-boundary budgets with an explicit current-debt baseline.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.
 - Verified matching browser voice as a temporary local fallback when no recording is available.

@@ -25,6 +25,14 @@ const DEFAULT_FOLDER_BASELINE = {
   src: 24,
   test: 19
 };
+const CHROME_API_PATTERN = /\b(?:chrome\.(?:commands|contextMenus|offscreen|permissions|runtime|scripting|storage|tabs|tts)|globalThis\.chrome)\b/g;
+const CHROME_API_ALLOWED_PATHS = [
+  /^src\/background\/runtime-platform\.js$/,
+  /^src\/content\/overlay-runtime-adapters\.js$/,
+  /^src\/offscreen\/runtime-adapters\.js$/,
+  /^src\/options\/runtime-adapters\.js$/,
+  /^src\/popup\/runtime-adapters\.js$/
+];
 
 export const DEFAULT_AUDIT_OPTIONS = {
   roots: DEFAULT_ROOTS,
@@ -40,6 +48,7 @@ export async function collectArchitectureAuditInputs(root = process.cwd(), optio
   const normalizedOptions = normalizeAuditOptions(options);
   const files = [];
   const folders = [];
+  const chromeApiUsages = [];
 
   for (const entry of normalizedOptions.roots) {
     const relativePath = normalizeAuditPath(entry);
@@ -53,18 +62,22 @@ export async function collectArchitectureAuditInputs(root = process.cwd(), optio
     }
 
     if (stats.isDirectory()) {
-      await walkDirectory(root, relativePath, files, folders);
+      await walkDirectory(root, relativePath, files, folders, chromeApiUsages);
     } else if (isAuditedFile(relativePath)) {
+      const text = await readFile(absolutePath, "utf8");
       files.push({
         path: relativePath,
-        lineCount: countLines(await readFile(absolutePath, "utf8"))
+        lineCount: countLines(text)
       });
+      chromeApiUsages.push(...findChromeApiUsages(relativePath, text));
     }
   }
 
   return {
     files: files.sort((left, right) => left.path.localeCompare(right.path)),
-    folders: folders.sort((left, right) => left.path.localeCompare(right.path))
+    folders: folders.sort((left, right) => left.path.localeCompare(right.path)),
+    chromeApiUsages: chromeApiUsages.sort((left, right) =>
+      left.path.localeCompare(right.path) || left.line - right.line)
   };
 }
 
@@ -72,12 +85,14 @@ export function createArchitectureAudit(inputs = {}, options = {}) {
   const normalizedOptions = normalizeAuditOptions(options);
   const fileFindings = fileSizeFindings(inputs.files || [], normalizedOptions);
   const folderFindings = folderDensityFindings(inputs.folders || [], normalizedOptions);
-  const findings = [...fileFindings, ...folderFindings];
+  const boundaryFindings = chromeApiBoundaryFindings(inputs.chromeApiUsages || []);
+  const findings = [...fileFindings, ...folderFindings, ...boundaryFindings];
 
   return {
     ok: findings.every((finding) => finding.severity !== "hard"),
     fileFindings,
     folderFindings,
+    boundaryFindings,
     findings
   };
 }
@@ -154,6 +169,25 @@ export function folderDensityFindings(folders = [], options = {}) {
     .filter(Boolean);
 }
 
+export function chromeApiBoundaryFindings(usages = []) {
+  return usages
+    .map((usage) => ({
+      ...usage,
+      path: normalizeAuditPath(usage.path)
+    }))
+    .filter((usage) =>
+      usage.path.startsWith("src/") &&
+      !CHROME_API_ALLOWED_PATHS.some((pattern) => pattern.test(usage.path)))
+    .map((usage) => ({
+      type: "chrome-api-boundary",
+      severity: "hard",
+      path: usage.path,
+      line: usage.line,
+      match: usage.match,
+      message: "Chrome API access belongs in runtime adapter or platform modules."
+    }));
+}
+
 export function countLines(text = "") {
   const normalized = String(text).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   if (!normalized) {
@@ -184,7 +218,7 @@ function normalizeAuditOptions(options = {}) {
   };
 }
 
-async function walkDirectory(root, directoryPath, files, folders) {
+async function walkDirectory(root, directoryPath, files, folders, chromeApiUsages) {
   const absolutePath = joinRoot(root, directoryPath);
   const entries = await readdir(absolutePath, { withFileTypes: true });
   let directFileCount = 0;
@@ -192,13 +226,15 @@ async function walkDirectory(root, directoryPath, files, folders) {
   for (const entry of entries) {
     const relativePath = posix.join(directoryPath, entry.name);
     if (entry.isDirectory()) {
-      await walkDirectory(root, relativePath, files, folders);
+      await walkDirectory(root, relativePath, files, folders, chromeApiUsages);
     } else if (entry.isFile() && isAuditedFile(relativePath)) {
+      const text = await readFile(joinRoot(root, relativePath), "utf8");
       directFileCount += 1;
       files.push({
         path: relativePath,
-        lineCount: countLines(await readFile(joinRoot(root, relativePath), "utf8"))
+        lineCount: countLines(text)
       });
+      chromeApiUsages.push(...findChromeApiUsages(relativePath, text));
     }
   }
 
@@ -213,6 +249,10 @@ function isAuditedFile(path) {
 }
 
 function formatFinding(finding) {
+  if (finding.type === "chrome-api-boundary") {
+    return `${finding.severity.toUpperCase()} ${finding.type}: ${finding.path}:${finding.line} uses ${finding.match}. ${finding.message}`;
+  }
+
   const baseline = finding.baseline ? `, baseline ${finding.baseline}` : "";
   const unit = finding.type === "file-size" ? "lines" : "files";
   return `${finding.severity.toUpperCase()} ${finding.type}: ${finding.path} has ${finding.count} ${unit}; limit ${finding.limit}${baseline}`;
@@ -231,6 +271,46 @@ function printAudit(audit) {
 
 function joinRoot(root, ...parts) {
   return posix.join(String(root).replaceAll("\\", "/"), ...parts);
+}
+
+function findChromeApiUsages(path, text = "") {
+  const normalizedPath = normalizeAuditPath(path);
+  const usages = [];
+  const lineStarts = lineStartIndexes(text);
+
+  for (const match of text.matchAll(CHROME_API_PATTERN)) {
+    usages.push({
+      path: normalizedPath,
+      line: lineNumberForIndex(lineStarts, match.index || 0),
+      match: match[0]
+    });
+  }
+
+  return usages;
+}
+
+function lineStartIndexes(text = "") {
+  const starts = [0];
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] === "\n") {
+      starts.push(index + 1);
+    }
+  }
+  return starts;
+}
+
+function lineNumberForIndex(lineStarts, index) {
+  let low = 0;
+  let high = lineStarts.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (lineStarts[mid] <= index) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+  return high + 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
