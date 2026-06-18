@@ -39,6 +39,8 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/shared/settings.js"));
   assert.ok(files.includes("src/shared/voice-preferences.js"));
   assert.ok(files.includes("src/wikidata/entity-types.js"));
+  assert.ok(files.includes("src/wikidata/pronunciation-audio.js"));
+  assert.ok(files.includes("src/wikidata/source-forms.js"));
   assert.ok(files.includes("src/sources/forvo-adapter.js"));
   assert.ok(files.includes("src/sources/nominatim-adapter.js"));
   assert.ok(files.includes("src/offscreen/audio-playback-flow.js"));

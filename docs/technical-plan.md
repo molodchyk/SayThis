@@ -31,6 +31,8 @@ Chrome Manifest V3 components:
 - `wikidata/search-languages.js`: plans bounded Wikidata search languages from selected script and explicit user hints.
 - `wikidata/language-claims.js`: maps selected Wikidata language and country claims into bounded result-language hints.
 - `wikidata/entity-types.js`: maps selected Wikidata instance, subclass, field, and main-subject claims into bounded result categories and ranking signals.
+- `wikidata/source-forms.js`: extracts source-form candidates, aliases, and variants from Wikidata claims, aliases, labels, and sitelinks.
+- `wikidata/pronunciation-audio.js`: ranks Wikidata pronunciation-audio claims with language qualifiers before unqualified fallback recordings.
 - `sources/wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, pronunciation-relevant etymology, and alternative written forms from Wiktionary wikitext.
 - `wiktionary/variants.js`: pure parser for bounded Wiktionary alternative-form and variant-section entries.
 - `sources/nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
@@ -135,6 +137,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Wikidata instance/subclass claim mapping for result categories and candidate ranking.
 - Wikidata entity-type scoring covers additional scientific, medical, academic, and technical term classes.
 - Wikidata field and main-subject domain claims can specialize generic concepts for rare term ranking.
+- Wikidata source-form, alias, variant, and pronunciation-audio extraction are split into pure modules behind the Wikidata adapter.
 - Wikidata candidate ranking uses bounded description relevance when explicit entity-type claims are sparse.
 - Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata selection preserves useful alternate entity candidates for result ambiguity and follow-up audio lookup.
