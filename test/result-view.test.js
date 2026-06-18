@@ -5,6 +5,7 @@ import {
   audioItemsForResult,
   evidenceItemsForResult,
   playbackItemsForResult,
+  preferredSpeechResultForResult,
   speechResultForPlaybackItem,
   sourceItemsForResult
 } from "../src/result-view.js";
@@ -232,6 +233,38 @@ test("builds speech-specific result copies for playback rows", () => {
     text: "p-shih-kla-doh-voh"
   }), {
     ...result,
+    speakText: "p-shih-kla-doh-voh",
+    ttsLang: "en-US",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  });
+});
+
+test("prefers source-form speech before guide speech", () => {
+  const result = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  };
+
+  assert.deepEqual(preferredSpeechResultForResult(result), {
+    ...result,
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    ttsLang: "pl-PL"
+  });
+
+  assert.deepEqual(preferredSpeechResultForResult({
+    display: "Exampletown",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  }), {
+    display: "Exampletown",
     speakText: "p-shih-kla-doh-voh",
     ttsLang: "en-US",
     pronunciation: {

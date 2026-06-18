@@ -77,6 +77,13 @@
     ].filter(Boolean);
   }
 
+  function preferredSpeechResult(result) {
+    const items = playbackItems(result);
+    const item = items.find((candidate) => candidate.kind === "speech")
+      || items.find((candidate) => candidate.kind === "guide");
+    return speechResultForPlaybackItem(result, item);
+  }
+
   function speechResultForPlaybackItem(result, item = {}) {
     const text = normalizeText(item.text);
     if (!result || item?.kind === "audio" || !text) {
@@ -325,6 +332,7 @@
     normalizeLongText,
     normalizeText,
     playbackItems,
+    preferredSpeechResult,
     speechResultForPlaybackItem,
     sourceItems,
     trustSignalItems,

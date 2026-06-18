@@ -74,6 +74,72 @@ test("source-form playback row sends a speak message", async () => {
   assert.deepEqual(sentMessages[0].dependencies, { surface: "content" });
 });
 
+test("alternate playback prefers source-form speech before guide speech", async () => {
+  const sentMessages = [];
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {
+      constructor() {
+        throw new Error("alternate speech should not construct audio");
+      }
+    },
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return { surface: "content" };
+    },
+    async sendRuntimeMessage(message, dependencies) {
+      sentMessages.push({ message, dependencies });
+      return {
+        ok: true,
+        speech: {
+          text: message.result?.speakText || message.text
+        }
+      };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Exampletown",
+    alternateResults: [{
+      display: "Exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL",
+      pronunciation: {
+        simple: "p-shih-kla-doh-voh"
+      }
+    }]
+  }, { onlineChecked: true });
+
+  const buttons = fakeDom.root.querySelectorAll('[data-action="alternate"]');
+  assert.equal(buttons.length, 1);
+
+  buttons[0].click();
+  await Promise.resolve();
+
+  assert.equal(sentMessages.length, 1);
+  assert.equal(sentMessages[0].message.type, "SAYTHIS_SPEAK");
+  assert.equal(sentMessages[0].message.result.speakText, "Przykladowo");
+  assert.equal(sentMessages[0].message.result.ttsLang, "pl-PL");
+});
+
 function createFakeDom() {
   const state = {
     root: null

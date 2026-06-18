@@ -71,6 +71,16 @@ test("normalizes overlay result display helpers", () => {
     label: "Guide speech",
     text: "eg-ZAM-pluh-term"
   }]);
+  assert.equal(view.preferredSpeechResult({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  }).speakText, "Przykladowo");
   assert.equal(view.speechResultForPlaybackItem(result, {
     kind: "guide",
     text: "NYOH-kee"

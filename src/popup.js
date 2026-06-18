@@ -1,6 +1,7 @@
 import { getBestAudio, normalizeSelection } from "./resolver-core.js";
 import {
   playbackItemsForResult,
+  preferredSpeechResultForResult,
   speechResultForPlaybackItem
 } from "./result-view.js";
 import {
@@ -295,14 +296,7 @@ function speakAlternate(index, rate) {
     return;
   }
 
-  speakResultCandidate(preferredSpeechResult(alternate), rate, "Speaking alternate");
-}
-
-function preferredSpeechResult(result) {
-  const items = playbackItemsForResult(result);
-  const item = items.find((candidate) => candidate.kind === "guide")
-    || items.find((candidate) => candidate.kind === "speech");
-  return speechResultForPlaybackItem(result, item);
+  speakResultCandidate(preferredSpeechResultForResult(alternate), rate, "Speaking alternate");
 }
 
 async function speakResultCandidate(result, rate, statusBase = "Speaking") {

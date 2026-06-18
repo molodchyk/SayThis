@@ -72,6 +72,13 @@ export function playbackItemsForResult(result, limit = 4) {
   ].filter(Boolean).slice(0, limit);
 }
 
+export function preferredSpeechResultForResult(result) {
+  const items = playbackItemsForResult(result);
+  const item = items.find((candidate) => candidate.kind === "speech")
+    || items.find((candidate) => candidate.kind === "guide");
+  return speechResultForPlaybackItem(result, item);
+}
+
 export function speechResultForPlaybackItem(result, item = {}) {
   const text = normalizeSelection(item.text);
   if (!result || item?.kind === "audio" || !text) {

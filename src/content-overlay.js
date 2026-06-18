@@ -25,6 +25,7 @@
     normalizeText,
     playbackItems,
     speechResultForPlaybackItem = (result) => result,
+    preferredSpeechResult = (result) => speechResultForPlaybackItem(result),
     sourceItems,
     trustSignalItems,
     variantItems,
@@ -356,13 +357,6 @@
     }).then((response) => {
       setStatus(response?.ok ? speakingStatus(response, rate) : response?.error || "Speech failed.");
     });
-  }
-
-  function preferredSpeechResult(result) {
-    const items = playbackItems(result);
-    const item = items.find((candidate) => candidate.kind === "guide")
-      || items.find((candidate) => candidate.kind === "speech");
-    return speechResultForPlaybackItem(result, item);
   }
 
   function playAudio(result, rate) {
