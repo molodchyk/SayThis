@@ -434,6 +434,53 @@ test("falls back to broad Commons search when audio-constrained search misses", 
   }
 });
 
+test("prefers Commons recordings that match the resolved language", async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async () => jsonResponse({
+      query: {
+        pages: {
+          1: {
+            index: 1,
+            title: "File:En-us-Gnocchi.ogg",
+            imageinfo: [{
+              url: "https://upload.wikimedia.org/wikipedia/commons/e/e1/En-us-Gnocchi.ogg",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Gnocchi.ogg",
+              mime: "audio/ogg",
+              mediatype: "AUDIO",
+              extmetadata: {
+                ObjectName: { value: "En-us-Gnocchi.ogg" }
+              }
+            }]
+          },
+          2: {
+            index: 2,
+            title: "File:It-Gnocchi.oga",
+            imageinfo: [{
+              url: "https://upload.wikimedia.org/wikipedia/commons/i/i1/It-Gnocchi.oga",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:It-Gnocchi.oga",
+              mime: "audio/ogg",
+              mediatype: "AUDIO",
+              extmetadata: {
+                ObjectName: { value: "It-Gnocchi.oga" }
+              }
+            }]
+          }
+        }
+      }
+    });
+
+    const result = await resolveWithCommonsAudioLookup("gnocchi", "gnocchi", "it");
+
+    assert.equal(result.sourceStatus, "verified-audio");
+    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/i/i1/It-Gnocchi.oga");
+    assert.equal(result.sources[0].url, "https://commons.wikimedia.org/wiki/File:It-Gnocchi.oga");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 function jsonResponse(payload) {
   return {
     ok: true,

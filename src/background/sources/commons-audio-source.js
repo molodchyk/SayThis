@@ -8,6 +8,9 @@ import {
   pronunciationLookupCandidates
 } from "../../pronunciation-source-plan.js";
 import {
+  languageNameFromCode
+} from "../../resolver/language.js";
+import {
   fetchWikimediaApi
 } from "./wikimedia-api.js";
 
@@ -53,7 +56,7 @@ export async function resolveWithCommonsAudioLookup(selectedText, lookupWord, la
     }
 
     const data = await response.json();
-    matches = commonsAudioMatches(data, query).slice(0, 3);
+    matches = commonsAudioMatches(data, query, language || baseResult?.language).slice(0, 3);
     if (matches.length) {
       break;
     }
@@ -117,12 +120,21 @@ export function buildCommonsAudioSearchUrl(lookupWord, options = {}) {
   return `https://commons.wikimedia.org/w/api.php?${params.toString()}`;
 }
 
-function commonsAudioMatches(data = {}, lookupWord) {
+function commonsAudioMatches(data = {}, lookupWord, language = "") {
   const pages = Object.values(data.query?.pages || {});
   return pages
-    .sort((left, right) => Number(left.index || 0) - Number(right.index || 0))
-    .map((page) => commonsAudioMatch(page, lookupWord))
-    .filter(Boolean);
+    .map((page, fallbackIndex) => {
+      const match = commonsAudioMatch(page, lookupWord);
+      return match
+        ? {
+          ...match,
+          index: Number(page.index || fallbackIndex),
+          score: scoreCommonsAudioMatch(page, lookupWord, language)
+        }
+        : null;
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.score - left.score || left.index - right.index);
 }
 
 function commonsAudioMatch(page = {}, lookupWord) {
@@ -152,6 +164,58 @@ function commonsAudioMatch(page = {}, lookupWord) {
     },
     sourceUrl
   };
+}
+
+function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
+  const languageCode = baseLanguage(language);
+  const lookupKey = createLookupKey(lookupWord);
+  const title = stripMarkup(page.title);
+  const fileName = title.replace(/^File:/i, "");
+  const filePrefix = fileLanguagePrefix(fileName);
+  const matchText = createLookupKey([
+    title,
+    page.snippet,
+    page.titlesnippet,
+    commonsExtText(page.imageinfo?.[0]?.extmetadata)
+  ].map(stripMarkup).join(" "));
+  let score = 0;
+
+  if (lookupKey && createLookupKey(fileName).includes(lookupKey)) {
+    score += 8;
+  }
+
+  if (!languageCode) {
+    return score;
+  }
+
+  if (filePrefix === languageCode) {
+    score += 50;
+  } else if (filePrefix) {
+    score -= 8;
+  }
+
+  const languageName = createLookupKey(languageNameFromCode(languageCode));
+  if (languageName && matchText.includes(languageName)) {
+    score += 12;
+  }
+
+  return score;
+}
+
+function fileLanguagePrefix(fileName) {
+  return String(fileName || "")
+    .trim()
+    .toLowerCase()
+    .match(/^([a-z]{2,3})(?:[-_][a-z0-9]{2,8})?[-_\s]/)?.[1] || "";
+}
+
+function baseLanguage(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-")
+    .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0]
+    ?.split("-")[0] || "";
 }
 
 async function safeResolve(resolver, ...args) {
