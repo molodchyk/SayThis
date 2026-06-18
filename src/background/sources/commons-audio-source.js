@@ -143,6 +143,7 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
   const sourceUrl = normalizeHttpsUrl(info.descriptionurl) || url;
   const mime = String(info.mime || "").toLowerCase();
   const mediaType = String(info.mediatype || "").toLowerCase();
+  const fileName = stripMarkup(page.title).replace(/^File:/i, "");
   const lookupKey = createLookupKey(lookupWord);
   const pronunciationScore = scorePronunciationSignal(page, lookupWord, language);
   const matchText = createLookupKey([
@@ -152,7 +153,14 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
     commonsExtText(info.extmetadata)
   ].map(stripMarkup).join(" "));
 
-  if (!url || !lookupKey || !pronunciationScore || !matchText.includes(lookupKey) || (!mime.startsWith("audio/") && mediaType !== "audio")) {
+  if (
+    !url ||
+    !lookupKey ||
+    hasConflictingLanguagePrefix(fileName, language) ||
+    !pronunciationScore ||
+    !matchText.includes(lookupKey) ||
+    (!mime.startsWith("audio/") && mediaType !== "audio")
+  ) {
     return null;
   }
 
@@ -228,6 +236,10 @@ function scorePronunciationSignal(page = {}, lookupWord, language = "") {
   }
 
   if (filePrefix && fileKey.includes(lookupKey)) {
+    if (languageCode && filePrefix !== languageCode) {
+      return 0;
+    }
+
     return filePrefix === languageCode ? 42 : 28;
   }
 
@@ -256,6 +268,12 @@ function fileLanguagePrefix(fileName) {
     .trim()
     .toLowerCase()
     .match(/^([a-z]{2,3})(?:[-_][a-z0-9]{2,8})?[-_\s]/)?.[1] || "";
+}
+
+function hasConflictingLanguagePrefix(fileName, language) {
+  const languageCode = baseLanguage(language);
+  const filePrefix = fileLanguagePrefix(fileName);
+  return Boolean(languageCode && filePrefix && filePrefix !== "ll" && filePrefix !== languageCode);
 }
 
 function baseLanguage(value) {
