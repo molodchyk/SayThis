@@ -80,7 +80,8 @@ test("reports TTS adapter failures", async () => {
   const result = await surface.speakResult({
     display: "Exampleterm",
     speakText: "Exampleterm",
-    ttsLang: "en-US"
+    ttsLang: "en-US",
+    sourceStatus: "structured-source"
   });
 
   assert.deepEqual(result, {
@@ -107,6 +108,68 @@ test("reports missing speech text as unavailable", async () => {
     error: "Speech unavailable."
   });
   assert.deepEqual(calls, []);
+});
+
+test("does not speak unresolved Latin text with raw browser TTS", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    speakText: "Exampleterm",
+    ttsLang: "en-US",
+    sourceStatus: "best-effort-fallback"
+  });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "Speech unavailable for unresolved text."
+  });
+  assert.deepEqual(calls, []);
+});
+
+test("still speaks unresolved abbreviation guides", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "P&L",
+    sourceForm: "P&L",
+    speakText: "P N L",
+    ttsLang: "en-US",
+    sourceStatus: "best-effort-fallback",
+    pronunciation: {
+      simple: "P N L"
+    }
+  });
+
+  assert.deepEqual(result, {
+    spoken: true,
+    text: "P N L",
+    options: {
+      enqueue: false,
+      rate: 0.82,
+      lang: "en-US",
+      voiceName: "English Default"
+    }
+  });
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "P N L", { enqueue: false, rate: 0.82, lang: "en-US", voiceName: "English Default" }]
+  ]);
 });
 
 test("does not speak with a known non-matching TTS voice", async () => {

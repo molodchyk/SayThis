@@ -91,6 +91,13 @@ export function createPlaybackSurface(dependencies = {}) {
       };
     }
 
+    if (shouldRejectUntrustedRawSpeech(result, speech)) {
+      return {
+        spoken: false,
+        error: "Speech unavailable for unresolved text."
+      };
+    }
+
     const voice = await bestTtsVoice(speech.options.lang);
     if (!voice.voiceName && shouldRequireVerifiedVoice(result, speech.options.lang)) {
       const offscreenSpeech = await speakTextOffscreen(speech.text, speech.options);
@@ -211,6 +218,26 @@ export function createPlaybackSurface(dependencies = {}) {
       baseVoiceLang(lang) !== "en" &&
       normalizeSelection(result?.sourceForm || result?.speakText || result?.display || result?.query)
     );
+  }
+
+  function shouldRejectUntrustedRawSpeech(result, speech = {}) {
+    const sourceStatus = normalizeSelection(result?.sourceStatus);
+    if (!["", "unknown", "best-effort-fallback"].includes(sourceStatus)) {
+      return false;
+    }
+
+    const text = normalizeSelection(speech.text);
+    const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
+    if (guide && text === guide) {
+      return false;
+    }
+
+    const lang = normalizeSelection(speech.options?.lang);
+    if (lang && baseVoiceLang(lang) !== "en") {
+      return false;
+    }
+
+    return true;
   }
 
   async function stopOffscreenAudio() {
