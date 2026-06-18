@@ -210,7 +210,7 @@ The first useful version should be narrow and trusted:
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 
-Community sync, approved-entry refresh, custom source lookup, DBpedia-compatible lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Lookup language hints only alter Wikidata API language parameters, local source-form ranking, hinted Wiktionary editions, gazetteer language parameters, and Forvo language filters. Community sync submits only the selected term, feedback type, correction or missing-request candidate fields, and resolver metadata. Feedback is not queued for sync until community sync is enabled. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata. SayThis does not submit page URLs or browsing history. Custom source and DBpedia-compatible lookup send only the selected term or a resolved pronunciation candidate. Forvo API keys are stored locally and are not included in data exports.
+Community sync, approved-entry refresh, custom source lookup, DBpedia-compatible lookup, Forvo audio lookup, and Nominatim-compatible place-name lookup are disabled by default. When any remote feature is enabled, SayThis asks Chrome for access to the relevant endpoint origin. Lookup language hints only alter Wikidata API language parameters, local source-form ranking, hinted Wiktionary editions, gazetteer language parameters, and Forvo language filters. Community sync submits only the selected term, feedback type, correction or missing-request candidate fields, and resolver metadata. Feedback is not queued for sync until community sync is enabled. Approved-entry refresh is a separate opt-in and stores only approved pronunciation metadata. SayThis does not submit page URLs or browsing history. Custom source and DBpedia-compatible lookup send only the selected term or a resolved pronunciation candidate. Optional Forvo API keys and shared-audio generation tokens are stored locally and are not included in data exports.
 
 ## Development
 
@@ -268,7 +268,7 @@ npm run community:serve
 
 ## Privacy
 
-SayThis stores settings, local pronunciation memory, lookup cache data, and optional API keys in Chrome extension local storage. Online lookup sends only the selected term or resolved pronunciation candidate to source services. See `PRIVACY.md` for the browser permissions, network behavior, and user controls.
+SayThis stores settings, local pronunciation memory, lookup cache data, and optional local credentials in Chrome extension local storage. Online lookup sends only the selected term or resolved pronunciation candidate to source services. See `PRIVACY.md` for the browser permissions, network behavior, and user controls.
 
 ## Open Source
 

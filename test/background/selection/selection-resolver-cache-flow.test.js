@@ -326,7 +326,7 @@ test("stores cacheable remote results after online lookup", async () => {
   assert.equal(calls[0].text, "Chiaroscuro");
   assert.deepEqual(calls[0].settings.lookupLanguageHints, ["pl", "it"]);
   assert.equal(calls[0].settings.onlineByDefault, false);
-  assert.deepEqual(calls[0].credentials, { forvoApiKey: "" });
+  assert.deepEqual(calls[0].credentials, { forvoApiKey: "", sharedAudioGenerationToken: "" });
   assert.equal(calls[0].localStatus, "best-effort-fallback");
   assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.lookupKey === "chiaroscuro"));
 });

@@ -16,6 +16,7 @@ import {
   syncSummary
 } from "../community-sync.js";
 import {
+  normalizeCredentials,
   normalizeSettings
 } from "../shared/settings.js";
 import {
@@ -26,6 +27,7 @@ const DEFAULT_STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
   communityEntries: "communityEntries",
   communityPullState: "communityPullState",
+  credentials: "credentials",
   lastResult: "lastResult",
   lastSelection: "lastSelection",
   syncQueue: "syncQueue",
@@ -163,6 +165,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
 
   const stored = await dependencies.getStorage([
     storageKeys.approvedCommunityEntries,
+    storageKeys.credentials,
     storageKeys.settings
   ]);
 
@@ -187,11 +190,15 @@ export async function requestSharedAudioForResult(text, result = null, options =
   }
 
   const settings = normalizeSettings(stored[storageKeys.settings]);
+  const credentials = normalizeCredentials(stored[storageKeys.credentials]);
   if (!settings.communityEndpoint) {
     throw new Error("Shared audio endpoint is not configured.");
   }
 
-  const payload = await requestSharedAudioEntry(settings.communityEndpoint, body, dependencies);
+  const payload = await requestSharedAudioEntry(settings.communityEndpoint, body, {
+    ...dependencies,
+    sharedAudioGenerationToken: credentials.sharedAudioGenerationToken
+  });
   const incoming = approvedEntriesForSharedAudioRequest(payload.entry, body);
   const approvedCommunityEntries = mergeApprovedEntries(
     stored[storageKeys.approvedCommunityEntries],
@@ -222,11 +229,15 @@ export async function postCommunitySubmission(endpoint, submission, dependencies
 export async function requestSharedAudioEntry(endpoint, body, dependencies = {}) {
   const url = new URL(endpoint);
   url.searchParams.set("action", "audio");
+  const token = normalizeCredentials({
+    sharedAudioGenerationToken: dependencies.sharedAudioGenerationToken
+  }).sharedAudioGenerationToken;
   const response = await fetcher(dependencies)(url.toString(), {
     method: "POST",
     headers: {
       "Accept": "application/json",
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": `Bearer ${token}` } : {})
     },
     body: JSON.stringify(body)
   });

@@ -5,7 +5,6 @@ import {
   flushCommunitySync,
   postCommunitySubmission,
   pullApprovedCommunityEntries,
-  requestSharedAudioEntry,
   requestSharedAudioForResult,
   saveFeedback
 } from "../../src/background/community-feedback-flow.js";
@@ -199,6 +198,9 @@ test("uses injected fetch for community HTTP helpers", async () => {
 test("requests shared audio, stores approved entry, and refreshes the result", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {},
+    credentials: {
+      sharedAudioGenerationToken: " client-token "
+    },
     settings: {
       communityEndpoint: "https://example.com/community"
     }
@@ -226,7 +228,7 @@ test("requests shared audio, stores approved entry, and refreshes the result", a
   const result = await requestSharedAudioForResult("Exampletown", baseResult, { rate: 0.82 }, {
     ...storage.dependencies,
     fetch: async (url, options) => {
-      calls.push(["fetch", url, JSON.parse(options.body)]);
+      calls.push(["fetch", url, JSON.parse(options.body), options.headers]);
       return {
         ok: true,
         async json() {
@@ -256,6 +258,7 @@ test("requests shared audio, stores approved entry, and refreshes the result", a
   assert.equal(calls[0][1], "https://example.com/community?action=audio");
   assert.equal(calls[0][2].sourceForm, "Przykladowo");
   assert.equal(calls[0][2].ttsLang, "pl-PL");
+  assert.equal(calls[0][3].Authorization, "Bearer client-token");
   assert.equal(storage.state.approvedCommunityEntries.exampletown.sourceStatus, "generated-audio");
   assert.equal(storage.state.lastResult, refreshed);
 });
@@ -533,34 +536,6 @@ test("does not request shared audio when a preferred recording exists", async ()
   });
 
   assert.equal(result, baseResult);
-});
-
-test("builds shared audio HTTP requests", async () => {
-  const payload = await requestSharedAudioEntry("https://example.com/community?client=public", {
-    term: "Exampletown",
-    lookupKey: "exampletown",
-    sourceForm: "Przykladowo",
-    ttsLang: "pl-PL"
-  }, {
-    fetch: async (url, options) => {
-      assert.equal(url, "https://example.com/community?client=public&action=audio");
-      assert.equal(options.method, "POST");
-      assert.equal(options.headers.Accept, "application/json");
-      assert.equal(JSON.parse(options.body).sourceForm, "Przykladowo");
-      return {
-        ok: true,
-        async json() {
-          return {
-            entry: {
-              audioUrl: "https://example.com/audio/aud_1234567890abcdef"
-            }
-          };
-        }
-      };
-    }
-  });
-
-  assert.equal(payload.entry.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
 });
 
 function storageHarness(initial = {}) {

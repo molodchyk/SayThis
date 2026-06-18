@@ -71,6 +71,7 @@ const dataBox = document.getElementById("data-box");
 const syncEnabled = document.getElementById("sync-enabled");
 const pullEnabled = document.getElementById("pull-enabled");
 const syncEndpoint = document.getElementById("sync-endpoint");
+const sharedAudioGenerationToken = document.getElementById("shared-audio-generation-token");
 const syncSummaryText = document.getElementById("sync-summary");
 const flushSyncButton = document.getElementById("flush-sync");
 const pullApprovedButton = document.getElementById("pull-approved");
@@ -101,6 +102,7 @@ clearCacheButton.addEventListener("click", clearLookupCache);
 syncEnabled.addEventListener("change", saveSettings);
 pullEnabled.addEventListener("change", saveSettings);
 syncEndpoint.addEventListener("change", saveSettings);
+sharedAudioGenerationToken.addEventListener("change", saveSettings);
 exportButton.addEventListener("click", exportData);
 importButton.addEventListener("click", importData);
 clearButton.addEventListener("click", clearMemory);
@@ -142,6 +144,7 @@ async function init() {
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
+  sharedAudioGenerationToken.value = credentials.sharedAudioGenerationToken;
   renderCacheSummary(stored[STORAGE_KEYS.resultCache]);
   renderSummary(stored[STORAGE_KEYS.communityEntries] || {});
   renderSyncSummary(stored[STORAGE_KEYS.syncSummary], stored[STORAGE_KEYS.syncQueue]);
@@ -188,6 +191,7 @@ async function saveSettings() {
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
+  sharedAudioGenerationToken.value = credentials.sharedAudioGenerationToken;
   setStatus((settings.communitySyncEnabled || !wantedSync) &&
       (settings.communityPullEnabled || !wantedPull) &&
       (settings.customSourceEnabled || !wantedCustomSource) &&
@@ -283,6 +287,7 @@ async function importData() {
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
+  sharedAudioGenerationToken.value = credentials.sharedAudioGenerationToken;
   renderCacheSummary(resultCache);
   renderSummary(communityEntries);
   renderSyncSummary(importedSyncSummary);
@@ -369,7 +374,8 @@ function renderApprovedSummary(entries = {}, state = {}) {
 
 function credentialsFromControls() {
   return normalizeCredentials({
-    forvoApiKey: forvoApiKey.value
+    forvoApiKey: forvoApiKey.value,
+    sharedAudioGenerationToken: sharedAudioGenerationToken.value
   });
 }
 

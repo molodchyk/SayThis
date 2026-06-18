@@ -14,8 +14,9 @@ SayThis uses Chrome extension local storage for:
 - bounded online lookup cache
 - community sync retry queue
 - optional Forvo API key
+- optional shared-audio generation token
 
-Forvo API keys stay in local extension storage and are not included in data exports.
+Forvo API keys and shared-audio generation tokens stay in local extension storage and are not included in data exports.
 
 The detailed local storage key map is documented in `docs/architecture/storage-ownership.md`.
 

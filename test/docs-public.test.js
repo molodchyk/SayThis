@@ -24,7 +24,7 @@ test("README links the public privacy policy", async () => {
   assert.match(rootPolicy, /## Permissions/);
   assert.match(rootPolicy, /No Sale Or Sharing/);
   assert.match(policy, /## Data Sent To Remote Services/);
-  assert.match(policy, /Forvo API keys stay in local extension storage/);
+  assert.match(policy, /Forvo API keys and shared-audio generation tokens stay in local extension storage/);
   assert.match(policy, /does not submit page URLs or browsing history/);
 });
 
