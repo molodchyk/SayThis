@@ -18,17 +18,12 @@
       return null;
     }
 
-    return audio.find((item) => item?.url && item.quality === "verified") || audio.find((item) => item?.url) || null;
+    return rankedAudioItems(audio)[0] || null;
   }
 
   function sourceItems(result) {
     const sources = Array.isArray(result?.sources) ? result.sources : [];
-    const audio = Array.isArray(result?.pronunciation?.audio)
-      ? result.pronunciation.audio.map((item) => ({
-        label: item.label || item.source || "Pronunciation audio",
-        url: item.url
-      }))
-      : [];
+    const audio = audioItems(result);
     const seen = new Set();
     const items = [];
 
@@ -50,7 +45,7 @@
     const seen = new Set();
     const items = [];
 
-    for (const item of audio) {
+    for (const item of rankedAudioItems(audio)) {
       const normalized = normalizeAudioItem(item);
       if (!normalized.url || seen.has(normalized.url)) {
         continue;
@@ -222,6 +217,51 @@
       label: normalizeText(item?.label || item?.source || hostLabel(url) || "Pronunciation audio"),
       url
     };
+  }
+
+  function rankedAudioItems(audio) {
+    return (Array.isArray(audio) ? audio : [])
+      .filter((item) => item?.url)
+      .map((item, index) => ({ item, index }))
+      .sort((left, right) =>
+        audioScore(right.item) - audioScore(left.item) ||
+        left.index - right.index)
+      .map(({ item }) => item);
+  }
+
+  function audioScore(item) {
+    return qualityScore(item?.quality) + sourceScore(item?.source || item?.label);
+  }
+
+  function qualityScore(value) {
+    const quality = normalizeText(value).toLowerCase();
+    if (quality === "verified") {
+      return 100;
+    }
+    if (quality === "generated") {
+      return 0;
+    }
+    return 40;
+  }
+
+  function sourceScore(value) {
+    const source = normalizeText(value).toLowerCase();
+    if (source.includes("forvo")) {
+      return 8;
+    }
+    if (source.includes("wiktionary")) {
+      return 7;
+    }
+    if (source.includes("wikidata")) {
+      return 6;
+    }
+    if (source.includes("commons")) {
+      return 5;
+    }
+    if (source.includes("community")) {
+      return 4;
+    }
+    return 1;
   }
 
   function sourceSpeechItem(result = {}) {

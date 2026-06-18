@@ -10,6 +10,7 @@ import {
   mapResultAudioUrls,
   mergeRemoteResult,
   normalizeCommunityEntries,
+  rankedAudioItems,
   resolveTerm,
   resultToSpeechOptions,
   sourceLabelForStatus,
@@ -43,7 +44,8 @@ import {
   getBestAudio as getBestAudioDirect,
   mapResultAudioUrls as mapResultAudioUrlsDirect,
   mergeAudioItems,
-  normalizePronunciation as normalizePronunciationDirect
+  normalizePronunciation as normalizePronunciationDirect,
+  rankedAudioItems as rankedAudioItemsDirect
 } from "../src/resolver/audio.js";
 import {
   applyCommunitySummary as applyCommunitySummaryDirect,
@@ -119,21 +121,26 @@ test("maps resolver audio helpers from a narrow module", () => {
   const pronunciation = normalizePronunciationDirect({
     ipa: "/a/",
     audio: [
+      { url: "https://voice.example/a.ogg", label: " Generated ", source: " Voice service ", quality: "generated" },
       { url: " assets/audio/public/a.ogg ", label: " One ", source: " Local ", quality: "verified" },
+      { url: "https://forvo.example/a.ogg", label: " Forvo ", source: " Forvo ", quality: "verified" },
       { url: "", label: "empty" }
     ]
   });
 
   assert.equal(pronunciation.ipa, "/a/");
-  assert.equal(pronunciation.audio.length, 1);
-  assert.equal(pronunciation.audio[0].url, "assets/audio/public/a.ogg");
-  assert.equal(getBestAudioDirect({ pronunciation }).url, "assets/audio/public/a.ogg");
-  assert.equal(getBestAudio({ pronunciation }).url, "assets/audio/public/a.ogg");
+  assert.equal(pronunciation.audio.length, 3);
+  assert.equal(pronunciation.audio[0].url, "https://forvo.example/a.ogg");
+  assert.equal(pronunciation.audio[2].quality, "generated");
+  assert.equal(getBestAudioDirect({ pronunciation }).url, "https://forvo.example/a.ogg");
+  assert.equal(getBestAudio({ pronunciation }).url, "https://forvo.example/a.ogg");
+  assert.deepEqual(rankedAudioItems(pronunciation.audio).map((item) => item.quality), ["verified", "verified", "generated"]);
+  assert.deepEqual(rankedAudioItemsDirect(pronunciation.audio).map((item) => item.quality), ["verified", "verified", "generated"]);
 
   const mapped = mapResultAudioUrlsDirect({ pronunciation }, (url) => `chrome-extension://id/${url}`);
 
-  assert.equal(mapped.pronunciation.audio[0].url, "chrome-extension://id/assets/audio/public/a.ogg");
-  assert.equal(mergeAudioItems(pronunciation.audio, pronunciation.audio).length, 1);
+  assert.equal(mapped.pronunciation.audio[1].url, "chrome-extension://id/assets/audio/public/a.ogg");
+  assert.equal(mergeAudioItems([pronunciation.audio[0]], [pronunciation.audio[0]]).length, 1);
 });
 
 test("maps resolver community helpers from a narrow module", () => {

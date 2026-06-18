@@ -113,6 +113,11 @@ test("builds playable audio items", () => {
   const items = audioItemsForResult({
     pronunciation: {
       audio: [{
+        label: "Generated service",
+        source: "Voice service",
+        quality: "generated",
+        url: "https://voice.example/generated.ogg"
+      }, {
         label: "Primary recording",
         source: "Forvo",
         quality: "verified",
@@ -140,6 +145,11 @@ test("builds playable audio items", () => {
     source: "Archive",
     quality: "",
     url: "chrome-extension://id/audio.ogg"
+  }, {
+    label: "Generated service",
+    source: "Voice service",
+    quality: "generated",
+    url: "https://voice.example/generated.ogg"
   }]);
 });
 

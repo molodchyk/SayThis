@@ -53,7 +53,7 @@ export {
 export { orthographicLanguageHint } from "./resolver/orthography.js";
 export { initialismGuide } from "./resolver/abbreviation.js";
 export { sourceLabelForStatus } from "./resolver/status.js";
-export { getBestAudio, mapResultAudioUrls } from "./resolver/audio.js";
+export { getBestAudio, mapResultAudioUrls, rankedAudioItems } from "./resolver/audio.js";
 export {
   applyCommunitySummary,
   hasCommunityPronunciationData,

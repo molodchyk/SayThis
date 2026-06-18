@@ -1,5 +1,6 @@
 import {
-  normalizeSelection
+  normalizeSelection,
+  rankedAudioItems
 } from "./resolver-core.js";
 
 export function evidenceItemsForResult(result, limit = 6) {
@@ -130,7 +131,7 @@ function uniqueAudioItems(items) {
   const seen = new Set();
   const result = [];
 
-  for (const item of items) {
+  for (const item of rankedAudioItems(items)) {
     const audio = normalizeAudioItem(item);
     if (!audio.url || seen.has(audio.url)) {
       continue;

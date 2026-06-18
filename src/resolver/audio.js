@@ -7,7 +7,7 @@ export function getBestAudio(result) {
     return null;
   }
 
-  return audio.find((item) => item?.url && item.quality === "verified") || audio.find((item) => item?.url) || null;
+  return rankedAudioItems(audio)[0] || null;
 }
 
 export function mapResultAudioUrls(result, resolveUrl) {
@@ -41,7 +41,7 @@ export function mergeAudioItems(...groups) {
     audio.push(item);
   }
 
-  return audio;
+  return rankedAudioItems(audio);
 }
 
 export function normalizePronunciation(pronunciation = {}) {
@@ -49,8 +49,55 @@ export function normalizePronunciation(pronunciation = {}) {
   return {
     ipa: value.ipa || "",
     simple: value.simple || "",
-    audio: normalizeAudio(value.audio)
+    audio: rankedAudioItems(normalizeAudio(value.audio))
   };
+}
+
+export function rankedAudioItems(audio = []) {
+  return (Array.isArray(audio) ? audio : [])
+    .filter((item) => item?.url)
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) =>
+      audioScore(right.item) - audioScore(left.item) ||
+      left.index - right.index)
+    .map(({ item }) => item);
+}
+
+function audioScore(item = {}) {
+  return qualityScore(item.quality) + sourceScore(item.source || item.label);
+}
+
+function qualityScore(value) {
+  const quality = normalizeSelection(value).toLowerCase();
+  if (quality === "verified") {
+    return 100;
+  }
+
+  if (quality === "generated") {
+    return 0;
+  }
+
+  return 40;
+}
+
+function sourceScore(value) {
+  const source = normalizeSelection(value).toLowerCase();
+  if (source.includes("forvo")) {
+    return 8;
+  }
+  if (source.includes("wiktionary")) {
+    return 7;
+  }
+  if (source.includes("wikidata")) {
+    return 6;
+  }
+  if (source.includes("commons")) {
+    return 5;
+  }
+  if (source.includes("community")) {
+    return 4;
+  }
+  return 1;
 }
 
 function normalizeAudio(audio) {

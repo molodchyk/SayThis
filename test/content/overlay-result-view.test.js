@@ -18,6 +18,7 @@ test("normalizes overlay result display helpers", () => {
     pronunciation: {
       audio: [
         { label: "First", url: "ftp://bad.example/audio.ogg" },
+        { label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" },
         { label: "Verified", url: "https://audio.example/verified.ogg", quality: "verified" },
         { label: "Duplicate", url: "https://audio.example/verified.ogg" },
         { source: "Commons", url: "https://audio.example/commons.ogg" }
@@ -43,11 +44,13 @@ test("normalizes overlay result display helpers", () => {
   assert.equal(view.getBestAudio(result).label, "Verified");
   assert.deepEqual(plain(view.audioItems(result)), [
     { label: "Verified", url: "https://audio.example/verified.ogg" },
-    { label: "Commons", url: "https://audio.example/commons.ogg" }
+    { label: "Commons", url: "https://audio.example/commons.ogg" },
+    { label: "Generated voice", url: "https://audio.example/generated.ogg" }
   ]);
   assert.deepEqual(plain(view.playbackItems(result)), [
     { kind: "audio", label: "Verified", url: "https://audio.example/verified.ogg" },
-    { kind: "audio", label: "Commons", url: "https://audio.example/commons.ogg" }
+    { kind: "audio", label: "Commons", url: "https://audio.example/commons.ogg" },
+    { kind: "audio", label: "Generated voice", url: "https://audio.example/generated.ogg" }
   ]);
   assert.deepEqual(plain(view.playbackItems({
     query: "Exampletown",
@@ -84,7 +87,8 @@ test("normalizes overlay result display helpers", () => {
   assert.deepEqual(plain(view.sourceItems(result)), [
     { label: "Wiktionary", url: "https://example.test/term" },
     { label: "Verified", url: "https://audio.example/verified.ogg" },
-    { label: "Commons", url: "https://audio.example/commons.ogg" }
+    { label: "Commons", url: "https://audio.example/commons.ogg" },
+    { label: "Generated voice", url: "https://audio.example/generated.ogg" }
   ]);
   assert.equal(view.firstSourceUrl(result), "https://example.test/term");
   assert.deepEqual(plain(view.alternateItems(result)), [{
