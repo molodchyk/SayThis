@@ -99,9 +99,12 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /data-lookup-hints/);
   assert.match(source, /languageHints/);
   assert.match(source, /lookupHints\(\)/);
+  assert.match(source, /playbackItems\(result\)/);
+  assert.match(resultView, /playbackItems/);
   assert.match(resultView, /normalizeLanguageHints/);
   assert.match(source, /speakCandidate\(result\.alternateResults\?\.\[index\], 0\.82\)/);
-  assert.match(source, /playAudioItem\(recordings\[index\], result, 0\.82\)/);
+  assert.match(source, /item\?\.kind === "guide"/);
+  assert.match(source, /playAudioItem\(item, result, 0\.82\)/);
 
   for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "root", "domainHint", "variants", "audioUrl", "sourceUrl", "variantNote"]) {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));
@@ -430,8 +433,9 @@ test("popup source-audio failure falls back to TTS", async () => {
   assert.match(source, /autoSpeakPopup/);
   assert.match(source, /await speakSelection\(0\.82\)/);
   assert.match(source, /createPopupAudioPlayback/);
-  assert.match(resultSource, /audioItemsForResult/);
+  assert.match(resultSource, /playbackItemsForResult/);
   assert.match(resultSource, /speakAlternate\(item\.index, 0\.82\)/);
+  assert.match(resultSource, /item\.kind === "guide"/);
   assert.match(source, /replaceCurrent: false/);
   assert.match(resultSource, /playAudioItem\(item, result, 0\.82\)/);
   assert.match(source, /Audio failed\. Using TTS fallback\./);

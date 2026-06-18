@@ -45,6 +45,19 @@ test("normalizes overlay result display helpers", () => {
     { label: "Verified", url: "https://audio.example/verified.ogg" },
     { label: "Commons", url: "https://audio.example/commons.ogg" }
   ]);
+  assert.deepEqual(plain(view.playbackItems(result)), [
+    { kind: "audio", label: "Verified", url: "https://audio.example/verified.ogg" },
+    { kind: "audio", label: "Commons", url: "https://audio.example/commons.ogg" }
+  ]);
+  assert.deepEqual(plain(view.playbackItems({
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  })), [{
+    kind: "guide",
+    label: "Guide speech",
+    text: "eg-ZAM-pluh-term"
+  }]);
   assert.deepEqual(plain(view.sourceItems(result)), [
     { label: "Wiktionary", url: "https://example.test/term" },
     { label: "Verified", url: "https://audio.example/verified.ogg" },

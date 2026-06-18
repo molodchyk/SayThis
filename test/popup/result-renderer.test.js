@@ -74,6 +74,33 @@ test("renders playback, alternate, evidence, and source lists", () => {
   assert.equal(elements.sources.children[0].children[0].rel, "noreferrer");
 });
 
+test("renders guide speech when no recording exists", () => {
+  const elements = createElements();
+  const spoken = [];
+
+  renderPopupResult({
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  }, elements, {
+    document: fakeDocument(),
+    speakResult: (result, rate) => spoken.push({ result, rate })
+  });
+
+  const button = elements.audioList.children[0].children[0];
+  const label = elements.audioList.children[0].children[1];
+  assert.equal(button.textContent, "Speak");
+  assert.equal(label.textContent, "Guide speech");
+
+  button.events.click();
+
+  assert.equal(spoken.length, 1);
+  assert.equal(spoken[0].result.display, "Exampleterm");
+  assert.equal(spoken[0].rate, 0.82);
+});
+
 function sampleResult() {
   return {
     query: "Example",

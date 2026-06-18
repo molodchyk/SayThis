@@ -1,7 +1,7 @@
 import {
   alternateItemsForResult,
-  audioItemsForResult,
   evidenceItemsForResult,
+  playbackItemsForResult,
   sourceItemsForResult
 } from "../result-view.js";
 import {
@@ -16,6 +16,7 @@ export function renderPopupResult(result, elements, actions = {}) {
 
   const doc = actions.document || globalThis.document;
   const speakAlternate = actions.speakAlternate || (() => {});
+  const speakResult = actions.speakResult || (() => {});
   const playAudioItem = actions.playAudioItem || (() => false);
   const setStatus = actions.setStatus || (() => {});
 
@@ -68,13 +69,18 @@ export function renderPopupResult(result, elements, actions = {}) {
   }
 
   elements.audioList.replaceChildren();
-  for (const item of audioItemsForResult(result)) {
+  for (const item of playbackItemsForResult(result)) {
     const li = doc.createElement("li");
     const button = doc.createElement("button");
     button.type = "button";
     button.className = "small secondary";
-    button.textContent = "Play";
+    button.textContent = item.kind === "guide" ? "Speak" : "Play";
     button.addEventListener("click", () => {
+      if (item.kind === "guide") {
+        speakResult(result, 0.82);
+        return;
+      }
+
       if (playAudioItem(item, result, 0.82)) {
         setStatus("Playing recording.");
       }

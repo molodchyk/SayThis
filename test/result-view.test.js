@@ -4,6 +4,7 @@ import {
   alternateItemsForResult,
   audioItemsForResult,
   evidenceItemsForResult,
+  playbackItemsForResult,
   sourceItemsForResult
 } from "../src/result-view.js";
 
@@ -138,6 +139,34 @@ test("builds playable audio items", () => {
     source: "Archive",
     quality: "",
     url: "chrome-extension://id/audio.ogg"
+  }]);
+});
+
+test("builds playback items from audio before guide speech", () => {
+  assert.deepEqual(playbackItemsForResult({
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term",
+      audio: [{
+        label: "Primary recording",
+        url: "https://example.com/primary.ogg"
+      }]
+    }
+  }), [{
+    kind: "audio",
+    label: "Primary recording",
+    source: "",
+    quality: "",
+    url: "https://example.com/primary.ogg"
+  }]);
+
+  assert.deepEqual(playbackItemsForResult({
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  }), [{
+    kind: "guide",
+    label: "Guide speech",
+    text: "eg-ZAM-pluh-term"
   }]);
 });
 

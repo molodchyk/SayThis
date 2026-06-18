@@ -63,6 +63,21 @@
     return items;
   }
 
+  function playbackItems(result) {
+    const audio = audioItems(result).map((item) => ({ ...item, kind: "audio" }));
+    const guide = normalizeText(result?.pronunciation?.simple);
+
+    if (audio.length || !guide) {
+      return audio;
+    }
+
+    return [{
+      kind: "guide",
+      label: "Guide speech",
+      text: guide
+    }];
+  }
+
   function firstSourceUrl(result) {
     const source = (Array.isArray(result?.sources) ? result.sources : [])
       .find((item) => normalizeUrl(item?.url));
@@ -214,6 +229,7 @@
     normalizeLanguageHints,
     normalizeLongText,
     normalizeText,
+    playbackItems,
     sourceItems,
     trustSignalItems,
     variantItems,

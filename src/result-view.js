@@ -51,6 +51,22 @@ export function audioItemsForResult(result, limit = 4) {
   return uniqueAudioItems(items).slice(0, limit);
 }
 
+export function playbackItemsForResult(result, limit = 4) {
+  const audio = audioItemsForResult(result, limit)
+    .map((item) => ({ ...item, kind: "audio" }));
+  const guide = normalizeSelection(result?.pronunciation?.simple);
+
+  if (audio.length || !guide) {
+    return audio;
+  }
+
+  return [{
+    kind: "guide",
+    label: "Guide speech",
+    text: guide
+  }];
+}
+
 export function alternateItemsForResult(result, limit = 3) {
   const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
   return alternates

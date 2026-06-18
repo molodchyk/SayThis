@@ -14,7 +14,6 @@
   const {
     aliasesTextFromResult,
     alternateItems,
-    audioItems,
     correctionInput,
     escapeAttribute,
     escapeHtml,
@@ -24,6 +23,7 @@
     normalizeLanguageHints,
     normalizeLongText,
     normalizeText,
+    playbackItems,
     sourceItems,
     trustSignalItems,
     variantItems,
@@ -50,7 +50,7 @@
     ].filter(Boolean).slice(0, 2);
     const sources = sourceItems(result).slice(0, 2);
     const alternates = alternateItems(result).slice(0, 2);
-    const recordings = audioItems(result).slice(0, 4);
+    const recordings = playbackItems(result).slice(0, 4);
     const community = result.community || {};
     const communityText = [
       community.confirmations ? `${community.confirmations} confirmation${community.confirmations === 1 ? "" : "s"}` : "",
@@ -112,7 +112,7 @@
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
         ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><button type="button" data-action="alternate" data-alternate-index="${item.index}">Speak</button><strong>${escapeHtml(item.display || "Alternate")}</strong><span>${escapeHtml(item.summary)}</span></li>`).join("")}</ul>` : ""}
-        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation recordings">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">Play</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
+        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation playback">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">${item.kind === "guide" ? "Speak" : "Play"}</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <label class="hint-field">
           <span>Lookup hints</span>
@@ -179,7 +179,10 @@
     for (const button of root.querySelectorAll('[data-action="recording"]')) {
       button.addEventListener("click", () => {
         const index = Number(button.dataset.audioIndex);
-        if (playAudioItem(recordings[index], result, 0.82)) {
+        const item = recordings[index];
+        if (item?.kind === "guide") {
+          speakCandidate(result, 0.82);
+        } else if (playAudioItem(item, result, 0.82)) {
           setStatus("Playing recording.");
         }
       });

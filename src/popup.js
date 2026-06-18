@@ -248,6 +248,7 @@ function renderResult(result) {
   }, {
     document,
     speakAlternate,
+    speakResult: (result, rate) => speakResultCandidate(result, rate, "Speaking"),
     playAudioItem,
     setStatus
   });
@@ -287,10 +288,10 @@ function speakAlternate(index, rate) {
     return;
   }
 
-  speakResultCandidate(alternate, rate);
+  speakResultCandidate(alternate, rate, "Speaking alternate");
 }
 
-async function speakResultCandidate(result, rate) {
+async function speakResultCandidate(result, rate, statusBase = "Speaking") {
   const text = normalizeSelection(selectionInput.value || result?.query || result?.sourceForm || result?.display);
   if (!text) {
     setStatus("No selected text.");
@@ -303,7 +304,7 @@ async function speakResultCandidate(result, rate) {
   }));
 
   setStatus(response.ok
-    ? speakingStatus(response, rate, "Speaking alternate")
+    ? speakingStatus(response, rate, statusBase)
     : response.error || "Speech failed.");
 }
 
