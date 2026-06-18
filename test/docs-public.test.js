@@ -68,3 +68,12 @@ test("documents public audio release guardrails", async () => {
   assert.match(audioReadme, /data\/public-audio-manifest\.json/);
   assert.equal(manifest.schemaVersion, 1);
 });
+
+test("runs release audits in non-browser CI", async () => {
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+
+  assert.match(readme, /release audits/);
+  assert.match(workflow, /npm run audit:architecture/);
+  assert.match(workflow, /npm run audit:public-audio/);
+});

@@ -25,5 +25,11 @@ jobs:
       - name: Run syntax checks
         run: npm run check
 
+      - name: Run architecture audit
+        run: npm run audit:architecture
+
+      - name: Run public audio audit
+        run: npm run audit:public-audio
+
       - name: Build Chrome package
         run: npm run package:chrome

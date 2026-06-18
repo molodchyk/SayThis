@@ -121,7 +121,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service serializes store writes so concurrent submissions do not overwrite pending entries.
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
 - Container image and deployment notes for the community service.
-- Non-browser CI for unit tests, syntax checks, and Chrome package creation.
+- Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
 - Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.
