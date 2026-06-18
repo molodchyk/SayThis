@@ -41,6 +41,10 @@ function initialismLetters(text) {
     return compact.split("").map((item) => item.toUpperCase());
   }
 
+  if (isTechnicalMixedInitialism(compact)) {
+    return compact.split("").map((item) => item.toUpperCase());
+  }
+
   return [];
 }
 
@@ -63,4 +67,8 @@ function shouldSpellAllUpper(text) {
 
 function isMixedInitialism(text) {
   return /^[A-Z][a-z]{1,2}[A-Z]$/.test(text);
+}
+
+function isTechnicalMixedInitialism(text) {
+  return text === "pH" || /^[a-z]{1,2}[A-Z]{2,6}$/.test(text);
 }
