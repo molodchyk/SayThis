@@ -1,8 +1,8 @@
 import {
   applyCommunitySummary,
   createLookupKey,
-  getBestAudio,
   hasCommunityPronunciationData,
+  hasPreferredAudio,
   normalizeSelection,
   updateCommunityEntries
 } from "../resolver-core.js";
@@ -154,7 +154,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
     throw new Error("No text selected.");
   }
 
-  if (getBestAudio(baseResult)) {
+  if (hasPreferredAudio(baseResult)) {
     return baseResult;
   }
 

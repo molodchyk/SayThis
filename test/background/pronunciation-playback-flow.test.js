@@ -109,6 +109,42 @@ test("requests shared audio after online retry still has no preferred audio", as
   ]);
 });
 
+test("requests shared audio after generated-audio retry finds no recording", async () => {
+  const calls = [];
+  const generated = {
+    display: "Exampletown",
+    sourceStatus: "generated-audio",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      audio: [{ url: "https://voice.example/item.ogg", quality: "generated" }]
+    }
+  };
+  const shared = {
+    ...generated,
+    pronunciation: {
+      audio: [{ url: "https://audio.example/shared.ogg", quality: "generated" }]
+    }
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", generated, {}, {
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return generated;
+    },
+    requestSharedAudio: async (text, item, options) => {
+      calls.push(["requestSharedAudio", text, item, options]);
+      return shared;
+    }
+  });
+
+  assert.equal(playable, shared);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: generated }],
+    ["requestSharedAudio", "Exampletown", generated, {}]
+  ]);
+});
+
 test("keeps current result when audio exists or retry fails", async () => {
   const audioResult = {
     display: "Exampletown",

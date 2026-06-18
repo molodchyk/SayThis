@@ -260,6 +260,107 @@ test("requests shared audio, stores approved entry, and refreshes the result", a
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("requests shared audio for generated-only results", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const calls = [];
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/generated.ogg",
+        quality: "generated"
+      }]
+    }
+  };
+  const refreshed = {
+    ...baseResult,
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, { rate: 0.82 }, {
+    ...storage.dependencies,
+    fetch: async (url, options) => {
+      calls.push(["fetch", url, JSON.parse(options.body)]);
+      return {
+        ok: true,
+        async json() {
+          return {
+            entry: {
+              term: "Exampletown",
+              lookupKey: "exampletown",
+              sourceForm: "Przykladowo",
+              language: "pl",
+              ttsLang: "pl-PL",
+              audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+              sourceStatus: "generated-audio"
+            }
+          };
+        }
+      };
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    }
+  });
+
+  assert.equal(result, refreshed);
+  assert.equal(calls[0][0], "fetch");
+  assert.equal(calls[0][2].sourceStatus, undefined);
+  assert.equal(calls[0][2].sourceForm, "Przykladowo");
+  assert.equal(storage.state.approvedCommunityEntries.exampletown.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
+});
+
+test("does not request shared audio when a preferred recording exists", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/recording.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch");
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve");
+    }
+  });
+
+  assert.equal(result, baseResult);
+});
+
 test("builds shared audio HTTP requests", async () => {
   const payload = await requestSharedAudioEntry("https://example.com/community?client=public", {
     term: "Exampletown",
