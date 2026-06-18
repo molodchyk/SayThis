@@ -207,6 +207,8 @@ For Latin-script input, entity or term resolution should happen before generic l
 
 Detected-language voice generation is useful for rare terms when it speaks the resolved source form with a matching locale. It remains generated evidence, not preferred evidence. Cache generated voice-service results by lookup and provider scope, reuse them when source refresh finds no better recording, and add quota or paid-access controls before exposing any shared paid voice backend.
 
+Provider-specific voice inventories and cost notes belong in ignored `private/` notes until there is a reviewed public provider policy.
+
 The resolver keeps useful displaced candidates on the winning result so the UI can show ambiguity when structured sources disagree or a higher-confidence audio source outranks another source-backed match. A single early language guess should not decide the result for rare terms.
 
 ## Data Model
