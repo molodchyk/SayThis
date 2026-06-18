@@ -5,6 +5,12 @@ import test from "node:test";
 import {
   auditReleaseReadiness
 } from "../scripts/audit-release-readiness.mjs";
+import {
+  BACKGROUND_STORAGE_KEYS
+} from "../src/background/runtime-platform.js";
+import {
+  OPTIONS_STORAGE_KEYS
+} from "../src/options/runtime-adapters.js";
 
 const PNG_SIGNATURE = "89504e470d0a1a0a";
 
@@ -31,6 +37,26 @@ test("documents public license and source URL", async () => {
   assert.match(readme, /GPL-3\.0-only/);
   assert.match(readme, /https:\/\/github\.com\/molodchyk\/SayThis/);
   assert.match(license, /GNU GENERAL PUBLIC LICENSE/);
+});
+
+test("documents local storage ownership for exported keys", async () => {
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const privacy = await readFile(new URL("../PRIVACY.md", import.meta.url), "utf8");
+  const publicPrivacy = await readFile(new URL("../docs/privacy-policy.md", import.meta.url), "utf8");
+  const storageDoc = await readFile(new URL("../docs/architecture/storage-ownership.md", import.meta.url), "utf8");
+  const keys = [...new Set([
+    ...Object.values(BACKGROUND_STORAGE_KEYS),
+    ...Object.values(OPTIONS_STORAGE_KEYS)
+  ])].sort();
+
+  assert.match(readme, /docs\/architecture\/storage-ownership\.md/);
+  assert.match(privacy, /docs\/architecture\/storage-ownership\.md/);
+  assert.match(publicPrivacy, /docs\/architecture\/storage-ownership\.md/);
+  assert.match(storageDoc, /Chrome extension local storage/);
+
+  for (const key of keys) {
+    assert.match(storageDoc, new RegExp(`\\| \`${escapeRegExp(key)}\` \\|`));
+  }
 });
 
 test("keeps Chrome Web Store automation docs aligned with StorePilot shape", async () => {
@@ -114,4 +140,8 @@ function pngDimensions(buffer) {
     width: buffer.readUInt32BE(16),
     height: buffer.readUInt32BE(20)
   };
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

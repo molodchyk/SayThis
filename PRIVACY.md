@@ -17,6 +17,8 @@ SayThis uses Chrome extension local storage for:
 
 Forvo API keys stay in local extension storage and are not included in data exports.
 
+The detailed local storage key map is documented in `docs/architecture/storage-ownership.md`.
+
 ## Network Behavior
 
 Online lookup can send the selected term or resolved pronunciation candidate to:

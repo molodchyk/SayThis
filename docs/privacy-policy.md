@@ -17,6 +17,8 @@ SayThis may store this data in Chrome extension local storage:
 
 Forvo API keys stay in local extension storage and are not included in data exports.
 
+The detailed local storage key map is documented in `docs/architecture/storage-ownership.md`.
+
 ## Data Sent To Remote Services
 
 Remote lookup is user-triggered or opt-in. SayThis can send the selected term to these services:

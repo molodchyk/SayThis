@@ -163,6 +163,7 @@ MVP quality bar: SayThis should prefer verified recordings from source-backed se
 - SWOT analysis: `docs/product/swot-analysis.md`
 - Research notes: `docs/product/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
+- Storage ownership: `docs/architecture/storage-ownership.md`
 - Browser extension playbook: `C:\Users\molod\Documents\Personal\settings\browser-extension-playbook.md`
 - Community service: `docs/community-service.md`
 - Deployment: `docs/deployment.md`
