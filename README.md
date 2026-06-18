@@ -93,6 +93,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wiktionary enPR and respelling guides are surfaced as simple pronunciation guides.
 - Wiktionary alternative-form sections can populate variant spellings for later audio lookup and review.
 - Source-provided simple guides can drive fallback speech when no verified audio is available.
+- Guide fallback speaks only guide-like text and leaves explanatory notes as metadata instead of reading them aloud.
 - Wiktionary pronunciation-audio lookup preserves multiple Commons recordings from one language section.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
 - Forvo audio paths are preserved as long source URLs for playback.

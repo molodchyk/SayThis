@@ -10,6 +10,9 @@ import {
   createShowResultMessage
 } from "../message-contracts.js";
 import {
+  normalizeSpeakableGuide
+} from "../resolver/pronunciation-guide.js";
+import {
   normalizeSettings
 } from "../shared/settings.js";
 import {
@@ -167,7 +170,7 @@ export function createPlaybackSurface(dependencies = {}) {
   }
 
   async function speakGuideFallback(result, rate) {
-    const guide = normalizeSelection(result?.pronunciation?.simple);
+    const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
     if (!guide || !result?.ttsLang || baseVoiceLang(result.ttsLang) === "en") {
       return null;
     }

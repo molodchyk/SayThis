@@ -27,6 +27,7 @@ import {
   normalizePronunciation
 } from "./resolver/audio.js";
 import {
+  normalizeSpeakableGuide,
   withGeneratedPronunciationGuide
 } from "./resolver/pronunciation-guide.js";
 import {
@@ -144,7 +145,7 @@ export function resultToSpeechOptions(result, overrides = {}) {
 function remoteSpeakText(source = {}, sourceForm, query, hasAudio) {
   return hasAudio
     ? sourceForm || query
-    : normalizeSelection(source.speakText || source.pronunciation?.simple || sourceForm || query);
+    : normalizeSelection(source.speakText || normalizeSpeakableGuide(source.pronunciation?.simple) || sourceForm || query);
 }
 
 function remoteTrustSignals(source = {}, sourceStatus, hasAudio) {
@@ -264,7 +265,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
 function communitySpeakText(entry = {}, sourceForm, query) {
   return entry.audioUrl
     ? sourceForm || query
-    : normalizeSelection(entry.simple || sourceForm || query);
+    : normalizeSelection(normalizeSpeakableGuide(entry.simple) || sourceForm || query);
 }
 
 function createFallbackResult(query, lookupKey, scriptInfo) {

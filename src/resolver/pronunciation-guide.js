@@ -55,6 +55,7 @@ const CYRILLIC_SOUND_MAP = {
   "\u044b": "ih",
   "\u044d": "eh"
 };
+const GUIDE_PROSE_MARKERS = /\b(?:context|contexts|depending|often|pronunciation|pronunciations|pronounced|speaker|speakers|source form|usually|varies|vary|voice)\b/i;
 
 export function pronunciationGuideFromSourceForm(sourceForm, language = "") {
   const text = normalizeSelection(sourceForm);
@@ -67,6 +68,20 @@ export function pronunciationGuideFromSourceForm(sourceForm, language = "") {
     .map(cyrillicWordGuide)
     .filter(Boolean)
     .join(" ");
+}
+
+export function normalizeSpeakableGuide(value) {
+  const guide = normalizeSelection(value);
+  if (!guide || guide.length > 120 || /[.;]/.test(guide) || GUIDE_PROSE_MARKERS.test(guide)) {
+    return "";
+  }
+
+  const words = guide.split(/\s+/);
+  if (words.length > 12) {
+    return "";
+  }
+
+  return guide;
 }
 
 export function withGeneratedPronunciationGuide(pronunciation = {}, sourceForm, language = "") {

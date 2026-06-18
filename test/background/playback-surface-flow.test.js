@@ -230,6 +230,32 @@ test("speaks a guide when the resolved locale voice is missing", async () => {
   ]);
 });
 
+test("does not speak explanatory guide prose when the resolved locale voice is missing", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "English pronunciations vary; source form should use a matching voice"
+    }
+  }, { rate: 0.8 });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "No verified browser voice for pl-PL."
+  });
+  assert.deepEqual(calls, []);
+});
+
 test("prefers guide speech when the target voice cannot be verified", async () => {
   const calls = [];
   const surface = createPlaybackSurface({

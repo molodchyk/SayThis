@@ -213,6 +213,12 @@ test("builds playback items from audio before source speech and guide speech", (
     label: "Guide speech",
     text: "eg-ZAM-pluh-term"
   }]);
+
+  assert.deepEqual(playbackItemsForResult({
+    pronunciation: {
+      simple: "English pronunciations vary; source form should use a matching voice"
+    }
+  }), []);
 });
 
 test("builds speech-specific result copies for playback rows", () => {

@@ -2,6 +2,9 @@ import {
   normalizeSelection,
   rankedAudioItems
 } from "../resolver-core.js";
+import {
+  normalizeSpeakableGuide
+} from "../resolver/pronunciation-guide.js";
 
 export function evidenceItemsForResult(result, limit = 6) {
   const community = result?.community || {};
@@ -56,7 +59,7 @@ export function playbackItemsForResult(result, limit = 4) {
   const audio = audioItemsForResult(result, limit)
     .map((item) => ({ ...item, kind: "audio" }));
   const speech = sourceSpeechItemForResult(result);
-  const guide = normalizeSelection(result?.pronunciation?.simple);
+  const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
 
   if (audio.length) {
     return audio;

@@ -142,6 +142,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Wiktionary enPR and respelling templates parsed into simple pronunciation guides.
 - Wiktionary alternative-form sections can populate variant spellings for later pronunciation-audio lookup.
 - Source-provided simple guides can drive fallback speech when no verified audio is available.
+- Guide fallback filters explanatory prose so only guide-like text is spoken aloud.
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.

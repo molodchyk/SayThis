@@ -193,6 +193,21 @@ test("keeps community audio corrections on source-form fallback speech", () => {
   assert.equal(resultToSpeechOptions(result).text, "Exampleterm");
 });
 
+test("does not use explanatory community guide prose as speech text", () => {
+  const entries = updateCommunityEntries({}, "Exampleterm", {
+    kind: "correction",
+    sourceForm: "Exampleterm",
+    simple: "English pronunciations vary; source form should use a matching voice"
+  });
+  const result = resolveTerm("Exampleterm", {
+    entries: [],
+    communityEntries: entries
+  });
+
+  assert.equal(result.pronunciation.simple, "English pronunciations vary; source form should use a matching voice");
+  assert.equal(resultToSpeechOptions(result).text, "Exampleterm");
+});
+
 test("uses variant-only local community corrections", () => {
   const entries = updateCommunityEntries({}, "Exampleterm", {
     kind: "correction",
@@ -474,6 +489,19 @@ test("uses remote simple guides for no-audio speech", () => {
 
   assert.equal(resultToSpeechOptions(result).text, "eg-ZAM-pluh-term");
   assert.deepEqual(result.variants, ["Regional form"]);
+});
+
+test("does not use explanatory remote guide prose as speech text", () => {
+  const result = createRemoteStructuredResult("Exampleterm", {
+    id: "remote:prose-guide",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    pronunciation: { simple: "English pronunciations vary; source form should use a matching voice" }
+  });
+
+  assert.equal(result.pronunciation.simple, "English pronunciations vary; source form should use a matching voice");
+  assert.equal(resultToSpeechOptions(result).text, "Exampleterm");
 });
 
 test("maps packaged audio paths to extension URLs", () => {

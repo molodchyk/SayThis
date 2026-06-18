@@ -14,7 +14,7 @@
       "origin": "Vietnamese surname",
       "pronunciation": {
         "ipa": "",
-        "simple": "ngwee-en; often shortened in English contexts",
+        "simple": "ngwee-en",
         "audio": []
       },
       "priority": "high",
@@ -35,7 +35,7 @@
       "origin": "Arabic place name",
       "pronunciation": {
         "ipa": "",
-        "simple": "English pronunciations vary; source form should use Arabic voice",
+        "simple": "",
         "audio": []
       },
       "priority": "high",
@@ -56,14 +56,14 @@
       "origin": "Irish given name and word meaning freedom",
       "pronunciation": {
         "ipa": "",
-        "simple": "SEER-sha or SUR-sha, depending on speaker",
+        "simple": "SEER-sha or SUR-sha",
         "audio": []
       },
       "priority": "medium",
       "sourceStatus": "structured-source",
       "confidence": "medium",
       "evidence": ["Bundled sample entry"],
-      "notes": "Useful example for name-focused lookup and audio source confidence."
+      "notes": "Useful example for name-focused lookup and audio source confidence. Pronunciation depends on speaker."
     },
     {
       "id": "gnocchi",

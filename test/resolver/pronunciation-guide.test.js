@@ -5,6 +5,7 @@ import {
   resultToSpeechOptions
 } from "../../src/resolver-core.js";
 import {
+  normalizeSpeakableGuide,
   pronunciationGuideFromSourceForm,
   withGeneratedPronunciationGuide
 } from "../../src/resolver/pronunciation-guide.js";
@@ -22,6 +23,15 @@ test("keeps supplied simple guides ahead of generated guides", () => {
   }, "\u041a\u0430\u043b\u0438\u043d\u0435", "uk");
 
   assert.equal(pronunciation.simple, "supplied-guide");
+});
+
+test("accepts speakable guides and rejects explanatory guide prose", () => {
+  assert.equal(normalizeSpeakableGuide("p-shih-kla-doh-voh"), "p-shih-kla-doh-voh");
+  assert.equal(normalizeSpeakableGuide("SEER-sha or SUR-sha"), "SEER-sha or SUR-sha");
+  assert.equal(normalizeSpeakableGuide("U S A"), "U S A");
+  assert.equal(normalizeSpeakableGuide("ngwee-en; often shortened in English contexts"), "");
+  assert.equal(normalizeSpeakableGuide("English pronunciations vary; source form should use a matching voice"), "");
+  assert.equal(normalizeSpeakableGuide("SEER-sha or SUR-sha, depending on speaker"), "");
 });
 
 test("keeps generated guides available without replacing source-form speech", () => {
