@@ -260,6 +260,133 @@ test("requests shared audio, stores approved entry, and refreshes the result", a
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("reuses local approved shared audio before requesting the endpoint", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+        sourceStatus: "generated-audio",
+        trustSignals: ["moderator-reviewed", "generated-audio", "audio-backed"]
+      }
+    },
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const calls = [];
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...baseResult,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch shared audio that is already approved locally");
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    }
+  });
+
+  assert.equal(result, refreshed);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: false, localResult: baseResult }]
+  ]);
+  assert.equal(storage.updates.length, 1);
+  assert.equal(storage.state.lastResult, refreshed);
+});
+
+test("does not reuse local approved shared audio with a mismatched language", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "it",
+        ttsLang: "it-IT",
+        audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+        sourceStatus: "generated-audio"
+      }
+    },
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const calls = [];
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...baseResult,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/audio/aud_new",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async (url, options) => {
+      calls.push(["fetch", url, JSON.parse(options.body)]);
+      return {
+        ok: true,
+        async json() {
+          return {
+            entry: {
+              term: "Exampletown",
+              lookupKey: "exampletown",
+              sourceForm: "Przykladowo",
+              language: "pl",
+              ttsLang: "pl-PL",
+              audioUrl: "https://example.com/audio/aud_new",
+              sourceStatus: "generated-audio"
+            }
+          };
+        }
+      };
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    }
+  });
+
+  assert.equal(result, refreshed);
+  assert.equal(calls[0][0], "fetch");
+  assert.equal(calls[0][2].ttsLang, "pl-PL");
+  assert.equal(storage.state.approvedCommunityEntries.exampletown.ttsLang, "pl-PL");
+});
+
 test("requests shared audio for generated-only results", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {},

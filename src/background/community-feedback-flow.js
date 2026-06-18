@@ -1,6 +1,6 @@
 import {
-  applyCommunitySummary,
   createLookupKey,
+  applyCommunitySummary,
   hasCommunityPronunciationData,
   hasPreferredAudio,
   normalizeSelection,
@@ -172,6 +172,11 @@ export async function requestSharedAudioForResult(text, result = null, options =
     throw new Error("Shared audio needs a resolved source form and language.");
   }
 
+  const localEntry = approvedAudioEntryForRequest(stored[storageKeys.approvedCommunityEntries], body);
+  if (localEntry) {
+    return refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
+  }
+
   const payload = await requestSharedAudioEntry(settings.communityEndpoint, body, dependencies);
   const incoming = normalizeApprovedEntries({
     entries: [payload.entry]
@@ -185,21 +190,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
     [storageKeys.approvedCommunityEntries]: approvedCommunityEntries
   });
 
-  const resolved = typeof dependencies.resolveSelection === "function"
-    ? await dependencies.resolveSelection(selectedText, {
-      useOnline: false,
-      localResult: baseResult
-    })
-    : baseResult;
-
-  if (resolved) {
-    await dependencies.setStorage({
-      [storageKeys.lastSelection]: selectedText,
-      [storageKeys.lastResult]: resolved
-    });
-  }
-
-  return resolved || baseResult;
+  return refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
 }
 
 export async function postCommunitySubmission(endpoint, submission, dependencies = {}) {
@@ -298,11 +289,50 @@ function sharedAudioRequestBody(selectedText, result = {}, options = {}) {
   };
 }
 
+function approvedAudioEntryForRequest(approvedEntries = {}, request = {}) {
+  const lookupKey = createLookupKey(request.lookupKey || request.term || request.sourceForm);
+  const entries = normalizeApprovedEntries({ entries: approvedEntries });
+  const entry = lookupKey && entries?.[lookupKey];
+  if (!entry?.audioUrl) {
+    return null;
+  }
+
+  const requestedLang = baseLanguage(request.ttsLang || request.language);
+  const entryLang = baseLanguage(entry.ttsLang || entry.language);
+  if (requestedLang && entryLang && requestedLang !== entryLang) {
+    return null;
+  }
+
+  return entry;
+}
+
+async function refreshSharedAudioResult(selectedText, baseResult, dependencies = {}, storageKeys = DEFAULT_STORAGE_KEYS) {
+  const resolved = typeof dependencies.resolveSelection === "function"
+    ? await dependencies.resolveSelection(selectedText, {
+      useOnline: false,
+      localResult: baseResult
+    })
+    : baseResult;
+
+  if (resolved) {
+    await dependencies.setStorage({
+      [storageKeys.lastSelection]: selectedText,
+      [storageKeys.lastResult]: resolved
+    });
+  }
+
+  return resolved || baseResult;
+}
+
 function firstSourceUrl(result = {}) {
   const source = Array.isArray(result.sources)
     ? result.sources.find((item) => item?.url)
     : null;
   return normalizeSelection(source?.url);
+}
+
+function baseLanguage(value) {
+  return normalizeSelection(value).toLowerCase().split(/[-_]/)[0];
 }
 
 function fetcher(dependencies = {}) {
