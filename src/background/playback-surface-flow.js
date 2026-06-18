@@ -65,7 +65,10 @@ export function createPlaybackSurface(dependencies = {}) {
   async function speakResult(result, overrides = {}) {
     const speech = resultToSpeechOptions(result, overrides);
     if (!speech.text) {
-      return;
+      return {
+        spoken: false,
+        error: "Speech unavailable."
+      };
     }
 
     const voice = await bestTtsVoice(speech.options.lang);

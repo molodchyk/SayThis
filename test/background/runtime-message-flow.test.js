@@ -125,6 +125,22 @@ test("reports missing matching voice from speak messages", async () => {
   assert.deepEqual(responses, [{ ok: false, error: "No matching browser voice for pl-PL." }]);
 });
 
+test("reports missing speech result from speak messages", async () => {
+  const responses = [];
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    result: { display: "" }
+  }, (value) => responses.push(value), {
+    speakResult: async () => undefined
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(responses, [{ ok: false, error: "Speech unavailable." }]);
+});
+
 test("rejects speak messages without selected text", () => {
   const responses = [];
   const handled = handleRuntimeMessage({

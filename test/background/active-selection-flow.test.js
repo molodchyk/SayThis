@@ -143,7 +143,7 @@ test("enriches no-audio keyboard selections before playback", async () => {
   ]);
 });
 
-test("falls back to speech when keyboard resolution fails", async () => {
+test("does not guess with raw speech when keyboard resolution fails", async () => {
   const calls = [];
   const result = await handleActiveSelectionCommand({ source: "keyboard" }, {
     getActiveTab: async () => ({ id: 7 }),
@@ -158,5 +158,5 @@ test("falls back to speech when keyboard resolution fails", async () => {
   assert.equal(result.handled, false);
   assert.equal(result.reason, "resolve-failed");
   assert.equal(result.error.message, "offline");
-  assert.deepEqual(calls, [["speakFallback", "Gnocchi"]]);
+  assert.deepEqual(calls, []);
 });

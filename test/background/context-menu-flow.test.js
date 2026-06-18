@@ -60,7 +60,7 @@ test("resolves, enriches, stores, and plays context menu selections", async () =
   ]);
 });
 
-test("falls back to speech when context menu resolution fails", async () => {
+test("does not guess with raw speech when context menu resolution fails", async () => {
   const calls = [];
   const result = await handleContextMenuClick({ menuItemId: "say", selectionText: "Gnocchi" }, {}, {
     resolveOptionsForMenuId: () => ({ ok: true, source: "context-menu", options: {} }),
@@ -75,5 +75,5 @@ test("falls back to speech when context menu resolution fails", async () => {
   assert.equal(result.handled, false);
   assert.equal(result.reason, "resolve-failed");
   assert.equal(result.error.message, "offline");
-  assert.deepEqual(calls, [["speakFallback", "Gnocchi"]]);
+  assert.deepEqual(calls, []);
 });

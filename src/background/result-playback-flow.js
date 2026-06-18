@@ -15,10 +15,10 @@ export async function playResolvedResult(result, tabId, dependencies = {}) {
 
   const speech = await dependencies.speakResult?.(result);
   dependencies.showResultOnTab?.(tabId, result);
-  if (speech?.spoken === false) {
+  if (!speech || speech.spoken === false) {
     return {
       mode: "speech-unavailable",
-      error: speech.error || "Speech unavailable."
+      error: speech?.error || "Speech unavailable."
     };
   }
 

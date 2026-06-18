@@ -32,8 +32,8 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     respondWithResult(
       resultPromise.then(async (result) => {
         const speech = await dependencies.speakResult(result, { rate: message.rate, lang: message.lang });
-        if (speech?.spoken === false) {
-          throw new Error(speech.error || "Speech failed.");
+        if (!speech || speech.spoken === false) {
+          throw new Error(speech?.error || "Speech unavailable.");
         }
         return { result, speech: speechSummary(speech) };
       }),

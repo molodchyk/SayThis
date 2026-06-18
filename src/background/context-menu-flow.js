@@ -28,7 +28,6 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
 
     return { handled: true, result: playableResult };
   } catch (error) {
-    dependencies.speakFallback?.(selectedText);
     return {
       handled: false,
       reason: "resolve-failed",

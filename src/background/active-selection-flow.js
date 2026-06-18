@@ -43,7 +43,6 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
 
     return { handled: true, result: playableResult };
   } catch (error) {
-    dependencies.speakFallback?.(selectedText);
     return {
       handled: false,
       reason: "resolve-failed",

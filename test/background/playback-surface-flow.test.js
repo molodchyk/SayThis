@@ -96,6 +96,22 @@ test("reports TTS adapter failures", async () => {
   ]);
 });
 
+test("reports missing speech text as unavailable", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({});
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "Speech unavailable."
+  });
+  assert.deepEqual(calls, []);
+});
+
 test("does not speak with a known non-matching TTS voice", async () => {
   const calls = [];
   const surface = createPlaybackSurface({
