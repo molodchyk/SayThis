@@ -391,7 +391,7 @@ function authorize(request, options) {
 function authorizeSharedAudioGeneration(request, options = {}) {
   const token = String(options.publicAudioGenerationToken || "").trim();
   if (!token) {
-    return { ok: true };
+    return { ok: false, status: 503, error: "generation-token-not-configured" };
   }
 
   return adminTokenMatches(request.headers?.authorization || request.headers?.Authorization || "", token)

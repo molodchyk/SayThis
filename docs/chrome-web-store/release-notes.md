@@ -8,7 +8,7 @@
 - Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
 - Keeps verified recording labels when generated fallback samples are also available.
 - Labels generated fallback playback separately from source-backed recordings in the popup and on-page card.
-- Keeps provider generation behind service-side opt-in, rate limits, and optional bearer-token controls.
+- Keeps provider generation behind service-side opt-in, rate limits, and required bearer-token controls.
 - Updates the Chrome extension and package version to 1.0.0.
 
 ## 0.1.0

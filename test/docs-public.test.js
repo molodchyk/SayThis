@@ -68,13 +68,18 @@ test("keeps Chrome Web Store automation docs aligned with StorePilot shape", asy
 
 test("documents community service deployment artifacts", async () => {
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const communityService = await readFile(new URL("../docs/community-service.md", import.meta.url), "utf8");
   const deployment = await readFile(new URL("../docs/deployment.md", import.meta.url), "utf8");
+  const releaseNotes = await readFile(new URL("../docs/chrome-web-store/release-notes.md", import.meta.url), "utf8");
   const dockerfile = await readFile(new URL("../Dockerfile.community", import.meta.url), "utf8");
   const dockerignore = await readFile(new URL("../.dockerignore", import.meta.url), "utf8");
 
   assert.match(readme, /docs\/deployment\.md/);
   assert.match(deployment, /docker build -f Dockerfile\.community/);
   assert.match(deployment, /SAYTHIS_ADMIN_TOKEN/);
+  assert.match(deployment, /SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token/);
+  assert.match(communityService, /Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>/);
+  assert.match(releaseNotes, /required bearer-token controls/);
   assert.match(dockerfile, /SAYTHIS_STORE=\/data\/community-store\.json/);
   assert.match(dockerfile, /server\/community-service\.js/);
   assert.match(dockerignore, /assets\/audio\/private/);

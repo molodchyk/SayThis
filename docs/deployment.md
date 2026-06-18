@@ -30,12 +30,12 @@ Use the public HTTPS `/community` URL as the extension community endpoint.
 - `SAYTHIS_PUBLIC_BASE_URL`: required before moderator-approved generated-audio artifacts can be stored and shared.
 - `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional bearer token for provider generation.
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: set to `1` only when shared provider generation should be available beyond already approved artifacts.
-- `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: optional bearer token for shared provider generation.
+- `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token for shared provider generation when public generation is enabled.
 - `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional Google-compatible speech endpoint override.
 - `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice override.
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`; defaults to `MP3`.
 
-Provider generation is only exposed through token-protected moderator endpoints. Public clients consume approved audio URLs after review; they do not call the paid provider directly.
+Provider generation is exposed through token-protected moderator endpoints. Public clients can consume approved audio URLs after review. Direct public provider generation requires both `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` and `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`.
 
 ## Abuse Controls
 

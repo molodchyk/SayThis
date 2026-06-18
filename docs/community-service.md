@@ -16,7 +16,7 @@ $env:SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN = ""
 $env:SAYTHIS_GOOGLE_TTS_VOICE = ""
 $env:SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING = "MP3"
 $env:SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED = "0"
-$env:SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN = ""
+$env:SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN = "change-me-before-enabling-generation"
 $env:SAYTHIS_RATE_LIMIT = "20"
 $env:SAYTHIS_RATE_WINDOW_MS = "60000"
 $env:SAYTHIS_MAX_PENDING_SUBMISSIONS = "1000"
@@ -74,7 +74,7 @@ Content-Type: application/json
 }
 ```
 
-The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. It can also reuse an approved entry with the same term, source form, alias, or variant when both the request and the entry have the same base language. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set. If `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN` is set, generation requests must include `Authorization: Bearer <token>`. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
+The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. It can also reuse an approved entry with the same term, source form, alias, or variant when both the request and the entry have the same base language. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set and generation requests include `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
 
 The extension submits only term-level pronunciation metadata. It does not submit page URLs or browsing history.
 
@@ -88,7 +88,7 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice name override
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: `0` by default; set to `1` only when shared provider generation should be available
-- `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: optional bearer token for shared provider generation
+- `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token for shared provider generation when public generation is enabled
 - `SAYTHIS_RATE_LIMIT`: `20`
 - `SAYTHIS_RATE_WINDOW_MS`: `60000`
 - `SAYTHIS_MAX_PENDING_SUBMISSIONS`: `1000`

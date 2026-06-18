@@ -226,7 +226,7 @@ test("reuses approved audio through the public shared audio action", async () =>
   assert.equal(response.body.entry.audioUrl, response.store.approved.exampletown.audioUrl);
 });
 
-test("public shared audio action generates only when enabled", async () => {
+test("public shared audio action generates only when enabled and authorized", async () => {
   const disabled = await handleCommunityRequest({
     method: "POST",
     url: "/community?action=audio",
@@ -244,6 +244,45 @@ test("public shared audio action generates only when enabled", async () => {
 
   assert.equal(disabled.status, 404);
   assert.equal(disabled.body.error, "shared-audio-not-found");
+
+  const missingToken = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: {},
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicBaseUrl: "https://community.example"
+  });
+
+  assert.equal(missingToken.status, 503);
+  assert.equal(missingToken.body.error, "generation-token-not-configured");
+
+  const unauthorized = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: {},
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicAudioGenerationToken: "client-token",
+    publicBaseUrl: "https://community.example"
+  });
+
+  assert.equal(unauthorized.status, 401);
+  assert.equal(unauthorized.body.error, "unauthorized");
 
   const ttsProvider = {
     async synthesize() {
@@ -263,7 +302,7 @@ test("public shared audio action generates only when enabled", async () => {
   const generated = await handleCommunityRequest({
     method: "POST",
     url: "/audio/generate",
-    headers: {},
+    headers: { authorization: "Bearer client-token" },
     body: JSON.stringify({
       term: "Exampletown",
       lookupKey: "exampletown",
@@ -273,6 +312,7 @@ test("public shared audio action generates only when enabled", async () => {
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
+    publicAudioGenerationToken: "client-token",
     publicBaseUrl: "https://community.example",
     ttsProvider
   });
