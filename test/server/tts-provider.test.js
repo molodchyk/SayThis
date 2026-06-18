@@ -71,8 +71,19 @@ test("converts provider output into a shared audio artifact payload", async () =
     term: "Exampletown",
     lookupKey: "exampletown",
     sourceForm: "Przykladowo",
+    aliases: ["Example alternate"],
     language: "pl",
-    ttsLang: "pl-PL"
+    ttsLang: "pl-PL",
+    languageName: "Polish",
+    origin: "sample source",
+    root: "przyklad",
+    domainHint: "field term",
+    variants: ["Regional reading"],
+    ipa: "pʂɨkˈwadɔvɔ",
+    simple: "pshih-KWAH-doh-vo",
+    sourceUrl: "https://source.example/przykladowo",
+    variantNote: "regional reading note",
+    trustSignals: ["source-backed", "root-noted"]
   }, {
     publicBaseUrl: "https://community.example",
     ttsProvider: provider
@@ -81,5 +92,11 @@ test("converts provider output into a shared audio artifact payload", async () =
   assert.equal(result.ok, true);
   assert.equal(result.value.provider, "pl-PL-TestVoice");
   assert.equal(result.value.mimeType, "audio/ogg");
+  assert.deepEqual(result.value.aliases, ["Example alternate"]);
+  assert.equal(result.value.languageName, "Polish");
+  assert.equal(result.value.root, "przyklad");
+  assert.equal(result.value.simple, "pshih-KWAH-doh-vo");
+  assert.equal(result.value.sourceUrl, "https://source.example/przykladowo");
+  assert.deepEqual(result.value.trustSignals, ["source-backed", "root-noted"]);
   assert.match(result.value.audioUrl, /^https:\/\/community\.example\/audio\/aud_[a-f0-9]{32}$/);
 });

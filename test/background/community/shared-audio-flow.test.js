@@ -92,8 +92,19 @@ test("includes aliases and variants in shared audio requests", async () => {
     aliases: ["Example alternate", "Shared spelling"],
     variants: ["Regional reading"],
     language: "pl",
+    languageName: "Polish",
+    origin: "sample source",
+    root: "przyklad",
+    domainHint: "field term",
     ttsLang: "pl-PL",
-    sourceStatus: "structured-source"
+    pronunciation: {
+      ipa: "pʂɨkˈwadɔvɔ",
+      simple: "pshih-KWAH-doh-vo"
+    },
+    sourceStatus: "structured-source",
+    variantNote: "regional reading note",
+    trustSignals: ["source-backed", "root-noted"],
+    sources: [{ label: "Example source", url: "https://source.example/przykladowo" }]
   };
 
   await requestSharedAudioForResult("Exampletown", baseResult, {}, {
@@ -122,6 +133,15 @@ test("includes aliases and variants in shared audio requests", async () => {
 
   assert.deepEqual(calls[0][2].aliases, ["Example alternate", "Shared spelling"]);
   assert.deepEqual(calls[0][2].variants, ["Regional reading"]);
+  assert.equal(calls[0][2].languageName, "Polish");
+  assert.equal(calls[0][2].origin, "sample source");
+  assert.equal(calls[0][2].root, "przyklad");
+  assert.equal(calls[0][2].domainHint, "field term");
+  assert.equal(calls[0][2].ipa, "pʂɨkˈwadɔvɔ");
+  assert.equal(calls[0][2].simple, "pshih-KWAH-doh-vo");
+  assert.equal(calls[0][2].sourceUrl, "https://source.example/przykladowo");
+  assert.equal(calls[0][2].variantNote, "regional reading note");
+  assert.deepEqual(calls[0][2].trustSignals, ["source-backed", "root-noted"]);
 });
 
 test("reuses local approved shared audio by source form and stores the selected alias", async () => {

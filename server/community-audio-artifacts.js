@@ -40,15 +40,25 @@ export function generatedAudioArtifactFromBody(body = {}, options = {}) {
       term: body.term,
       lookupKey: body.lookupKey,
       sourceForm: body.sourceForm,
+      aliases: body.aliases,
       language: body.language,
       ttsLang: body.ttsLang,
+      languageName: body.languageName,
+      origin: body.origin,
+      root: body.root,
+      domainHint: body.domainHint,
+      variants: body.variants,
+      ipa: body.ipa,
+      simple: body.simple,
       provider: body.provider,
       mimeType,
       byteLength: buffer.length,
       sha256: hash,
       dataBase64: buffer.toString("base64"),
       audioUrl,
-      sourceUrl: body.sourceUrl
+      sourceUrl: body.sourceUrl,
+      variantNote: body.variantNote,
+      trustSignals: body.trustSignals
     }
   };
 }
@@ -63,14 +73,24 @@ export function publicAudioArtifact(artifact = {}) {
     term: artifact.term,
     lookupKey: artifact.lookupKey,
     sourceForm: artifact.sourceForm,
+    aliases: artifact.aliases,
     language: artifact.language,
     ttsLang: artifact.ttsLang,
+    languageName: artifact.languageName,
+    origin: artifact.origin,
+    root: artifact.root,
+    domainHint: artifact.domainHint,
+    variants: artifact.variants,
+    ipa: artifact.ipa,
+    simple: artifact.simple,
     provider: artifact.provider,
     mimeType: artifact.mimeType,
     byteLength: artifact.byteLength,
     sha256: artifact.sha256,
     audioUrl: artifact.audioUrl,
-    sourceUrl: artifact.sourceUrl
+    sourceUrl: artifact.sourceUrl,
+    variantNote: artifact.variantNote,
+    trustSignals: artifact.trustSignals
   };
 }
 

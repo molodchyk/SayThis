@@ -76,11 +76,22 @@ test("stores generated audio artifacts as shared approved pronunciation audio", 
       term: "Exampletown",
       lookupKey: "exampletown",
       sourceForm: "Przykladowo",
+      aliases: ["Example alternate", "Example alternate", "Shared spelling"],
       language: "pl",
+      languageName: "Polish",
+      origin: "sample source",
+      root: "przyklad",
+      domainHint: "field term",
+      variants: ["Regional reading"],
+      ipa: "pʂɨkˈwadɔvɔ",
+      simple: "pshih-KWAH-doh-vo",
       ttsLang: "pl-PL",
       provider: "Example voice",
       mimeType: "audio/ogg",
-      dataBase64: audioBytes.toString("base64")
+      dataBase64: audioBytes.toString("base64"),
+      sourceUrl: "https://source.example/przykladowo",
+      variantNote: "regional reading note",
+      trustSignals: ["source-backed", "curator-reviewed", "verified-audio"]
     })
   }, createEmptyStore(), {
     adminToken: "secret",
@@ -92,14 +103,27 @@ test("stores generated audio artifacts as shared approved pronunciation audio", 
   assert.equal(response.body.artifact.mimeType, "audio/ogg");
   assert.equal(response.body.artifact.byteLength, audioBytes.length);
   assert.match(response.body.artifact.audioUrl, /^https:\/\/community\.example\/audio\/aud_[a-f0-9]{32}$/);
+  assert.deepEqual(response.body.artifact.aliases, ["Example alternate", "Shared spelling"]);
+  assert.deepEqual([response.body.artifact.languageName, response.body.artifact.root, response.body.artifact.simple, response.body.artifact.variantNote], ["Polish", "przyklad", "pshih-KWAH-doh-vo", "regional reading note"]);
   assert.equal(response.body.entry.lookupKey, "exampletown");
   assert.equal(response.body.entry.audioUrl, response.body.artifact.audioUrl);
   assert.equal(response.body.entry.ttsLang, "pl-PL");
+  assert.deepEqual(response.body.entry.aliases, ["Example alternate", "Shared spelling"]);
+  assert.deepEqual([response.body.entry.languageName, response.body.entry.origin, response.body.entry.root, response.body.entry.domainHint], ["Polish", "sample source", "przyklad", "field term"]);
+  assert.deepEqual(response.body.entry.variants, ["Regional reading"]);
+  assert.equal(response.body.entry.ipa, "pʂɨkˈwadɔvɔ");
+  assert.equal(response.body.entry.simple, "pshih-KWAH-doh-vo");
+  assert.equal(response.body.entry.sourceUrl, "https://source.example/przykladowo");
+  assert.equal(response.body.entry.variantNote, "regional reading note");
   assert.equal(response.body.entry.sourceStatus, "generated-audio");
   assert.deepEqual(response.body.entry.trustSignals, [
     "moderator-reviewed",
     "generated-audio",
-    "audio-backed"
+    "audio-backed",
+    "source-backed",
+    "root-noted",
+    "variant-noted",
+    "curator-reviewed"
   ]);
 
   response = await handleCommunityRequest({

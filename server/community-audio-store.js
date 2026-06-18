@@ -113,14 +113,15 @@ function uniqueLookupKeys(values = []) {
 }
 
 function normalizeList(value) {
-  if (Array.isArray(value)) {
-    return value.map(normalizeSelection).filter(Boolean);
-  }
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[;,\n]/);
 
-  return String(value || "")
-    .split(/[;,\n]/)
-    .map(normalizeSelection)
-    .filter(Boolean);
+  return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeTrustSignals(value) {
+  return normalizeList(value);
 }
 
 export function normalizeAudioArtifactMap(value = {}) {
@@ -164,8 +165,16 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
     term,
     lookupKey,
     sourceForm: normalizeSelection(value.sourceForm || term),
+    aliases: normalizeList(value.aliases),
     language: normalizeSelection(value.language),
     ttsLang: normalizeSelection(value.ttsLang),
+    languageName: normalizeSelection(value.languageName),
+    origin: normalizeSelection(value.origin),
+    root: normalizeSelection(value.root),
+    domainHint: normalizeSelection(value.domainHint),
+    variants: normalizeList(value.variants),
+    ipa: normalizeSelection(value.ipa),
+    simple: normalizeSelection(value.simple),
     provider: normalizeSelection(value.provider || "voice-service"),
     mimeType,
     byteLength,
@@ -173,6 +182,8 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
     dataBase64,
     audioUrl,
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
+    variantNote: normalizeSelection(value.variantNote),
+    trustSignals: normalizeTrustSignals(value.trustSignals),
     createdAt: normalizeSelection(value.createdAt) || now,
     updatedAt: normalizeSelection(value.updatedAt) || now
   };
@@ -187,28 +198,57 @@ function approvedEntryFromGeneratedAudio(artifact, now) {
     flags: 0,
     requests: 0,
     sourceForm: artifact.sourceForm,
-    aliases: [],
+    aliases: artifact.aliases,
     language: artifact.language,
     ttsLang: artifact.ttsLang,
-    languageName: "",
-    origin: "",
-    root: "",
-    domainHint: "",
-    variants: [],
-    ipa: "",
-    simple: "",
+    languageName: artifact.languageName,
+    origin: artifact.origin,
+    root: artifact.root,
+    domainHint: artifact.domainHint,
+    variants: artifact.variants,
+    ipa: artifact.ipa,
+    simple: artifact.simple,
     audioUrl: artifact.audioUrl,
     sourceUrl: artifact.sourceUrl,
-    variantNote: "",
-    trustSignals: [
-      "moderator-reviewed",
-      "generated-audio",
-      "audio-backed"
-    ],
+    variantNote: artifact.variantNote,
+    trustSignals: generatedAudioTrustSignals(artifact),
     sourceStatus: "generated-audio",
     approvedAt: now,
     updatedAt: now
   };
+}
+
+function generatedAudioTrustSignals(artifact = {}) {
+  const signals = [
+    "moderator-reviewed",
+    "generated-audio",
+    "audio-backed"
+  ];
+
+  if (artifact.sourceUrl) {
+    signals.push("source-backed");
+  }
+  if (artifact.root) {
+    signals.push("root-noted");
+  }
+  if (artifact.variantNote || artifact.variants?.length) {
+    signals.push("variant-noted");
+  }
+
+  signals.push(...artifact.trustSignals.filter(isContextTrustSignal));
+  return normalizeTrustSignals(signals);
+}
+
+function isContextTrustSignal(value) {
+  return [
+    "source-backed",
+    "root-noted",
+    "variant-noted",
+    "domain-reviewed",
+    "curator-reviewed",
+    "contributor-confirmed",
+    "repeated-confirmation"
+  ].includes(value);
 }
 
 function normalizeArtifactId(value) {

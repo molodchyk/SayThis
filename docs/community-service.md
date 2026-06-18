@@ -182,15 +182,26 @@ Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
   "term": "Exampletown",
   "lookupKey": "exampletown",
   "sourceForm": "Przykladowo",
+  "aliases": ["Example alternate"],
   "language": "pl",
+  "languageName": "Polish",
+  "origin": "sample source",
+  "root": "przyklad",
+  "domainHint": "field term",
+  "variants": ["Regional reading"],
+  "ipa": "<IPA transcription>",
+  "simple": "pshih-KWAH-doh-vo",
   "ttsLang": "pl-PL",
   "provider": "Example voice",
   "mimeType": "audio/ogg",
-  "dataBase64": "<base64 audio bytes>"
+  "dataBase64": "<base64 audio bytes>",
+  "sourceUrl": "https://source.example/przykladowo",
+  "variantNote": "regional reading note",
+  "trustSignals": ["source-backed", "root-noted"]
 }
 ```
 
-The service stores the bytes under `/audio/<artifact-id>`, adds an approved shared entry with that audio URL, and serves the artifact with immutable public cache headers. This path is moderator-only so generated samples can be checked, cost-controlled, and reused by every client through approved-entry refresh or same-source-form shared-audio requests.
+The service stores the bytes under `/audio/<artifact-id>`, adds an approved shared entry with that audio URL, preserves bounded pronunciation metadata, and serves the artifact with immutable public cache headers. This path is moderator-only so generated samples can be checked, cost-controlled, and reused by every client through approved-entry refresh or same-source-form shared-audio requests.
 
 Generate provider audio and store it as a reviewed artifact:
 
@@ -205,11 +216,14 @@ Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
   "sourceForm": "Przykladowo",
   "language": "pl",
   "ttsLang": "pl-PL",
+  "root": "przyklad",
+  "simple": "pshih-KWAH-doh-vo",
+  "sourceUrl": "https://source.example/przykladowo",
   "voiceName": "pl-PL-ExampleVoice"
 }
 ```
 
-This endpoint is admin-only and requires `SAYTHIS_PUBLIC_BASE_URL` plus a configured provider token. It sends only the source form or term text, locale, optional voice name, and speaking rate to the provider. The returned audio is stored once as `/audio/<artifact-id>` and published through an approved shared entry, so clients reuse the shared sample instead of regenerating it.
+This endpoint is admin-only and requires `SAYTHIS_PUBLIC_BASE_URL` plus a configured provider token. It sends only the source form or term text, locale, optional voice name, and speaking rate to the provider. Pronunciation metadata remains in the service artifact and approved shared entry. The returned audio is stored once as `/audio/<artifact-id>` and published through an approved shared entry, so clients reuse the shared sample instead of regenerating it.
 
 The `/admin` page supports pending submission review. It can approve submissions with edited source form, aliases, language, origin, root, domain hint, variants, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields. It can also generate provider audio from a pending submission, publish the returned shared audio artifact, and clear the pending item in one moderator action.
 

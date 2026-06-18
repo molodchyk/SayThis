@@ -110,12 +110,22 @@ export async function generatedAudioArtifactFromTts(body = {}, options = {}) {
     term: body.term,
     lookupKey: body.lookupKey,
     sourceForm: body.sourceForm || text,
+    aliases: body.aliases,
     language: body.language,
     ttsLang: body.ttsLang || ttsResult.voice?.languageCode,
+    languageName: body.languageName,
+    origin: body.origin,
+    root: body.root,
+    domainHint: body.domainHint,
+    variants: body.variants,
+    ipa: body.ipa,
+    simple: body.simple,
     provider: ttsResult.voice?.name || ttsResult.provider || provider.name,
     mimeType: ttsResult.audio.mimeType,
     dataBase64: ttsResult.audio.dataBase64,
-    sourceUrl: body.sourceUrl
+    sourceUrl: body.sourceUrl,
+    variantNote: body.variantNote,
+    trustSignals: body.trustSignals
   }, {
     maxAudioBytes: options.maxAudioBytes,
     publicBaseUrl: options.publicBaseUrl

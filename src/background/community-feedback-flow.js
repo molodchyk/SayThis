@@ -297,15 +297,25 @@ function sharedAudioRequestBody(selectedText, result = {}, options = {}) {
 
   const aliases = normalizeList(result?.aliases).slice(0, 12);
   const variants = normalizeList(result?.variants).slice(0, 12);
+  const ipa = normalizeSelection(result?.pronunciation?.ipa || result?.ipa);
+  const simple = normalizeSelection(result?.pronunciation?.simple || result?.simple);
   return {
     term: normalizeSelection(result?.display || result?.query || selectedText),
     lookupKey: createLookupKey(result?.lookupKey || selectedText),
     sourceForm,
     language,
     ttsLang,
+    ...optionalTextField("languageName", result?.languageName),
+    ...optionalTextField("origin", result?.origin),
+    ...optionalTextField("root", result?.root),
+    ...optionalTextField("domainHint", result?.domainHint),
     ...(aliases.length ? { aliases } : {}),
     ...(variants.length ? { variants } : {}),
+    ...(ipa ? { ipa } : {}),
+    ...(simple ? { simple } : {}),
     sourceUrl: firstSourceUrl(result),
+    ...optionalTextField("variantNote", result?.variantNote || result?.notes),
+    ...optionalListField("trustSignals", result?.trustSignals),
     rate: Number.isFinite(Number(options.rate)) ? Number(options.rate) : undefined
   };
 }
@@ -418,6 +428,16 @@ function normalizeList(value) {
     .filter(Boolean);
 }
 
+function optionalTextField(key, value) {
+  const normalized = normalizeSelection(value);
+  return normalized ? { [key]: normalized } : {};
+}
+
+function optionalListField(key, value) {
+  const normalized = normalizeList(value).slice(0, 12);
+  return normalized.length ? { [key]: normalized } : {};
+}
+
 async function refreshSharedAudioResult(selectedText, baseResult, dependencies = {}, storageKeys = DEFAULT_STORAGE_KEYS) {
   const resolved = typeof dependencies.resolveSelection === "function"
     ? await dependencies.resolveSelection(selectedText, {
@@ -437,6 +457,11 @@ async function refreshSharedAudioResult(selectedText, baseResult, dependencies =
 }
 
 function firstSourceUrl(result = {}) {
+  const direct = normalizeSelection(result.sourceUrl);
+  if (direct) {
+    return direct;
+  }
+
   const source = Array.isArray(result.sources)
     ? result.sources.find((item) => item?.url)
     : null;
