@@ -2,6 +2,7 @@ import {
   alternateItemsForResult,
   evidenceItemsForResult,
   playbackItemsForResult,
+  speechResultForPlaybackItem,
   sourceItemsForResult
 } from "../result-view.js";
 import {
@@ -77,7 +78,7 @@ export function renderPopupResult(result, elements, actions = {}) {
     button.textContent = item.kind === "audio" ? "Play" : "Speak";
     button.addEventListener("click", () => {
       if (item.kind !== "audio") {
-        speakResult(result, 0.82);
+        speakResult(speechResultForPlaybackItem(result, item), 0.82);
         return;
       }
 

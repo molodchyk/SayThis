@@ -5,6 +5,7 @@ import {
   audioItemsForResult,
   evidenceItemsForResult,
   playbackItemsForResult,
+  speechResultForPlaybackItem,
   sourceItemsForResult
 } from "../src/result-view.js";
 
@@ -191,6 +192,42 @@ test("builds playback items from audio before source speech and guide speech", (
     label: "Guide speech",
     text: "eg-ZAM-pluh-term"
   }]);
+});
+
+test("builds speech-specific result copies for playback rows", () => {
+  const result = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  };
+
+  assert.deepEqual(speechResultForPlaybackItem(result, {
+    kind: "speech",
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }), {
+    ...result,
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    ttsLang: "pl-PL"
+  });
+
+  assert.deepEqual(speechResultForPlaybackItem(result, {
+    kind: "guide",
+    text: "p-shih-kla-doh-voh"
+  }), {
+    ...result,
+    speakText: "p-shih-kla-doh-voh",
+    ttsLang: "en-US",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  });
 });
 
 test("builds compact alternate candidate summaries", () => {

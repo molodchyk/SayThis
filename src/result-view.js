@@ -71,6 +71,36 @@ export function playbackItemsForResult(result, limit = 4) {
   ].filter(Boolean).slice(0, limit);
 }
 
+export function speechResultForPlaybackItem(result, item = {}) {
+  const text = normalizeSelection(item.text);
+  if (!result || item?.kind === "audio" || !text) {
+    return result;
+  }
+
+  if (item.kind === "guide") {
+    return {
+      ...result,
+      speakText: text,
+      ttsLang: "en-US",
+      pronunciation: {
+        ...(result.pronunciation || {}),
+        simple: text
+      }
+    };
+  }
+
+  if (item.kind === "speech") {
+    return {
+      ...result,
+      sourceForm: text,
+      speakText: text,
+      ttsLang: normalizeSelection(item.lang || result.ttsLang || result.language)
+    };
+  }
+
+  return result;
+}
+
 export function alternateItemsForResult(result, limit = 3) {
   const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
   return alternates

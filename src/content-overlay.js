@@ -24,6 +24,7 @@
     normalizeLongText,
     normalizeText,
     playbackItems,
+    speechResultForPlaybackItem = (result) => result,
     sourceItems,
     trustSignalItems,
     variantItems,
@@ -173,7 +174,7 @@
     for (const button of root.querySelectorAll('[data-action="alternate"]')) {
       button.addEventListener("click", () => {
         const index = Number(button.dataset.alternateIndex);
-        speakCandidate(result.alternateResults?.[index], 0.82);
+        speakCandidate(preferredSpeechResult(result.alternateResults?.[index]), 0.82);
       });
     }
     for (const button of root.querySelectorAll('[data-action="recording"]')) {
@@ -181,7 +182,7 @@
         const index = Number(button.dataset.audioIndex);
         const item = recordings[index];
         if (item?.kind !== "audio") {
-          speakCandidate(result, 0.82);
+          speakCandidate(speechResultForPlaybackItem(result, item), 0.82);
         } else if (playAudioItem(item, result, 0.82)) {
           setStatus("Playing recording.");
         }
@@ -355,6 +356,13 @@
     }).then((response) => {
       setStatus(response?.ok ? speakingStatus(response, rate) : response?.error || "Speech failed.");
     });
+  }
+
+  function preferredSpeechResult(result) {
+    const items = playbackItems(result);
+    const item = items.find((candidate) => candidate.kind === "guide")
+      || items.find((candidate) => candidate.kind === "speech");
+    return speechResultForPlaybackItem(result, item);
   }
 
   function playAudio(result, rate) {

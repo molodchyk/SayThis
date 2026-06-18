@@ -82,6 +82,36 @@
     ].filter(Boolean);
   }
 
+  function speechResultForPlaybackItem(result, item = {}) {
+    const text = normalizeText(item.text);
+    if (!result || item?.kind === "audio" || !text) {
+      return result;
+    }
+
+    if (item.kind === "guide") {
+      return {
+        ...result,
+        speakText: text,
+        ttsLang: "en-US",
+        pronunciation: {
+          ...(result.pronunciation || {}),
+          simple: text
+        }
+      };
+    }
+
+    if (item.kind === "speech") {
+      return {
+        ...result,
+        sourceForm: text,
+        speakText: text,
+        ttsLang: normalizeText(item.lang || result.ttsLang || result.language)
+      };
+    }
+
+    return result;
+  }
+
   function firstSourceUrl(result) {
     const source = (Array.isArray(result?.sources) ? result.sources : [])
       .find((item) => normalizeUrl(item?.url));
@@ -255,6 +285,7 @@
     normalizeLongText,
     normalizeText,
     playbackItems,
+    speechResultForPlaybackItem,
     sourceItems,
     trustSignalItems,
     variantItems,

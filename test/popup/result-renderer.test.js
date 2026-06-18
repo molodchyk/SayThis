@@ -98,6 +98,8 @@ test("renders guide speech when no recording exists", () => {
 
   assert.equal(spoken.length, 1);
   assert.equal(spoken[0].result.display, "Exampleterm");
+  assert.equal(spoken[0].result.speakText, "eg-ZAM-pluh-term");
+  assert.equal(spoken[0].result.ttsLang, "en-US");
   assert.equal(spoken[0].rate, 0.82);
 });
 
@@ -128,6 +130,8 @@ test("renders source-form speech before guide speech", () => {
 
   assert.equal(spoken.length, 1);
   assert.equal(spoken[0].result.sourceForm, "Przykladowo");
+  assert.equal(spoken[0].result.speakText, "Przykladowo");
+  assert.equal(spoken[0].result.ttsLang, "pl-PL");
   assert.equal(spoken[0].rate, 0.82);
 });
 

@@ -68,6 +68,19 @@ test("normalizes overlay result display helpers", () => {
     label: "Guide speech",
     text: "eg-ZAM-pluh-term"
   }]);
+  assert.equal(view.speechResultForPlaybackItem(result, {
+    kind: "guide",
+    text: "NYOH-kee"
+  }).ttsLang, "en-US");
+  assert.equal(view.speechResultForPlaybackItem({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL"
+  }, {
+    kind: "speech",
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }).speakText, "Przykladowo");
   assert.deepEqual(plain(view.sourceItems(result)), [
     { label: "Wiktionary", url: "https://example.test/term" },
     { label: "Verified", url: "https://audio.example/verified.ogg" },

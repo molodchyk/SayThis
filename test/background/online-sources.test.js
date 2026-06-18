@@ -12,7 +12,8 @@ import {
   resolveWithVoiceService
 } from "../../src/background/online-sources.js";
 import {
-  buildCommonsAudioSearchUrl
+  buildCommonsAudioSearchUrl,
+  resolveWithCommonsAudioLookup
 } from "../../src/background/sources/commons-audio-source.js";
 
 test("adds local fallback language to online lookup hints", () => {
@@ -314,10 +315,12 @@ test("uses Commons audio before generated voice-service audio", async () => {
     category: "place"
   });
   const requestedUrls = [];
+  const requestedHeaders = [];
 
   try {
-    globalThis.fetch = async (url) => {
+    globalThis.fetch = async (url, options = {}) => {
       requestedUrls.push(String(url));
+      requestedHeaders.push(options.headers || {});
       const parsed = new URL(url);
 
       if (parsed.host === "www.wikidata.org") {
@@ -335,7 +338,7 @@ test("uses Commons audio before generated voice-service audio", async () => {
       if (parsed.host === "commons.wikimedia.org") {
         assert.equal(parsed.searchParams.get("generator"), "search");
         assert.equal(parsed.searchParams.get("gsrnamespace"), "6");
-        assert.equal(parsed.searchParams.get("gsrsearch"), "Przykladowo");
+        assert.equal(parsed.searchParams.get("gsrsearch"), "filetype:audio Przykladowo");
         return jsonResponse({
           query: {
             pages: {
@@ -368,6 +371,7 @@ test("uses Commons audio before generated voice-service audio", async () => {
     });
 
     assert.ok(requestedUrls.some((url) => url.startsWith("https://commons.wikimedia.org/w/api.php?")));
+    assert.ok(requestedHeaders.some((headers) => headers["Api-User-Agent"]?.startsWith("SayThis/")));
     assert.equal(result.sourceStatus, "verified-audio");
     assert.equal(result.sourceForm, "Przykladowo");
     assert.equal(result.pronunciation.audio[0].source, "Wikimedia Commons");
@@ -383,9 +387,51 @@ test("builds Commons audio search URLs for file namespace lookup", () => {
   assert.equal(url.origin, "https://commons.wikimedia.org");
   assert.equal(url.pathname, "/w/api.php");
   assert.equal(url.searchParams.get("generator"), "search");
+  assert.equal(url.searchParams.get("gsrsearch"), "filetype:audio Przykladowo");
   assert.equal(url.searchParams.get("gsrnamespace"), "6");
   assert.equal(url.searchParams.get("prop"), "imageinfo");
   assert.equal(url.searchParams.get("iiprop"), "url|mime|mediatype|extmetadata");
+});
+
+test("falls back to broad Commons search when audio-constrained search misses", async () => {
+  const originalFetch = globalThis.fetch;
+  const searches = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      searches.push(parsed.searchParams.get("gsrsearch"));
+      return jsonResponse(searches.length === 1
+        ? { query: { pages: {} } }
+        : {
+          query: {
+            pages: {
+              1: {
+                index: 1,
+                title: "File:Exampletown.ogg",
+                imageinfo: [{
+                  url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/Exampletown.ogg",
+                  descriptionurl: "https://commons.wikimedia.org/wiki/File:Exampletown.ogg",
+                  mime: "audio/ogg",
+                  mediatype: "AUDIO",
+                  extmetadata: {
+                    ObjectName: { value: "Exampletown.ogg" }
+                  }
+                }]
+              }
+            }
+          }
+        });
+    };
+
+    const result = await resolveWithCommonsAudioLookup("Exampletown", "Exampletown", "en");
+
+    assert.deepEqual(searches, ["filetype:audio Exampletown", "Exampletown"]);
+    assert.equal(result.sourceStatus, "verified-audio");
+    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/a/a1/Exampletown.ogg");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 function jsonResponse(payload) {

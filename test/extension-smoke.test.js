@@ -101,8 +101,10 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /lookupHints\(\)/);
   assert.match(source, /playbackItems\(result\)/);
   assert.match(resultView, /playbackItems/);
+  assert.match(resultView, /speechResultForPlaybackItem/);
   assert.match(resultView, /normalizeLanguageHints/);
-  assert.match(source, /speakCandidate\(result\.alternateResults\?\.\[index\], 0\.82\)/);
+  assert.match(source, /speakCandidate\(preferredSpeechResult\(result\.alternateResults\?\.\[index\]\), 0\.82\)/);
+  assert.match(source, /speechResultForPlaybackItem\(result, item\)/);
   assert.match(source, /item\?\.kind !== "audio"/);
   assert.match(source, /playAudioItem\(item, result, 0\.82\)/);
 

@@ -37,6 +37,9 @@ import {
   buildDbpediaResult
 } from "./dbpedia-source.js";
 import {
+  fetchWikimediaApi
+} from "./sources/wikimedia-api.js";
+import {
   resolveWithCommonsAudioCandidates
 } from "./sources/commons-audio-source.js";
 
@@ -193,7 +196,7 @@ export async function fetchWikidataSearch(query, language) {
     limit: "8"
   });
 
-  const searchResponse = await fetch(`https://www.wikidata.org/w/api.php?${params.toString()}`);
+  const searchResponse = await fetchWikimediaApi(`https://www.wikidata.org/w/api.php?${params.toString()}`);
   if (!searchResponse.ok) {
     return [];
   }
@@ -240,7 +243,7 @@ export async function resolveWithWiktionaryLookup(selectedText, lookupWord, opti
     return null;
   }
 
-  const response = await fetch(url);
+  const response = await fetchWikimediaApi(url);
   if (!response.ok) {
     return null;
   }
@@ -503,7 +506,7 @@ export async function resolveWithForvoCandidates(text, structuredResult, apiKey,
 export async function fetchWikidataEntities(matches) {
   const pairs = await Promise.all(matches.map(async (match) => {
     try {
-      const response = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${encodeURIComponent(match.id)}.json`);
+      const response = await fetchWikimediaApi(`https://www.wikidata.org/wiki/Special:EntityData/${encodeURIComponent(match.id)}.json`);
       if (!response.ok) {
         return null;
       }

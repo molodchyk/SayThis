@@ -7,6 +7,9 @@ import {
 import {
   pronunciationLookupCandidates
 } from "../../pronunciation-source-plan.js";
+import {
+  fetchWikimediaApi
+} from "./wikimedia-api.js";
 
 export async function resolveWithCommonsAudioCandidates(text, structuredResult) {
   const query = normalizeSelection(text);
@@ -35,23 +38,27 @@ export async function resolveWithCommonsAudioCandidates(text, structuredResult) 
 export async function resolveWithCommonsAudioLookup(selectedText, lookupWord, language = "", baseResult = {}) {
   const selected = normalizeSelection(selectedText);
   const query = normalizeSelection(lookupWord);
-  const url = buildCommonsAudioSearchUrl(query);
-  if (!selected || !query || !url) {
+  const urls = buildCommonsAudioSearchUrls(query);
+  if (!selected || !query || !urls.length) {
     return null;
   }
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Accept": "application/json"
+  let matches = [];
+  for (const url of urls) {
+    const response = await fetchWikimediaApi(url, {
+      method: "GET"
+    });
+    if (!response.ok) {
+      continue;
     }
-  });
-  if (!response.ok) {
-    return null;
+
+    const data = await response.json();
+    matches = commonsAudioMatches(data, query).slice(0, 3);
+    if (matches.length) {
+      break;
+    }
   }
 
-  const data = await response.json();
-  const matches = commonsAudioMatches(data, query).slice(0, 3);
   if (!matches.length) {
     return null;
   }
@@ -80,20 +87,28 @@ export async function resolveWithCommonsAudioLookup(selectedText, lookupWord, la
   });
 }
 
-export function buildCommonsAudioSearchUrl(lookupWord) {
+export function buildCommonsAudioSearchUrls(lookupWord) {
+  return [
+    buildCommonsAudioSearchUrl(lookupWord, { audioOnly: true }),
+    buildCommonsAudioSearchUrl(lookupWord, { audioOnly: false })
+  ].filter(Boolean);
+}
+
+export function buildCommonsAudioSearchUrl(lookupWord, options = {}) {
   const query = normalizeSelection(lookupWord);
   if (!query) {
     return "";
   }
+  const search = options.audioOnly === false ? query : `filetype:audio ${query}`;
 
   const params = new URLSearchParams({
     action: "query",
     format: "json",
     origin: "*",
     generator: "search",
-    gsrsearch: query,
+    gsrsearch: search,
     gsrnamespace: "6",
-    gsrlimit: "8",
+    gsrlimit: "12",
     gsrprop: "snippet|titlesnippet",
     prop: "imageinfo",
     iiprop: "url|mime|mediatype|extmetadata"
