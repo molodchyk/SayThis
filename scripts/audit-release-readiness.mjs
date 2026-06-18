@@ -24,6 +24,7 @@ export async function auditReleaseReadiness(root = ROOT) {
   const privacyForm = await readText(root, "docs/chrome-web-store/privacy-form.md");
   const reviewerNotes = await readText(root, "docs/chrome-web-store/reviewer-notes.md");
   const extraFields = await readText(root, "docs/chrome-web-store/additional-fields.md");
+  const storeIconPath = "store-listing/chrome-web-store/media/icon-128.png";
 
   if (packageJson.license !== "GPL-3.0-only") {
     fail("package.json license must be GPL-3.0-only.");
@@ -95,6 +96,12 @@ export async function auditReleaseReadiness(root = ROOT) {
     fail("Store listing must include the license.");
   }
 
+  if (/^(?:#|Name:|Summary:|Description:|Detailed Description:)/m.test(listing)) {
+    fail("Store listing en.md must contain only the detailed description body.");
+  }
+
+  await expectPngDimensions(root, storeIconPath, 128, 128, "StorePilot 128px icon", fail);
+
   if (!reviewerNotes.includes("Default online sources")) {
     fail("Reviewer notes must describe default online sources.");
   }
@@ -122,6 +129,24 @@ async function expectPath(root, path, label, fail) {
 
   try {
     await access(join(root, path));
+  } catch {
+    fail(`${label} does not exist: ${path}`);
+  }
+}
+
+async function expectPngDimensions(root, path, width, height, label, fail) {
+  try {
+    const png = await readFile(join(root, path));
+    if (png.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a") {
+      fail(`${label} must be a PNG file: ${path}`);
+      return;
+    }
+
+    const actualWidth = png.readUInt32BE(16);
+    const actualHeight = png.readUInt32BE(20);
+    if (actualWidth !== width || actualHeight !== height) {
+      fail(`${label} must be ${width} x ${height}; found ${actualWidth} x ${actualHeight}.`);
+    }
   } catch {
     fail(`${label} does not exist: ${path}`);
   }

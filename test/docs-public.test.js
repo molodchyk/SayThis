@@ -6,6 +6,8 @@ import {
   auditReleaseReadiness
 } from "../scripts/audit-release-readiness.mjs";
 
+const PNG_SIGNATURE = "89504e470d0a1a0a";
+
 test("README links the public privacy policy", async () => {
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
   const rootPolicy = await readFile(new URL("../PRIVACY.md", import.meta.url), "utf8");
@@ -36,9 +38,11 @@ test("keeps Chrome Web Store automation docs aligned with StorePilot shape", asy
   const additionalFields = await readFile(new URL("../docs/chrome-web-store/additional-fields.md", import.meta.url), "utf8");
   const category = await readFile(new URL("../docs/chrome-web-store/category.md", import.meta.url), "utf8");
   const privacyForm = await readFile(new URL("../docs/chrome-web-store/privacy-form.md", import.meta.url), "utf8");
+  const icon = await readFile(new URL("../store-listing/chrome-web-store/media/icon-128.png", import.meta.url));
 
   assert.match(listing, /SayThis lets you highlight unfamiliar text/);
   assert.match(listing, /Open source under the GPL-3\.0 license/);
+  assert.doesNotMatch(listing, /^(?:#|Name:|Summary:|Description:|Detailed Description:)/m);
   assert.match(additionalFields, /\[additional_fields\]/);
   assert.match(additionalFields, /homepage_url:\nhttps:\/\/github\.com\/molodchyk\/SayThis/);
   assert.match(category, /Selected category: Tools/);
@@ -46,6 +50,8 @@ test("keeps Chrome Web Store automation docs aligned with StorePilot shape", asy
   assert.match(privacyForm, /permission\.tts:/);
   assert.match(privacyForm, /remote_code:\nno/);
   assert.match(privacyForm, /certification\.no_sell_or_transfer:\nyes/);
+  assert.equal(icon.subarray(0, 8).toString("hex"), PNG_SIGNATURE);
+  assert.deepEqual(pngDimensions(icon), { width: 128, height: 128 });
 });
 
 test("documents community service deployment artifacts", async () => {
@@ -85,3 +91,10 @@ test("runs release audits in non-browser CI", async () => {
   assert.match(workflow, /npm run audit:release/);
   assert.deepEqual(failures, []);
 });
+
+function pngDimensions(buffer) {
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20)
+  };
+}
