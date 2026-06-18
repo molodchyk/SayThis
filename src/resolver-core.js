@@ -89,12 +89,12 @@ export function createRemoteStructuredResult(selection, source) {
   const sourceForm = normalizeSelection(source.sourceForm || source.display || query);
   const language = normalizeLanguage(source.language);
   const sourcePronunciation = source.pronunciation || {};
-  const pronunciation = withGeneratedPronunciationGuide(sourcePronunciation, sourceForm, language);
-  const hasAudio = Boolean(sourcePronunciation.audio?.length);
+  const pronunciation = normalizePronunciation(withGeneratedPronunciationGuide(sourcePronunciation, sourceForm, language));
+  const hasAudio = Boolean(pronunciation.audio.length);
   const speechSource = sourcePronunciation.simple
     ? { ...source, pronunciation }
     : source;
-  const sourceStatus = normalizeSourceStatus(source.sourceStatus || (hasAudio ? "verified-audio" : "structured-source"));
+  const sourceStatus = remoteSourceStatus(source.sourceStatus, hasAudio);
 
   return normalizeResult({
     id: source.id || `remote:${lookupKey}`,
@@ -148,6 +148,19 @@ function remoteSpeakText(source = {}, sourceForm, query, hasAudio) {
     : normalizeSelection(source.speakText || normalizeSpeakableGuide(source.pronunciation?.simple) || sourceForm || query);
 }
 
+function remoteSourceStatus(status, hasAudio) {
+  const sourceStatus = normalizeSourceStatus(status);
+  if (hasAudio) {
+    return sourceStatus === "unknown" ? "verified-audio" : sourceStatus;
+  }
+
+  if (["verified-audio", "generated-audio", "unknown"].includes(sourceStatus)) {
+    return "structured-source";
+  }
+
+  return sourceStatus;
+}
+
 function remoteTrustSignals(source = {}, sourceStatus, hasAudio) {
   const signals = [...normalizeTrustSignals(source.trustSignals)];
 
@@ -155,7 +168,7 @@ function remoteTrustSignals(source = {}, sourceStatus, hasAudio) {
     signals.push("source-backed");
   }
 
-  if (hasAudio || sourceStatus === "verified-audio") {
+  if (hasAudio) {
     signals.push("audio-backed");
   }
 

@@ -477,6 +477,56 @@ test("promotes remote results with verified audio", () => {
   assert.deepEqual(result.trustSignals, ["source-backed", "audio-backed"]);
 });
 
+test("does not promote unplayable remote audio metadata", () => {
+  const result = createRemoteStructuredResult("AudioTerm", {
+    id: "remote:audio-metadata",
+    display: "AudioTerm",
+    sourceForm: "AudioTerm",
+    language: "en",
+    pronunciation: {
+      audio: [{
+        label: "Pronunciation audio",
+        quality: "verified"
+      }]
+    }
+  });
+
+  assert.equal(result.sourceStatus, "structured-source");
+  assert.equal(result.sourceLabel, "Structured source");
+  assert.equal(result.confidence, "medium");
+  assert.deepEqual(result.pronunciation.audio, []);
+  assert.deepEqual(result.trustSignals, ["source-backed"]);
+});
+
+test("downgrades explicit audio status when no playable audio remains", () => {
+  const verified = createRemoteStructuredResult("AudioTerm", {
+    id: "remote:missing-verified",
+    display: "AudioTerm",
+    sourceForm: "AudioTerm",
+    language: "en",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: " ",
+        label: "Pronunciation audio",
+        quality: "verified"
+      }]
+    }
+  });
+  const generated = createRemoteStructuredResult("AudioTerm", {
+    id: "remote:missing-generated",
+    display: "AudioTerm",
+    sourceForm: "AudioTerm",
+    language: "en",
+    sourceStatus: "generated-audio"
+  });
+
+  assert.equal(verified.sourceStatus, "structured-source");
+  assert.equal(generated.sourceStatus, "structured-source");
+  assert.deepEqual(verified.trustSignals, ["source-backed"]);
+  assert.deepEqual(generated.trustSignals, ["source-backed"]);
+});
+
 test("uses remote simple guides for no-audio speech", () => {
   const result = createRemoteStructuredResult("Exampleterm", {
     id: "remote:simple",
