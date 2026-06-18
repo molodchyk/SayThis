@@ -1,5 +1,6 @@
 import {
   getBestAudio,
+  normalizeSelection,
   resultToSpeechOptions
 } from "../resolver-core.js";
 import {
@@ -69,6 +70,11 @@ export function createPlaybackSurface(dependencies = {}) {
 
     const voice = await bestTtsVoice(speech.options.lang);
     if (voice.checked && !voice.voiceName) {
+      const guideSpeech = await speakGuideFallback(result, speech.options.rate);
+      if (guideSpeech) {
+        return guideSpeech;
+      }
+
       return {
         spoken: false,
         error: `No matching browser voice for ${speech.options.lang}.`
@@ -85,6 +91,34 @@ export function createPlaybackSurface(dependencies = {}) {
       spoken: true,
       text: speech.text,
       options
+    };
+  }
+
+  async function speakGuideFallback(result, rate) {
+    const guide = normalizeSelection(result?.pronunciation?.simple);
+    if (!guide || !result?.ttsLang || baseVoiceLang(result.ttsLang) === "en") {
+      return null;
+    }
+
+    const guideVoice = await bestTtsVoice("en-US");
+    if (guideVoice.checked && !guideVoice.voiceName) {
+      return null;
+    }
+
+    const options = {
+      enqueue: false,
+      rate,
+      lang: "en-US",
+      ...(guideVoice.voiceName ? { voiceName: guideVoice.voiceName } : {})
+    };
+
+    dependencies.stopTts?.();
+    dependencies.speakTts?.(guide, options);
+    return {
+      spoken: true,
+      text: guide,
+      options,
+      fallback: "guide"
     };
   }
 

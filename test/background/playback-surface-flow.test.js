@@ -85,6 +85,42 @@ test("does not speak with a known non-matching TTS voice", async () => {
   assert.deepEqual(calls, []);
 });
 
+test("speaks a guide when the resolved locale voice is missing", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  }, { rate: 0.8 });
+
+  assert.deepEqual(result, {
+    spoken: true,
+    text: "p-shih-kla-doh-voh",
+    options: {
+      enqueue: false,
+      rate: 0.8,
+      lang: "en-US",
+      voiceName: "English Default"
+    },
+    fallback: "guide"
+  });
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "p-shih-kla-doh-voh", { enqueue: false, rate: 0.8, lang: "en-US", voiceName: "English Default" }]
+  ]);
+});
+
 test("selects exact and base-language TTS voices deterministically", () => {
   const voices = [
     { voiceName: "English Default", lang: "en-US" },

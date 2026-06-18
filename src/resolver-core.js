@@ -30,6 +30,9 @@ import {
   normalizePronunciation
 } from "./resolver/audio.js";
 import {
+  withGeneratedPronunciationGuide
+} from "./resolver/pronunciation-guide.js";
+import {
   communitySourceLinks,
   communitySummary,
   emptyCommunity,
@@ -117,7 +120,12 @@ export function createRemoteStructuredResult(selection, source) {
   const scriptInfo = detectScript(query);
   const sourceForm = normalizeSelection(source.sourceForm || source.display || query);
   const language = normalizeLanguage(source.language);
-  const hasAudio = Boolean(source.pronunciation?.audio?.length);
+  const sourcePronunciation = source.pronunciation || {};
+  const pronunciation = withGeneratedPronunciationGuide(sourcePronunciation, sourceForm, language);
+  const hasAudio = Boolean(sourcePronunciation.audio?.length);
+  const speechSource = sourcePronunciation.simple
+    ? { ...source, pronunciation }
+    : source;
   const sourceStatus = normalizeSourceStatus(source.sourceStatus || (hasAudio ? "verified-audio" : "structured-source"));
 
   return normalizeResult({
@@ -129,7 +137,7 @@ export function createRemoteStructuredResult(selection, source) {
     trustSignals: remoteTrustSignals(source, sourceStatus, hasAudio),
     variants: source.variants || [],
     sourceForm,
-    speakText: remoteSpeakText(source, sourceForm, query, hasAudio),
+    speakText: remoteSpeakText(speechSource, sourceForm, query, hasAudio),
     script: detectScript(sourceForm || query).script,
     queryScript: scriptInfo.script,
     language,
@@ -139,7 +147,7 @@ export function createRemoteStructuredResult(selection, source) {
     origin: source.origin || "",
     root: normalizeSelection(source.root),
     domainHint: normalizeSelection(source.domainHint || source.domain),
-    pronunciation: source.pronunciation || {},
+    pronunciation,
     confidence: source.confidence || (hasAudio ? "high" : "medium"),
     sourceStatus,
     sourceLabel: sourceLabelForStatus(sourceStatus),
