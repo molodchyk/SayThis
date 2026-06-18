@@ -108,6 +108,32 @@ test("normalizes overlay result display helpers", () => {
     label: "Guide speech",
     text: "eg-ZAM-pluh-term"
   }]);
+  assert.deepEqual(plain(view.playbackItems({
+    query: "P&L",
+    display: "P&L",
+    sourceForm: "P N L",
+    language: "en",
+    ttsLang: "en-US"
+  })), [{
+    kind: "speech",
+    label: "Source-form speech",
+    text: "P N L",
+    lang: "en-US"
+  }]);
+  assert.deepEqual(plain(view.playbackItems({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    ttsLang: "en-US",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  })), [{
+    kind: "guide",
+    label: "Guide speech",
+    text: "eg-ZAM-pluh-term"
+  }]);
   assert.equal(view.preferredSpeechResult({
     query: "Exampletown",
     display: "Exampletown",

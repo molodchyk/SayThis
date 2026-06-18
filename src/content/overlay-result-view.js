@@ -353,14 +353,17 @@
     const sourceForm = normalizeText(result.sourceForm || result.display || result.query);
     const lang = normalizeText(result.ttsLang || result.language);
     const selected = normalizeText(result.query || result.display);
+    const sourceKey = createLookupKey(sourceForm);
+    const selectedKey = createLookupKey(selected);
+    const sourceDiffers = Boolean(sourceKey && selectedKey && sourceKey !== selectedKey);
 
-    if (!sourceForm || !lang || baseLanguage(lang) === "en") {
+    if (!sourceForm || !lang || (baseLanguage(lang) === "en" && !sourceDiffers)) {
       return null;
     }
 
     return {
       kind: "speech",
-      label: selected && sourceForm !== selected ? "Source-form speech" : "Resolved speech",
+      label: sourceDiffers ? "Source-form speech" : "Resolved speech",
       text: sourceForm,
       lang
     };
