@@ -78,8 +78,10 @@ test("reports TTS adapter failures", async () => {
   });
 
   const result = await surface.speakResult({
-    display: "Exampleterm",
-    speakText: "Exampleterm",
+    query: "P&L",
+    display: "P&L",
+    sourceForm: "P N L",
+    speakText: "P N L",
     ttsLang: "en-US",
     sourceStatus: "structured-source"
   });
@@ -90,7 +92,7 @@ test("reports TTS adapter failures", async () => {
   });
   assert.deepEqual(calls, [
     ["stopTts"],
-    ["speakTts", "Exampleterm", { enqueue: false, rate: 0.82, lang: "en-US", voiceName: "English Default" }]
+    ["speakTts", "P N L", { enqueue: false, rate: 0.82, lang: "en-US", voiceName: "English Default" }]
   ]);
 });
 
@@ -155,6 +157,32 @@ test("does not speak structured results through the default browser voice withou
   assert.deepEqual(result, {
     spoken: false,
     error: "Speech unavailable without a resolved language."
+  });
+  assert.deepEqual(calls, []);
+});
+
+test("does not speak plain same-text English structured results with browser TTS", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    speakText: "Exampleterm",
+    ttsLang: "en-US",
+    sourceStatus: "structured-source"
+  });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "Speech unavailable for plain English text without a guide."
   });
   assert.deepEqual(calls, []);
 });

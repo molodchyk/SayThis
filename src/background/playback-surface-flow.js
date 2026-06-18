@@ -1,4 +1,5 @@
 import {
+  createLookupKey,
   getBestAudio,
   normalizeSelection,
   resultToSpeechOptions
@@ -102,6 +103,13 @@ export function createPlaybackSurface(dependencies = {}) {
       return {
         spoken: false,
         error: "Speech unavailable without a resolved language."
+      };
+    }
+
+    if (shouldRejectPlainEnglishSameTextSpeech(result, speech)) {
+      return {
+        spoken: false,
+        error: "Speech unavailable for plain English text without a guide."
       };
     }
 
@@ -255,6 +263,23 @@ export function createPlaybackSurface(dependencies = {}) {
     const text = normalizeSelection(speech.text);
     const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
     return !(guide && text === guide);
+  }
+
+  function shouldRejectPlainEnglishSameTextSpeech(result, speech = {}) {
+    const lang = normalizeSelection(speech.options?.lang || result?.ttsLang || result?.language);
+    if (baseVoiceLang(lang) !== "en") {
+      return false;
+    }
+
+    const text = normalizeSelection(speech.text);
+    const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
+    if (guide && text === guide) {
+      return false;
+    }
+
+    const selectedKey = createLookupKey(result?.query || result?.display);
+    const sourceKey = createLookupKey(result?.sourceForm || result?.display || result?.query);
+    return Boolean(selectedKey && sourceKey && selectedKey === sourceKey);
   }
 
   async function stopOffscreenAudio() {
