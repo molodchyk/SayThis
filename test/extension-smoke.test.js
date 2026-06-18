@@ -416,7 +416,8 @@ test("background includes per-lookup hints in online settings", async () => {
 
   assert.match(source, /normalizeLanguageHints/);
   assert.match(source, /const hasRequestHints = normalizeLanguageHints\(options\.languageHints\)\.length > 0/);
-  assert.match(source, /const shouldUseOnline = options\.useOnline \?\? \(hasRequestHints \|\| onlineSettings\.onlineByDefault\)/);
+  assert.match(source, /const shouldUseOnline = options\.useOnline \?\? \(/);
+  assert.match(source, /shouldUseOnlineForPronunciation\(selectedText, localResult\)/);
   assert.match(source, /onlineSettingsForRequest/);
   assert.match(source, /\.\.\.settings\.lookupLanguageHints/);
   assert.match(source, /\.\.\.requestHints/);

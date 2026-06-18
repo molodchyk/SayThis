@@ -82,6 +82,54 @@ test("uses cached online results before remote lookup", async () => {
   assert.ok(storedUpdates[0].resultCache.entries.athens);
 });
 
+test("checks online sources when local lookup lacks pronunciation", async () => {
+  const calls = [];
+  const storedUpdates = [];
+
+  const result = await resolveSelection("Exampletown", {}, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false }
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async (text, settings, credentials, context) => {
+      calls.push({ text, settings, credentials, localStatus: context.localResult.sourceStatus });
+      return createRemoteStructuredResult(text, {
+        id: "remote:exampletown",
+        display: "Exampletown",
+        sourceForm: "\u041a\u0430\u043b\u0438\u043d\u0435",
+        language: "uk",
+        evidence: ["Remote source"]
+      });
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].text, "Exampletown");
+  assert.equal(calls[0].localStatus, "best-effort-fallback");
+  assert.equal(result.id, "remote:exampletown");
+  assert.equal(result.language, "uk");
+  assert.equal(result.pronunciation.simple, "kah-lih-neh");
+  assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.lookupKey === "exampletown"));
+});
+
+test("keeps explicit local lookup local even without pronunciation", async () => {
+  const storedUpdates = [];
+  const result = await resolveSelection("Exampletown", { useOnline: false }, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false }
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async () => {
+      throw new Error("remote should not be called");
+    }
+  });
+
+  assert.equal(result.sourceStatus, "best-effort-fallback");
+  assert.equal("resultCache" in storedUpdates[0], false);
+});
+
 test("refreshes cached no-audio results for explicit online lookup", async () => {
   const cachedRemote = createRemoteStructuredResult("Exampletown", {
     id: "remote:exampletown",

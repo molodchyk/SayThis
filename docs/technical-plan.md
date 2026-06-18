@@ -105,7 +105,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Script-sensitive fallback for non-Latin selected text.
 - Latin orthography hints can guide fallback TTS and optional pronunciation-audio lookup when structured sources are absent.
 - Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.
-- Optional Wikidata lookup from the popup `Online` action.
+- Unknown local results automatically check public structured sources for pronunciation data; the popup `Online` action still forces a refresh.
 - Online source orchestration has a background-owned module outside the service-worker entry point.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Script-based Wikidata search languages for non-Latin selections.

@@ -61,7 +61,11 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
     : baseLocalResult;
 
   let result = localResult;
-  const shouldUseOnline = options.useOnline ?? (hasRequestHints || onlineSettings.onlineByDefault);
+  const shouldUseOnline = options.useOnline ?? (
+    hasRequestHints ||
+    onlineSettings.onlineByDefault ||
+    shouldUseOnlineForPronunciation(selectedText, localResult)
+  );
   let resultCache = stored[storageKeys.resultCache];
   if (shouldUseOnline) {
     const cacheOptions = { cacheScope: onlineCacheScope(onlineSettings, credentials) };
@@ -108,6 +112,15 @@ function shouldRefreshCachedResult(result, options = {}) {
 
 function hasPlayableAudio(result = {}) {
   return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
+}
+
+function shouldUseOnlineForPronunciation(selectedText, result = {}) {
+  return Boolean(
+    selectedText &&
+    !hasPlayableAudio(result) &&
+    !normalizeSelection(result?.pronunciation?.simple) &&
+    !normalizeSelection(result?.pronunciation?.ipa)
+  );
 }
 
 function suppliedLocalResult(options = {}) {

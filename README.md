@@ -71,7 +71,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Correction audio and source links are normalized before local storage or shared submission.
 - Import and export cleanup for local and approved shared pronunciation memory.
 - Sparse keyed memory imports preserve selected-term lookup keys while keeping source-form pronunciation data.
-- Optional Wikidata lookup from the popup when the user chooses `Online`.
+- Unknown local results automatically check public structured sources for pronunciation data; the popup `Online` action still forces a refresh.
 - Latin orthography hints can guide fallback TTS and optional pronunciation-audio lookup when structured sources are absent.
 - Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
