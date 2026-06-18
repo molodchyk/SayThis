@@ -21,6 +21,15 @@
     return rankedAudioItems(audio)[0] || null;
   }
 
+  function hasPreferredAudio(result) {
+    const audio = result?.pronunciation?.audio;
+    if (!Array.isArray(audio) || !audio.length) {
+      return false;
+    }
+
+    return rankedAudioItems(audio).some((item) => isPreferredAudioItem(item, result?.sourceStatus));
+  }
+
   function sourceItems(result) {
     const sources = Array.isArray(result?.sources) ? result.sources : [];
     const audio = audioItems(result);
@@ -238,6 +247,16 @@
       .map(({ item }) => item);
   }
 
+  function isPreferredAudioItem(item = {}, sourceStatus = "") {
+    const quality = normalizeText(item.quality).toLowerCase();
+    if (!item.url || quality === "generated") {
+      return false;
+    }
+
+    return qualityScore(quality) >= 85 ||
+      ["verified-audio", "community-confirmed"].includes(normalizeText(sourceStatus));
+  }
+
   function audioScore(item) {
     return qualityScore(item?.quality) + sourceScore(item?.source || item?.label);
   }
@@ -350,6 +369,7 @@
     escapeHtml,
     firstSourceUrl,
     getBestAudio,
+    hasPreferredAudio,
     normalizeAliases,
     normalizeLanguageHints,
     normalizeLongText,

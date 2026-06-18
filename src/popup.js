@@ -1,4 +1,4 @@
-import { getBestAudio, normalizeSelection } from "./resolver-core.js";
+import { getBestAudio, hasPreferredAudio, normalizeSelection } from "./resolver-core.js";
 import {
   playbackItemsForResult,
   preferredSpeechResultForResult,
@@ -397,7 +397,7 @@ function isGeneratedAudioItem(audio = {}) {
 function isSharedAudioCandidate(result = {}) {
   return Boolean(
     result &&
-    !getBestAudio(result) &&
+    !hasPreferredAudio(result) &&
     normalizeSelection(result.sourceForm || result.display || result.query) &&
     normalizeSelection(result.ttsLang) &&
     baseLanguage(result.ttsLang) !== "en" &&

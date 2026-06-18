@@ -43,6 +43,17 @@ test("normalizes overlay result display helpers", () => {
   assert.deepEqual(plain(view.trustSignalItems(result.trustSignals)), ["Trust: source-backed"]);
   assert.deepEqual(plain(view.variantItems(result.variants)), ["Variant: regional", "Variant: slow"]);
   assert.equal(view.getBestAudio(result).label, "Curated");
+  assert.equal(view.hasPreferredAudio(result), true);
+  assert.equal(view.hasPreferredAudio({
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Generated voice",
+        url: "https://audio.example/generated.ogg",
+        quality: "generated"
+      }]
+    }
+  }), false);
   assert.deepEqual(plain(view.audioItems(result)), [
     { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },

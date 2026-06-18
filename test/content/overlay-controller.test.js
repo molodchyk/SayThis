@@ -140,6 +140,153 @@ test("alternate playback prefers source-form speech before guide speech", async 
   assert.equal(sentMessages[0].message.result.ttsLang, "pl-PL");
 });
 
+test("speak action requests shared audio before generated playback", async () => {
+  const sentMessages = [];
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {
+      constructor() {
+        throw new Error("generated audio should use extension-owned playback");
+      }
+    },
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return { surface: "content" };
+    },
+    async sendRuntimeMessage(message, dependencies) {
+      sentMessages.push({ message, dependencies });
+      if (message.type === "SAYTHIS_REQUEST_SHARED_AUDIO") {
+        return {
+          ok: true,
+          result: {
+            ...message.result,
+            pronunciation: {
+              audio: [{
+                label: "Shared generated audio",
+                url: "https://audio.example/shared.ogg",
+                quality: "generated"
+              }]
+            }
+          }
+        };
+      }
+
+      return { ok: true };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener(generatedResult(), { onlineChecked: true });
+  fakeDom.root.querySelector('[data-action="speak"]').click();
+  await flushPromises();
+
+  assert.equal(sentMessages[0].message.type, "SAYTHIS_REQUEST_SHARED_AUDIO");
+  assert.equal(sentMessages[0].message.result.sourceForm, "Przykladowo");
+  assert.equal(sentMessages[1].message.type, "SAYTHIS_PLAY_AUDIO");
+  assert.equal(sentMessages[1].message.audio.url, "https://audio.example/shared.ogg");
+  assert.deepEqual(sentMessages[0].dependencies, { surface: "content" });
+});
+
+test("speak action refreshes generated audio before shared playback", async () => {
+  const sentMessages = [];
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {
+      constructor() {
+        throw new Error("generated audio should use extension-owned playback");
+      }
+    },
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return { surface: "content" };
+    },
+    async sendRuntimeMessage(message) {
+      sentMessages.push({ message });
+      if (message.type === "SAYTHIS_RESOLVE") {
+        return {
+          ok: true,
+          result: generatedResult()
+        };
+      }
+
+      if (message.type === "SAYTHIS_REQUEST_SHARED_AUDIO") {
+        return {
+          ok: true,
+          result: {
+            ...message.result,
+            pronunciation: {
+              audio: [{
+                label: "Shared generated audio",
+                url: "https://audio.example/shared.ogg",
+                quality: "generated"
+              }]
+            }
+          }
+        };
+      }
+
+      return { ok: true };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener(generatedResult(), { onlineChecked: false });
+  fakeDom.root.querySelector('[data-action="speak"]').click();
+  await flushPromises();
+
+  assert.deepEqual(sentMessages.map((item) => item.message.type), [
+    "SAYTHIS_RESOLVE",
+    "SAYTHIS_REQUEST_SHARED_AUDIO",
+    "SAYTHIS_PLAY_AUDIO"
+  ]);
+});
+
+function generatedResult() {
+  return {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Generated audio",
+        url: "https://voice.example/generated.ogg",
+        quality: "generated"
+      }]
+    }
+  };
+}
+
 function createFakeDom() {
   const state = {
     root: null
@@ -167,6 +314,12 @@ function createFakeDom() {
     },
     document
   };
+}
+
+async function flushPromises(turns = 6) {
+  for (let index = 0; index < turns; index += 1) {
+    await Promise.resolve();
+  }
 }
 
 class FakeRoot {

@@ -19,6 +19,7 @@
     escapeHtml,
     firstSourceUrl,
     getBestAudio,
+    hasPreferredAudio = (result) => Boolean(getBestAudio(result)),
     normalizeAliases,
     normalizeLanguageHints,
     normalizeLongText,
@@ -329,6 +330,26 @@
   }
 
   function speak(result, rate, options = {}) {
+    if (!options.onlineChecked && !hasPreferredAudio(result)) {
+      resolveOnline(result, {
+        autoPlay: true,
+        rate
+      });
+      return;
+    }
+
+    if (isSharedAudioCandidate(result)) {
+      ensureSharedAudio(result, rate).then((sharedResult) => {
+        if (playAudio(sharedResult, rate)) {
+          setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+          return;
+        }
+
+        speakCandidate(sharedResult, rate, { skipSharedAudio: true });
+      });
+      return;
+    }
+
     if (playAudio(result, rate)) {
       return;
     }
@@ -463,7 +484,7 @@
   function isSharedAudioCandidate(result = {}) {
     return Boolean(
       result &&
-      !getBestAudio(result) &&
+      !hasPreferredAudio(result) &&
       normalizeText(result.sourceForm || result.display || result.query) &&
       normalizeText(result.ttsLang) &&
       baseLanguage(result.ttsLang) !== "en" &&
