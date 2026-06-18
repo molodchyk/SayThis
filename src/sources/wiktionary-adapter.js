@@ -3,7 +3,9 @@ import {
   createRemoteStructuredResult,
   normalizeSelection
 } from "../resolver-core.js";
-import { commonsRedirectUrl } from "./wikidata-adapter.js";
+import {
+  commonsPronunciationAudioItem
+} from "./commons-audio-metadata.js";
 import { variantsFromWiktionaryText } from "../wiktionary/variants.js";
 
 const LANGUAGE_CODES = {
@@ -109,11 +111,9 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed, options = {}) {
     pronunciation: {
       ipa: parsed.ipa,
       simple: parsed.simple,
-      audio: audioFiles.map((audioFile, index) => ({
-        url: commonsRedirectUrl(audioFile),
+      audio: audioFiles.map((audioFile, index) => commonsPronunciationAudioItem(audioFile, {
         label: audioFiles.length > 1 ? `Pronunciation audio ${index + 1}` : "Pronunciation audio",
-        source: "Wiktionary",
-        quality: "verified"
+        source: "Wiktionary"
       }))
     },
     sourceStatus: audioFiles.length ? "verified-audio" : "structured-source",

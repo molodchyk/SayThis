@@ -129,6 +129,24 @@ test("builds a verified-audio pronunciation result from Wiktionary", () => {
   assert.equal(result.sources[0].url, "https://en.wiktionary.org/wiki/chiaroscuro");
 });
 
+test("ranks Lingua Libre Wiktionary audio as native-speaker audio", () => {
+  const result = buildWiktionaryResult("Exampletown", "Exampletown", `
+==French==
+
+===Pronunciation===
+* {{audio|fr|Fr-Exampletown.ogg|Audio}}
+* {{audio|fr|LL-Q150 (fra)-Speaker-Exampletown.wav|Audio}}
+`);
+
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.language, "fr");
+  assert.equal(result.pronunciation.audio[0].url.includes("LL-Q150%20(fra)-Speaker-Exampletown.wav"), true);
+  assert.equal(result.pronunciation.audio[0].label, "Lingua Libre audio 2");
+  assert.equal(result.pronunciation.audio[0].source, "Wiktionary (Lingua Libre)");
+  assert.equal(result.pronunciation.audio[0].quality, "native-speaker");
+  assert.equal(result.pronunciation.audio[1].quality, "verified");
+});
+
 test("uses the language section that carries pronunciation data", () => {
   const parsed = parseWiktionaryPronunciation(SECTIONED_WIKITEXT);
 

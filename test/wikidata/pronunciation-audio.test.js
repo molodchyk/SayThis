@@ -122,3 +122,40 @@ test("prefers Wikidata pronunciation audio with a matching language qualifier", 
     commonsRedirectUrl("Exampletown unqualified.ogg")
   ]);
 });
+
+test("ranks Lingua Libre Wikidata pronunciation audio as native-speaker audio", () => {
+  const result = buildWikidataResult("Exampletown", {
+    id: "QaudioLL",
+    label: "Exampletown",
+    language: "en",
+    description: "term"
+  }, {
+    id: "QaudioLL",
+    labels: {
+      en: { language: "en", value: "Exampletown" }
+    },
+    claims: {
+      P443: [{
+        mainsnak: {
+          datavalue: {
+            value: "Exampletown generic.ogg"
+          }
+        }
+      }, {
+        mainsnak: {
+          datavalue: {
+            value: "LL-Q150 (fra)-Speaker-Exampletown.wav"
+          }
+        }
+      }]
+    },
+    aliases: {}
+  });
+
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.pronunciation.audio[0].url, commonsRedirectUrl("LL-Q150 (fra)-Speaker-Exampletown.wav"));
+  assert.equal(result.pronunciation.audio[0].label, "Lingua Libre audio 2");
+  assert.equal(result.pronunciation.audio[0].source, "Wikimedia Commons (Lingua Libre)");
+  assert.equal(result.pronunciation.audio[0].quality, "native-speaker");
+  assert.equal(result.pronunciation.audio[1].quality, "verified");
+});

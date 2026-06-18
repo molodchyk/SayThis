@@ -152,7 +152,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Guide fallback filters explanatory prose so only guide-like text is spoken aloud.
 - Generated Cyrillic source-form guides account for resolved language differences.
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
-- Lingua Libre recordings found through Wikimedia Commons are ranked as native-speaker audio ahead of generic verified Commons recordings.
+- Lingua Libre recordings found through Commons-backed sources are ranked as native-speaker audio ahead of generic verified recordings.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Custom source matching uses term, source form, aliases, and variants from returned entries.

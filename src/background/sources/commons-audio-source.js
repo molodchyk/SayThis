@@ -11,6 +11,10 @@ import {
   languageNameFromCode
 } from "../../resolver/language.js";
 import {
+  commonsPronunciationAudioItem,
+  isLinguaLibreAudioFile
+} from "../../sources/commons-audio-metadata.js";
+import {
   fetchWikimediaApi
 } from "./wikimedia-api.js";
 
@@ -144,7 +148,6 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
   const mime = String(info.mime || "").toLowerCase();
   const mediaType = String(info.mediatype || "").toLowerCase();
   const fileName = stripMarkup(page.title).replace(/^File:/i, "");
-  const linguaLibre = isLinguaLibreFile(fileName);
   const lookupKey = createLookupKey(lookupWord);
   const pronunciationScore = scorePronunciationSignal(page, lookupWord, language);
   const matchText = createLookupKey([
@@ -166,12 +169,11 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
   }
 
   return {
-    audio: {
+    audio: commonsPronunciationAudioItem(fileName, {
       url,
-      label: linguaLibre ? "Lingua Libre audio" : "Wikimedia Commons audio",
-      source: linguaLibre ? "Wikimedia Commons (Lingua Libre)" : "Wikimedia Commons",
-      quality: linguaLibre ? "native-speaker" : "verified"
-    },
+      label: "Wikimedia Commons audio",
+      source: "Wikimedia Commons"
+    }),
     sourceUrl
   };
 }
@@ -232,7 +234,7 @@ function scorePronunciationSignal(page = {}, lookupWord, language = "") {
     return 0;
   }
 
-  if (isLinguaLibreFile(fileName)) {
+  if (isLinguaLibreAudioFile(fileName)) {
     return 40;
   }
 
@@ -278,10 +280,6 @@ function boundaryLookupKey(value) {
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function isLinguaLibreFile(fileName) {
-  return /^LL[-_]/i.test(String(fileName || "").trim());
 }
 
 function fileLanguagePrefix(fileName) {

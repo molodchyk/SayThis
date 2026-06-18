@@ -22,11 +22,18 @@ import {
 import {
   wikidataPronunciationAudioFiles
 } from "../wikidata/pronunciation-audio.js";
+import {
+  commonsPronunciationAudioItem,
+  commonsRedirectUrl
+} from "./commons-audio-metadata.js";
 
 export {
   normalizeSearchLanguageHints,
   wikidataSearchLanguages
 } from "../wikidata/search-languages.js";
+export {
+  commonsRedirectUrl
+} from "./commons-audio-metadata.js";
 
 const IPA_TRANSCRIPTION = "P898";
 export function buildWikidataResult(query, match, entity, options = {}) {
@@ -58,11 +65,9 @@ export function buildWikidataResult(query, match, entity, options = {}) {
     pronunciation: {
       ipa,
       simple: "",
-      audio: audioFiles.map((audioFile, index) => ({
-        url: commonsRedirectUrl(audioFile),
+      audio: audioFiles.map((audioFile, index) => commonsPronunciationAudioItem(audioFile, {
         label: audioFiles.length > 1 ? `Pronunciation audio ${index + 1}` : "Pronunciation audio",
-        source: "Wikimedia Commons",
-        quality: "verified"
+        source: "Wikimedia Commons"
       }))
     },
     sourceStatus: audioFiles.length ? "verified-audio" : "structured-source",
@@ -141,10 +146,6 @@ export function createWikidataSearchOnlyResult(query, match) {
     evidence: [`Wikidata search match ${match.id}`],
     sources: [{ label: "Wikidata", url: match.concepturi || `https://www.wikidata.org/wiki/${match.id}` }]
   });
-}
-
-export function commonsRedirectUrl(fileName) {
-  return `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(fileName)}`;
 }
 
 function searchOnlyAliases(query, match = {}) {
