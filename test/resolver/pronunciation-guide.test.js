@@ -14,6 +14,9 @@ test("builds a readable guide from Cyrillic source forms", () => {
   const sourceForm = "\u041a\u0430\u043b\u0438\u043d\u0435";
 
   assert.equal(pronunciationGuideFromSourceForm(sourceForm, "uk"), "kah-lih-neh");
+  assert.equal(pronunciationGuideFromSourceForm("\u0413\u0430\u043b\u0438\u043d\u0430", "ru"), "gah-lee-nah");
+  assert.equal(pronunciationGuideFromSourceForm("\u0429\u0443\u043a\u0430", "bg"), "shtoo-kah");
+  assert.equal(pronunciationGuideFromSourceForm("\u040a\u0435\u0433\u043e\u0448", "sr"), "nyeh-gohsh");
   assert.equal(pronunciationGuideFromSourceForm("Exampleterm", "en"), "");
 });
 

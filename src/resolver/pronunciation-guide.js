@@ -55,6 +55,28 @@ const CYRILLIC_SOUND_MAP = {
   "\u044b": "ih",
   "\u044d": "eh"
 };
+const CYRILLIC_SOUND_MAP_OVERRIDES = {
+  bg: {
+    "\u0433": "g",
+    "\u0438": "ee",
+    "\u0449": "sht",
+    "\u044a": "uh"
+  },
+  ru: {
+    "\u0433": "g",
+    "\u0438": "ee"
+  },
+  sr: {
+    "\u0452": "dj",
+    "\u0433": "g",
+    "\u0438": "ee",
+    "\u0458": "y",
+    "\u0459": "ly",
+    "\u045a": "ny",
+    "\u045b": "ch",
+    "\u045f": "dzh"
+  }
+};
 const GUIDE_PROSE_MARKERS = /\b(?:context|contexts|depending|often|pronunciation|pronunciations|pronounced|speaker|speakers|source form|usually|varies|vary|voice)\b/i;
 
 export function pronunciationGuideFromSourceForm(sourceForm, language = "") {
@@ -63,9 +85,10 @@ export function pronunciationGuideFromSourceForm(sourceForm, language = "") {
     return "";
   }
 
+  const soundMap = cyrillicSoundMap(language);
   return text
     .split(/\s+/)
-    .map(cyrillicWordGuide)
+    .map((word) => cyrillicWordGuide(word, soundMap))
     .filter(Boolean)
     .join(" ");
 }
@@ -96,12 +119,20 @@ export function withGeneratedPronunciationGuide(pronunciation = {}, sourceForm, 
     : pronunciation;
 }
 
-function cyrillicWordGuide(word) {
+function cyrillicSoundMap(language = "") {
+  const baseLanguage = String(language || "").trim().toLowerCase().split(/[-_]/)[0];
+  return {
+    ...CYRILLIC_SOUND_MAP,
+    ...(CYRILLIC_SOUND_MAP_OVERRIDES[baseLanguage] || {})
+  };
+}
+
+function cyrillicWordGuide(word, soundMap = CYRILLIC_SOUND_MAP) {
   const syllables = [];
   let syllable = "";
 
   for (const char of normalizeSelection(word).toLocaleLowerCase()) {
-    const sound = CYRILLIC_SOUND_MAP[char];
+    const sound = soundMap[char];
     if (!sound) {
       continue;
     }

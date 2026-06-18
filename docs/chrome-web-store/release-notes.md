@@ -18,6 +18,7 @@
 - Requires word-boundary matches before treating Wikimedia Commons audio as verified pronunciation audio.
 - Rejects region-specific browser voices from the wrong locale variant when using verified speech fallback.
 - Filters on-page guide speech so explanatory guide notes are not offered as spoken fallback.
+- Makes generated Cyrillic source-form guides language-sensitive.
 - Ignores incompatible provider voice overrides so generated fallback audio follows the resolved TTS locale.
 - Keeps provider generation behind service-side opt-in, rate limits, and required bearer-token controls.
 - Updates the Chrome extension and package version to 1.0.0.
