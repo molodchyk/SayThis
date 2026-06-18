@@ -9,6 +9,7 @@ export const DEFAULT_RESULT_CACHE_LIMIT = 200;
 
 const CACHEABLE_STATUSES = new Set([
   "verified-audio",
+  "generated-audio",
   "community-confirmed",
   "structured-source",
   "generated-from-source"

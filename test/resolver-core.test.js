@@ -97,8 +97,10 @@ test("maps resolver status helpers from a narrow module", () => {
   assert.equal(confidenceRank("high"), 5);
   assert.equal(normalizeConfidence("unclear"), "unknown");
   assert.equal(normalizeSourceStatus("verified-audio"), "verified-audio");
+  assert.equal(normalizeSourceStatus("generated-audio"), "generated-audio");
   assert.equal(normalizeSourceStatus("generated"), "unknown");
   assert.equal(strongerConfidence("low", "medium"), "medium");
+  assert.equal(sourceLabelForStatusDirect("generated-audio"), "Generated audio");
   assert.equal(sourceLabelForStatusDirect("structured-source"), "Structured source");
   assert.equal(sourceLabelForStatus("structured-source"), sourceLabelForStatusDirect("structured-source"));
 });
@@ -526,6 +528,37 @@ test("merges verified audio into a matching structured result", () => {
   assert.ok(merged.evidence.includes("Pronunciation audio from Forvo"));
   assert.ok(merged.sources.some((source) => source.label === "Forvo word page"));
   assert.deepEqual(merged.alternateResults, []);
+});
+
+test("merges generated audio into a matching structured result", () => {
+  const structured = createRemoteStructuredResult("Exampleterm", {
+    id: "remote:structured",
+    display: "Exampleterm",
+    sourceForm: "Sourceform",
+    language: "pl",
+    evidence: ["Structured source candidate"]
+  });
+  const generated = createRemoteStructuredResult("Exampleterm", {
+    id: "voice:sourceform",
+    display: "Sourceform",
+    sourceForm: "Sourceform",
+    language: "pl",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/speak?text=Sourceform&lang=pl-PL",
+        label: "Voice service audio",
+        quality: "generated"
+      }]
+    },
+    evidence: ["Audio URL from voice service"]
+  });
+  const merged = mergeRemoteResult(structured, generated);
+
+  assert.equal(merged.id, "remote:structured");
+  assert.equal(merged.sourceStatus, "generated-audio");
+  assert.equal(merged.sourceLabel, "Generated audio");
+  assert.equal(merged.pronunciation.audio[0].quality, "generated");
 });
 
 test("preserves useful displaced remote candidates", () => {

@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  createRemoteStructuredResult,
   resolveTerm
 } from "../../src/resolver-core.js";
 import {
   onlineLookupLanguageHints,
   resolveWithCustomSourceCandidates,
   resolveWithWikidata,
-  resolveWithOnlineSources
+  resolveWithOnlineSources,
+  resolveWithVoiceService
 } from "../../src/background/online-sources.js";
 
 test("adds local fallback language to online lookup hints", () => {
@@ -258,6 +260,43 @@ test("retries custom source with resolved source-form candidates", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("builds voice-service audio from resolved structured results", async () => {
+  const structured = createRemoteStructuredResult("Exampletown", {
+    id: "remote:exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    languageName: "Polish",
+    ttsLang: "pl-PL",
+    category: "place"
+  });
+
+  const result = resolveWithVoiceService("Exampletown", structured, {
+    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}",
+    voiceServiceLabel: "Example voice"
+  });
+
+  assert.equal(result.sourceStatus, "generated-audio");
+  assert.equal(result.sourceForm, "Przykladowo");
+  assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
+});
+
+test("does not build voice-service audio when a recording exists", async () => {
+  const recorded = createRemoteStructuredResult("Exampletown", {
+    id: "remote:recorded",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/przykladowo.ogg" }]
+    }
+  });
+
+  assert.equal(resolveWithVoiceService("Exampletown", recorded, {
+    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  }), null);
 });
 
 function jsonResponse(payload) {

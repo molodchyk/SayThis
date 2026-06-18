@@ -36,6 +36,7 @@ import {
   normalizeApiKey,
   normalizeCredentials,
   normalizeHttpsEndpoint as normalizeEndpoint,
+  normalizeHttpsUrlTemplate,
   normalizeLanguageHints,
   normalizeLanguageCode,
   normalizeSettings,
@@ -57,6 +58,9 @@ const forvoApiKey = document.getElementById("forvo-api-key");
 const forvoLanguage = document.getElementById("forvo-language");
 const gazetteerEnabled = document.getElementById("gazetteer-enabled");
 const gazetteerEndpoint = document.getElementById("gazetteer-endpoint");
+const voiceServiceEnabled = document.getElementById("voice-service-enabled");
+const voiceServiceUrlTemplate = document.getElementById("voice-service-url-template");
+const voiceServiceLabel = document.getElementById("voice-service-label");
 const cacheSummaryText = document.getElementById("cache-summary");
 const clearCacheButton = document.getElementById("clear-cache");
 const memorySummary = document.getElementById("memory-summary");
@@ -90,6 +94,9 @@ forvoApiKey.addEventListener("change", saveSettings);
 forvoLanguage.addEventListener("change", saveSettings);
 gazetteerEnabled.addEventListener("change", saveSettings);
 gazetteerEndpoint.addEventListener("change", saveSettings);
+voiceServiceEnabled.addEventListener("change", saveSettings);
+voiceServiceUrlTemplate.addEventListener("change", saveSettings);
+voiceServiceLabel.addEventListener("change", saveSettings);
 clearCacheButton.addEventListener("click", clearLookupCache);
 syncEnabled.addEventListener("change", saveSettings);
 pullEnabled.addEventListener("change", saveSettings);
@@ -129,6 +136,9 @@ async function init() {
   forvoLanguage.value = settings.forvoLanguage;
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
+  voiceServiceEnabled.checked = settings.voiceServiceEnabled;
+  voiceServiceUrlTemplate.value = settings.voiceServiceUrlTemplate;
+  voiceServiceLabel.value = settings.voiceServiceLabel;
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
@@ -152,6 +162,7 @@ async function saveSettings() {
   const wantedDbpedia = dbpediaEnabled.checked && Boolean(normalizeEndpoint(dbpediaEndpoint.value));
   const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
+  const wantedVoiceService = voiceServiceEnabled.checked && Boolean(normalizeHttpsUrlTemplate(voiceServiceUrlTemplate.value));
   const credentials = credentialsFromControls();
   const settings = await settingsFromControls(credentials);
   await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials, optionsRuntimeAdapters());
@@ -171,6 +182,9 @@ async function saveSettings() {
   forvoLanguage.value = settings.forvoLanguage;
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
+  voiceServiceEnabled.checked = settings.voiceServiceEnabled;
+  voiceServiceUrlTemplate.value = settings.voiceServiceUrlTemplate;
+  voiceServiceLabel.value = settings.voiceServiceLabel;
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
@@ -179,6 +193,7 @@ async function saveSettings() {
       (settings.customSourceEnabled || !wantedCustomSource) &&
       (settings.dbpediaEnabled || !wantedDbpedia) &&
       (settings.gazetteerEnabled || !wantedGazetteer) &&
+      (settings.voiceServiceEnabled || !wantedVoiceService) &&
       (settings.forvoEnabled || !wantedForvo)
     ? "Settings saved."
     : "Settings saved. Endpoint permission was not granted.");
@@ -262,6 +277,9 @@ async function importData() {
   forvoLanguage.value = settings.forvoLanguage;
   gazetteerEnabled.checked = settings.gazetteerEnabled;
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
+  voiceServiceEnabled.checked = settings.voiceServiceEnabled;
+  voiceServiceUrlTemplate.value = settings.voiceServiceUrlTemplate;
+  voiceServiceLabel.value = settings.voiceServiceLabel;
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
   syncEndpoint.value = settings.communityEndpoint;
@@ -370,6 +388,9 @@ async function settingsFromControls(credentials) {
     forvoLanguage: normalizeLanguageCode(forvoLanguage.value),
     gazetteerEnabled: gazetteerEnabled.checked,
     gazetteerEndpoint: normalizeEndpoint(gazetteerEndpoint.value),
+    voiceServiceEnabled: voiceServiceEnabled.checked,
+    voiceServiceUrlTemplate: normalizeHttpsUrlTemplate(voiceServiceUrlTemplate.value),
+    voiceServiceLabel: normalizeShortText(voiceServiceLabel.value),
     communitySyncEnabled: syncEnabled.checked,
     communityPullEnabled: pullEnabled.checked,
     communityEndpoint: normalizeEndpoint(syncEndpoint.value)
@@ -411,6 +432,14 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
     settings = {
       ...settings,
       gazetteerEnabled: Boolean(granted)
+    };
+  }
+
+  if (settings.voiceServiceEnabled) {
+    const granted = await requestEndpointPermission(settings.voiceServiceUrlTemplate, optionsRuntimeAdapters());
+    settings = {
+      ...settings,
+      voiceServiceEnabled: Boolean(granted)
     };
   }
 

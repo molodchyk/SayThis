@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildVoiceServiceAudioUrl,
+  buildVoiceServiceResult,
   buildCustomSourceResult,
   buildCustomSourceUrl,
+  normalizeVoiceServiceUrlTemplate,
   selectBestCustomEntry
 } from "../src/custom-source-adapter.js";
 
@@ -17,6 +20,45 @@ test("builds a custom source lookup URL", () => {
 
 test("rejects non-https custom source endpoints", () => {
   assert.equal(buildCustomSourceUrl("term", "http://example.com/search"), "");
+});
+
+test("builds voice-service audio URLs from templates", () => {
+  assert.equal(buildVoiceServiceAudioUrl("https://voice.example/speak?text={text}&lang={lang}", {
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }), "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
+
+  assert.equal(buildVoiceServiceAudioUrl("https://voice.example/speak", {
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }), "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
+});
+
+test("rejects unsafe voice-service templates", () => {
+  assert.equal(normalizeVoiceServiceUrlTemplate("http://voice.example/speak?text={text}"), "");
+  assert.equal(normalizeVoiceServiceUrlTemplate("javascript:alert(1)"), "");
+});
+
+test("builds generated audio results from resolved source forms", () => {
+  const result = buildVoiceServiceResult("Exampletown", {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    languageName: "Polish",
+    ttsLang: "pl-PL",
+    category: "place"
+  }, {
+    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}",
+    label: "Example voice"
+  });
+
+  assert.equal(result.sourceStatus, "generated-audio");
+  assert.equal(result.sourceLabel, "Generated audio");
+  assert.equal(result.sourceForm, "Przykladowo");
+  assert.equal(result.language, "pl");
+  assert.equal(result.ttsLang, "pl-PL");
+  assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
+  assert.equal(result.pronunciation.audio[0].quality, "generated");
 });
 
 test("selects the matching custom source entry", () => {

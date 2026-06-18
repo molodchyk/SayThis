@@ -29,7 +29,8 @@ import {
 } from "../resolver/transliteration.js";
 import {
   buildCustomSourceResult,
-  buildCustomSourceUrl
+  buildCustomSourceUrl,
+  buildVoiceServiceResult
 } from "../custom-source-adapter.js";
 import {
   buildDbpediaLookupUrl,
@@ -84,8 +85,14 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
       lookupLanguageHints: languageHints
     })
     : null;
+  const audioBaseResult = [refinedStructuredResult, forvoResult, context.localResult]
+    .filter(Boolean)
+    .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
+  const voiceServiceResult = settings.voiceServiceEnabled
+    ? resolveWithVoiceService(text, audioBaseResult, settings)
+    : null;
 
-  return [refinedStructuredResult, forvoResult]
+  return [refinedStructuredResult, forvoResult, voiceServiceResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }
@@ -99,6 +106,17 @@ export function onlineLookupLanguageHints(configuredHints = [], localResult = {}
   return localLanguage && !hints.includes(localLanguage)
     ? [...hints, localLanguage].slice(0, 8)
     : hints;
+}
+
+export function resolveWithVoiceService(text, result, settings = {}) {
+  if (!settings.voiceServiceUrlTemplate || hasPlayableAudio(result)) {
+    return null;
+  }
+
+  return buildVoiceServiceResult(text, result, {
+    urlTemplate: settings.voiceServiceUrlTemplate,
+    label: settings.voiceServiceLabel
+  });
 }
 
 export async function resolveSafely(resolver, ...args) {
@@ -529,4 +547,8 @@ function normalizeLanguageHint(value) {
     .replace(/_/g, "-")
     .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0]
     ?.split("-")[0] || "";
+}
+
+function hasPlayableAudio(result = {}) {
+  return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
 }

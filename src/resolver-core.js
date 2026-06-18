@@ -351,7 +351,9 @@ function shouldMergeAudioIntoResult(primary, audioResult) {
 }
 
 function mergeAudioIntoResult(primary, audioResult) {
-  const sourceStatus = "verified-audio";
+  const sourceStatus = audioResult.sourceStatus === "generated-audio"
+    ? "generated-audio"
+    : "verified-audio";
   const pronunciation = {
     ipa: primary.pronunciation?.ipa || audioResult.pronunciation?.ipa || "",
     simple: primary.pronunciation?.simple || audioResult.pronunciation?.simple || "",
@@ -370,7 +372,7 @@ function mergeAudioIntoResult(primary, audioResult) {
 }
 
 function hasAudioResult(result = {}) {
-  return result.sourceStatus === "verified-audio" && Boolean(result.pronunciation?.audio?.some((item) => item?.url));
+  return ["verified-audio", "generated-audio"].includes(result.sourceStatus) && Boolean(result.pronunciation?.audio?.some((item) => item?.url));
 }
 
 function hasCompatibleLanguage(primary = {}, candidate = {}) {

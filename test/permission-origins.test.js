@@ -24,6 +24,8 @@ test("collects optional remote permission origins", () => {
     forvoEnabled: true,
     gazetteerEnabled: true,
     gazetteerEndpoint: "http://maps.example/search",
+    voiceServiceEnabled: true,
+    voiceServiceUrlTemplate: "https://voice.example/speak?text={text}&lang={lang}",
     communityPullEnabled: true,
     communityEndpoint: "https://community.example/saythis"
   }, {
@@ -32,6 +34,7 @@ test("collects optional remote permission origins", () => {
     "https://packs.example/*",
     "https://lookup.example/*",
     "https://apifree.forvo.com/*",
+    "https://voice.example/*",
     "https://community.example/*"
   ]);
 });
@@ -45,6 +48,8 @@ test("finds stale optional remote permission origins", () => {
     forvoEnabled: true,
     gazetteerEnabled: true,
     gazetteerEndpoint: "https://maps.example/search",
+    voiceServiceEnabled: true,
+    voiceServiceUrlTemplate: "https://voice.example/speak?text={text}",
     communitySyncEnabled: true,
     communityEndpoint: "https://community.example/submit"
   };
@@ -55,6 +60,7 @@ test("finds stale optional remote permission origins", () => {
     dbpediaEndpoint: "https://lookup.example/new",
     forvoEnabled: false,
     gazetteerEnabled: false,
+    voiceServiceEnabled: false,
     communityPullEnabled: true,
     communityEndpoint: "https://community.example/approved"
   };
@@ -65,7 +71,8 @@ test("finds stale optional remote permission origins", () => {
     forvoApiKey: "key"
   }), [
     "https://apifree.forvo.com/*",
-    "https://maps.example/*"
+    "https://maps.example/*",
+    "https://voice.example/*"
   ]);
 });
 
@@ -84,6 +91,9 @@ test("normalizes extension settings and credentials from one module", () => {
     forvoLanguage: "PT_BR",
     gazetteerEnabled: true,
     gazetteerEndpoint: "http://maps.example/search",
+    voiceServiceEnabled: true,
+    voiceServiceUrlTemplate: " https://voice.example/speak?text={text}&lang={lang} ",
+    voiceServiceLabel: " Example   voice ",
     communitySyncEnabled: true,
     communityPullEnabled: true,
     communityEndpoint: "https://community.example/saythis"
@@ -104,6 +114,9 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(settings.forvoEnabled, true);
   assert.equal(settings.forvoLanguage, "pt-br");
   assert.equal(settings.gazetteerEnabled, false);
+  assert.equal(settings.voiceServiceEnabled, true);
+  assert.equal(settings.voiceServiceUrlTemplate, "https://voice.example/speak?text={text}&lang={lang}");
+  assert.equal(settings.voiceServiceLabel, "Example voice");
   assert.equal(settings.communitySyncEnabled, true);
   assert.equal(settings.communityPullEnabled, true);
   assert.equal(credentials.forvoApiKey, "keywithspaces");
@@ -112,5 +125,5 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(normalizeShortText(` ${"a".repeat(90)} `).length, 80);
   assert.equal(normalizeLanguageCode("EN_us"), "en-us");
   assert.deepEqual(normalizeLanguageHints(["EN-us", "pl", "en", "bad!"]), ["en", "pl"]);
-  assert.equal(onlineCacheScope(settings, credentials), "wikidata pl,pt,ja custom https://packs.example/search?set=terms dbpedia https://lookup.example/api/search forvo pt-br");
+  assert.equal(onlineCacheScope(settings, credentials), "wikidata pl,pt,ja custom https://packs.example/search?set=terms dbpedia https://lookup.example/api/search forvo pt-br voice https://voice.example/speak?text={text}&lang={lang}");
 });

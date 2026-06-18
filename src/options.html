@@ -71,6 +71,18 @@
           <span>Place-name endpoint</span>
           <input id="gazetteer-endpoint" type="url" placeholder="https://example.com/search" spellcheck="false">
         </label>
+        <label class="toggle">
+          <input id="voice-service-enabled" type="checkbox">
+          <span>Use a voice-service audio URL template</span>
+        </label>
+        <label class="field">
+          <span>Voice-service URL template</span>
+          <input id="voice-service-url-template" type="url" placeholder="https://voice.example/speak?text={text}&lang={lang}" spellcheck="false">
+        </label>
+        <label class="field">
+          <span>Voice-service label</span>
+          <input id="voice-service-label" type="text" placeholder="optional label shown in sources" spellcheck="false">
+        </label>
         <p id="cache-summary" class="summary">No cached lookups.</p>
         <div class="actions">
           <button id="clear-cache" type="button" class="secondary">Clear Lookup Cache</button>

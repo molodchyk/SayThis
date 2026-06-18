@@ -24,6 +24,93 @@ export function buildCustomSourceUrl(query, endpoint) {
   return url.toString();
 }
 
+export function buildVoiceServiceResult(selection, result = {}, options = {}) {
+  const selectedText = normalizeSelection(selection);
+  const template = normalizeVoiceServiceUrlTemplate(options.urlTemplate);
+  const sourceForm = normalizeSelection(result.sourceForm || result.display || selectedText);
+  const language = normalizeSelection(result.language);
+  const ttsLang = normalizeSelection(result.ttsLang || language);
+  const url = buildVoiceServiceAudioUrl(template, {
+    text: sourceForm,
+    sourceForm,
+    query: selectedText,
+    lang: ttsLang,
+    language
+  });
+  if (!selectedText || !sourceForm || !url) {
+    return null;
+  }
+
+  const label = normalizeSelection(options.label || "Voice service");
+  return createRemoteStructuredResult(selectedText, {
+    id: `voice-service:${createLookupKey([sourceForm, ttsLang || language].join(" "))}`,
+    display: result.display || sourceForm,
+    sourceForm,
+    aliases: result.aliases || [],
+    variants: result.variants || [],
+    language,
+    languageName: result.languageName,
+    ttsLang,
+    category: result.category || "term",
+    root: result.root,
+    domainHint: result.domainHint,
+    pronunciation: {
+      ipa: result.pronunciation?.ipa || "",
+      simple: result.pronunciation?.simple || "",
+      audio: [{
+        url,
+        label: `${label} audio`,
+        source: label,
+        quality: "generated"
+      }]
+    },
+    sourceStatus: "generated-audio",
+    confidence: "medium",
+    evidence: [`Audio URL from ${label}`],
+    sources: [{ label, url }]
+  });
+}
+
+export function buildVoiceServiceAudioUrl(template, values = {}) {
+  const normalizedTemplate = normalizeVoiceServiceUrlTemplate(template);
+  if (!normalizedTemplate) {
+    return "";
+  }
+
+  const safeValues = {
+    text: normalizeSelection(values.text),
+    sourceForm: normalizeSelection(values.sourceForm || values.text),
+    query: normalizeSelection(values.query),
+    lang: normalizeSelection(values.lang),
+    language: normalizeSelection(values.language || baseLanguage(values.lang))
+  };
+
+  const expanded = hasVoiceServicePlaceholders(normalizedTemplate)
+    ? expandVoiceServiceTemplate(normalizedTemplate, safeValues)
+    : appendVoiceServiceParams(normalizedTemplate, safeValues);
+
+  return normalizeUrl(expanded);
+}
+
+export function normalizeVoiceServiceUrlTemplate(value) {
+  const raw = String(value || "").replace(/\s+/g, " ").trim().slice(0, 2048);
+  if (!raw) {
+    return "";
+  }
+
+  const sample = hasVoiceServicePlaceholders(raw)
+    ? expandVoiceServiceTemplate(raw, {
+      text: "example",
+      sourceForm: "example",
+      query: "example",
+      lang: "en-US",
+      language: "en"
+    })
+    : raw;
+
+  return normalizeUrl(sample) ? raw : "";
+}
+
 export function buildCustomSourceResult(query, payload = {}, options = {}) {
   const selectedText = normalizeSelection(query);
   const lookupText = normalizeSelection(options.lookupWord || selectedText);
@@ -278,6 +365,46 @@ function normalizeUrl(value) {
   } catch {
     return "";
   }
+}
+
+function hasVoiceServicePlaceholders(template) {
+  return voiceServicePlaceholders().some((placeholder) => template.includes(placeholder));
+}
+
+function expandVoiceServiceTemplate(template, values) {
+  return voiceServicePlaceholders().reduce((next, placeholder) => {
+    const key = placeholder.slice(1, -1);
+    return next.replaceAll(placeholder, encodeURIComponent(values[key] || ""));
+  }, template);
+}
+
+function appendVoiceServiceParams(template, values) {
+  try {
+    const url = new URL(template);
+    if (values.text) {
+      url.searchParams.set("text", values.text);
+    }
+    if (values.lang) {
+      url.searchParams.set("lang", values.lang);
+    }
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+function voiceServicePlaceholders() {
+  return [
+    "{text}",
+    "{sourceForm}",
+    "{query}",
+    "{lang}",
+    "{language}"
+  ];
+}
+
+function baseLanguage(value) {
+  return normalizeSelection(value).split("-")[0];
 }
 
 function normalizeConfidence(value) {

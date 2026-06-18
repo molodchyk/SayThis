@@ -1,5 +1,6 @@
 const SOURCE_LABELS = {
   "verified-audio": "Verified audio",
+  "generated-audio": "Generated audio",
   "community-confirmed": "Community confirmed",
   "structured-source": "Structured source",
   "generated-from-source": "Generated from source form",

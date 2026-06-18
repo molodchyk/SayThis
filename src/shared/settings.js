@@ -17,6 +17,9 @@ export const DEFAULT_SETTINGS = {
   forvoLanguage: "",
   gazetteerEnabled: false,
   gazetteerEndpoint: "",
+  voiceServiceEnabled: false,
+  voiceServiceUrlTemplate: "",
+  voiceServiceLabel: "",
   ...DEFAULT_SYNC_SETTINGS
 };
 
@@ -31,6 +34,7 @@ export function normalizeSettings(settings = {}) {
   const gazetteerEndpoint = normalizeHttpsEndpoint(settings.gazetteerEndpoint);
   const forvoLanguage = normalizeLanguageCode(settings.forvoLanguage);
   const lookupLanguageHints = normalizeLanguageHints(settings.lookupLanguageHints);
+  const voiceServiceUrlTemplate = normalizeHttpsUrlTemplate(settings.voiceServiceUrlTemplate);
 
   return {
     ...DEFAULT_SETTINGS,
@@ -48,6 +52,9 @@ export function normalizeSettings(settings = {}) {
     forvoEnabled: Boolean(settings.forvoEnabled),
     gazetteerEndpoint,
     gazetteerEnabled: Boolean(settings.gazetteerEnabled && gazetteerEndpoint),
+    voiceServiceUrlTemplate,
+    voiceServiceLabel: normalizeShortText(settings.voiceServiceLabel),
+    voiceServiceEnabled: Boolean(settings.voiceServiceEnabled && voiceServiceUrlTemplate),
     ...syncSettings
   };
 }
@@ -68,7 +75,8 @@ export function onlineCacheScope(settings, credentials = {}) {
     safeSettings.customSourceEnabled && safeSettings.customSourceEndpoint ? `custom ${safeSettings.customSourceEndpoint}` : "",
     safeSettings.dbpediaEnabled && safeSettings.dbpediaEndpoint ? `dbpedia ${safeSettings.dbpediaEndpoint}` : "",
     safeSettings.gazetteerEnabled && safeSettings.gazetteerEndpoint ? `gazetteer ${safeSettings.gazetteerEndpoint}` : "",
-    safeSettings.forvoEnabled && safeCredentials.forvoApiKey ? `forvo ${safeSettings.forvoLanguage || "all"}` : ""
+    safeSettings.forvoEnabled && safeCredentials.forvoApiKey ? `forvo ${safeSettings.forvoLanguage || "all"}` : "",
+    safeSettings.voiceServiceEnabled && safeSettings.voiceServiceUrlTemplate ? `voice ${safeSettings.voiceServiceUrlTemplate}` : ""
   ].filter(Boolean).join(" ");
 }
 
@@ -92,6 +100,20 @@ export function normalizeApiKey(value) {
 
 export function normalizeShortText(value) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+export function normalizeHttpsUrlTemplate(value) {
+  const raw = String(value || "").replace(/\s+/g, " ").trim().slice(0, 2048);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" ? raw : "";
+  } catch {
+    return "";
+  }
 }
 
 export function normalizeLanguageCode(value) {
