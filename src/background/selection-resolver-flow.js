@@ -125,8 +125,9 @@ function shouldUseOnlineForPronunciation(selectedText, result = {}) {
   return Boolean(
     selectedText &&
     !hasPlayableAudio(result) &&
-    !normalizeSelection(result?.pronunciation?.simple) &&
-    !normalizeSelection(result?.pronunciation?.ipa)
+    (result?.sourceStatus === "best-effort-fallback" ||
+      (!normalizeSelection(result?.pronunciation?.simple) &&
+        !normalizeSelection(result?.pronunciation?.ipa)))
   );
 }
 

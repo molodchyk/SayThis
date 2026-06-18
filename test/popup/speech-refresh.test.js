@@ -20,6 +20,15 @@ test("does not refresh speech when a guide can be spoken", () => {
   }), false);
 });
 
+test("refreshes best-effort fallback even when a guide exists", () => {
+  assert.equal(shouldRefreshBeforeSpeech({
+    sourceStatus: "best-effort-fallback",
+    pronunciation: {
+      simple: "P N L"
+    }
+  }), true);
+});
+
 test("refreshes speech when no playback path exists yet", () => {
   assert.equal(shouldRefreshBeforeSpeech({
     display: "Exampleterm",

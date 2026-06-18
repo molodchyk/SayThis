@@ -113,6 +113,30 @@ test("checks online sources when local lookup lacks pronunciation", async () => 
   assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.lookupKey === "exampletown"));
 });
 
+test("checks online sources for best-effort initialism guides", async () => {
+  const calls = [];
+  const storedUpdates = [];
+
+  const result = await resolveSelection("PnL", {}, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false }
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async (text, settings, credentials, context) => {
+      calls.push({ text, localResult: context.localResult });
+      return null;
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].text, "PnL");
+  assert.equal(calls[0].localResult.pronunciation.simple, "P N L");
+  assert.equal(result.sourceStatus, "best-effort-fallback");
+  assert.equal(result.speakText, "P N L");
+  assert.ok(cacheEntries(storedUpdates[0].resultCache).length === 0);
+});
+
 test("keeps explicit local lookup local even without pronunciation", async () => {
   const storedUpdates = [];
   const result = await resolveSelection("Exampletown", { useOnline: false }, {

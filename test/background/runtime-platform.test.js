@@ -128,7 +128,7 @@ test("maps background platform adapters to browser APIs", async () => {
   await platform.matchClients();
   assert.deepEqual(await platform.getTtsVoices(), [{ voiceName: "Italian", lang: "it-IT" }]);
   platform.stopTts();
-  platform.speakTts("gnocchi", { rate: 0.82 });
+  assert.deepEqual(await platform.speakTts("gnocchi", { rate: 0.82 }), { ok: true });
 
   assert.deepEqual(Object.keys(listeners).sort(), ["command", "contextMenu", "installed", "message"]);
   assert.deepEqual(calls, [
@@ -160,4 +160,19 @@ test("builds dependency bundles from platform adapters", () => {
   assert.equal(runtime.getRuntimeUrl("x"), "x");
   assert.deepEqual(platform.matchClients(), []);
   assert.equal(platform.hasOffscreenDocument, null);
+});
+
+test("reports TTS adapter errors", async () => {
+  const platform = createBackgroundPlatformAdapters({
+    tts: {
+      speak: async () => {
+        throw new Error("Speech engine refused the utterance");
+      }
+    }
+  }, {});
+
+  assert.deepEqual(await platform.speakTts("Example", { lang: "en-US" }), {
+    ok: false,
+    error: "Speech engine refused the utterance"
+  });
 });

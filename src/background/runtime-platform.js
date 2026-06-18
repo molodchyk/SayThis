@@ -47,7 +47,7 @@ export function createBackgroundPlatformAdapters(chromeApi = globalThis.chrome, 
     sendRuntimeMessage: message => runtime?.sendMessage?.(message),
     sendTabMessage: (tabId, message) => tabs?.sendMessage?.(tabId, message),
     setStorage: value => storage?.set?.(value),
-    speakTts: (text, options) => tts?.speak?.(text, options),
+    speakTts: (text, options) => speakTts(tts, text, options),
     stopTts: () => tts?.stop?.()
   };
 }
@@ -66,6 +66,28 @@ function getTtsVoices(tts) {
       resolve([]);
     }
   });
+}
+
+async function speakTts(tts, text, options) {
+  if (typeof tts?.speak !== "function") {
+    return {
+      ok: false,
+      error: "Text-to-speech unavailable."
+    };
+  }
+
+  try {
+    const result = tts.speak(text, options);
+    if (result && typeof result.then === "function") {
+      await result;
+    }
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || "Text-to-speech failed."
+    };
+  }
 }
 
 export function createPlaybackSurfacePlatformDependencies(platform = {}, storageKeys = BACKGROUND_STORAGE_KEYS) {

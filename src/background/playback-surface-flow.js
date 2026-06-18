@@ -93,7 +93,14 @@ export function createPlaybackSurface(dependencies = {}) {
       : speech.options;
 
     dependencies.stopTts?.();
-    dependencies.speakTts?.(speech.text, options);
+    const spoken = await dependencies.speakTts?.(speech.text, options);
+    if (spoken?.ok === false) {
+      return {
+        spoken: false,
+        error: spoken.error || "Speech failed."
+      };
+    }
+
     return {
       spoken: true,
       text: speech.text,
@@ -120,7 +127,14 @@ export function createPlaybackSurface(dependencies = {}) {
     };
 
     dependencies.stopTts?.();
-    dependencies.speakTts?.(guide, options);
+    const spoken = await dependencies.speakTts?.(guide, options);
+    if (spoken?.ok === false) {
+      return {
+        spoken: false,
+        error: spoken.error || "Speech failed."
+      };
+    }
+
     return {
       spoken: true,
       text: guide,

@@ -12,6 +12,9 @@ import {
   orthographicLanguageHint
 } from "./resolver/orthography.js";
 import {
+  initialismGuide
+} from "./resolver/abbreviation.js";
+import {
   confidenceRank,
   normalizeConfidence,
   normalizeSourceStatus,
@@ -48,6 +51,7 @@ export {
   normalizeSelection
 } from "./resolver/text.js";
 export { orthographicLanguageHint } from "./resolver/orthography.js";
+export { initialismGuide } from "./resolver/abbreviation.js";
 export { sourceLabelForStatus } from "./resolver/status.js";
 export { getBestAudio, mapResultAudioUrls } from "./resolver/audio.js";
 export {
@@ -288,9 +292,10 @@ function createFallbackResult(query, lookupKey, scriptInfo) {
   const hint = scriptHintForScript(scriptInfo.script);
   const isLatin = scriptInfo.script === "Latin";
   const orthographyHint = isLatin ? orthographicLanguageHint(query) : null;
+  const initialism = isLatin ? initialismGuide(query) : "";
   const sourceStatus = isLatin ? "best-effort-fallback" : "generated-from-source";
-  const language = hint.language || orthographyHint?.language || "";
-  const languageName = hint.languageName || orthographyHint?.languageName || (isLatin ? "Unresolved Latin-script term" : "Unresolved term");
+  const language = initialism ? "en" : hint.language || orthographyHint?.language || "";
+  const languageName = initialism ? "English" : hint.languageName || orthographyHint?.languageName || (isLatin ? "Unresolved Latin-script term" : "Unresolved term");
 
   return normalizeResult({
     id: `fallback:${lookupKey}`,
@@ -298,21 +303,22 @@ function createFallbackResult(query, lookupKey, scriptInfo) {
     lookupKey,
     display: query,
     sourceForm: query,
-    speakText: query,
+    speakText: initialism || query,
     script: scriptInfo.script,
     queryScript: scriptInfo.script,
     language,
     languageName,
     ttsLang: hint.ttsLang || ttsLangFromLanguage(language),
-    category: "unresolved",
+    category: initialism ? "abbreviation" : "unresolved",
     origin: "",
     domainHint: "",
-    pronunciation: {},
+    pronunciation: initialism ? { simple: initialism } : {},
     confidence: isLatin ? orthographyHint?.confidence || "low" : "medium",
     sourceStatus,
     sourceLabel: sourceLabelForStatus(sourceStatus),
     evidence: [
       ...(isLatin ? ["No structured match found"] : [`Detected ${scriptInfo.script} script`]),
+      initialism ? "Detected compact initialism" : "",
       orthographyHint?.evidence || ""
     ].filter(Boolean),
     sources: [],

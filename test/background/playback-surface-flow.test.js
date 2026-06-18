@@ -64,6 +64,38 @@ test("uses a matching TTS voice for resolved source forms", async () => {
   ]);
 });
 
+test("reports TTS adapter failures", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: async (text, options) => {
+      calls.push(["speakTts", text, options]);
+      return {
+        ok: false,
+        error: "Speech engine failed."
+      };
+    }
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampleterm",
+    speakText: "Exampleterm",
+    ttsLang: "en-US"
+  });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "Speech engine failed."
+  });
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "Exampleterm", { enqueue: false, rate: 0.82, lang: "en-US", voiceName: "English Default" }]
+  ]);
+});
+
 test("does not speak with a known non-matching TTS voice", async () => {
   const calls = [];
   const surface = createPlaybackSurface({
