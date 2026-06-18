@@ -479,7 +479,10 @@ export async function resolveWithForvoLookup(selectedText, lookupWord, apiKey, l
   }
 
   const data = await response.json();
-  return buildForvoResult(query, data);
+  return buildForvoResult(query, data, {
+    lookupWord: word,
+    language
+  });
 }
 
 export async function resolveWithForvoCandidates(text, structuredResult, apiKey, settings = {}) {

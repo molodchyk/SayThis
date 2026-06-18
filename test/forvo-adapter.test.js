@@ -63,6 +63,65 @@ test("keeps long Forvo audio URLs intact", () => {
   assert.equal(result.pronunciation.audio[0].url, longAudioUrl);
 });
 
+test("filters Forvo payloads by requested lookup word and language", () => {
+  const payload = {
+    items: [{
+      id: 1,
+      word: "different",
+      code: "it",
+      pathogg: "https://audio.example/different.ogg",
+      rate: 5
+    }, {
+      id: 2,
+      word: "chiaroscuro",
+      code: "en",
+      pathogg: "https://audio.example/chiaroscuro-en.ogg",
+      rate: 5
+    }, {
+      id: 3,
+      word: "chiaroscuro",
+      code: "it",
+      pathogg: "https://audio.example/chiaroscuro-it.ogg",
+      rate: 4
+    }]
+  };
+
+  const best = selectBestForvoItem(payload, {
+    lookupWord: "chiaroscuro",
+    language: "it"
+  });
+  const result = buildForvoResult("selected term", payload, {
+    lookupWord: "chiaroscuro",
+    language: "it"
+  });
+
+  assert.equal(best.id, 3);
+  assert.equal(result.sourceForm, "chiaroscuro");
+  assert.equal(result.language, "it");
+  assert.equal(result.pronunciation.audio[0].url, "https://audio.example/chiaroscuro-it.ogg");
+});
+
+test("rejects Forvo payloads that do not match requested lookup constraints", () => {
+  const payload = {
+    items: [{
+      id: 1,
+      word: "chiaroscuro",
+      code: "en",
+      pathogg: "https://audio.example/chiaroscuro-en.ogg",
+      rate: 5
+    }]
+  };
+
+  assert.equal(buildForvoResult("selected term", payload, {
+    lookupWord: "chiaroscuro",
+    language: "it"
+  }), null);
+  assert.equal(selectBestForvoItem(payload, {
+    lookupWord: "different",
+    language: "en"
+  }), null);
+});
+
 test("builds a verified-audio result from Forvo payload", () => {
   const result = buildForvoResult("chiaroscuro", {
     items: [{

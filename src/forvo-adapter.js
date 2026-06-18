@@ -35,9 +35,12 @@ export function buildForvoWordPronunciationsUrl(query, apiKey, options = {}) {
   return `${FORVO_API_ORIGIN}${parts.join("/")}`;
 }
 
-export function buildForvoResult(query, payload = {}) {
+export function buildForvoResult(query, payload = {}, options = {}) {
   const selectedText = normalizeSelection(query);
-  const rankedItems = rankedForvoItems(payload);
+  const rankedItems = rankedForvoItems(payload, {
+    lookupWord: options.lookupWord,
+    language: options.language
+  });
   const item = rankedItems[0]?.item;
   if (!selectedText || !item) {
     return null;
@@ -86,16 +89,21 @@ export function buildForvoResult(query, payload = {}) {
   });
 }
 
-export function selectBestForvoItem(payload = {}) {
-  return rankedForvoItems(payload)[0]?.item || null;
+export function selectBestForvoItem(payload = {}, options = {}) {
+  return rankedForvoItems(payload, options)[0]?.item || null;
 }
 
-function rankedForvoItems(payload = {}) {
+function rankedForvoItems(payload = {}, options = {}) {
   const items = normalizeForvoItems(payload);
+  const expectedWordKey = createLookupKey(options.lookupWord);
+  const expectedLanguage = normalizeLanguageCode(options.language);
   return items
     .map((item, index) => ({
       item,
-      score: scoreForvoItem(item, index)
+      score: scoreForvoItem(item, index, {
+        expectedWordKey,
+        expectedLanguage
+      })
     }))
     .filter((candidate) => candidate.score > 0)
     .sort((left, right) => right.score - left.score);
@@ -117,9 +125,17 @@ function normalizeForvoItems(payload = {}) {
   return [];
 }
 
-function scoreForvoItem(item = {}, index) {
+function scoreForvoItem(item = {}, index, expected = {}) {
   const audioUrl = normalizeLongValue(item.pathogg || item.pathmp3);
   if (!audioUrl) {
+    return 0;
+  }
+
+  if (expected.expectedWordKey && forvoItemWordKey(item) !== expected.expectedWordKey) {
+    return 0;
+  }
+
+  if (expected.expectedLanguage && forvoItemLanguage(item) !== expected.expectedLanguage) {
     return 0;
   }
 

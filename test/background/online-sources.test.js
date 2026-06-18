@@ -7,6 +7,7 @@ import {
 import {
   onlineLookupLanguageHints,
   resolveWithCustomSourceCandidates,
+  resolveWithForvoCandidates,
   resolveWithWikidata,
   resolveWithOnlineSources,
   resolveWithVoiceService
@@ -82,6 +83,34 @@ test("uses local fallback language hints for Forvo lookup candidates", async () 
     assert.equal(result.language, "pl");
     assert.equal(result.sourceStatus, "verified-audio");
     assert.equal(result.pronunciation.audio[0].url, "https://audio.example/lodz.ogg");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("does not promote mismatched Forvo payload audio", async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async () => jsonResponse({
+      items: [{
+        id: 1,
+        word: "chiaroscuro",
+        code: "en",
+        langname: "English",
+        pathogg: "https://audio.example/chiaroscuro-en.ogg",
+        rate: 5
+      }]
+    });
+
+    const result = await resolveWithForvoCandidates("bright-dark", {
+      display: "bright-dark",
+      sourceForm: "chiaroscuro",
+      language: "it",
+      sourceStatus: "structured-source"
+    }, "api-key");
+
+    assert.equal(result, null);
   } finally {
     globalThis.fetch = originalFetch;
   }
