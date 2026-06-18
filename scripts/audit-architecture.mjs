@@ -23,7 +23,7 @@ const AUDITED_EXTENSIONS = new Set([
 const DEFAULT_FILE_BASELINE = {};
 const DEFAULT_FOLDER_BASELINE = {
   src: 24,
-  test: 21
+  test: 19
 };
 
 export const DEFAULT_AUDIT_OPTIONS = {

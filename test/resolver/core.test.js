@@ -15,38 +15,38 @@ import {
   resultToSpeechOptions,
   sourceLabelForStatus,
   updateCommunityEntries
-} from "../src/resolver-core.js";
+} from "../../src/resolver-core.js";
 import {
   createLookupKey as createTextLookupKey,
   detectScript as detectTextScript,
   normalizeSelection as normalizeTextSelection
-} from "../src/resolver/text.js";
+} from "../../src/resolver/text.js";
 import {
   languageNameFromCode,
   scriptHintForScript,
   ttsLangFromLanguage
-} from "../src/resolver/language.js";
+} from "../../src/resolver/language.js";
 import {
   confidenceRank,
   normalizeConfidence,
   normalizeSourceStatus,
   sourceLabelForStatus as sourceLabelForStatusDirect,
   strongerConfidence
-} from "../src/resolver/status.js";
+} from "../../src/resolver/status.js";
 import {
   normalizeAliases as normalizeValueAliases,
   normalizeCount as normalizeValueCount,
   normalizeLongValue,
   normalizeTrustSignals as normalizeValueTrustSignals,
   normalizeUrl as normalizeValueUrl
-} from "../src/resolver/values.js";
+} from "../../src/resolver/values.js";
 import {
   getBestAudio as getBestAudioDirect,
   mapResultAudioUrls as mapResultAudioUrlsDirect,
   mergeAudioItems,
   normalizePronunciation as normalizePronunciationDirect,
   rankedAudioItems as rankedAudioItemsDirect
-} from "../src/resolver/audio.js";
+} from "../../src/resolver/audio.js";
 import {
   applyCommunitySummary as applyCommunitySummaryDirect,
   communitySummary,
@@ -54,10 +54,10 @@ import {
   findCommunityEntry,
   normalizeCommunityEntries as normalizeCommunityEntriesDirect,
   updateCommunityEntries as updateCommunityEntriesDirect
-} from "../src/resolver/community.js";
+} from "../../src/resolver/community.js";
 
-const seedData = JSON.parse(await readFile(new URL("../data/pronunciation-seed.json", import.meta.url), "utf8"));
-const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8"));
+const seedData = JSON.parse(await readFile(new URL("../../data/pronunciation-seed.json", import.meta.url), "utf8"));
+const manifest = JSON.parse(await readFile(new URL("../../manifest.json", import.meta.url), "utf8"));
 
 test("manifest exposes extension resolver capabilities", () => {
   assert.equal(manifest.manifest_version, 3);

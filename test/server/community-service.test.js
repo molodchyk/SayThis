@@ -6,7 +6,7 @@ import test from "node:test";
 import {
   createEmptyStore,
   normalizeStore
-} from "../server/community-store.js";
+} from "../../server/community-store.js";
 import {
   adminTokenMatches,
   corsAllowOrigin,
@@ -15,7 +15,7 @@ import {
   handleCommunityRequest,
   normalizeAllowedOrigins,
   requestOriginAllowed
-} from "../server/community-service.js";
+} from "../../server/community-service.js";
 
 test("accepts browser preflight requests", async () => {
   const result = await handleCommunityRequest({

@@ -45,12 +45,12 @@ test("fails when a large file grows past its baseline", () => {
 
 test("tracks folder density with the same baseline rule", () => {
   const insideBaseline = folderDensityFindings([{
-    path: "src",
-    fileCount: 24
+    path: "test",
+    fileCount: 19
   }]);
   const pastBaseline = folderDensityFindings([{
-    path: "src",
-    fileCount: 25
+    path: "test",
+    fileCount: 21
   }]);
 
   assert.equal(insideBaseline[0].severity, "notice");
