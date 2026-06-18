@@ -69,12 +69,14 @@ Content-Type: application/json
   "term": "Exampletown",
   "lookupKey": "exampletown",
   "sourceForm": "Przykladowo",
+  "aliases": ["Example alternate"],
+  "variants": ["Regional reading"],
   "language": "pl",
   "ttsLang": "pl-PL"
 }
 ```
 
-The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. It can also reuse an approved entry with the same term, source form, alias, or variant when both the request and the entry have the same base language. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set and generation requests include `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
+The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. It can also reuse an approved entry with the same term, source form, alias, or variant when both the request and the entry have the same base language. The extension sends bounded aliases and variants from the resolved result so approved shared audio can be reused across known written forms. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set and generation requests include `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
 
 The extension submits only term-level pronunciation metadata. It does not submit page URLs or browsing history.
 

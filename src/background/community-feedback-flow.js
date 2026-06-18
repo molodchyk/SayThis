@@ -165,7 +165,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
 
   const body = sharedAudioRequestBody(selectedText, baseResult, options);
   if (!body) {
-    throw new Error("Shared audio needs a resolved source form and language.");
+    throw new Error("Shared audio needs a useful resolved source form and language.");
   }
 
   const localEntry = approvedAudioEntryForRequest(stored[storageKeys.approvedCommunityEntries], body);
@@ -283,19 +283,44 @@ function sharedAudioRequestBody(selectedText, result = {}, options = {}) {
   const language = normalizeSelection(result?.language);
   const ttsLang = normalizeSelection(result?.ttsLang || language);
   const sourceStatus = normalizeSelection(result?.sourceStatus);
-  if (!sourceForm || !ttsLang || ["", "unknown", "best-effort-fallback"].includes(sourceStatus)) {
+  if (
+    !sourceForm ||
+    !ttsLang ||
+    ["", "unknown", "best-effort-fallback"].includes(sourceStatus) ||
+    !hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang)
+  ) {
     return null;
   }
 
+  const aliases = normalizeList(result?.aliases).slice(0, 12);
+  const variants = normalizeList(result?.variants).slice(0, 12);
   return {
     term: normalizeSelection(result?.display || result?.query || selectedText),
     lookupKey: createLookupKey(result?.lookupKey || selectedText),
     sourceForm,
     language,
     ttsLang,
+    ...(aliases.length ? { aliases } : {}),
+    ...(variants.length ? { variants } : {}),
     sourceUrl: firstSourceUrl(result),
     rate: Number.isFinite(Number(options.rate)) ? Number(options.rate) : undefined
   };
+}
+
+function hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang) {
+  return createLookupKey(selectedText) !== createLookupKey(sourceForm) ||
+    hasNonEnglishLanguageSignal(language) ||
+    hasNonEnglishLanguageSignal(ttsLang);
+}
+
+function hasNonEnglishLanguageSignal(value) {
+  const normalized = normalizeSelection(value).toLowerCase();
+  const base = baseLanguage(normalized);
+  if (!base || ["unknown", "und", "en", "eng"].includes(base) || normalized.startsWith("english")) {
+    return false;
+  }
+
+  return true;
 }
 
 function approvedAudioEntryForRequest(approvedEntries = {}, request = {}) {

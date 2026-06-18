@@ -9,6 +9,7 @@
 - Keeps verified recording labels when generated fallback samples are also available.
 - Labels generated fallback playback separately from source-backed recordings in the popup and on-page card.
 - Avoids generated fallback audio for plain English same-text structured results.
+- Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Keeps provider generation behind service-side opt-in, rate limits, and required bearer-token controls.
 - Updates the Chrome extension and package version to 1.0.0.
 
