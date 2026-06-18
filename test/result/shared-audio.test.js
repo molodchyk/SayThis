@@ -34,9 +34,22 @@ test("allows non-English language signal when spelling matches", () => {
     display: "Saoirse",
     sourceForm: "Saoirse",
     language: "ga",
-    ttsLang: "en-IE",
+    ttsLang: "ga-IE",
     sourceStatus: "structured-source"
   }, "Saoirse"), true);
+});
+
+test("blocks non-English targets routed to an English provider locale", () => {
+  assert.equal(isSharedAudioCandidate({
+    query: "Saoirse",
+    display: "Saoirse",
+    sourceForm: "Saoirse",
+    language: "ga",
+    ttsLang: "en-IE",
+    sourceStatus: "structured-source"
+  }, "Saoirse"), false);
+  assert.equal(hasUsefulSharedAudioTarget("Saoirse", "Saoirse", "ga", "en-IE"), false);
+  assert.equal(hasUsefulSharedAudioTarget("Selected", "Resolved", "ga", "en-IE"), false);
 });
 
 test("blocks results that already have preferred audio", () => {
@@ -70,7 +83,7 @@ test("blocks best-effort fallback results", () => {
 
 test("recognizes useful targets by source-form differences and language signals", () => {
   assert.equal(hasUsefulSharedAudioTarget("P&L", "P N L", "en", "en-US"), true);
-  assert.equal(hasUsefulSharedAudioTarget("Saoirse", "Saoirse", "ga", "en-IE"), true);
+  assert.equal(hasUsefulSharedAudioTarget("Saoirse", "Saoirse", "ga", "ga-IE"), true);
   assert.equal(hasUsefulSharedAudioTarget("Exampleterm", "Exampleterm", "en", "en-US"), false);
   assert.equal(hasNonEnglishLanguageSignal("English"), false);
   assert.equal(hasNonEnglishLanguageSignal("und"), false);

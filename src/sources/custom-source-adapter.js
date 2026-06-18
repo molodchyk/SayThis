@@ -3,6 +3,9 @@ import {
   createRemoteStructuredResult,
   normalizeSelection
 } from "../resolver-core.js";
+import {
+  hasUsefulSharedAudioTarget
+} from "../result/shared-audio.js";
 
 const VALID_CONFIDENCE = new Set(["high", "medium", "low", "unknown"]);
 const VALID_SOURCE_STATUS = new Set([
@@ -92,9 +95,7 @@ function canGenerateVoiceServiceAudio(result = {}) {
 }
 
 function hasUsefulVoiceServiceTarget(selectedText, sourceForm, language, ttsLang) {
-  return createLookupKey(selectedText) !== createLookupKey(sourceForm) ||
-    (language && baseLanguage(language) !== "en") ||
-    (ttsLang && baseLanguage(ttsLang) !== "en");
+  return hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang);
 }
 
 function voiceServiceSources(result = {}, label, url) {

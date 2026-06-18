@@ -64,6 +64,34 @@ test("rejects plain same-text English public audio generation", async () => {
   assert.equal(Object.keys(response.store.approved).length, 0);
 });
 
+test("rejects non-English public audio generation routed to an English provider locale", async () => {
+  const response = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: { authorization: "Bearer client-token" },
+    body: JSON.stringify({
+      term: "Saoirse",
+      lookupKey: "saoirse",
+      sourceForm: "Saoirse",
+      language: "ga",
+      ttsLang: "en-IE"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicAudioGenerationToken: "client-token",
+    publicBaseUrl: "https://community.example",
+    ttsProvider: {
+      async synthesize() {
+        throw new Error("should not synthesize non-English text with an English provider voice");
+      }
+    }
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid-shared-audio-target");
+  assert.equal(Object.keys(response.store.approved).length, 0);
+});
+
 test("labels public generated shared audio without moderator review", async () => {
   const response = await handleCommunityRequest({
     method: "POST",

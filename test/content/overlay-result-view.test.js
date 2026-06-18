@@ -71,6 +71,22 @@ test("normalizes overlay result display helpers", () => {
     ttsLang: "en-US",
     sourceStatus: "structured-source"
   }, "Exampleterm"), false);
+  assert.equal(view.isSharedAudioCandidate({
+    query: "Saoirse",
+    display: "Saoirse",
+    sourceForm: "Saoirse",
+    language: "ga",
+    ttsLang: "ga-IE",
+    sourceStatus: "structured-source"
+  }, "Saoirse"), true);
+  assert.equal(view.isSharedAudioCandidate({
+    query: "Saoirse",
+    display: "Saoirse",
+    sourceForm: "Saoirse",
+    language: "ga",
+    ttsLang: "en-IE",
+    sourceStatus: "structured-source"
+  }, "Saoirse"), false);
   assert.deepEqual(plain(view.audioItems(result)), [
     { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },

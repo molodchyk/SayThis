@@ -77,6 +77,36 @@ test("requests shared audio for resolved same-language source-form differences",
   assert.equal(calls[0][2].ttsLang, "en-US");
 });
 
+test("does not request shared audio when a non-English result would use an English voice", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const baseResult = {
+    query: "Saoirse",
+    display: "Saoirse",
+    sourceForm: "Saoirse",
+    language: "ga",
+    ttsLang: "en-IE",
+    sourceStatus: "structured-source"
+  };
+
+  await assert.rejects(
+    requestSharedAudioForResult("Saoirse", baseResult, {}, {
+      ...storage.dependencies,
+      fetch: async () => {
+        throw new Error("should not request shared audio through an English voice");
+      },
+      resolveSelection: async () => {
+        throw new Error("should not refresh after a rejected shared-audio request");
+      }
+    }),
+    /useful resolved source form/
+  );
+});
+
 test("includes aliases and variants in shared audio requests", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {},

@@ -14,6 +14,7 @@
 - Avoids generated fallback audio for plain English same-text structured results.
 - Avoids browser TTS fallback for plain English same-text structured results without a guide.
 - Rejects public shared-audio generation for plain English same-text requests at the service boundary.
+- Rejects generated voice-service/provider audio when a non-English resolved language would use an English TTS locale.
 - Labels token-gated public generated shared audio as service-generated instead of moderator-reviewed.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Uses one-off lookup hints to prefer matching Wiktionary language sections and source-form edition retries.

@@ -389,9 +389,14 @@
   }
 
   function hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang) {
-    return createLookupKey(selectedText) !== createLookupKey(sourceForm) ||
-      hasNonEnglishLanguageSignal(language) ||
-      hasNonEnglishLanguageSignal(ttsLang);
+    const sourceFormChanged = createLookupKey(selectedText) !== createLookupKey(sourceForm);
+    const nonEnglishLanguage = hasNonEnglishLanguageSignal(language);
+    const nonEnglishTts = hasNonEnglishLanguageSignal(ttsLang);
+    if (nonEnglishLanguage && !nonEnglishTts) {
+      return false;
+    }
+
+    return sourceFormChanged || nonEnglishTts;
   }
 
   function hasNonEnglishLanguageSignal(value) {

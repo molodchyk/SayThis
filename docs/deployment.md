@@ -35,7 +35,7 @@ Use the public HTTPS `/community` URL as the extension community endpoint.
 - `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice override. Locale-prefixed voice names are used only when compatible with the requested TTS locale.
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`; defaults to `MP3`.
 
-Provider generation is exposed through token-protected moderator endpoints. Public clients can consume approved audio URLs after review. Direct public provider generation requires both `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` and `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`.
+Provider generation is exposed through token-protected moderator endpoints. Public clients can consume approved audio URLs after review. Direct public provider generation requires both `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` and `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`. Public generation also rejects non-English resolved languages when the request would use an English TTS locale.
 
 ## Abuse Controls
 

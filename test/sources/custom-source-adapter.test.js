@@ -123,12 +123,12 @@ test("builds generated audio for resolved abbreviation source forms", () => {
   assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=P%20N%20L&lang=en-US");
 });
 
-test("builds generated audio for non-English language signals even when spelling matches", () => {
+test("builds generated audio for non-English TTS locales even when spelling matches", () => {
   const result = buildVoiceServiceResult("Saoirse", {
     display: "Saoirse",
     sourceForm: "Saoirse",
     language: "ga",
-    ttsLang: "en-IE",
+    ttsLang: "ga-IE",
     sourceStatus: "structured-source"
   }, {
     urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
@@ -136,7 +136,19 @@ test("builds generated audio for non-English language signals even when spelling
 
   assert.equal(result.sourceStatus, "generated-audio");
   assert.equal(result.language, "ga");
-  assert.equal(result.ttsLang, "en-IE");
+  assert.equal(result.ttsLang, "ga-IE");
+});
+
+test("does not build generated audio for non-English languages routed to English TTS", () => {
+  assert.equal(buildVoiceServiceResult("Saoirse", {
+    display: "Saoirse",
+    sourceForm: "Saoirse",
+    language: "ga",
+    ttsLang: "en-IE",
+    sourceStatus: "structured-source"
+  }, {
+    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  }), null);
 });
 
 test("selects the matching custom source entry", () => {
