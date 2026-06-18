@@ -219,7 +219,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 
 For Latin-script input, entity or term resolution should happen before generic language detection. A romanized term can look like many languages, but a matched entity can provide a reliable native/source form.
 
-Detected-language voice generation is useful for rare terms when it speaks the resolved source form with a matching locale. It remains generated evidence, not preferred evidence. Store useful generated samples as moderated shared audio artifacts, publish their audio URLs through approved entries, reuse them by source form plus base language, and keep paid provider generation behind service-side opt-in, rate limits, and optional bearer-token controls until quota or paid-access controls exist.
+Detected-language voice generation is useful for rare terms when it speaks the resolved source form with a matching locale. It remains generated evidence, not preferred evidence. Store useful generated samples as moderated shared audio artifacts, publish their audio URLs through approved entries, reuse them by source form plus base language, and keep paid provider generation behind service-side opt-in, rate limits, and optional bearer-token controls until quota or paid-access controls exist. Generated fallback samples should not relabel a result that already has a verified or native-speaker recording.
 
 Provider-specific voice inventories and cost notes belong in ignored `private/` notes until there is a reviewed public provider policy.
 

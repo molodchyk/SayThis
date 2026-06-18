@@ -6,6 +6,7 @@
 - Reuses approved shared audio artifacts before any provider generation.
 - Reuses reviewed shared audio across alternate spellings when the resolved source form and base language match.
 - Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
+- Keeps verified recording labels when generated fallback samples are also available.
 - Keeps provider generation behind service-side opt-in, rate limits, and optional bearer-token controls.
 - Updates the Chrome extension and package version to 1.0.0.
 

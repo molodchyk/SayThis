@@ -138,6 +138,48 @@ test("merges generated audio into a matching structured result", () => {
   assert.equal(merged.pronunciation.audio[0].quality, "generated");
 });
 
+test("keeps verified status when generated audio is merged after a recording", () => {
+  const verified = createRemoteStructuredResult("Exampleterm", {
+    id: "source:recording",
+    display: "Exampleterm",
+    sourceForm: "Sourceform",
+    language: "pl",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/sourceform.ogg",
+        label: "Native speaker recording",
+        source: "Curated audio",
+        quality: "native speaker"
+      }]
+    },
+    evidence: ["Source-backed recording"]
+  });
+  const generated = createRemoteStructuredResult("Exampleterm", {
+    id: "voice:sourceform",
+    display: "Sourceform",
+    sourceForm: "Sourceform",
+    language: "pl",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/sourceform.ogg",
+        label: "Generated fallback",
+        source: "Voice service",
+        quality: "generated"
+      }]
+    },
+    evidence: ["Generated shared audio"]
+  });
+  const merged = mergeRemoteResult(verified, generated);
+
+  assert.equal(merged.sourceStatus, "verified-audio");
+  assert.equal(merged.sourceLabel, "Verified audio");
+  assert.equal(getBestAudio(merged).url, "https://audio.example/sourceform.ogg");
+  assert.deepEqual(merged.pronunciation.audio.map((item) => item.quality), ["native speaker", "generated"]);
+  assert.ok(merged.evidence.includes("Source-backed recording"));
+  assert.ok(merged.evidence.includes("Generated shared audio"));
+});
+
 test("preserves generated audio when a structured refresh has no recording", () => {
   const generated = createRemoteStructuredResult("Exampleterm", {
     id: "voice:sourceform",

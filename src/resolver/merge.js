@@ -14,6 +14,7 @@ import {
   normalizeSelection
 } from "./text.js";
 import {
+  hasPreferredAudio,
   mergeAudioItems,
   normalizePronunciation
 } from "./audio.js";
@@ -94,14 +95,12 @@ function shouldMergeAudioIntoResult(primary, audioResult) {
 }
 
 function mergeAudioIntoResult(primary, audioResult) {
-  const sourceStatus = audioResult.sourceStatus === "generated-audio"
-    ? "generated-audio"
-    : "verified-audio";
   const pronunciation = {
     ipa: primary.pronunciation?.ipa || audioResult.pronunciation?.ipa || "",
     simple: primary.pronunciation?.simple || audioResult.pronunciation?.simple || "",
     audio: mergeAudioItems(primary.pronunciation?.audio, audioResult.pronunciation?.audio)
   };
+  const sourceStatus = mergedAudioSourceStatus(primary, audioResult, pronunciation);
 
   return normalizeResult({
     ...primary,
@@ -112,6 +111,22 @@ function mergeAudioIntoResult(primary, audioResult) {
     evidence: mergeTextItems(primary.evidence, audioResult.evidence),
     sources: mergeSourceItems(primary.sources, audioResult.sources)
   });
+}
+
+function mergedAudioSourceStatus(primary = {}, audioResult = {}, pronunciation = {}) {
+  if (hasPreferredAudio({
+    sourceStatus: primary.sourceStatus,
+    pronunciation
+  }) || hasPreferredAudio({
+    sourceStatus: audioResult.sourceStatus,
+    pronunciation
+  })) {
+    return "verified-audio";
+  }
+
+  return audioResult.sourceStatus === "generated-audio"
+    ? "generated-audio"
+    : "verified-audio";
 }
 
 function hasAudioResult(result = {}) {
