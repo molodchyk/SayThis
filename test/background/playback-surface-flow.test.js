@@ -135,6 +135,30 @@ test("does not speak unresolved Latin text with raw browser TTS", async () => {
   assert.deepEqual(calls, []);
 });
 
+test("does not speak structured results through the default browser voice without a locale", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    speakText: "Exampleterm",
+    sourceStatus: "structured-source"
+  });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "Speech unavailable without a resolved language."
+  });
+  assert.deepEqual(calls, []);
+});
+
 test("still speaks unresolved abbreviation guides", async () => {
   const calls = [];
   const surface = createPlaybackSurface({

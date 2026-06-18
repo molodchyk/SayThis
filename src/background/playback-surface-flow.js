@@ -98,6 +98,13 @@ export function createPlaybackSurface(dependencies = {}) {
       };
     }
 
+    if (shouldRejectMissingSpeechLanguage(result, speech)) {
+      return {
+        spoken: false,
+        error: "Speech unavailable without a resolved language."
+      };
+    }
+
     const voice = await bestTtsVoice(speech.options.lang);
     if (!voice.voiceName && shouldRequireVerifiedVoice(result, speech.options.lang)) {
       const offscreenSpeech = await speakTextOffscreen(speech.text, speech.options);
@@ -238,6 +245,16 @@ export function createPlaybackSurface(dependencies = {}) {
     }
 
     return true;
+  }
+
+  function shouldRejectMissingSpeechLanguage(result, speech = {}) {
+    if (normalizeSelection(speech.options?.lang)) {
+      return false;
+    }
+
+    const text = normalizeSelection(speech.text);
+    const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
+    return !(guide && text === guide);
   }
 
   async function stopOffscreenAudio() {

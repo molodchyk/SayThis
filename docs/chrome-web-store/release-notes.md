@@ -22,6 +22,7 @@
 - Requires word-boundary matches before treating Wikimedia Commons audio as verified pronunciation audio.
 - Rejects region-specific browser voices from the wrong locale variant when using verified speech fallback.
 - Reports unresolved raw text as unavailable instead of speaking it through generic browser TTS.
+- Requires an explicit resolved speech locale before using browser TTS for non-guide fallback.
 - Filters on-page guide speech so explanatory guide notes are not offered as spoken fallback.
 - Makes generated Cyrillic source-form guides language-sensitive.
 - Ignores incompatible provider voice overrides so generated fallback audio follows the resolved TTS locale.
