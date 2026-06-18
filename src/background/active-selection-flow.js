@@ -1,3 +1,7 @@
+import {
+  resolvePlayableResult
+} from "./pronunciation-playback-flow.js";
+
 const KEYBOARD_COMMANDS = {
   local: "pronounce-selection",
   online: "pronounce-selection-online"
@@ -32,9 +36,12 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
     const result = await dependencies.resolveSelection?.(selectedText, {
       useOnline: options.useOnline
     });
-    await dependencies.playResolvedResult?.(result, tab.id);
+    const playableResult = await resolvePlayableResult(selectedText, result, {
+      useOnline: options.useOnline
+    }, dependencies);
+    await dependencies.playResolvedResult?.(playableResult, tab.id);
 
-    return { handled: true, result };
+    return { handled: true, result: playableResult };
   } catch (error) {
     dependencies.speakFallback?.(selectedText);
     return {

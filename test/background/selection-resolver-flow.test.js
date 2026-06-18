@@ -133,6 +133,45 @@ test("refreshes cached no-audio results for explicit online lookup", async () =>
   assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
 });
 
+test("uses supplied local result context for online lookup", async () => {
+  const supplied = createRemoteStructuredResult("Exampletown", {
+    id: "supplied:exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    evidence: ["Supplied source"]
+  });
+  const calls = [];
+
+  const result = await resolveSelection("Exampletown", {
+    useOnline: true,
+    localResult: supplied
+  }, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false },
+      resultCache: {}
+    }),
+    setStorage: async () => {},
+    resolveWithOnlineSources: async (text, settings, credentials, context) => {
+      calls.push({ text, contextResult: context.localResult });
+      return createRemoteStructuredResult(text, {
+        id: "audio:exampletown",
+        display: "Przykladowo",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        pronunciation: {
+          audio: [{ url: "https://audio.example/przykladowo.ogg" }]
+        }
+      });
+    }
+  });
+
+  assert.equal(calls[0].contextResult.sourceForm, "Przykladowo");
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.pronunciation.audio[0].url, "https://audio.example/przykladowo.ogg");
+});
+
 test("stores cacheable remote results after online lookup", async () => {
   const remote = createRemoteStructuredResult("Chiaroscuro", {
     id: "remote:chiaroscuro",

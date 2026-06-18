@@ -22,9 +22,16 @@ test("ignores context menu clicks without selected text", async () => {
   assert.deepEqual(result, { handled: false, reason: "empty-selection" });
 });
 
-test("resolves, stores, and plays context menu selections", async () => {
+test("resolves, enriches, stores, and plays context menu selections", async () => {
   const calls = [];
   const resolved = { display: "Gnocchi", sourceStatus: "structured-source" };
+  const enriched = {
+    display: "Gnocchi",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/gnocchi.ogg" }]
+    }
+  };
   const result = await handleContextMenuClick({ menuItemId: "say", selectionText: " Gnocchi " }, { id: 42 }, {
     resolveOptionsForMenuId: () => ({
       ok: true,
@@ -35,7 +42,7 @@ test("resolves, stores, and plays context menu selections", async () => {
     setStorage: async (value) => calls.push(["setStorage", value]),
     resolveSelection: async (text, options) => {
       calls.push(["resolveSelection", text, options]);
-      return resolved;
+      return options.useOnline ? enriched : resolved;
     },
     playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
     speakFallback: (text) => calls.push(["speakFallback", text]),
@@ -43,12 +50,13 @@ test("resolves, stores, and plays context menu selections", async () => {
   });
 
   assert.equal(result.handled, true);
-  assert.equal(result.result, resolved);
+  assert.equal(result.result, enriched);
   assert.deepEqual(calls, [
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "context-menu" }],
     ["resolveSelection", "Gnocchi", { useOnline: false }],
-    ["setStorage", { lastResult: resolved }],
-    ["playResolvedResult", resolved, 42]
+    ["resolveSelection", "Gnocchi", { useOnline: true, localResult: resolved }],
+    ["setStorage", { lastResult: enriched }],
+    ["playResolvedResult", enriched, 42]
   ]);
 });
 

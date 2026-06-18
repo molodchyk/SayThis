@@ -1,0 +1,69 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  hasPlayableAudio,
+  resolvePlayableResult
+} from "../../src/background/pronunciation-playback-flow.js";
+
+test("detects playable pronunciation audio", () => {
+  assert.equal(hasPlayableAudio({
+    pronunciation: {
+      audio: [{ url: "https://audio.example/item.ogg" }]
+    }
+  }), true);
+  assert.equal(hasPlayableAudio({
+    pronunciation: {
+      audio: [{ label: "missing url" }]
+    }
+  }), false);
+});
+
+test("retries no-audio results online with local context", async () => {
+  const calls = [];
+  const result = { display: "Exampletown", sourceStatus: "structured-source" };
+  const enriched = {
+    display: "Exampletown",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/item.ogg" }]
+    }
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", result, {}, {
+    resolveSelection: async (text, options) => {
+      calls.push([text, options]);
+      return enriched;
+    }
+  });
+
+  assert.equal(playable, enriched);
+  assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: result }]]);
+});
+
+test("keeps current result when audio exists or retry fails", async () => {
+  const audioResult = {
+    display: "Exampletown",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/item.ogg" }]
+    }
+  };
+  const noAudioResult = { display: "Exampletown" };
+
+  assert.equal(await resolvePlayableResult("Exampletown", audioResult, {}, {
+    resolveSelection: async () => {
+      throw new Error("should not retry");
+    }
+  }), audioResult);
+
+  assert.equal(await resolvePlayableResult("Exampletown", noAudioResult, {}, {
+    resolveSelection: async () => {
+      throw new Error("offline");
+    }
+  }), noAudioResult);
+
+  assert.equal(await resolvePlayableResult("Exampletown", null, {}, {
+    resolveSelection: async () => {
+      throw new Error("should not retry");
+    }
+  }), null);
+});

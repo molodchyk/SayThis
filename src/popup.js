@@ -118,6 +118,13 @@ async function speakSelection(rate) {
     await resolveSelection();
   }
 
+  if (!getBestAudio(currentResult)) {
+    const refreshed = await resolveSelection(true);
+    if (refreshed) {
+      currentResult = refreshed;
+    }
+  }
+
   if (playAudio(currentResult, rate)) {
     setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
     return;

@@ -159,9 +159,13 @@
       root = null;
     });
 
-    root.querySelector('[data-action="speak"]').addEventListener("click", () => speak(result, 0.82));
+    root.querySelector('[data-action="speak"]').addEventListener("click", () => speak(result, 0.82, {
+      onlineChecked: Boolean(options.onlineChecked)
+    }));
     root.querySelector('[data-action="online"]').addEventListener("click", () => resolveOnline(result));
-    root.querySelector('[data-action="slow"]').addEventListener("click", () => speak(result, 0.62));
+    root.querySelector('[data-action="slow"]').addEventListener("click", () => speak(result, 0.62, {
+      onlineChecked: Boolean(options.onlineChecked)
+    }));
     root.querySelector('[data-action="correct"]').addEventListener("click", () => toggleCorrection());
     root.querySelector('[data-action="confirm"]').addEventListener("click", () => sendFeedback(result, "confirm"));
     root.querySelector('[data-action="missing"]').addEventListener("click", () => sendFeedback(result, "missing", correctionFeedbackFromForm("missing")));
@@ -187,11 +191,13 @@
     });
 
     if (options.autoPlay) {
-      speak(result, 0.82);
+      speak(result, options.autoPlayRate || 0.82, {
+        onlineChecked: Boolean(options.onlineChecked)
+      });
     }
   }
 
-  function resolveOnline(result) {
+  function resolveOnline(result, options = {}) {
     const languageHints = lookupHints();
     setStatus("Checking online sources.");
     sendOverlayMessage({
@@ -202,10 +208,18 @@
     }).then((response) => {
       if (!response?.ok) {
         setStatus(response?.error || "Online lookup failed.");
+        if (options.autoPlay !== false) {
+          speakCandidate(result, options.rate || 0.82);
+        }
         return;
       }
 
-      renderOverlay(response.result || result, { autoPlay: true, lookupHints: languageHints.join(", ") });
+      renderOverlay(response.result || result, {
+        autoPlay: options.autoPlay !== false,
+        autoPlayRate: options.rate || 0.82,
+        lookupHints: languageHints.join(", "),
+        onlineChecked: true
+      });
       setStatus("Online result ready.");
     });
   }
@@ -309,8 +323,16 @@
     document.documentElement.append(host);
   }
 
-  function speak(result, rate) {
+  function speak(result, rate, options = {}) {
     if (playAudio(result, rate)) {
+      return;
+    }
+
+    if (!options.onlineChecked) {
+      resolveOnline(result, {
+        autoPlay: true,
+        rate
+      });
       return;
     }
 

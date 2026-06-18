@@ -51,10 +51,14 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
   const credentials = normalizeCredentials(stored[storageKeys.credentials]);
   const hasRequestHints = normalizeLanguageHints(options.languageHints).length > 0;
   const onlineSettings = onlineSettingsForRequest(settings, options);
-  const localResult = resolveTerm(selectedText, {
+  const baseLocalResult = resolveTerm(selectedText, {
     entries: data.entries,
     communityEntries
   });
+  const providedLocalResult = suppliedLocalResult(options);
+  const localResult = providedLocalResult
+    ? mergeRemoteResult(baseLocalResult, providedLocalResult)
+    : baseLocalResult;
 
   let result = localResult;
   const shouldUseOnline = options.useOnline ?? (hasRequestHints || onlineSettings.onlineByDefault);
@@ -104,6 +108,12 @@ function shouldRefreshCachedResult(result, options = {}) {
 
 function hasPlayableAudio(result = {}) {
   return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
+}
+
+function suppliedLocalResult(options = {}) {
+  return options.localResult && typeof options.localResult === "object"
+    ? options.localResult
+    : null;
 }
 
 export function onlineSettingsForRequest(settings, options = {}) {

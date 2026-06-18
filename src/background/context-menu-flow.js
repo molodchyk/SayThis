@@ -1,3 +1,7 @@
+import {
+  resolvePlayableResult
+} from "./pronunciation-playback-flow.js";
+
 export async function handleContextMenuClick(info = {}, tab = {}, dependencies = {}) {
   const action = dependencies.resolveOptionsForMenuId?.(info.menuItemId);
   if (!action?.ok) {
@@ -16,12 +20,13 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
     });
 
     const result = await dependencies.resolveSelection(selectedText, action.options || {});
+    const playableResult = await resolvePlayableResult(selectedText, result, action.options || {}, dependencies);
     await dependencies.setStorage?.({
-      [dependencies.lastResultKey || "lastResult"]: result
+      [dependencies.lastResultKey || "lastResult"]: playableResult
     });
-    await dependencies.playResolvedResult?.(result, tab?.id);
+    await dependencies.playResolvedResult?.(playableResult, tab?.id);
 
-    return { handled: true, result };
+    return { handled: true, result: playableResult };
   } catch (error) {
     dependencies.speakFallback?.(selectedText);
     return {
