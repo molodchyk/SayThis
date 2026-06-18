@@ -124,7 +124,7 @@ function commonsAudioMatches(data = {}, lookupWord, language = "") {
   const pages = Object.values(data.query?.pages || {});
   return pages
     .map((page, fallbackIndex) => {
-      const match = commonsAudioMatch(page, lookupWord);
+      const match = commonsAudioMatch(page, lookupWord, language);
       return match
         ? {
           ...match,
@@ -137,13 +137,14 @@ function commonsAudioMatches(data = {}, lookupWord, language = "") {
     .sort((left, right) => right.score - left.score || left.index - right.index);
 }
 
-function commonsAudioMatch(page = {}, lookupWord) {
+function commonsAudioMatch(page = {}, lookupWord, language = "") {
   const info = page.imageinfo?.[0] || {};
   const url = normalizeHttpsUrl(info.url);
   const sourceUrl = normalizeHttpsUrl(info.descriptionurl) || url;
   const mime = String(info.mime || "").toLowerCase();
   const mediaType = String(info.mediatype || "").toLowerCase();
   const lookupKey = createLookupKey(lookupWord);
+  const pronunciationScore = scorePronunciationSignal(page, lookupWord, language);
   const matchText = createLookupKey([
     page.title,
     page.snippet,
@@ -151,7 +152,7 @@ function commonsAudioMatch(page = {}, lookupWord) {
     commonsExtText(info.extmetadata)
   ].map(stripMarkup).join(" "));
 
-  if (!url || !lookupKey || !matchText.includes(lookupKey) || (!mime.startsWith("audio/") && mediaType !== "audio")) {
+  if (!url || !lookupKey || !pronunciationScore || !matchText.includes(lookupKey) || (!mime.startsWith("audio/") && mediaType !== "audio")) {
     return null;
   }
 
@@ -180,6 +181,8 @@ function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
   ].map(stripMarkup).join(" "));
   let score = 0;
 
+  score += scorePronunciationSignal(page, lookupWord, language);
+
   if (lookupKey && createLookupKey(fileName).includes(lookupKey)) {
     score += 8;
   }
@@ -190,7 +193,7 @@ function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
 
   if (filePrefix === languageCode) {
     score += 50;
-  } else if (filePrefix) {
+  } else if (filePrefix && filePrefix !== "ll") {
     score -= 8;
   }
 
@@ -200,6 +203,52 @@ function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
   }
 
   return score;
+}
+
+function scorePronunciationSignal(page = {}, lookupWord, language = "") {
+  const lookupKey = createLookupKey(lookupWord);
+  const languageCode = baseLanguage(language);
+  const title = stripMarkup(page.title);
+  const fileName = title.replace(/^File:/i, "");
+  const fileKey = createLookupKey(fileName);
+  const filePrefix = fileLanguagePrefix(fileName);
+  const text = createLookupKey([
+    title,
+    page.snippet,
+    page.titlesnippet,
+    commonsExtText(page.imageinfo?.[0]?.extmetadata)
+  ].map(stripMarkup).join(" "));
+
+  if (!lookupKey || !text.includes(lookupKey)) {
+    return 0;
+  }
+
+  if (isLinguaLibreFile(fileName)) {
+    return 40;
+  }
+
+  if (filePrefix && fileKey.includes(lookupKey)) {
+    return filePrefix === languageCode ? 42 : 28;
+  }
+
+  if (hasPronunciationText(text)) {
+    return 24;
+  }
+
+  return 0;
+}
+
+function hasPronunciationText(text) {
+  return [
+    "pronunciation",
+    "pronounced",
+    "spoken pronunciation",
+    "spoken word"
+  ].some((phrase) => text.includes(createLookupKey(phrase)));
+}
+
+function isLinguaLibreFile(fileName) {
+  return /^LL[-_]/i.test(String(fileName || "").trim());
 }
 
 function fileLanguagePrefix(fileName) {

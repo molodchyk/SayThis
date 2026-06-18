@@ -408,14 +408,14 @@ test("falls back to broad Commons search when audio-constrained search misses", 
             pages: {
               1: {
                 index: 1,
-                title: "File:Exampletown.ogg",
+                title: "File:En-us-Exampletown.ogg",
                 imageinfo: [{
-                  url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/Exampletown.ogg",
-                  descriptionurl: "https://commons.wikimedia.org/wiki/File:Exampletown.ogg",
+                  url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/En-us-Exampletown.ogg",
+                  descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Exampletown.ogg",
                   mime: "audio/ogg",
                   mediatype: "AUDIO",
                   extmetadata: {
-                    ObjectName: { value: "Exampletown.ogg" }
+                    ObjectName: { value: "En-us-Exampletown.ogg" }
                   }
                 }]
               }
@@ -428,7 +428,40 @@ test("falls back to broad Commons search when audio-constrained search misses", 
 
     assert.deepEqual(searches, ["filetype:audio Exampletown", "Exampletown"]);
     assert.equal(result.sourceStatus, "verified-audio");
-    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/a/a1/Exampletown.ogg");
+    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/a/a1/En-us-Exampletown.ogg");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects generic Commons audio without pronunciation evidence", async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async () => jsonResponse({
+      query: {
+        pages: {
+          1: {
+            index: 1,
+            title: "File:Exampletown anthem.ogg",
+            imageinfo: [{
+              url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/Exampletown_anthem.ogg",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:Exampletown_anthem.ogg",
+              mime: "audio/ogg",
+              mediatype: "AUDIO",
+              extmetadata: {
+                ObjectName: { value: "Exampletown anthem.ogg" },
+                ImageDescription: { value: "Anthem of Exampletown" }
+              }
+            }]
+          }
+        }
+      }
+    });
+
+    const result = await resolveWithCommonsAudioLookup("Exampletown", "Exampletown", "en");
+
+    assert.equal(result, null);
   } finally {
     globalThis.fetch = originalFetch;
   }
