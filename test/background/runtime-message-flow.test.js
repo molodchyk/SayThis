@@ -77,6 +77,35 @@ test("speaks supplied runtime results without resolving again", async () => {
   assert.deepEqual(responses, [{ ok: true, result: resolved }]);
 });
 
+test("returns guide speech metadata from speak messages", async () => {
+  const responses = [];
+  const resolved = { display: "Exampletown" };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    result: resolved,
+    rate: 0.82
+  }, (value) => responses.push(value), {
+    speakResult: async () => ({
+      spoken: true,
+      text: "eg-ZAM-pluh-town",
+      fallback: "guide"
+    })
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(responses, [{
+    ok: true,
+    result: resolved,
+    speech: {
+      fallback: "guide",
+      text: "eg-ZAM-pluh-town"
+    }
+  }]);
+});
+
 test("reports missing matching voice from speak messages", async () => {
   const responses = [];
   const handled = handleRuntimeMessage({

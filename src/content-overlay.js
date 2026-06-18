@@ -350,9 +350,7 @@
       result,
       rate
     }).then((response) => {
-      setStatus(response?.ok
-        ? rate < 0.7 ? "Speaking slowly." : "Speaking."
-        : response?.error || "Speech failed.");
+      setStatus(response?.ok ? speakingStatus(response, rate) : response?.error || "Speech failed.");
     });
   }
 
@@ -380,7 +378,9 @@
         result,
         rate
       }).then((response) => {
-        if (!response?.ok) {
+        if (response?.ok) {
+          setStatus(speakingStatus(response, rate));
+        } else {
           setStatus(response?.error || "Speech failed.");
         }
       });
@@ -414,6 +414,15 @@
     }
 
     return overlayRuntime.sendRuntimeMessage(message, runtimeAdapters);
+  }
+
+  function speakingStatus(response, rate) {
+    const guide = response?.speech?.fallback === "guide";
+    if (guide) {
+      return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+    }
+
+    return rate < 0.7 ? "Speaking slowly." : "Speaking.";
   }
 
 })();

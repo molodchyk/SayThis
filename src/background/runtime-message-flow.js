@@ -35,10 +35,14 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         if (speech?.spoken === false) {
           throw new Error(speech.error || "Speech failed.");
         }
-        return result;
+        return { result, speech: speechSummary(speech) };
       }),
       sendResponse,
-      (result) => ({ ok: true, result }),
+      ({ result, speech }) => ({
+        ok: true,
+        result,
+        ...(speech ? { speech } : {})
+      }),
       "Speech failed."
     );
     return true;
@@ -107,4 +111,18 @@ function respondWithResult(promise, sendResponse, buildResponse, fallbackError) 
     .catch((error) => {
       sendResponse({ ok: false, error: error?.message || fallbackError });
     });
+}
+
+function speechSummary(speech = {}) {
+  const fallback = normalizeSelection(speech.fallback);
+  const text = normalizeSelection(speech.text);
+
+  if (!fallback && !text) {
+    return null;
+  }
+
+  return {
+    ...(fallback ? { fallback } : {}),
+    ...(text ? { text } : {})
+  };
 }

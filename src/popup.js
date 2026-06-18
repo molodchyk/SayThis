@@ -138,7 +138,7 @@ async function speakSelection(rate) {
   if (response.ok) {
     currentResult = response.result;
     renderResult(currentResult);
-    setStatus(rate < 0.7 ? "Speaking slowly." : "Speaking.");
+    setStatus(speakingStatus(response, rate));
   } else {
     setStatus(response.error || "Speech failed.");
   }
@@ -303,7 +303,7 @@ async function speakResultCandidate(result, rate) {
   }));
 
   setStatus(response.ok
-    ? rate < 0.7 ? "Speaking alternate slowly." : "Speaking alternate."
+    ? speakingStatus(response, rate, "Speaking alternate")
     : response.error || "Speech failed.");
 }
 
@@ -329,7 +329,7 @@ function playAudioItem(audio, result, rate, options = {}) {
         currentResult = response.result;
         renderResult(currentResult);
       }
-      setStatus(rate < 0.7 ? "Speaking slowly." : "Speaking.");
+      setStatus(speakingStatus(response, rate));
     } else {
       setStatus(response.error || "Speech failed.");
     }
@@ -360,6 +360,15 @@ function updateButtonState() {
   onlineButton.disabled = !hasText;
   speakButton.disabled = !hasText;
   slowButton.disabled = !hasText;
+}
+
+function speakingStatus(response, rate, base = "Speaking") {
+  const guide = response?.speech?.fallback === "guide";
+  if (guide) {
+    return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+  }
+
+  return rate < 0.7 ? `${base} slowly.` : `${base}.`;
 }
 
 function popupRuntimeAdapters() {
