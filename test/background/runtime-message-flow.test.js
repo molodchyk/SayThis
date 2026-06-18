@@ -53,7 +53,7 @@ test("resolves selected text runtime messages", async () => {
   assert.deepEqual(responses, [{ ok: true, result: resolved }]);
 });
 
-test("speaks supplied runtime results without resolving again", async () => {
+test("speaks supplied runtime results when refresh is unavailable", async () => {
   const responses = [];
   const calls = [];
   const resolved = { display: "Gnocchi" };
@@ -75,6 +75,113 @@ test("speaks supplied runtime results without resolving again", async () => {
   assert.equal(handled, true);
   assert.deepEqual(calls, [["speakResult", resolved, { rate: 0.7, lang: "it" }]]);
   assert.deepEqual(responses, [{ ok: true, result: resolved }]);
+});
+
+test("refreshes supplied runtime speak results before speech", async () => {
+  const responses = [];
+  const calls = [];
+  const supplied = {
+    display: "Exampletown",
+    sourceForm: "Exampletown",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...supplied,
+    sourceForm: "Przykladowo",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/przykladowo.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    result: supplied,
+    rate: 0.82
+  }, (value) => responses.push(value), {
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    },
+    speakResult: async (result, options) => {
+      calls.push(["speakResult", result, options]);
+      return { spoken: true, text: result.sourceForm };
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: supplied }],
+    ["speakResult", refreshed, { rate: 0.82, lang: undefined }]
+  ]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    result: refreshed,
+    speech: {
+      text: "Przykladowo"
+    }
+  }]);
+});
+
+test("requests shared audio for runtime speak results before speech", async () => {
+  const responses = [];
+  const calls = [];
+  const supplied = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const shared = {
+    ...supplied,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://community.example/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    result: supplied,
+    rate: 0.62
+  }, (value) => responses.push(value), {
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return supplied;
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return shared;
+    },
+    speakResult: async (result, options) => {
+      calls.push(["speakResult", result, options]);
+      return { spoken: true, text: result.sourceForm };
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: supplied }],
+    ["requestSharedAudio", "Exampletown", supplied, {}],
+    ["speakResult", shared, { rate: 0.62, lang: undefined }]
+  ]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    result: shared,
+    speech: {
+      text: "Przykladowo"
+    }
+  }]);
 });
 
 test("returns guide speech metadata from speak messages", async () => {

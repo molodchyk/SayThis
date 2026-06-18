@@ -7,6 +7,9 @@ import {
 import {
   normalizeLanguageHints
 } from "../shared/settings.js";
+import {
+  resolvePlayableResult
+} from "./pronunciation-playback-flow.js";
 
 export function handleRuntimeMessage(message = {}, sendResponse = () => {}, dependencies = {}) {
   if (message?.type === MESSAGE_TYPES.resolve) {
@@ -26,16 +29,18 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       return true;
     }
 
+    const options = useOnlineMessageOptions(message);
     const resultPromise = message.result
       ? Promise.resolve(message.result)
-      : dependencies.resolveSelection(selectedText, useOnlineMessageOptions(message));
+      : dependencies.resolveSelection(selectedText, options);
     respondWithResult(
       resultPromise.then(async (result) => {
-        const speech = await dependencies.speakResult(result, { rate: message.rate, lang: message.lang });
+        const playableResult = await resolvePlayableResult(selectedText, result, options, dependencies);
+        const speech = await dependencies.speakResult(playableResult, { rate: message.rate, lang: message.lang });
         if (!speech || speech.spoken === false) {
           throw new Error(speech?.error || "Speech unavailable.");
         }
-        return { result, speech: speechSummary(speech) };
+        return { result: playableResult, speech: speechSummary(speech) };
       }),
       sendResponse,
       ({ result, speech }) => ({

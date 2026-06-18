@@ -87,6 +87,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Keyboard command routing and handling has a narrow background module with deterministic mapping and fallback tests.
 - Context-menu click handling has a narrow background module with deterministic fallback tests.
 - Runtime message handling has a narrow background router with deterministic validation and error-response tests.
+- Runtime speak messages use the shared playable-result policy so online refresh and shared-audio reuse happen before speech fallback.
 - Runtime browser adapters have a narrow background module with tests for seed-data caching, tab selection extraction, and keyboard dependency wiring.
 - Service-worker platform adapters have deterministic tests for storage, runtime, tabs, scripting, commands, context menus, TTS, offscreen APIs, and dependency bundles.
 - Result playback order has a narrow background module with deterministic overlay, offscreen, and verified speech fallback tests.
