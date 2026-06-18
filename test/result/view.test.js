@@ -244,6 +244,21 @@ test("builds playback items from audio before source speech and guide speech", (
   }]);
 
   assert.deepEqual(playbackItemsForResult({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Differentform",
+    language: "ga",
+    ttsLang: "en-IE",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  }), [{
+    kind: "guide",
+    label: "Guide speech",
+    text: "eg-ZAM-pluh-term"
+  }]);
+
+  assert.deepEqual(playbackItemsForResult({
     pronunciation: {
       simple: "eg-ZAM-pluh-term"
     }

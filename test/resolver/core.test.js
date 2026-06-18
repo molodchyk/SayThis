@@ -435,8 +435,10 @@ test("uses browser language display names for valid source codes", () => {
 
 test("maps structured source language codes to speech locales", () => {
   const cases = [
+    ["ga", "ga-IE"],
     ["hy", "hy-AM"],
     ["hi", "hi-IN"],
+    ["la", "la"],
     ["th", "th-TH"],
     ["bg", "bg-BG"],
     ["sr", "sr-RS"],

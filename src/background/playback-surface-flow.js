@@ -17,6 +17,9 @@ import {
   normalizeSettings
 } from "../shared/settings.js";
 import {
+  hasNonEnglishLanguageSignal
+} from "../result/shared-audio.js";
+import {
   baseVoiceLocale,
   normalizeVoiceLocale,
   preferredVoiceScoreForLabel,
@@ -110,6 +113,13 @@ export function createPlaybackSurface(dependencies = {}) {
       return {
         spoken: false,
         error: "Speech unavailable for plain English text without a guide."
+      };
+    }
+
+    if (shouldRejectCrossLanguageEnglishSpeech(result, speech)) {
+      return {
+        spoken: false,
+        error: "Speech unavailable for non-English text with an English voice."
       };
     }
 
@@ -280,6 +290,18 @@ export function createPlaybackSurface(dependencies = {}) {
     const selectedKey = createLookupKey(result?.query || result?.display);
     const sourceKey = createLookupKey(result?.sourceForm || result?.display || result?.query);
     return Boolean(selectedKey && sourceKey && selectedKey === sourceKey);
+  }
+
+  function shouldRejectCrossLanguageEnglishSpeech(result, speech = {}) {
+    const language = normalizeSelection(result?.language);
+    const lang = normalizeSelection(speech.options?.lang || result?.ttsLang);
+    if (!hasNonEnglishLanguageSignal(language) || baseVoiceLang(lang) !== "en") {
+      return false;
+    }
+
+    const text = normalizeSelection(speech.text);
+    const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
+    return !(guide && text === guide);
   }
 
   async function stopOffscreenAudio() {

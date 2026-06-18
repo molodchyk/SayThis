@@ -187,6 +187,72 @@ test("does not speak plain same-text English structured results with browser TTS
   assert.deepEqual(calls, []);
 });
 
+test("does not speak non-English results through English browser voices", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Differentform",
+    speakText: "Differentform",
+    language: "ga",
+    ttsLang: "en-IE",
+    sourceStatus: "structured-source"
+  });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "Speech unavailable for non-English text with an English voice."
+  });
+  assert.deepEqual(calls, []);
+});
+
+test("still speaks non-English guide rows with an English guide voice", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    speakText: "eg-ZAM-pluh-term",
+    language: "ga",
+    ttsLang: "en-US",
+    sourceStatus: "structured-source",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  });
+
+  assert.deepEqual(result, {
+    spoken: true,
+    text: "eg-ZAM-pluh-term",
+    options: {
+      enqueue: false,
+      rate: 0.82,
+      lang: "en-US",
+      voiceName: "English Default"
+    }
+  });
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "eg-ZAM-pluh-term", { enqueue: false, rate: 0.82, lang: "en-US", voiceName: "English Default" }]
+  ]);
+});
+
 test("still speaks unresolved abbreviation guides", async () => {
   const calls = [];
   const surface = createPlaybackSurface({

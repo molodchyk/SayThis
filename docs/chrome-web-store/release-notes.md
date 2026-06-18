@@ -13,6 +13,7 @@
 - Labels generated fallback playback separately from source-backed recordings in the popup and on-page card.
 - Avoids generated fallback audio for plain English same-text structured results.
 - Avoids browser TTS fallback for plain English same-text structured results without a guide.
+- Avoids browser TTS fallback when a non-English resolved language would use an English voice.
 - Rejects public shared-audio generation for plain English same-text requests at the service boundary.
 - Rejects generated voice-service/provider audio when a non-English resolved language would use an English TTS locale.
 - Labels token-gated public generated shared audio as service-generated instead of moderator-reviewed.

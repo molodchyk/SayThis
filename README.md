@@ -116,6 +116,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Imported lookup-cache results are allowlisted to pronunciation result fields while preserving trust and variant metadata.
 - Verified pronunciation-audio playback from structured sources when available, with verified matching browser voice or guide speech fallback.
 - Popup source-audio playback falls back through the same verified speech policy if the audio cannot start.
+- Browser speech is blocked when a non-English resolved language would be routed through an English voice, except for explicit simple guide speech.
 - Options for default online lookup, on-page card display, and local/shared community-memory data management.
 - Opt-in community sync endpoint with a local retry queue for correction submissions.
 - Privacy-scoped community submissions can carry resolver aliases, origin, root, domain hints, guides, audio, variants, and source links for moderator review.
@@ -153,7 +154,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Pure resolver merge helpers split into a narrow module.
 - Pure resolver community-memory helpers split into a narrow module.
 
-Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken. Paid-provider generation belongs behind service-side controls, with useful generated samples saved as shared reviewed audio artifacts.
+Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken. It should not route a non-English resolved language through an English voice for source-form speech. Paid-provider generation belongs behind service-side controls, with useful generated samples saved as shared reviewed audio artifacts.
 
 MVP quality bar: SayThis should prefer verified recordings from source-backed services. If no recording is available, it may use a verified matching browser voice for the resolved source form. If the browser cannot verify a matching voice, SayThis should use the simple guide when present or report that speech is unavailable instead of playing a misleading fallback voice.
 

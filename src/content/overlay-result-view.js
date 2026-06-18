@@ -372,7 +372,12 @@
     const selectedKey = createLookupKey(selected);
     const sourceDiffers = Boolean(sourceKey && selectedKey && sourceKey !== selectedKey);
 
-    if (!sourceForm || !lang || (baseLanguage(lang) === "en" && !sourceDiffers)) {
+    if (
+      !sourceForm ||
+      !lang ||
+      (baseLanguage(lang) === "en" && !sourceDiffers) ||
+      shouldHideCrossLanguageEnglishSpeech(result.language, lang)
+    ) {
       return null;
     }
 
@@ -386,6 +391,11 @@
 
   function baseLanguage(value) {
     return String(value || "").trim().toLowerCase().split(/[-_]/)[0];
+  }
+
+  function shouldHideCrossLanguageEnglishSpeech(language, lang) {
+    const languageBase = baseLanguage(language);
+    return Boolean(languageBase && !["unknown", "und", "en", "eng"].includes(languageBase) && baseLanguage(lang) === "en");
   }
 
   function hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang) {
