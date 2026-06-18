@@ -46,7 +46,8 @@ test("builds generated audio results from resolved source forms", () => {
     language: "pl",
     languageName: "Polish",
     ttsLang: "pl-PL",
-    category: "place"
+    category: "place",
+    sourceStatus: "structured-source"
   }, {
     urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}",
     label: "Example voice"
@@ -59,6 +60,25 @@ test("builds generated audio results from resolved source forms", () => {
   assert.equal(result.ttsLang, "pl-PL");
   assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
   assert.equal(result.pronunciation.audio[0].quality, "generated");
+});
+
+test("does not build generated audio for unresolved or language-less results", () => {
+  assert.equal(buildVoiceServiceResult("Exampleterm", {
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    sourceStatus: "best-effort-fallback",
+    ttsLang: "en-US"
+  }, {
+    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  }), null);
+
+  assert.equal(buildVoiceServiceResult("Exampleterm", {
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    sourceStatus: "structured-source"
+  }, {
+    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  }), null);
 });
 
 test("selects the matching custom source entry", () => {

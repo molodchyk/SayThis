@@ -332,6 +332,16 @@ test("does not build voice-service audio when a recording exists", async () => {
   }), null);
 });
 
+test("does not build voice-service audio for best-effort fallback results", async () => {
+  const fallback = resolveTerm("Exampleterm", { entries: [] });
+
+  const result = resolveWithVoiceService("Exampleterm", fallback, {
+    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  });
+
+  assert.equal(result, null);
+});
+
 test("uses Commons audio before generated voice-service audio", async () => {
   const originalFetch = globalThis.fetch;
   const structured = createRemoteStructuredResult("Exampletown", {

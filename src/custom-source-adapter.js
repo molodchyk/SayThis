@@ -37,7 +37,7 @@ export function buildVoiceServiceResult(selection, result = {}, options = {}) {
     lang: ttsLang,
     language
   });
-  if (!selectedText || !sourceForm || !url) {
+  if (!selectedText || !sourceForm || !ttsLang || !url || !canGenerateVoiceServiceAudio(result)) {
     return null;
   }
 
@@ -69,6 +69,14 @@ export function buildVoiceServiceResult(selection, result = {}, options = {}) {
     evidence: [`Audio URL from ${label}`],
     sources: [{ label, url }]
   });
+}
+
+function canGenerateVoiceServiceAudio(result = {}) {
+  return [
+    "verified-audio",
+    "community-confirmed",
+    "structured-source"
+  ].includes(normalizeSelection(result.sourceStatus));
 }
 
 export function buildVoiceServiceAudioUrl(template, values = {}) {
