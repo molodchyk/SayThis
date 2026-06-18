@@ -134,6 +134,16 @@ test("normalizes overlay result display helpers", () => {
     label: "Guide speech",
     text: "eg-ZAM-pluh-term"
   }]);
+  assert.deepEqual(plain(view.playbackItems({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    ttsLang: "en-US",
+    pronunciation: {
+      simple: "English pronunciations vary; source form should use a matching voice"
+    }
+  })), []);
   assert.equal(view.preferredSpeechResult({
     query: "Exampletown",
     display: "Exampletown",
@@ -144,6 +154,18 @@ test("normalizes overlay result display helpers", () => {
       simple: "eg-ZAM-pluh-term"
     }
   }).speakText, "Przykladowo");
+  assert.equal(view.preferredSpeechResult({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    ttsLang: "en-US",
+    pronunciation: {
+      simple: "English pronunciations vary; source form should use a matching voice"
+    }
+  })?.speakText, undefined);
+  assert.equal(view.normalizeSpeakableGuide("p-shih-kla-doh-voh"), "p-shih-kla-doh-voh");
+  assert.equal(view.normalizeSpeakableGuide("SEER-sha or SUR-sha, depending on speaker"), "");
   assert.equal(view.speechResultForPlaybackItem(result, {
     kind: "guide",
     text: "NYOH-kee"

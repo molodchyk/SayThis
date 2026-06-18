@@ -3,6 +3,8 @@
     return;
   }
 
+  const GUIDE_PROSE_MARKERS = /\b(?:context|contexts|depending|often|pronunciation|pronunciations|pronounced|speaker|speakers|source form|usually|varies|vary|voice)\b/i;
+
   function correctionInput(label, field, value, maxLength, className = "", type = "text") {
     return `
       <label class="${escapeAttribute(className)}">
@@ -84,7 +86,7 @@
   function playbackItems(result) {
     const audio = audioItems(result).map((item) => ({ ...item, kind: "audio" }));
     const speech = sourceSpeechItem(result);
-    const guide = normalizeText(result?.pronunciation?.simple);
+    const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
 
     if (audio.length) {
       return audio;
@@ -187,6 +189,19 @@
 
   function normalizeText(value) {
     return String(value || "").replace(/\s+/g, " ").trim().slice(0, 160);
+  }
+
+  function normalizeSpeakableGuide(value) {
+    const guide = normalizeText(value);
+    if (!guide || guide.length > 120 || /[.;]/.test(guide) || GUIDE_PROSE_MARKERS.test(guide)) {
+      return "";
+    }
+
+    if (guide.split(/\s+/).length > 12) {
+      return "";
+    }
+
+    return guide;
   }
 
   function createLookupKey(value) {
@@ -429,6 +444,7 @@
     normalizeAliases,
     normalizeLanguageHints,
     normalizeLongText,
+    normalizeSpeakableGuide,
     normalizeText,
     playbackItems,
     playbackStatus,
