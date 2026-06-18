@@ -47,7 +47,13 @@ test("builds generated audio results from resolved source forms", () => {
     languageName: "Polish",
     ttsLang: "pl-PL",
     category: "place",
-    sourceStatus: "structured-source"
+    origin: "sample source",
+    root: "przyklad",
+    domainHint: "field term",
+    sourceStatus: "structured-source",
+    trustSignals: ["source-backed", "root-noted"],
+    variantNote: "regional reading note",
+    sources: [{ label: "Structured source", url: "https://source.example/przykladowo" }]
   }, {
     urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}",
     label: "Example voice"
@@ -58,6 +64,15 @@ test("builds generated audio results from resolved source forms", () => {
   assert.equal(result.sourceForm, "Przykladowo");
   assert.equal(result.language, "pl");
   assert.equal(result.ttsLang, "pl-PL");
+  assert.equal(result.origin, "sample source");
+  assert.equal(result.root, "przyklad");
+  assert.equal(result.domainHint, "field term");
+  assert.deepEqual(result.trustSignals, ["source-backed", "root-noted", "audio-backed"]);
+  assert.equal(result.notes, "regional reading note");
+  assert.deepEqual(result.sources, [
+    { label: "Structured source", url: "https://source.example/przykladowo" },
+    { label: "Example voice", url: "https://voice.example/speak?text=Przykladowo&lang=pl-PL" }
+  ]);
   assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
   assert.equal(result.pronunciation.audio[0].quality, "generated");
 });

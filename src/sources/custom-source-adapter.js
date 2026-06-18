@@ -49,6 +49,8 @@ export function buildVoiceServiceResult(selection, result = {}, options = {}) {
   }
 
   const label = normalizeSelection(options.label || "Voice service");
+  const sources = voiceServiceSources(result, label, url);
+  const notes = normalizeSelection(result.notes || result.variantNote);
   return createRemoteStructuredResult(selectedText, {
     id: `voice-service:${createLookupKey([sourceForm, ttsLang || language].join(" "))}`,
     display: result.display || sourceForm,
@@ -59,6 +61,7 @@ export function buildVoiceServiceResult(selection, result = {}, options = {}) {
     languageName: result.languageName,
     ttsLang,
     category: result.category || "term",
+    origin: result.origin,
     root: result.root,
     domainHint: result.domainHint,
     pronunciation: {
@@ -72,9 +75,11 @@ export function buildVoiceServiceResult(selection, result = {}, options = {}) {
       }]
     },
     sourceStatus: "generated-audio",
+    trustSignals: result.trustSignals || [],
     confidence: "medium",
     evidence: [`Audio URL from ${label}`],
-    sources: [{ label, url }]
+    sources,
+    notes
   });
 }
 
@@ -90,6 +95,15 @@ function hasUsefulVoiceServiceTarget(selectedText, sourceForm, language, ttsLang
   return createLookupKey(selectedText) !== createLookupKey(sourceForm) ||
     (language && baseLanguage(language) !== "en") ||
     (ttsLang && baseLanguage(ttsLang) !== "en");
+}
+
+function voiceServiceSources(result = {}, label, url) {
+  const sources = Array.isArray(result.sources) ? result.sources : [];
+  return [
+    ...sources,
+    result.sourceUrl ? { label: "Source", url: result.sourceUrl } : null,
+    { label, url }
+  ].filter(Boolean);
 }
 
 export function buildVoiceServiceAudioUrl(template, values = {}) {
