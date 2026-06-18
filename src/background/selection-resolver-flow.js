@@ -75,7 +75,7 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
     resultCache = cached.cache;
 
     try {
-      const shouldRefreshCache = cached.hit && shouldRefreshCachedResult(cached.result, options);
+      const shouldRefreshCache = cached.hit && shouldRefreshCachedResult(cached.result, options, localResult);
       const remoteResult = cached.hit && !shouldRefreshCache
         ? cached.result
         : mergeRemoteResult(cached.result, await remoteResolver(dependencies)(selectedText, onlineSettings, credentials, {
@@ -108,12 +108,22 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
   return result;
 }
 
-function shouldRefreshCachedResult(result, options = {}) {
+function shouldRefreshCachedResult(result, options = {}, localResult = {}) {
   if (options.useOnline === true) {
     return !hasPreferredAudio(result);
   }
 
-  return hasGeneratedAudio(result) && !hasPreferredAudio(result);
+  return !hasPreferredAudio(result) && (
+    hasGeneratedAudio(result) ||
+    shouldRefreshCacheForLocalAudioSearch(localResult)
+  );
+}
+
+function shouldRefreshCacheForLocalAudioSearch(result = {}) {
+  const sourceStatus = normalizeSelection(result?.sourceStatus);
+  return sourceStatus === "structured-source" ||
+    sourceStatus === "community-confirmed" ||
+    sourceStatus === "generated-audio";
 }
 
 function withEvidence(result, item) {

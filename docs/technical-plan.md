@@ -118,6 +118,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Latin orthography hints can guide fallback speech policy and optional pronunciation-audio lookup when structured sources are absent.
 - Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.
 - Local results without a preferred recording automatically check public structured sources for pronunciation data; the popup `Online` action still forces a refresh.
+- Cached no-audio results do not block recording refresh for structured local entries that still need preferred audio.
 - Online source orchestration has a background-owned module outside the service-worker entry point.
 - Multi-candidate Wikidata search ranking before entity-detail extraction.
 - Script-based Wikidata search languages for non-Latin selections.

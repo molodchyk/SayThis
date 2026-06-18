@@ -5,6 +5,7 @@
 - Adds shared generated audio requests through the configured community endpoint.
 - Reuses approved shared audio artifacts before any provider generation.
 - Reuses reviewed shared audio across alternate spellings when the resolved source form and base language match.
+- Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
 - Keeps provider generation behind service-side opt-in, rate limits, and optional bearer-token controls.
 - Updates the Chrome extension and package version to 1.0.0.
 

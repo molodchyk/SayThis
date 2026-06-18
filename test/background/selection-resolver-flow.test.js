@@ -191,6 +191,73 @@ test("checks online sources for structured guide-only local entries", async () =
   assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
 });
 
+test("refreshes cached no-audio results for structured guide-only local entries", async () => {
+  const calls = [];
+  const storedUpdates = [];
+  const guideOnlyData = {
+    entries: [{
+      id: "sampleterm",
+      display: "Sampleterm",
+      sourceForm: "Sampleterm",
+      language: "it",
+      pronunciation: {
+        simple: "SAM-pluh-term"
+      },
+      sourceStatus: "structured-source",
+      confidence: "medium"
+    }]
+  };
+  const cachedRemote = createRemoteStructuredResult("Sampleterm", {
+    id: "remote:sampleterm",
+    display: "Sampleterm",
+    sourceForm: "Sampleterm",
+    language: "it",
+    pronunciation: {
+      simple: "SAM-pluh-term"
+    },
+    evidence: ["Cached no-audio source"]
+  });
+  const audioRemote = createRemoteStructuredResult("Sampleterm", {
+    id: "audio:sampleterm",
+    display: "Sampleterm",
+    sourceForm: "Sampleterm",
+    language: "it",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/sampleterm.ogg",
+        label: "Verified recording",
+        source: "Audio source",
+        quality: "verified"
+      }]
+    },
+    sourceStatus: "verified-audio",
+    evidence: ["Verified audio"]
+  });
+  const resultCache = upsertCachedResult({}, "Sampleterm", cachedRemote);
+
+  const result = await resolveSelection("Sampleterm", {}, {
+    loadSeedData: async () => guideOnlyData,
+    getStorage: async () => ({
+      settings: { onlineByDefault: false },
+      resultCache
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async (text, settings, credentials, context) => {
+      calls.push({ text, contextResult: context.localResult });
+      return audioRemote;
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].contextResult.id, "sampleterm");
+  assert.equal(calls[0].contextResult.pronunciation.simple, "SAM-pluh-term");
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.pronunciation.audio[0].url, "https://audio.example/sampleterm.ogg");
+  assert.ok(result.evidence.includes("Local lookup cache"));
+  assert.ok(result.evidence.includes("Verified audio"));
+  assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
+});
+
 test("keeps explicit local lookup local even without pronunciation", async () => {
   const storedUpdates = [];
   const result = await resolveSelection("Exampletown", { useOnline: false }, {
