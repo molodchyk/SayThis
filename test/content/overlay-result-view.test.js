@@ -55,6 +55,22 @@ test("normalizes overlay result display helpers", () => {
       }]
     }
   }), false);
+  assert.equal(view.isSharedAudioCandidate({
+    query: "P&L",
+    display: "P&L",
+    sourceForm: "P N L",
+    language: "en",
+    ttsLang: "en-US",
+    sourceStatus: "structured-source"
+  }, "P&L"), true);
+  assert.equal(view.isSharedAudioCandidate({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    ttsLang: "en-US",
+    sourceStatus: "structured-source"
+  }, "Exampleterm"), false);
   assert.deepEqual(plain(view.audioItems(result)), [
     { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },

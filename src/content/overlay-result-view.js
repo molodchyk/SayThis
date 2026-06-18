@@ -30,6 +30,20 @@
     return rankedAudioItems(audio).some((item) => isPreferredAudioItem(item, result?.sourceStatus));
   }
 
+  function isSharedAudioCandidate(result = {}, selectedText = "") {
+    const sourceForm = normalizeText(result?.sourceForm || result?.display || result?.query);
+    const ttsLang = normalizeText(result?.ttsLang || result?.language);
+    const sourceStatus = normalizeText(result?.sourceStatus);
+    return Boolean(
+      result &&
+      !hasPreferredAudio(result) &&
+      sourceForm &&
+      ttsLang &&
+      !["", "unknown", "best-effort-fallback"].includes(sourceStatus) &&
+      hasUsefulSharedAudioTarget(selectedText || result?.query || result?.display, sourceForm, result?.language, ttsLang)
+    );
+  }
+
   function sourceItems(result) {
     const sources = Array.isArray(result?.sources) ? result.sources : [];
     const audio = audioItems(result);
@@ -173,6 +187,15 @@
 
   function normalizeText(value) {
     return String(value || "").replace(/\s+/g, " ").trim().slice(0, 160);
+  }
+
+  function createLookupKey(value) {
+    return normalizeText(value)
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")
+      .replace(/[\s\-_]+/g, " ")
+      .toLocaleLowerCase();
   }
 
   function normalizeLongText(value) {
@@ -347,6 +370,22 @@
     return String(value || "").trim().toLowerCase().split(/[-_]/)[0];
   }
 
+  function hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang) {
+    return createLookupKey(selectedText) !== createLookupKey(sourceForm) ||
+      hasNonEnglishLanguageSignal(language) ||
+      hasNonEnglishLanguageSignal(ttsLang);
+  }
+
+  function hasNonEnglishLanguageSignal(value) {
+    const normalized = normalizeText(value).toLowerCase();
+    const base = baseLanguage(normalized);
+    if (!base || ["unknown", "und", "en", "eng"].includes(base) || normalized.startsWith("english")) {
+      return false;
+    }
+
+    return true;
+  }
+
   function normalizeUrl(value) {
     const raw = String(value || "").trim();
     if (!raw) {
@@ -383,6 +422,7 @@
     firstSourceUrl,
     getBestAudio,
     hasPreferredAudio,
+    isSharedAudioCandidate,
     normalizeAliases,
     normalizeLanguageHints,
     normalizeLongText,

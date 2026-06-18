@@ -436,8 +436,8 @@ test("popup source-audio failure uses speech fallback", async () => {
   assert.match(source, /autoSpeakPopup/);
   assert.match(source, /await speakSelection\(0\.82\)/);
   assert.match(source, /createPopupAudioPlayback/);
-  assert.match(source, /hasPreferredAudio/);
-  assert.match(source, /!hasPreferredAudio\(result\)/);
+  assert.match(source, /from "\.\.\/result\/shared-audio\.js"/);
+  assert.match(source, /sharedAudioCandidateForResult\(result, selectionInput\.value\)/);
   assert.match(source, /!options\.skipSharedAudio && isGeneratedAudioItem\(audio\) && isSharedAudioCandidate\(result\)/);
   assert.match(source, /skipSharedAudio: true/);
   assert.match(resultSource, /playbackItemsForResult/);

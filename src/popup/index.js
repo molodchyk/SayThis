@@ -1,9 +1,12 @@
-import { getBestAudio, hasPreferredAudio, normalizeSelection } from "../resolver-core.js";
+import { getBestAudio, normalizeSelection } from "../resolver-core.js";
 import {
   playbackItemsForResult,
   preferredSpeechResultForResult,
   speechResultForPlaybackItem
 } from "../result/view.js";
+import {
+  isSharedAudioCandidate as sharedAudioCandidateForResult
+} from "../result/shared-audio.js";
 import {
   correctionFeedbackFromValues,
   hasCorrectionDetail
@@ -408,18 +411,7 @@ function isGeneratedAudioItem(audio = {}) {
 }
 
 function isSharedAudioCandidate(result = {}) {
-  return Boolean(
-    result &&
-    !hasPreferredAudio(result) &&
-    normalizeSelection(result.sourceForm || result.display || result.query) &&
-    normalizeSelection(result.ttsLang) &&
-    baseLanguage(result.ttsLang) !== "en" &&
-    !["", "unknown", "best-effort-fallback"].includes(normalizeSelection(result.sourceStatus))
-  );
-}
-
-function baseLanguage(value) {
-  return normalizeSelection(value).toLowerCase().split(/[-_]/)[0];
+  return sharedAudioCandidateForResult(result, selectionInput.value);
 }
 
 function stopAudio() {

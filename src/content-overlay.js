@@ -20,6 +20,7 @@
     firstSourceUrl,
     getBestAudio,
     hasPreferredAudio = (result) => Boolean(getBestAudio(result)),
+    isSharedAudioCandidate: sharedAudioCandidateForResult = () => false,
     normalizeAliases,
     normalizeLanguageHints,
     normalizeLongText,
@@ -494,18 +495,7 @@
   }
 
   function isSharedAudioCandidate(result = {}) {
-    return Boolean(
-      result &&
-      !hasPreferredAudio(result) &&
-      normalizeText(result.sourceForm || result.display || result.query) &&
-      normalizeText(result.ttsLang) &&
-      baseLanguage(result.ttsLang) !== "en" &&
-      !["", "unknown", "best-effort-fallback"].includes(normalizeText(result.sourceStatus))
-    );
-  }
-
-  function baseLanguage(value) {
-    return normalizeText(value).toLowerCase().split(/[-_]/)[0];
+    return sharedAudioCandidateForResult(result, result?.query || result?.display);
   }
 
   function stopAudio() {

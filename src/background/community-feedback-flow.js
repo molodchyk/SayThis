@@ -18,6 +18,9 @@ import {
 import {
   normalizeSettings
 } from "../shared/settings.js";
+import {
+  hasUsefulSharedAudioTarget
+} from "../result/shared-audio.js";
 
 const DEFAULT_STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
@@ -305,22 +308,6 @@ function sharedAudioRequestBody(selectedText, result = {}, options = {}) {
     sourceUrl: firstSourceUrl(result),
     rate: Number.isFinite(Number(options.rate)) ? Number(options.rate) : undefined
   };
-}
-
-function hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang) {
-  return createLookupKey(selectedText) !== createLookupKey(sourceForm) ||
-    hasNonEnglishLanguageSignal(language) ||
-    hasNonEnglishLanguageSignal(ttsLang);
-}
-
-function hasNonEnglishLanguageSignal(value) {
-  const normalized = normalizeSelection(value).toLowerCase();
-  const base = baseLanguage(normalized);
-  if (!base || ["unknown", "und", "en", "eng"].includes(base) || normalized.startsWith("english")) {
-    return false;
-  }
-
-  return true;
 }
 
 function approvedAudioEntryForRequest(approvedEntries = {}, request = {}) {

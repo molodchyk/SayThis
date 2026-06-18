@@ -201,6 +201,78 @@ test("speak action requests shared audio before generated playback", async () =>
   assert.deepEqual(sentMessages[0].dependencies, { surface: "content" });
 });
 
+test("speak action requests shared audio for same-language source-form differences", async () => {
+  const sentMessages = [];
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {
+      constructor() {
+        throw new Error("shared generated audio should use extension-owned playback");
+      }
+    },
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return { surface: "content" };
+    },
+    async sendRuntimeMessage(message, dependencies) {
+      sentMessages.push({ message, dependencies });
+      if (message.type === "SAYTHIS_REQUEST_SHARED_AUDIO") {
+        return {
+          ok: true,
+          result: {
+            ...message.result,
+            pronunciation: {
+              audio: [{
+                label: "Shared generated audio",
+                url: "https://audio.example/shared-abbrev.ogg",
+                quality: "generated"
+              }]
+            }
+          }
+        };
+      }
+
+      return { ok: true };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener({
+    query: "P&L",
+    display: "P&L",
+    sourceForm: "P N L",
+    language: "en",
+    ttsLang: "en-US",
+    sourceStatus: "structured-source"
+  }, { onlineChecked: true });
+  fakeDom.root.querySelector('[data-action="speak"]').click();
+  await flushPromises();
+
+  assert.deepEqual(sentMessages.map((item) => item.message.type), [
+    "SAYTHIS_REQUEST_SHARED_AUDIO",
+    "SAYTHIS_PLAY_AUDIO"
+  ]);
+  assert.equal(sentMessages[0].message.text, "P&L");
+  assert.equal(sentMessages[0].message.result.sourceForm, "P N L");
+  assert.equal(sentMessages[0].message.result.ttsLang, "en-US");
+  assert.equal(sentMessages[1].message.audio.url, "https://audio.example/shared-abbrev.ogg");
+  assert.deepEqual(sentMessages[0].dependencies, { surface: "content" });
+});
+
 test("generated recording row requests shared audio before playback", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();
