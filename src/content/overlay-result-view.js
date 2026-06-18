@@ -229,12 +229,25 @@
 
   function normalizeAudioItem(item) {
     const url = normalizeUrl(item?.url);
+    const source = normalizeText(item?.source);
+    const quality = normalizeText(item?.quality);
     return {
-      label: normalizeText(item?.label || item?.source || hostLabel(url) || "Pronunciation audio"),
-      source: normalizeText(item?.source),
-      quality: normalizeText(item?.quality),
+      label: audioItemLabel(item?.label, source, quality, url),
+      source,
+      quality,
       url
     };
+  }
+
+  function audioItemLabel(label, source, quality, url) {
+    const fallback = normalizeText(label || source || hostLabel(url) || "Pronunciation audio");
+    if (normalizeText(quality).toLowerCase() !== "generated") {
+      return fallback;
+    }
+
+    return /\bgenerated\b|\bshared audio\b/i.test(fallback)
+      ? fallback
+      : `Generated fallback: ${fallback}`;
   }
 
   function rankedAudioItems(audio) {
@@ -375,6 +388,7 @@
     normalizeLongText,
     normalizeText,
     playbackItems,
+    playbackStatus,
     preferredSpeechResult,
     speechResultForPlaybackItem,
     sourceItems,
@@ -382,4 +396,20 @@
     variantItems,
     variantsTextFromResult
   };
+
+  function playbackStatus(item = {}, rate = 0.82) {
+    if (item.kind === "audio" && normalizeText(item.quality).toLowerCase() === "generated") {
+      return rate < 0.7 ? "Playing generated audio slowly." : "Playing generated audio.";
+    }
+
+    if (item.kind === "audio") {
+      return rate < 0.7 ? "Playing recording slowly." : "Playing recording.";
+    }
+
+    if (item.kind === "guide") {
+      return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+    }
+
+    return rate < 0.7 ? "Speaking slowly." : "Speaking.";
+  }
 })();

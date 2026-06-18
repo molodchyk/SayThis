@@ -135,6 +135,37 @@ test("renders source-form speech before guide speech", () => {
   assert.equal(spoken[0].rate, 0.82);
 });
 
+test("renders generated fallback audio without recording status", () => {
+  const elements = createElements();
+  const statuses = [];
+  const playedAudio = [];
+
+  renderPopupResult({
+    display: "Exampleterm",
+    pronunciation: {
+      audio: [{
+        label: "Voice service audio",
+        source: "Voice service",
+        quality: "generated",
+        url: "https://voice.example/exampleterm.ogg"
+      }]
+    }
+  }, elements, {
+    document: fakeDocument(),
+    playAudioItem: (item, result, rate) => {
+      playedAudio.push({ item, result, rate });
+      return true;
+    },
+    setStatus: (value) => statuses.push(value)
+  });
+
+  assert.equal(elements.audioList.children[0].children[1].textContent, "Generated fallback: Voice service audio");
+  elements.audioList.children[0].children[0].events.click();
+
+  assert.equal(playedAudio[0].item.quality, "generated");
+  assert.deepEqual(statuses, ["Playing generated audio."]);
+});
+
 function sampleResult() {
   return {
     query: "Example",

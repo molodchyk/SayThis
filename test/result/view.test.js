@@ -5,6 +5,7 @@ import {
   audioItemsForResult,
   evidenceItemsForResult,
   playbackItemsForResult,
+  playbackStatusForItem,
   preferredSpeechResultForResult,
   speechResultForPlaybackItem,
   sourceItemsForResult
@@ -119,6 +120,11 @@ test("builds playable audio items", () => {
         quality: "generated",
         url: "https://voice.example/generated.ogg"
       }, {
+        label: "Voice service audio",
+        source: "Voice service",
+        quality: "generated",
+        url: "https://voice.example/generic.ogg"
+      }, {
         label: "Primary recording",
         source: "Forvo",
         quality: "verified",
@@ -139,7 +145,7 @@ test("builds playable audio items", () => {
         url: "chrome-extension://id/audio.ogg"
       }]
     }
-  });
+  }, 5);
 
   assert.deepEqual(items, [{
     label: "Curated pronunciation",
@@ -161,6 +167,11 @@ test("builds playable audio items", () => {
     source: "Voice service",
     quality: "generated",
     url: "https://voice.example/generated.ogg"
+  }, {
+    label: "Generated fallback: Voice service audio",
+    source: "Voice service",
+    quality: "generated",
+    url: "https://voice.example/generic.ogg"
   }]);
 });
 
@@ -287,6 +298,20 @@ test("prefers source-form speech before guide speech", () => {
       simple: "p-shih-kla-doh-voh"
     }
   });
+});
+
+test("describes generated fallback playback without calling it a recording", () => {
+  assert.equal(playbackStatusForItem({
+    kind: "audio",
+    quality: "generated"
+  }), "Playing generated audio.");
+  assert.equal(playbackStatusForItem({
+    kind: "audio",
+    quality: "verified"
+  }), "Playing recording.");
+  assert.equal(playbackStatusForItem({
+    kind: "guide"
+  }, 0.62), "Speaking guide slowly.");
 });
 
 test("builds compact alternate candidate summaries", () => {

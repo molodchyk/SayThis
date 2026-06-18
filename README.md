@@ -132,6 +132,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Shared audio requests reuse locally approved shared artifacts before contacting the endpoint again, even after endpoint access is disabled.
 - Shared audio reuse can match lookup key, term, source form, alias, or variant when the base language matches, and stores a selected-key alias so refreshed results can play the shared sample.
 - Generated fallback samples do not relabel a result that already has a verified or native-speaker recording.
+- Generated fallback samples are labeled separately from source-backed recordings in popup and on-page playback rows.
 - Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
 - Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.

@@ -75,6 +75,22 @@ export function playbackItemsForResult(result, limit = 4) {
   ].filter(Boolean).slice(0, limit);
 }
 
+export function playbackStatusForItem(item = {}, rate = 0.82) {
+  if (item.kind === "audio" && isGeneratedAudioItem(item)) {
+    return rate < 0.7 ? "Playing generated audio slowly." : "Playing generated audio.";
+  }
+
+  if (item.kind === "audio") {
+    return rate < 0.7 ? "Playing recording slowly." : "Playing recording.";
+  }
+
+  if (item.kind === "guide") {
+    return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+  }
+
+  return rate < 0.7 ? "Speaking slowly." : "Speaking.";
+}
+
 export function preferredSpeechResultForResult(result) {
   const items = playbackItemsForResult(result);
   const item = items.find((candidate) => candidate.kind === "speech")
@@ -178,12 +194,33 @@ function normalizeAlternateItem(item = {}, index = 0) {
 
 function normalizeAudioItem(item = {}) {
   const url = normalizeUrl(item.url);
+  const source = normalizeSelection(item.source);
+  const quality = normalizeSelection(item.quality);
   return {
-    label: normalizeSelection(item.label || item.source || hostLabel(url) || "Pronunciation audio"),
-    source: normalizeSelection(item.source),
-    quality: normalizeSelection(item.quality),
+    label: audioItemLabel(item.label, source, quality, url),
+    source,
+    quality,
     url
   };
+}
+
+function audioItemLabel(label, source, quality, url) {
+  const fallback = normalizeSelection(label || source || hostLabel(url) || "Pronunciation audio");
+  if (!isGeneratedAudioQuality(quality)) {
+    return fallback;
+  }
+
+  return /\bgenerated\b|\bshared audio\b/i.test(fallback)
+    ? fallback
+    : `Generated fallback: ${fallback}`;
+}
+
+function isGeneratedAudioItem(item = {}) {
+  return isGeneratedAudioQuality(item.quality);
+}
+
+function isGeneratedAudioQuality(value) {
+  return normalizeSelection(value).toLowerCase() === "generated";
 }
 
 function sourceSpeechItemForResult(result = {}) {

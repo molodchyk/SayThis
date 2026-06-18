@@ -2,6 +2,7 @@ import {
   alternateItemsForResult,
   evidenceItemsForResult,
   playbackItemsForResult,
+  playbackStatusForItem,
   speechResultForPlaybackItem,
   sourceItemsForResult
 } from "../result/view.js";
@@ -83,7 +84,7 @@ export function renderPopupResult(result, elements, actions = {}) {
       }
 
       if (playAudioItem(item, result, 0.82)) {
-        setStatus("Playing recording.");
+        setStatus(playbackStatusForItem(item, 0.82));
       }
     });
     const label = doc.createElement("span");

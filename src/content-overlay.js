@@ -25,6 +25,7 @@
     normalizeLongText,
     normalizeText,
     playbackItems,
+    playbackStatus = (item) => item?.kind === "audio" ? "Playing recording." : "Speaking.",
     speechResultForPlaybackItem = (result) => result,
     preferredSpeechResult = (result) => speechResultForPlaybackItem(result),
     sourceItems,
@@ -187,7 +188,7 @@
         if (item?.kind !== "audio") {
           speakCandidate(speechResultForPlaybackItem(result, item), 0.82);
         } else if (playAudioItem(item, result, 0.82)) {
-          setStatus("Playing recording.");
+          setStatus(playbackStatus(item, 0.82));
         }
       });
     }

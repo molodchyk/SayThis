@@ -19,6 +19,7 @@ test("normalizes overlay result display helpers", () => {
       audio: [
         { label: "First", url: "ftp://bad.example/audio.ogg" },
         { label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" },
+        { label: "Voice service audio", source: "Voice service", url: "https://audio.example/generic-generated.ogg", quality: "generated" },
         { label: "Verified", url: "https://audio.example/verified.ogg", quality: "verified" },
         { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
         { label: "Duplicate", url: "https://audio.example/verified.ogg" },
@@ -58,14 +59,20 @@ test("normalizes overlay result display helpers", () => {
     { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },
     { label: "Commons", source: "Commons", url: "https://audio.example/commons.ogg", quality: "" },
-    { label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" }
+    { label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" },
+    { label: "Generated fallback: Voice service audio", source: "Voice service", url: "https://audio.example/generic-generated.ogg", quality: "generated" }
   ]);
   assert.deepEqual(plain(view.playbackItems(result)), [
     { kind: "audio", label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { kind: "audio", label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },
     { kind: "audio", label: "Commons", source: "Commons", url: "https://audio.example/commons.ogg", quality: "" },
-    { kind: "audio", label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" }
+    { kind: "audio", label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" },
+    { kind: "audio", label: "Generated fallback: Voice service audio", source: "Voice service", url: "https://audio.example/generic-generated.ogg", quality: "generated" }
   ]);
+  assert.equal(view.playbackStatus({
+    kind: "audio",
+    quality: "generated"
+  }), "Playing generated audio.");
   assert.deepEqual(plain(view.playbackItems({
     query: "Exampletown",
     display: "Exampletown",
@@ -113,7 +120,8 @@ test("normalizes overlay result display helpers", () => {
     { label: "Curated", url: "https://audio.example/curated.ogg" },
     { label: "Verified", url: "https://audio.example/verified.ogg" },
     { label: "Commons", url: "https://audio.example/commons.ogg" },
-    { label: "Generated voice", url: "https://audio.example/generated.ogg" }
+    { label: "Generated voice", url: "https://audio.example/generated.ogg" },
+    { label: "Generated fallback: Voice service audio", url: "https://audio.example/generic-generated.ogg" }
   ]);
   assert.equal(view.firstSourceUrl(result), "https://example.test/term");
   assert.deepEqual(plain(view.alternateItems(result)), [{
