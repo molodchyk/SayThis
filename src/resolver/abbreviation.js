@@ -6,7 +6,7 @@ const COMPACT_SEPARATORS = /[.\-_/&+\s]+/g;
 const VOWELS = /[AEIOU]/;
 
 export function initialismGuide(value) {
-  const text = normalizeSelection(value);
+  const text = compactInitialismSeparators(normalizeSelection(value));
   if (!text || text.length > 32 || /\s/.test(text.trim())) {
     return "";
   }
@@ -15,6 +15,10 @@ export function initialismGuide(value) {
   return letters.length >= 2
     ? letters.join(" ")
     : "";
+}
+
+function compactInitialismSeparators(text) {
+  return text.replace(/\s*([.\-_/&+])\s*/g, "$1");
 }
 
 function initialismLetters(text) {

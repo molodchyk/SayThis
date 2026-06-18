@@ -113,6 +113,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Pronunciation-audio selection and normalization have a narrow pure module.
 - Local community-memory normalization and summaries have a narrow pure module.
 - Script-sensitive fallback for non-Latin selected text.
+- Compact and punctuation-spaced initialisms can use letter-by-letter guide speech.
 - Latin orthography hints can guide fallback speech policy and optional pronunciation-audio lookup when structured sources are absent.
 - Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.
 - Unknown local results automatically check public structured sources for pronunciation data; the popup `Online` action still forces a refresh.
