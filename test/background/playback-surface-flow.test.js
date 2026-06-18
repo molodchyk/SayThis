@@ -4,7 +4,8 @@ import {
   MESSAGE_TYPES
 } from "../../src/message-contracts.js";
 import {
-  createPlaybackSurface
+  createPlaybackSurface,
+  selectTtsVoiceName
 } from "../../src/background/playback-surface-flow.js";
 
 const AUDIO_RESULT = {
@@ -16,14 +17,14 @@ const AUDIO_RESULT = {
   }
 };
 
-test("speaks resolved results and fallback text through TTS adapters", () => {
+test("speaks resolved results and fallback text through TTS adapters", async () => {
   const calls = [];
   const surface = createPlaybackSurface({
     stopTts: () => calls.push(["stopTts"]),
     speakTts: (text, options) => calls.push(["speakTts", text, options])
   });
 
-  surface.speakResult(AUDIO_RESULT, { rate: 0.7 });
+  await surface.speakResult(AUDIO_RESULT, { rate: 0.7 });
   surface.speakFallback("Gnocchi");
 
   assert.deepEqual(calls, [
@@ -32,6 +33,43 @@ test("speaks resolved results and fallback text through TTS adapters", () => {
     ["stopTts"],
     ["speakTts", "Gnocchi", { enqueue: false, rate: 0.82 }]
   ]);
+});
+
+test("uses a matching TTS voice for resolved source forms", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" },
+      { voiceName: "Polish Local", lang: "pl" },
+      { voiceName: "Polish Remote", lang: "pl-PL", remote: true }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  await surface.speakResult({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    ttsLang: "pl-PL"
+  }, { rate: 0.8 });
+
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "Przykladowo", { enqueue: false, rate: 0.8, lang: "pl-PL", voiceName: "Polish Remote" }]
+  ]);
+});
+
+test("selects exact and base-language TTS voices deterministically", () => {
+  const voices = [
+    { voiceName: "English Default", lang: "en-US" },
+    { voiceName: "Polish Base", lang: "pl" },
+    { voiceName: "Polish Exact", lang: "pl-PL" }
+  ];
+
+  assert.equal(selectTtsVoiceName(voices, "pl-PL"), "Polish Exact");
+  assert.equal(selectTtsVoiceName(voices, "pl-CA"), "Polish Base");
+  assert.equal(selectTtsVoiceName(voices, "ja-JP"), "");
 });
 
 test("injects the overlay and sends result messages when enabled", async () => {

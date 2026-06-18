@@ -34,6 +34,7 @@ const LANGUAGE_TO_TTS = {
   sv: "sv-SE",
   th: "th-TH",
   tr: "tr-TR",
+  uk: "uk-UA",
   vi: "vi-VN",
   zh: "zh-CN"
 };

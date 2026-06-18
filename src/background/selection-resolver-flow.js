@@ -65,12 +65,13 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
     resultCache = cached.cache;
 
     try {
-      const remoteResult = cached.hit
+      const shouldRefreshCache = cached.hit && shouldRefreshCachedResult(cached.result, options);
+      const remoteResult = cached.hit && !shouldRefreshCache
         ? cached.result
-        : await remoteResolver(dependencies)(selectedText, onlineSettings, credentials, {
-          localResult
-        });
-      if (!cached.hit && isCacheableResult(remoteResult)) {
+        : mergeRemoteResult(cached.result, await remoteResolver(dependencies)(selectedText, onlineSettings, credentials, {
+          localResult: cached.hit ? mergeRemoteResult(localResult, cached.result) : localResult
+        }));
+      if ((!cached.hit || shouldRefreshCache) && isCacheableResult(remoteResult)) {
         resultCache = upsertCachedResult(resultCache, selectedText, remoteResult, cacheOptions);
       }
       result = mergeRemoteResult(localResult, remoteResult);
@@ -95,6 +96,14 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
   await dependencies.setStorage(updates);
 
   return result;
+}
+
+function shouldRefreshCachedResult(result, options = {}) {
+  return options.useOnline === true && !hasPlayableAudio(result);
+}
+
+function hasPlayableAudio(result = {}) {
+  return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
 }
 
 export function onlineSettingsForRequest(settings, options = {}) {

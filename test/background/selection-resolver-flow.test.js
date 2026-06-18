@@ -82,6 +82,57 @@ test("uses cached online results before remote lookup", async () => {
   assert.ok(storedUpdates[0].resultCache.entries.athens);
 });
 
+test("refreshes cached no-audio results for explicit online lookup", async () => {
+  const cachedRemote = createRemoteStructuredResult("Exampletown", {
+    id: "remote:exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    evidence: ["Cached source"]
+  });
+  const audioRemote = createRemoteStructuredResult("Exampletown", {
+    id: "audio:exampletown",
+    display: "Przykladowo",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/przykladowo.ogg",
+        label: "Verified recording",
+        source: "Audio source",
+        quality: "verified"
+      }]
+    },
+    sourceStatus: "verified-audio",
+    evidence: ["Verified audio"]
+  });
+  const resultCache = upsertCachedResult({}, "Exampletown", cachedRemote);
+  const calls = [];
+  const storedUpdates = [];
+
+  const result = await resolveSelection("Exampletown", { useOnline: true }, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false },
+      resultCache
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async (text, settings, credentials, context) => {
+      calls.push({ text, contextResult: context.localResult });
+      return audioRemote;
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].text, "Exampletown");
+  assert.equal(calls[0].contextResult.sourceForm, "Przykladowo");
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.pronunciation.audio[0].url, "https://audio.example/przykladowo.ogg");
+  assert.ok(result.evidence.includes("Local lookup cache"));
+  assert.ok(result.evidence.includes("Verified audio"));
+  assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
+});
+
 test("stores cacheable remote results after online lookup", async () => {
   const remote = createRemoteStructuredResult("Chiaroscuro", {
     id: "remote:chiaroscuro",

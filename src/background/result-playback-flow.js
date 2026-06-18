@@ -13,7 +13,7 @@ export async function playResolvedResult(result, tabId, dependencies = {}) {
     }
   }
 
-  dependencies.speakResult?.(result);
+  await dependencies.speakResult?.(result);
   dependencies.showResultOnTab?.(tabId, result);
   return { mode: "tts" };
 }

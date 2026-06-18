@@ -35,6 +35,7 @@ export function createBackgroundPlatformAdapters(chromeApi = globalThis.chrome, 
     fetch: url => environment.fetch?.(url),
     getRuntimeUrl: url => runtime?.getURL?.(url) || url,
     getStorage: keys => storage?.get?.(keys),
+    getTtsVoices: () => getTtsVoices(tts),
     hasOffscreenAudioSupport: () => Boolean(offscreen),
     hasOffscreenDocument: typeof offscreen?.hasDocument === "function"
       ? () => offscreen.hasDocument()
@@ -51,10 +52,27 @@ export function createBackgroundPlatformAdapters(chromeApi = globalThis.chrome, 
   };
 }
 
+function getTtsVoices(tts) {
+  if (typeof tts?.getVoices !== "function") {
+    return Promise.resolve([]);
+  }
+
+  return new Promise((resolve) => {
+    try {
+      tts.getVoices((voices = []) => {
+        resolve(Array.isArray(voices) ? voices : []);
+      });
+    } catch {
+      resolve([]);
+    }
+  });
+}
+
 export function createPlaybackSurfacePlatformDependencies(platform = {}, storageKeys = BACKGROUND_STORAGE_KEYS) {
   return {
     offscreenAudioUrl: BACKGROUND_OFFSCREEN_AUDIO_URL,
     getStorage: platform.getStorage,
+    getTtsVoices: platform.getTtsVoices,
     stopTts: platform.stopTts,
     speakTts: platform.speakTts,
     hasOffscreenAudioSupport: platform.hasOffscreenAudioSupport,

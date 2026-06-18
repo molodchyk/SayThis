@@ -30,8 +30,8 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       ? Promise.resolve(message.result)
       : dependencies.resolveSelection(selectedText, useOnlineMessageOptions(message));
     respondWithResult(
-      resultPromise.then((result) => {
-        dependencies.speakResult(result, { rate: message.rate, lang: message.lang });
+      resultPromise.then(async (result) => {
+        await dependencies.speakResult(result, { rate: message.rate, lang: message.lang });
         return result;
       }),
       sendResponse,

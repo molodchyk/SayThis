@@ -88,6 +88,10 @@ test("maps background platform adapters to browser APIs", async () => {
       sendMessage: async (tabId, message) => calls.push(["sendTabMessage", tabId, message])
     },
     tts: {
+      getVoices: callback => {
+        calls.push(["getTtsVoices"]);
+        callback([{ voiceName: "Italian", lang: "it-IT" }]);
+      },
       speak: (text, options) => calls.push(["speakTts", text, options]),
       stop: () => calls.push(["stopTts"])
     }
@@ -122,6 +126,7 @@ test("maps background platform adapters to browser APIs", async () => {
   await platform.createOffscreenDocument({ url: BACKGROUND_OFFSCREEN_AUDIO_URL });
   await platform.fetch("https://example.test/data.json");
   await platform.matchClients();
+  assert.deepEqual(await platform.getTtsVoices(), [{ voiceName: "Italian", lang: "it-IT" }]);
   platform.stopTts();
   platform.speakTts("gnocchi", { rate: 0.82 });
 
@@ -138,6 +143,7 @@ test("maps background platform adapters to browser APIs", async () => {
     ["createOffscreenDocument", { url: BACKGROUND_OFFSCREEN_AUDIO_URL }],
     ["fetch", "https://example.test/data.json"],
     ["matchClients"],
+    ["getTtsVoices"],
     ["stopTts"],
     ["speakTts", "gnocchi", { rate: 0.82 }]
   ]);

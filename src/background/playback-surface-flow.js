@@ -27,6 +27,7 @@ export function createPlaybackSurface(dependencies = {}) {
     ...(dependencies.storageKeys || {})
   };
   let offscreenCreatePromise = null;
+  let ttsVoicesPromise = null;
 
   return {
     ensureOffscreenAudioDocument,
@@ -60,14 +61,19 @@ export function createPlaybackSurface(dependencies = {}) {
     }, rate);
   }
 
-  function speakResult(result, overrides = {}) {
+  async function speakResult(result, overrides = {}) {
     const speech = resultToSpeechOptions(result, overrides);
     if (!speech.text) {
       return;
     }
 
+    const voiceName = await bestTtsVoiceName(speech.options.lang);
+    const options = voiceName
+      ? { ...speech.options, voiceName }
+      : speech.options;
+
     dependencies.stopTts?.();
-    dependencies.speakTts?.(speech.text, speech.options);
+    dependencies.speakTts?.(speech.text, options);
   }
 
   function speakFallback(text) {
@@ -162,4 +168,56 @@ export function createPlaybackSurface(dependencies = {}) {
       ? dependencies.getRuntimeUrl(url)
       : url;
   }
+
+  async function bestTtsVoiceName(lang) {
+    if (!lang || typeof dependencies.getTtsVoices !== "function") {
+      return "";
+    }
+
+    if (!ttsVoicesPromise) {
+      ttsVoicesPromise = Promise.resolve(dependencies.getTtsVoices()).catch(() => []);
+    }
+
+    const voices = await ttsVoicesPromise;
+    return selectTtsVoiceName(Array.isArray(voices) ? voices : [], lang);
+  }
+}
+
+export function selectTtsVoiceName(voices = [], lang = "") {
+  const requested = normalizeVoiceLang(lang);
+  const requestedBase = baseVoiceLang(requested);
+  if (!requested || !requestedBase) {
+    return "";
+  }
+
+  return voices
+    .map((voice, index) => {
+      const voiceLang = normalizeVoiceLang(voice?.lang);
+      const voiceBase = baseVoiceLang(voiceLang);
+      const exactScore = voiceLang === requested ? 4 : 0;
+      const baseScore = !exactScore && voiceBase === requestedBase ? 2 : 0;
+      const score = exactScore || baseScore;
+      if (!score || !voice?.voiceName) {
+        return null;
+      }
+
+      return {
+        voiceName: voice.voiceName,
+        score: score + (voice.remote ? 1 : 0),
+        index
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.voiceName || "";
+}
+
+function normalizeVoiceLang(value) {
+  return String(value || "")
+    .trim()
+    .replace(/_/g, "-")
+    .toLowerCase();
+}
+
+function baseVoiceLang(value) {
+  return normalizeVoiceLang(value).split("-")[0];
 }

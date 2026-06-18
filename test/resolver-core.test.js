@@ -418,7 +418,8 @@ test("maps structured source language codes to speech locales", () => {
     ["hi", "hi-IN"],
     ["th", "th-TH"],
     ["bg", "bg-BG"],
-    ["sr", "sr-RS"]
+    ["sr", "sr-RS"],
+    ["uk", "uk-UA"]
   ];
 
   for (const [language, ttsLang] of cases) {
