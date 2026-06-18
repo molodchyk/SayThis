@@ -201,6 +201,67 @@ test("speak action requests shared audio before generated playback", async () =>
   assert.deepEqual(sentMessages[0].dependencies, { surface: "content" });
 });
 
+test("generated recording row requests shared audio before playback", async () => {
+  const sentMessages = [];
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {
+      constructor() {
+        throw new Error("generated audio should use extension-owned playback");
+      }
+    },
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return { surface: "content" };
+    },
+    async sendRuntimeMessage(message) {
+      sentMessages.push({ message });
+      if (message.type === "SAYTHIS_REQUEST_SHARED_AUDIO") {
+        return {
+          ok: true,
+          result: {
+            ...message.result,
+            pronunciation: {
+              audio: [{
+                label: "Shared generated audio",
+                url: "https://audio.example/shared.ogg",
+                quality: "generated"
+              }]
+            }
+          }
+        };
+      }
+
+      return { ok: true };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener(generatedResult(), { onlineChecked: true });
+  fakeDom.root.querySelectorAll('[data-action="recording"]')[0].click();
+  await flushPromises();
+
+  assert.deepEqual(sentMessages.map((item) => item.message.type), [
+    "SAYTHIS_REQUEST_SHARED_AUDIO",
+    "SAYTHIS_PLAY_AUDIO"
+  ]);
+  assert.equal(sentMessages[1].message.audio.url, "https://audio.example/shared.ogg");
+});
+
 test("speak action refreshes generated audio before shared playback", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();

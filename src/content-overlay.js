@@ -422,12 +422,22 @@
 
   function playAudio(result, rate) {
     const audio = getBestAudio(result);
-    return playAudioItem(audio, result, rate);
+    return playAudioItem(audio, result, rate, { skipSharedAudio: true });
   }
 
-  function playAudioItem(audio, result, rate) {
+  function playAudioItem(audio, result, rate, options = {}) {
     if (!audio?.url) {
       return false;
+    }
+
+    if (!options.skipSharedAudio && isGeneratedAudioItem(audio) && isSharedAudioCandidate(result)) {
+      ensureSharedAudio(result, rate).then((sharedResult) => {
+        const sharedAudio = getBestAudio(sharedResult);
+        playAudioItem(sharedAudio || audio, sharedResult || result, rate, {
+          skipSharedAudio: true
+        });
+      });
+      return true;
     }
 
     let fallbackStarted = false;
