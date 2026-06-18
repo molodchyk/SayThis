@@ -77,6 +77,10 @@ export function wikidataClaimedLanguage(entity, options = {}) {
   return strongestLanguageCandidate(candidates);
 }
 
+export function wikidataLanguageCodeFromClaimValue(value) {
+  return normalizeLanguageCode(LANGUAGE_CODE_BY_ENTITY_ID[entityIdFromClaimValue(value)]);
+}
+
 export function wikidataResultLanguage(sourceCandidate, claimedLanguage, match = {}) {
   const candidateLanguage = sourceCandidate?.language || "";
   if (shouldUseClaimedLanguage(candidateLanguage, sourceCandidate, claimedLanguage)) {

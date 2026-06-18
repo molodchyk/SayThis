@@ -9,6 +9,7 @@ import {
 } from "../wikidata/search-languages.js";
 import {
   wikidataClaimedLanguage,
+  wikidataLanguageCodeFromClaimValue,
   wikidataResultLanguage
 } from "../wikidata/language-claims.js";
 import {
@@ -32,6 +33,7 @@ const TAXON_NAME = "P225";
 const TAXON_COMMON_NAME = "P1843";
 const PSEUDONYM = "P742";
 const PRONUNCIATION_AUDIO = "P443";
+const LANGUAGE_OF_WORK_OR_NAME = "P407";
 const IPA_TRANSCRIPTION = "P898";
 export function buildWikidataResult(query, match, entity, options = {}) {
   if (!match?.id || !entity) {
@@ -41,11 +43,11 @@ export function buildWikidataResult(query, match, entity, options = {}) {
   const sourceCandidate = chooseSourceCandidate(query, match, entity, options);
   const description = entity.descriptions?.en?.value || match.description || "";
   const entityType = wikidataEntityType(entity);
-  const audioFiles = stringClaimValues(entity, PRONUNCIATION_AUDIO).slice(0, 4);
   const ipa = firstStringClaimValue(entity, IPA_TRANSCRIPTION);
   const sourceForm = sourceCandidate?.value || match.label || query;
   const claimedLanguage = wikidataClaimedLanguage(entity, options);
   const language = wikidataResultLanguage(sourceCandidate, claimedLanguage, match);
+  const audioFiles = pronunciationAudioFiles(entity, language).slice(0, 4);
   const aliases = wikidataAliases(entity, [match.label, sourceForm]).slice(0, 8);
   const variants = wikidataVariants(entity, [query, match.label, sourceForm]).slice(0, 8);
 
@@ -491,6 +493,47 @@ function firstStringClaimValue(entity, propertyId) {
   return stringClaimValues(entity, propertyId)[0] || "";
 }
 
+function pronunciationAudioFiles(entity, language = "") {
+  const targetLanguage = baseLanguage(language);
+  const seen = new Set();
+  const values = [];
+
+  for (const [index, claim] of (entity.claims?.[PRONUNCIATION_AUDIO] || []).entries()) {
+    const value = claim?.mainsnak?.datavalue?.value;
+    if (typeof value !== "string" || !value.trim()) {
+      continue;
+    }
+
+    const qualifierLanguage = claimLanguageQualifier(claim);
+    if (targetLanguage && qualifierLanguage && qualifierLanguage !== targetLanguage) {
+      continue;
+    }
+
+    const text = value.trim();
+    const key = createLookupKey(text);
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    values.push({
+      value: text,
+      score: qualifierLanguage && targetLanguage && qualifierLanguage === targetLanguage ? 20 : 0,
+      index
+    });
+  }
+
+  return values
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((item) => item.value);
+}
+
+function claimLanguageQualifier(claim = {}) {
+  return (claim.qualifiers?.[LANGUAGE_OF_WORK_OR_NAME] || [])
+    .map((qualifier) => wikidataLanguageCodeFromClaimValue(qualifier?.datavalue?.value))
+    .filter(Boolean)[0] || "";
+}
+
 function stringClaimValues(entity, propertyId) {
   const claims = entity.claims?.[propertyId] || [];
   const values = [];
@@ -579,6 +622,10 @@ function languageHintSet(value) {
 }
 
 function matchesLanguageHint(language, hints = new Set()) {
-  const base = String(language || "").trim().toLowerCase().split(/[-_]/)[0];
+  const base = baseLanguage(language);
   return Boolean(base && hints.has(base));
+}
+
+function baseLanguage(language) {
+  return String(language || "").trim().toLowerCase().split(/[-_]/)[0];
 }

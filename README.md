@@ -54,7 +54,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wikidata candidate ranking uses bounded description relevance when explicit entity-type claims are sparse.
 - Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata lookup preserves useful alternate entity candidates for ambiguity review and follow-up audio lookup.
-- Wikidata pronunciation-audio lookup preserves multiple Commons recordings when an entity provides them.
+- Wikidata pronunciation-audio lookup preserves multiple Commons recordings when an entity provides them, preferring language-qualified recordings that match the resolved result.
 - Optional Wikidata lookup language hints for rare Latin-script terms and competing source forms.
 - Popup and on-page one-off lookup language hints can guide a single online resolve without changing saved defaults.
 - A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.

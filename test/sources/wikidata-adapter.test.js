@@ -369,6 +369,70 @@ test("extracts pronunciation audio and IPA claims", () => {
   assert.ok(result.evidence.includes("Additional Wikidata pronunciation audio: 1"));
 });
 
+test("prefers Wikidata pronunciation audio with a matching language qualifier", () => {
+  const result = buildWikidataResult("Exampletown", {
+    id: "QaudioLang",
+    label: "Exampletown",
+    language: "en",
+    description: "settlement"
+  }, {
+    id: "QaudioLang",
+    labels: {
+      en: { language: "en", value: "Exampletown" }
+    },
+    claims: {
+      P1705: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "pl", text: "Przyklad" }
+          }
+        }
+      }],
+      P443: [{
+        mainsnak: {
+          datavalue: {
+            value: "Exampletown English.ogg"
+          }
+        },
+        qualifiers: {
+          P407: [{
+            datavalue: {
+              value: { id: "Q1860", "numeric-id": 1860 }
+            }
+          }]
+        }
+      }, {
+        mainsnak: {
+          datavalue: {
+            value: "Exampletown unqualified.ogg"
+          }
+        }
+      }, {
+        mainsnak: {
+          datavalue: {
+            value: "Exampletown Polish.ogg"
+          }
+        },
+        qualifiers: {
+          P407: [{
+            datavalue: {
+              value: { id: "Q809", "numeric-id": 809 }
+            }
+          }]
+        }
+      }]
+    },
+    aliases: {}
+  });
+
+  assert.equal(result.language, "pl");
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.deepEqual(result.pronunciation.audio.map((item) => item.url), [
+    commonsRedirectUrl("Exampletown Polish.ogg"),
+    commonsRedirectUrl("Exampletown unqualified.ogg")
+  ]);
+});
+
 test("selects a later candidate when it has stronger pronunciation evidence", () => {
   const matches = [{
     id: "Qbad",

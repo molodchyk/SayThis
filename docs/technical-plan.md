@@ -138,7 +138,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Wikidata candidate ranking uses bounded description relevance when explicit entity-type claims are sparse.
 - Wikidata language claims can guide result language, TTS locale, and pronunciation-audio lookup when source-form fields are sparse.
 - Wikidata selection preserves useful alternate entity candidates for result ambiguity and follow-up audio lookup.
-- Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity.
+- Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity and prefers recordings with matching language qualifiers.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Wiktionary section selection can use resolved source languages and one-off lookup hints from the user.
 - Hinted Wiktionary edition retries after English Wiktionary for dictionary entries missing from English Wiktionary.
