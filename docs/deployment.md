@@ -27,7 +27,7 @@ Use the public HTTPS `/community` URL as the extension community endpoint.
 - `SAYTHIS_ADMIN_TOKEN`: required for `/admin/pending`, `/admin/approve`, and `/admin/reject`.
 - `SAYTHIS_ALLOWED_ORIGINS`: set to the extension origin and any trusted admin origins.
 - `SAYTHIS_STORE`: defaults to `/data/community-store.json` in the image.
-- `SAYTHIS_PUBLIC_BASE_URL`: required before moderator-approved generated-audio artifacts can be stored and shared.
+- `SAYTHIS_PUBLIC_BASE_URL`: required before shared generated-audio artifacts can be stored and served.
 - `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional bearer token for provider generation.
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: set to `1` only when shared provider generation should be available beyond already approved artifacts.
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token for shared provider generation when public generation is enabled.

@@ -69,7 +69,9 @@ export async function handleSharedAudioRequest(request, store, options = {}) {
     return response(artifact.status, store, { error: artifact.error });
   }
 
-  const result = upsertGeneratedAudioArtifact(store, artifact.value, new Date().toISOString());
+  const result = upsertGeneratedAudioArtifact(store, artifact.value, new Date().toISOString(), {
+    reviewed: false
+  });
   return response(result.accepted ? 200 : 400, result.store, {
     accepted: result.accepted,
     reused: false,

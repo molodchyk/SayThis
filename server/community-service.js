@@ -165,7 +165,9 @@ export async function handleCommunityRequest(request, store, options = {}) {
       return jsonResponse(artifact.status, state, { error: artifact.error });
     }
 
-    const result = upsertGeneratedAudioArtifact(state, artifact.value, new Date().toISOString());
+    const result = upsertGeneratedAudioArtifact(state, artifact.value, new Date().toISOString(), {
+      reviewed: true
+    });
     return jsonResponse(result.accepted ? 200 : 400, result.store, {
       accepted: result.accepted,
       reason: result.reason || "",
@@ -192,7 +194,9 @@ export async function handleCommunityRequest(request, store, options = {}) {
     }
 
     const now = new Date().toISOString();
-    const result = upsertGeneratedAudioArtifact(state, artifact.value, now);
+    const result = upsertGeneratedAudioArtifact(state, artifact.value, now, {
+      reviewed: true
+    });
     const pending = result.accepted && body.id
       ? removePendingSubmission(result.store, body.id, now)
       : { store: result.store, removed: false };

@@ -36,7 +36,7 @@ Community sync submits only the selected term, feedback type, correction or miss
 
 Custom source and DBpedia-compatible lookup send only the selected term or a resolved pronunciation candidate to the configured endpoint.
 
-A configured community service may host reviewed generated-audio artifacts for shared reuse. These artifacts are tied to term-level pronunciation metadata and do not include page URLs, browsing history, full-page text, or user recordings.
+A configured community service may host reviewed or token-gated service-generated audio artifacts for shared reuse. These artifacts are tied to term-level pronunciation metadata and do not include page URLs, browsing history, full-page text, or user recordings.
 
 If a community service operator uses moderator or explicitly enabled shared provider generation, the service sends only the source form or term text, locale, optional voice name, and speaking rate to the configured speech provider.
 

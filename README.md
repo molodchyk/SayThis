@@ -129,7 +129,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service can reject browser-originated requests outside configured allowed origins.
 - Community service serializes store writes so concurrent submissions do not overwrite pending entries.
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
-- Community service can store reviewed generated-audio artifacts and publish shared audio URLs through approved entries.
+- Community service can store reviewed or token-gated service-generated audio artifacts and publish shared audio URLs through approved entries.
 - Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
 - Shared audio requests reuse locally approved shared artifacts before contacting the endpoint again, even after endpoint access is disabled.

@@ -4,7 +4,7 @@ import {
 } from "../src/resolver-core.js";
 import { normalizeAudioMimeType } from "./community-audio-artifacts.js";
 
-export function upsertGeneratedAudioArtifact(store, artifact, now = new Date().toISOString()) {
+export function upsertGeneratedAudioArtifact(store, artifact, now = new Date().toISOString(), options = {}) {
   const normalizedStore = normalizeAudioStore(store);
   const normalizedArtifact = normalizeAudioArtifact(artifact, now);
   if (!normalizedArtifact.id) {
@@ -15,7 +15,7 @@ export function upsertGeneratedAudioArtifact(store, artifact, now = new Date().t
     };
   }
 
-  const entry = approvedEntryFromGeneratedAudio(normalizedArtifact, now);
+  const entry = approvedEntryFromGeneratedAudio(normalizedArtifact, now, options);
 
   return {
     store: {
@@ -189,7 +189,7 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
   };
 }
 
-function approvedEntryFromGeneratedAudio(artifact, now) {
+function approvedEntryFromGeneratedAudio(artifact, now, options = {}) {
   return {
     term: artifact.term,
     lookupKey: artifact.lookupKey,
@@ -211,16 +211,17 @@ function approvedEntryFromGeneratedAudio(artifact, now) {
     audioUrl: artifact.audioUrl,
     sourceUrl: artifact.sourceUrl,
     variantNote: artifact.variantNote,
-    trustSignals: generatedAudioTrustSignals(artifact),
+    trustSignals: generatedAudioTrustSignals(artifact, options),
     sourceStatus: "generated-audio",
     approvedAt: now,
     updatedAt: now
   };
 }
 
-function generatedAudioTrustSignals(artifact = {}) {
+function generatedAudioTrustSignals(artifact = {}, options = {}) {
+  const reviewed = options.reviewed !== false;
   const signals = [
-    "moderator-reviewed",
+    reviewed ? "moderator-reviewed" : "service-generated",
     "generated-audio",
     "audio-backed"
   ];

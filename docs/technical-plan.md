@@ -60,7 +60,7 @@ Chrome Manifest V3 components:
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
 - `server/community-service.js`: dependency-free Node community service for submission intake, moderation, approved-entry serving, shared audio serving, moderator provider generation, and opt-in shared provider generation.
 - `server/community-audio-artifacts.js`: normalizes generated-audio artifact bodies, public artifact metadata, HTTPS base URLs, and audio MIME types.
-- `server/community-audio-store.js`: stores reviewed generated-audio artifacts and publishes approved shared entries that point at those artifacts, with source-form and language matching for reuse.
+- `server/community-audio-store.js`: stores reviewed or token-gated service-generated audio artifacts and publishes approved shared entries that point at those artifacts, with source-form and language matching for reuse.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
 - `server/tts-provider.js`: Google-compatible speech provider adapter with locale voice preferences, authenticated synthesis requests, and artifact conversion.
 - `server/admin-page.js`: static moderator UI shell for reviewing pending community submissions.
@@ -196,7 +196,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Community service request-size limits, in-memory public submission rate limiting, and configurable pending-queue caps.
 - Community service serialized store writes for overlapping public or moderator requests.
 - Community service proxy IP headers are ignored for rate limiting unless explicitly enabled.
-- Community service can store reviewed generated-audio artifacts, generate provider audio through moderator or explicitly enabled shared routes, serve artifacts with immutable cache headers, and publish their URLs through approved entries.
+- Community service can store reviewed or token-gated service-generated audio artifacts, generate provider audio through moderator or explicitly enabled shared routes, serve artifacts with immutable cache headers, and publish their URLs through approved entries.
 - Shared generated-audio reuse checks exact lookup keys first, then term, source form, alias, and variant keys only when the base language matches.
 - Shared-audio requests check locally approved shared artifacts before requiring or contacting the configured endpoint again.
 - Community service container image and deployment notes.
@@ -255,7 +255,7 @@ Core fields:
 - `resultCache`: local successful online lookup results keyed by normalized selected term.
 - `sources`: source URLs or source IDs.
 - `variants`: regional, professional, historical, or source-specific pronunciation variants.
-- `trustSignals`: source-backed, repeated, moderator-reviewed, or local-only status.
+- `trustSignals`: source-backed, repeated, moderator-reviewed, service-generated, or local-only status.
 - `notes`: curator notes.
 
 ## Community Memory Layer

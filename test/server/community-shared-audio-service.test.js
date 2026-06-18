@@ -64,6 +64,49 @@ test("rejects plain same-text English public audio generation", async () => {
   assert.equal(Object.keys(response.store.approved).length, 0);
 });
 
+test("labels public generated shared audio without moderator review", async () => {
+  const response = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: { authorization: "Bearer client-token" },
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicAudioGenerationToken: "client-token",
+    publicBaseUrl: "https://community.example",
+    ttsProvider: {
+      async synthesize() {
+        return {
+          ok: true,
+          audio: {
+            mimeType: "audio/ogg",
+            dataBase64: Buffer.from("generated shared sample").toString("base64")
+          },
+          voice: {
+            languageCode: "pl-PL",
+            name: "pl-PL-TestVoice"
+          }
+        };
+      }
+    }
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.generated, true);
+  assert.equal(response.body.entry.sourceStatus, "generated-audio");
+  assert.deepEqual(response.body.entry.trustSignals, [
+    "service-generated",
+    "generated-audio",
+    "audio-backed"
+  ]);
+});
+
 async function storeAudioArtifact(overrides = {}) {
   return handleCommunityRequest({
     method: "POST",
