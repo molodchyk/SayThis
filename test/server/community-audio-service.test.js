@@ -182,6 +182,66 @@ test("generates provider audio and stores it as a shared artifact", async () => 
   ]);
 });
 
+test("generates provider audio from a pending submission and clears it", async () => {
+  let store = createEmptyStore();
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community",
+    headers: {},
+    body: JSON.stringify({
+      id: "sub_generate_audio",
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      kind: "missing",
+      correction: {
+        sourceForm: "Przykladowo",
+        language: "pl",
+        simple: "eg-ZAM-pluh-term"
+      }
+    })
+  }, store);
+  store = response.store;
+
+  const ttsProvider = {
+    async synthesize() {
+      return {
+        ok: true,
+        audio: {
+          mimeType: "audio/ogg",
+          dataBase64: Buffer.from("reviewed provider sample").toString("base64")
+        },
+        voice: {
+          languageCode: "pl-PL",
+          name: "pl-PL-TestVoice"
+        }
+      };
+    }
+  };
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/admin/generate-audio-artifact",
+    headers: { authorization: "Bearer secret" },
+    body: JSON.stringify({
+      id: "sub_generate_audio",
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    })
+  }, store, {
+    adminToken: "secret",
+    publicBaseUrl: "https://community.example",
+    ttsProvider
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.removedPending, true);
+  assert.equal(response.store.pending.length, 0);
+  assert.equal(response.store.approved.exampletown.audioUrl, response.body.artifact.audioUrl);
+});
+
 test("rejects shared generated audio artifacts without public storage settings", async () => {
   const response = await handleCommunityRequest({
     method: "POST",

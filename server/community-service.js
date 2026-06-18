@@ -10,7 +10,8 @@ import {
   createEmptyStore,
   normalizeStore,
   pendingPayload,
-  rejectSubmission
+  rejectSubmission,
+  removePendingSubmission
 } from "./community-store.js";
 import {
   DEFAULT_MAX_AUDIO_BYTES,
@@ -166,13 +167,18 @@ export async function handleCommunityRequest(request, store, options = {}) {
       return jsonResponse(artifact.status, state, { error: artifact.error });
     }
 
-    const result = upsertGeneratedAudioArtifact(state, artifact.value, new Date().toISOString());
-    return jsonResponse(result.accepted ? 200 : 400, result.store, {
+    const now = new Date().toISOString();
+    const result = upsertGeneratedAudioArtifact(state, artifact.value, now);
+    const pending = result.accepted && body.id
+      ? removePendingSubmission(result.store, body.id, now)
+      : { store: result.store, removed: false };
+    return jsonResponse(result.accepted ? 200 : 400, pending.store, {
       accepted: result.accepted,
       reason: result.reason || "",
       artifact: publicAudioArtifact(result.artifact),
       entry: result.entry || null,
-      voice: artifact.voice || null
+      voice: artifact.voice || null,
+      removedPending: pending.removed
     });
   }
 

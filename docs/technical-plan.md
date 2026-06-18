@@ -59,7 +59,8 @@ Chrome Manifest V3 components:
 - `server/community-audio-store.js`: stores reviewed generated-audio artifacts and publishes approved shared entries that point at those artifacts.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
 - `server/tts-provider.js`: Google-compatible speech provider adapter with locale voice preferences, authenticated synthesis requests, and artifact conversion.
-- `server/admin-page.js`: static moderator UI for reviewing pending community submissions.
+- `server/admin-page.js`: static moderator UI shell for reviewing pending community submissions.
+- `server/admin-page-script.js`: moderator-page client behavior for loading pending submissions, approving or rejecting entries, and generating shared audio artifacts.
 - `shared/settings.js`: pure settings and credential normalization used by the background worker and options page.
 - `assets/icons/`: generated PNG icons referenced by the manifest and toolbar action.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
@@ -176,7 +177,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Optional host permission request for the configured community sync endpoint.
 - Approved shared-entry pull from the community endpoint, merged below local corrections.
 - Self-hostable moderation service with token-protected pending, approve, and reject endpoints.
-- Static moderator page for loading pending submissions and approving or rejecting structured pronunciation entries.
+- Static moderator page for loading pending submissions, approving or rejecting structured pronunciation entries, and generating shared audio artifacts from reviewed source forms.
 - Community service request-size limits, in-memory public submission rate limiting, and configurable pending-queue caps.
 - Community service serialized store writes for overlapping public or moderator requests.
 - Community service proxy IP headers are ignored for rate limiting unless explicitly enabled.

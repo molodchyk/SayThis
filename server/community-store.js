@@ -151,6 +151,26 @@ export function rejectSubmission(store, submissionId, reason = "", now = new Dat
   };
 }
 
+export function removePendingSubmission(store, submissionId, now = new Date().toISOString()) {
+  const normalizedStore = normalizeStore(store, now);
+  const id = normalizeSelection(submissionId);
+  if (!id || !normalizedStore.pending.some((item) => item.id === id)) {
+    return {
+      store: normalizedStore,
+      removed: false
+    };
+  }
+
+  return {
+    store: {
+      ...normalizedStore,
+      updatedAt: now,
+      pending: normalizedStore.pending.filter((item) => item.id !== id)
+    },
+    removed: true
+  };
+}
+
 export function approvedEntriesPayload(store) {
   const normalizedStore = normalizeStore(store);
   return {

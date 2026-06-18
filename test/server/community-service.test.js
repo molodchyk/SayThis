@@ -128,6 +128,9 @@ test("serves a static moderator page without pending data", async () => {
   assert.equal(response.contentType, "text/html; charset=utf-8");
   assert.match(response.body, /SayThis Moderator/);
   assert.match(response.body, /Load Pending/);
+  assert.match(response.body, /Generate Audio &amp; Approve/);
+  assert.match(response.body, /data-input="ttsLang"/);
+  assert.match(response.body, /\/admin\/generate-audio-artifact/);
   assert.equal(response.body.includes("Chiaroscuro"), false);
   assert.equal(response.store.pending.length, 1);
 });

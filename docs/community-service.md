@@ -188,7 +188,7 @@ Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
 
 This endpoint is admin-only and requires `SAYTHIS_PUBLIC_BASE_URL` plus a configured provider token. It sends only the source form or term text, locale, optional voice name, and speaking rate to the provider. The returned audio is stored once as `/audio/<artifact-id>` and published through an approved shared entry, so clients reuse the shared sample instead of regenerating it.
 
-The `/admin` page supports pending submission review. It can approve submissions with edited source form, aliases, language, origin, root, domain hint, variants, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields. Generated-audio artifact endpoints are available as token-protected HTTP endpoints for now.
+The `/admin` page supports pending submission review. It can approve submissions with edited source form, aliases, language, origin, root, domain hint, variants, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields. It can also generate provider audio from a pending submission, publish the returned shared audio artifact, and clear the pending item in one moderator action.
 
 ## Storage
 
