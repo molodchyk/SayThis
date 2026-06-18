@@ -87,7 +87,7 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_PUBLIC_BASE_URL`: required before storing shared generated-audio artifacts
 - `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: bearer token for Google-compatible speech generation
 - `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional override for the Google-compatible speech endpoint
-- `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice name override
+- `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice name override. Locale-prefixed voice names are used only when compatible with the requested TTS locale.
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: `0` by default; set to `1` only when shared provider generation should be available
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token for shared provider generation when public generation is enabled

@@ -1,5 +1,6 @@
 import { generatedAudioArtifactFromBody } from "./community-audio-artifacts.js";
 import {
+  baseVoiceLocale,
   normalizeVoiceLocale,
   preferredVoiceNamesForLocale
 } from "../src/shared/voice-preferences.js";
@@ -142,17 +143,40 @@ export function preferredGoogleVoiceNamesForLocale(locale) {
 }
 
 export function selectGoogleVoiceName(options = {}) {
+  const languageCode = normalizeLocale(options.languageCode);
   const requested = normalizeVoiceName(options.requestedVoiceName);
-  if (requested) {
+  if (requested && isVoiceNameCompatibleWithLocale(requested, languageCode)) {
     return requested;
   }
 
   const defaultVoiceName = normalizeVoiceName(options.defaultVoiceName);
-  if (defaultVoiceName) {
+  if (defaultVoiceName && isVoiceNameCompatibleWithLocale(defaultVoiceName, languageCode)) {
     return defaultVoiceName;
   }
 
-  return preferredGoogleVoiceNamesForLocale(options.languageCode)[0] || "";
+  return preferredGoogleVoiceNamesForLocale(languageCode)[0] || "";
+}
+
+function isVoiceNameCompatibleWithLocale(voiceName, locale) {
+  const voiceLocale = localeFromGoogleVoiceName(voiceName);
+  if (!voiceLocale || !locale) {
+    return true;
+  }
+
+  if (voiceLocale === locale) {
+    return true;
+  }
+
+  if (voiceLocale.includes("-") && locale.includes("-")) {
+    return false;
+  }
+
+  return baseVoiceLocale(voiceLocale) === baseVoiceLocale(locale);
+}
+
+function localeFromGoogleVoiceName(value) {
+  const match = String(value || "").match(/^([A-Za-z]{2,3}-[A-Za-z0-9]{2,8})(?:-|$)/);
+  return normalizeVoiceLocale(match?.[1]);
 }
 
 function normalizeTtsText(value) {

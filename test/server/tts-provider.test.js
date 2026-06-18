@@ -13,6 +13,22 @@ test("selects preferred provider voice names for configured locales", () => {
     languageCode: "uk-UA",
     requestedVoiceName: "uk-UA-Chirp3-HD-Leda"
   }), "uk-UA-Chirp3-HD-Leda");
+  assert.equal(selectGoogleVoiceName({
+    languageCode: "uk-UA",
+    requestedVoiceName: "pl-PL-TestVoice"
+  }), "uk-UA-Chirp3-HD-Gacrux");
+  assert.equal(selectGoogleVoiceName({
+    languageCode: "uk-UA",
+    defaultVoiceName: "pl-PL-TestVoice"
+  }), "uk-UA-Chirp3-HD-Gacrux");
+  assert.equal(selectGoogleVoiceName({
+    languageCode: "pl-PL",
+    defaultVoiceName: "uk-UA-Chirp3-HD-Gacrux"
+  }), "");
+  assert.equal(selectGoogleVoiceName({
+    languageCode: "pt-BR",
+    requestedVoiceName: "pt-PT-TestVoice"
+  }), "");
   assert.equal(preferredGoogleVoiceNamesForLocale("uk-UA").at(-1), "uk-UA-Chirp3-HD-Zephyr");
   assert.equal(selectGoogleVoiceName({ languageCode: "pl-PL" }), "");
 });
