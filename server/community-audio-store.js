@@ -48,18 +48,79 @@ export function approvedAudioEntryForRequest(store, request = {}) {
     return null;
   }
 
-  const entry = normalizedStore.approved[lookupKey];
+  const requestedLang = baseLanguage(request.ttsLang || request.language);
+  const directEntry = compatibleApprovedAudioEntry(normalizedStore.approved[lookupKey], requestedLang);
+  if (directEntry) {
+    return directEntry;
+  }
+
+  const requestKeys = sharedAudioRequestKeys(request);
+  if (!requestKeys.length) {
+    return null;
+  }
+
+  return Object.values(normalizedStore.approved).find((entry) =>
+    sharedAudioEntryMatchesRequest(entry, requestKeys, requestedLang)) || null;
+}
+
+function compatibleApprovedAudioEntry(entry, requestedLang) {
   if (!entry?.audioUrl) {
     return null;
   }
 
-  const requestedLang = baseLanguage(request.ttsLang || request.language);
   const entryLang = baseLanguage(entry.ttsLang || entry.language);
   if (requestedLang && entryLang && requestedLang !== entryLang) {
     return null;
   }
 
   return entry;
+}
+
+function sharedAudioEntryMatchesRequest(entry, requestKeys, requestedLang) {
+  const entryLang = baseLanguage(entry?.ttsLang || entry?.language);
+  if (!requestedLang || !entryLang || requestedLang !== entryLang || !compatibleApprovedAudioEntry(entry, requestedLang)) {
+    return false;
+  }
+
+  const entryKeys = new Set(sharedAudioEntryKeys(entry));
+  return requestKeys.some((key) => entryKeys.has(key));
+}
+
+function sharedAudioRequestKeys(request = {}) {
+  return uniqueLookupKeys([
+    request.lookupKey,
+    request.term,
+    request.display,
+    request.sourceForm,
+    ...normalizeList(request.aliases),
+    ...normalizeList(request.variants)
+  ]);
+}
+
+function sharedAudioEntryKeys(entry = {}) {
+  return uniqueLookupKeys([
+    entry.lookupKey,
+    entry.term,
+    entry.display,
+    entry.sourceForm,
+    ...normalizeList(entry.aliases),
+    ...normalizeList(entry.variants)
+  ]);
+}
+
+function uniqueLookupKeys(values = []) {
+  return [...new Set(values.map(createLookupKey).filter(Boolean))];
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value.map(normalizeSelection).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(/[;,\n]/)
+    .map(normalizeSelection)
+    .filter(Boolean);
 }
 
 export function normalizeAudioArtifactMap(value = {}) {

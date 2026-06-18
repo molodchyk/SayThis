@@ -74,7 +74,7 @@ Content-Type: application/json
 }
 ```
 
-The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set. If `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN` is set, generation requests must include `Authorization: Bearer <token>`. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
+The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. It can also reuse an approved entry with the same term, source form, alias, or variant when both the request and the entry have the same base language. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set. If `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN` is set, generation requests must include `Authorization: Bearer <token>`. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
 
 The extension submits only term-level pronunciation metadata. It does not submit page URLs or browsing history.
 
@@ -188,7 +188,7 @@ Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
 }
 ```
 
-The service stores the bytes under `/audio/<artifact-id>`, adds an approved shared entry with that audio URL, and serves the artifact with immutable public cache headers. This path is moderator-only so generated samples can be checked, cost-controlled, and reused by every client through approved-entry refresh.
+The service stores the bytes under `/audio/<artifact-id>`, adds an approved shared entry with that audio URL, and serves the artifact with immutable public cache headers. This path is moderator-only so generated samples can be checked, cost-controlled, and reused by every client through approved-entry refresh or same-source-form shared-audio requests.
 
 Generate provider audio and store it as a reviewed artifact:
 

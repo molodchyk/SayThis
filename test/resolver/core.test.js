@@ -104,9 +104,11 @@ test("maps resolver community helpers from a narrow module", () => {
   const confirmed = updateCommunityEntriesDirect(corrected, "Exampleterm", { kind: "confirm" });
   const normalized = normalizeCommunityEntriesDirect(confirmed);
   const found = findCommunityEntry("alias", normalized);
+  const foundVariant = findCommunityEntry(createLookupKey("studio variant"), normalized);
   const summarized = applyCommunitySummaryDirect({ id: "result" }, found);
 
   assert.equal(found.sourceForm, "Exampleterm");
+  assert.equal(foundVariant, found);
   assert.equal(found.root, "example root");
   assert.equal(found.domainHint, "research");
   assert.deepEqual(found.aliases, ["Alias"]);
@@ -205,6 +207,13 @@ test("uses variant-only local community corrections", () => {
   assert.deepEqual(result.variants, ["studio variant", "regional variant"]);
   assert.deepEqual(result.trustSignals, ["local-correction", "variant-noted"]);
   assert.equal(result.community.corrections, 1);
+
+  const variantResult = resolveTerm("regional variant", {
+    entries: [],
+    communityEntries: entries
+  });
+  assert.equal(variantResult.id, "community:regional variant");
+  assert.equal(variantResult.sourceForm, "Exampleterm");
 });
 
 test("captures structured missing requests without promoting them to answers", () => {

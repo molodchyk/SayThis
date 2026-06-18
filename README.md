@@ -126,6 +126,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
 - Shared audio requests reuse locally approved shared artifacts before contacting the endpoint again, even after endpoint access is disabled.
+- Shared audio reuse can match lookup key, term, source form, alias, or variant when the base language matches, and stores a selected-key alias so refreshed results can play the shared sample.
 - Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
 - Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.
@@ -196,7 +197,7 @@ The first useful version should be narrow and trusted:
 - Treat community submissions as structured pronunciation knowledge: source form, root, domain hint, audio, guide, variant, source, and trust signal.
 - Prefer curated or native-speaker audio over generated voices.
 - Use detected or resolved language to feed source forms into optional voice-service fallback, but publish useful generated results as reviewed shared audio artifacts and keep them below recordings.
-- Promote useful generated samples into moderated shared audio artifacts so one reviewed generation can be reused by every client.
+- Promote useful generated samples into moderated shared audio artifacts so one reviewed generation can be reused by every client that resolves the same source form and language.
 - Add cost controls before enabling any shared paid voice provider.
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.

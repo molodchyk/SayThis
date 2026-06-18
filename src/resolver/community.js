@@ -290,7 +290,8 @@ function communityEntryKeys(entry = {}) {
     entry.lookupKey,
     entry.term,
     entry.sourceForm,
-    ...normalizeAliases(entry.aliases)
+    ...normalizeAliases(entry.aliases),
+    ...normalizeAliases(entry.variants)
   ]
     .map(createLookupKey)
     .filter(Boolean);
