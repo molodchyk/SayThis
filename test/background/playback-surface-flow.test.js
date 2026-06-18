@@ -276,6 +276,16 @@ test("selects exact and base-language TTS voices deterministically", () => {
   assert.equal(selectTtsVoiceName(voices, "ja-JP"), "");
 });
 
+test("prefers configured HD extension TTS voices for matching locales", () => {
+  const voices = [
+    { voiceName: "Generic exact", lang: "uk-UA", remote: true },
+    { voiceName: "Service uk-UA-Chirp3-HD-Zephyr (Google)", lang: "uk-UA", remote: true },
+    { voiceName: "Service uk-UA-Chirp3-HD-Gacrux (Google)", lang: "uk-UA" }
+  ];
+
+  assert.equal(selectTtsVoiceName(voices, "uk-UA"), "Service uk-UA-Chirp3-HD-Gacrux (Google)");
+});
+
 test("injects the overlay and sends result messages when enabled", async () => {
   const calls = [];
   const surface = createPlaybackSurface({

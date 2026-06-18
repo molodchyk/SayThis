@@ -13,6 +13,11 @@ import {
   normalizeSettings
 } from "../shared/settings.js";
 import {
+  baseVoiceLocale,
+  normalizeVoiceLocale,
+  preferredVoiceScoreForLabel
+} from "../shared/voice-preferences.js";
+import {
   playAudioItemOffscreen as playAudioItemOffscreenFlow,
   playAudioOffscreen as playAudioOffscreenFlow,
   playResolvedResult as playResolvedResultFlow
@@ -311,18 +316,18 @@ export function createPlaybackSurface(dependencies = {}) {
 }
 
 export function selectTtsVoiceName(voices = [], lang = "") {
-  const requested = normalizeVoiceLang(lang);
-  const requestedBase = baseVoiceLang(requested);
+  const requested = normalizeVoiceLocale(lang);
+  const requestedBase = baseVoiceLocale(requested);
   if (!requested || !requestedBase) {
     return "";
   }
 
   return voices
     .map((voice, index) => {
-      const voiceLang = normalizeVoiceLang(voice?.lang);
-      const voiceBase = baseVoiceLang(voiceLang);
-      const exactScore = voiceLang === requested ? 4 : 0;
-      const baseScore = !exactScore && voiceBase === requestedBase ? 2 : 0;
+      const voiceLang = normalizeVoiceLocale(voice?.lang);
+      const voiceBase = baseVoiceLocale(voiceLang);
+      const exactScore = voiceLang === requested ? 100 : 0;
+      const baseScore = !exactScore && voiceBase === requestedBase ? 50 : 0;
       const score = exactScore || baseScore;
       if (!score || !voice?.voiceName) {
         return null;
@@ -330,7 +335,7 @@ export function selectTtsVoiceName(voices = [], lang = "") {
 
       return {
         voiceName: voice.voiceName,
-        score: score + (voice.remote ? 1 : 0),
+        score: score + preferredVoiceScoreForLabel(voice.voiceName, requested) + (voice.remote ? 10 : 0),
         index
       };
     })
@@ -338,13 +343,6 @@ export function selectTtsVoiceName(voices = [], lang = "") {
     .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.voiceName || "";
 }
 
-function normalizeVoiceLang(value) {
-  return String(value || "")
-    .trim()
-    .replace(/_/g, "-")
-    .toLowerCase();
-}
-
 function baseVoiceLang(value) {
-  return normalizeVoiceLang(value).split("-")[0];
+  return baseVoiceLocale(value);
 }

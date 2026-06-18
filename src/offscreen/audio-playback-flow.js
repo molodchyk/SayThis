@@ -1,21 +1,8 @@
-const PREFERRED_WEB_SPEECH_VOICES_BY_LANG = {
-  "uk-ua": [
-    "uk-UA-Chirp3-HD-Gacrux",
-    "uk-UA-Chirp3-HD-Achernar",
-    "uk-UA-Chirp3-HD-Aoede",
-    "uk-UA-Chirp3-HD-Autonoe",
-    "uk-UA-Chirp3-HD-Callirrhoe",
-    "uk-UA-Chirp3-HD-Despina",
-    "uk-UA-Chirp3-HD-Erinome",
-    "uk-UA-Chirp3-HD-Kore",
-    "uk-UA-Chirp3-HD-Laomedeia",
-    "uk-UA-Chirp3-HD-Leda",
-    "uk-UA-Chirp3-HD-Pulcherrima",
-    "uk-UA-Chirp3-HD-Sulafat",
-    "uk-UA-Chirp3-HD-Vindemiatrix",
-    "uk-UA-Chirp3-HD-Zephyr"
-  ]
-};
+import {
+  baseVoiceLocale,
+  normalizeVoiceLocale,
+  preferredVoiceScoreForLabel
+} from "../shared/voice-preferences.js";
 
 export function createOffscreenAudioPlayback(dependencies = {}) {
   let audioPlayer = null;
@@ -121,17 +108,16 @@ export function clampSpeechRate(value) {
 }
 
 export function selectSpeechSynthesisVoice(voices = [], lang = "") {
-  const requested = normalizeVoiceLang(lang);
-  const requestedBase = baseVoiceLang(requested);
-  const preferredNames = preferredWebSpeechVoiceNames(requested);
+  const requested = normalizeVoiceLocale(lang);
+  const requestedBase = baseVoiceLocale(requested);
   if (!requested || !requestedBase) {
     return null;
   }
 
   return voices
     .map((voice, index) => {
-      const voiceLang = normalizeVoiceLang(voice?.lang);
-      const voiceBase = baseVoiceLang(voiceLang);
+      const voiceLang = normalizeVoiceLocale(voice?.lang);
+      const voiceBase = baseVoiceLocale(voiceLang);
       const exactScore = voiceLang === requested ? 100 : 0;
       const baseScore = !exactScore && voiceBase === requestedBase ? 50 : 0;
       const score = exactScore || baseScore;
@@ -141,26 +127,12 @@ export function selectSpeechSynthesisVoice(voices = [], lang = "") {
 
       return {
         voice,
-        score: score + preferredVoiceScore(voice, preferredNames) + (voice.default ? 10 : 0),
+        score: score + preferredVoiceScoreForLabel(`${voice?.name || ""} ${voice?.voiceName || ""}`, requested) + (voice.default ? 10 : 0),
         index
       };
     })
     .filter(Boolean)
     .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.voice || null;
-}
-
-function preferredWebSpeechVoiceNames(lang) {
-  const requested = normalizeVoiceLang(lang);
-  const base = baseVoiceLang(requested);
-  return Object.entries(PREFERRED_WEB_SPEECH_VOICES_BY_LANG)
-    .filter(([key]) => key === requested || baseVoiceLang(key) === base)
-    .flatMap(([, names]) => names.map(normalizeVoiceName));
-}
-
-function preferredVoiceScore(voice, preferredNames = []) {
-  const label = normalizeVoiceName(`${voice?.name || ""} ${voice?.voiceName || ""}`);
-  const index = preferredNames.findIndex((name) => label.includes(name));
-  return index >= 0 ? 1000 - index : 0;
 }
 
 function createAudio(url, dependencies = {}) {
@@ -360,22 +332,4 @@ function normalizeSpeechLang(value) {
     .trim()
     .replace(/_/g, "-")
     .slice(0, 32);
-}
-
-function normalizeVoiceLang(value) {
-  return String(value || "")
-    .trim()
-    .replace(/_/g, "-")
-    .toLowerCase();
-}
-
-function normalizeVoiceName(value) {
-  return String(value || "")
-    .trim()
-    .replace(/_/g, "-")
-    .toLowerCase();
-}
-
-function baseVoiceLang(value) {
-  return normalizeVoiceLang(value).split("-")[0];
 }

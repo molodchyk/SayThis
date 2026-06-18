@@ -1,28 +1,13 @@
 import { generatedAudioArtifactFromBody } from "./community-audio-artifacts.js";
+import {
+  normalizeVoiceLocale,
+  preferredVoiceNamesForLocale
+} from "../src/shared/voice-preferences.js";
 
 const DEFAULT_GOOGLE_TTS_ENDPOINT = "https://texttospeech.googleapis.com/v1/text:synthesize";
 const DEFAULT_AUDIO_ENCODING = "MP3";
 const DEFAULT_SPEAKING_RATE = 0.82;
 const MAX_TTS_TEXT_LENGTH = 240;
-
-const PREFERRED_GOOGLE_VOICES_BY_LOCALE = {
-  "uk-UA": [
-    "uk-UA-Chirp3-HD-Gacrux",
-    "uk-UA-Chirp3-HD-Achernar",
-    "uk-UA-Chirp3-HD-Aoede",
-    "uk-UA-Chirp3-HD-Autonoe",
-    "uk-UA-Chirp3-HD-Callirrhoe",
-    "uk-UA-Chirp3-HD-Despina",
-    "uk-UA-Chirp3-HD-Erinome",
-    "uk-UA-Chirp3-HD-Kore",
-    "uk-UA-Chirp3-HD-Laomedeia",
-    "uk-UA-Chirp3-HD-Leda",
-    "uk-UA-Chirp3-HD-Pulcherrima",
-    "uk-UA-Chirp3-HD-Sulafat",
-    "uk-UA-Chirp3-HD-Vindemiatrix",
-    "uk-UA-Chirp3-HD-Zephyr"
-  ]
-};
 
 export function createConfiguredTtsProvider(options = {}) {
   return createGoogleTtsProvider(options);
@@ -143,20 +128,7 @@ export async function generatedAudioArtifactFromTts(body = {}, options = {}) {
 }
 
 export function preferredGoogleVoiceNamesForLocale(locale) {
-  const normalized = normalizeLocale(locale);
-  if (!normalized) {
-    return [];
-  }
-
-  const exact = PREFERRED_GOOGLE_VOICES_BY_LOCALE[normalized] || [];
-  if (exact.length) {
-    return exact;
-  }
-
-  const base = normalized.split("-")[0].toLowerCase();
-  return Object.entries(PREFERRED_GOOGLE_VOICES_BY_LOCALE)
-    .filter(([key]) => key.toLowerCase().split("-")[0] === base)
-    .flatMap(([, voices]) => voices);
+  return preferredVoiceNamesForLocale(locale);
 }
 
 export function selectGoogleVoiceName(options = {}) {
@@ -181,10 +153,7 @@ function normalizeTtsText(value) {
 }
 
 function normalizeLocale(value) {
-  return String(value || "")
-    .trim()
-    .replace(/_/g, "-")
-    .match(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/)?.[0] || "";
+  return normalizeVoiceLocale(value);
 }
 
 function normalizeVoiceName(value) {

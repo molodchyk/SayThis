@@ -36,6 +36,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Options runtime adapters for storage, endpoint permissions, and background runtime messages.
 - Options summary helpers for cache, sync, shared entries, and local memory.
 - Popup, options, source adapters, and shared result helpers live in owned folders to keep Chrome surfaces and lookup sources modular.
+- Shared voice preferences rank known high-quality locale voices across browser speech and provider generation.
 - Popup opens can auto-speak the active selection, with an options-page toggle.
 - A resolver result card with source form, aliases, language, origin, root, domain hint, variants, IPA/simple guide, confidence, evidence, and source links.
 - Alternate candidate display when structured sources disagree or a stronger source displaces another useful match.

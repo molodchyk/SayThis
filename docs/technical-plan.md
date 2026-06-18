@@ -64,6 +64,7 @@ Chrome Manifest V3 components:
 - `server/admin-page.js`: static moderator UI shell for reviewing pending community submissions.
 - `server/admin-page-script.js`: moderator-page client behavior for loading pending submissions, approving or rejecting entries, and generating shared audio artifacts.
 - `shared/settings.js`: pure settings and credential normalization used by the background worker and options page.
+- `shared/voice-preferences.js`: pure locale voice preference inventory and ranking helpers used by browser speech and provider generation.
 - `assets/icons/`: generated PNG icons referenced by the manifest and toolbar action.
 - `data/pronunciation-seed.json`: stores early resolver entry shape and sample fields.
 - `assets/audio/public/`: stores redistributable packaged audio referenced by resolver entries.
