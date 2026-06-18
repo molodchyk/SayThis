@@ -81,6 +81,49 @@ test("does not build generated audio for unresolved or language-less results", (
   }), null);
 });
 
+test("does not build generated audio for same-text English results", () => {
+  assert.equal(buildVoiceServiceResult("Exampleterm", {
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "en",
+    ttsLang: "en-US",
+    sourceStatus: "structured-source"
+  }, {
+    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  }), null);
+});
+
+test("builds generated audio for resolved abbreviation source forms", () => {
+  const result = buildVoiceServiceResult("P&L", {
+    display: "P&L",
+    sourceForm: "P N L",
+    language: "en",
+    ttsLang: "en-US",
+    sourceStatus: "structured-source"
+  }, {
+    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  });
+
+  assert.equal(result.sourceStatus, "generated-audio");
+  assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=P%20N%20L&lang=en-US");
+});
+
+test("builds generated audio for non-English language signals even when spelling matches", () => {
+  const result = buildVoiceServiceResult("Saoirse", {
+    display: "Saoirse",
+    sourceForm: "Saoirse",
+    language: "ga",
+    ttsLang: "en-IE",
+    sourceStatus: "structured-source"
+  }, {
+    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  });
+
+  assert.equal(result.sourceStatus, "generated-audio");
+  assert.equal(result.language, "ga");
+  assert.equal(result.ttsLang, "en-IE");
+});
+
 test("selects the matching custom source entry", () => {
   const entry = selectBestCustomEntry("chiaroscuro", {
     entries: [{

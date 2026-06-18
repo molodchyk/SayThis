@@ -203,7 +203,7 @@ The first useful version should be narrow and trusted:
 - Treat each useful lookup as a reusable pronunciation-graph entry, not a chat response or a closed-list item.
 - Treat community submissions as structured pronunciation knowledge: source form, root, domain hint, audio, guide, variant, source, and trust signal.
 - Prefer curated or native-speaker audio over generated voices.
-- Use detected or resolved language to feed source forms into optional voice-service fallback, but publish useful generated results as reviewed shared audio artifacts and keep them below recordings.
+- Use detected or resolved language to feed source forms into optional voice-service fallback only when there is a resolved source-form difference or non-English language signal, then publish useful generated results as reviewed shared audio artifacts and keep them below recordings.
 - Promote useful generated samples into moderated shared audio artifacts so one reviewed generation can be reused by every client that resolves the same source form and language.
 - Add cost controls before enabling any shared paid voice provider.
 - Show confidence and source labels in the UI.

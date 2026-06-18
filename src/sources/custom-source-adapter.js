@@ -37,7 +37,14 @@ export function buildVoiceServiceResult(selection, result = {}, options = {}) {
     lang: ttsLang,
     language
   });
-  if (!selectedText || !sourceForm || !ttsLang || !url || !canGenerateVoiceServiceAudio(result)) {
+  if (
+    !selectedText ||
+    !sourceForm ||
+    !ttsLang ||
+    !url ||
+    !canGenerateVoiceServiceAudio(result) ||
+    !hasUsefulVoiceServiceTarget(selectedText, sourceForm, language, ttsLang)
+  ) {
     return null;
   }
 
@@ -77,6 +84,12 @@ function canGenerateVoiceServiceAudio(result = {}) {
     "community-confirmed",
     "structured-source"
   ].includes(normalizeSelection(result.sourceStatus));
+}
+
+function hasUsefulVoiceServiceTarget(selectedText, sourceForm, language, ttsLang) {
+  return createLookupKey(selectedText) !== createLookupKey(sourceForm) ||
+    (language && baseLanguage(language) !== "en") ||
+    (ttsLang && baseLanguage(ttsLang) !== "en");
 }
 
 export function buildVoiceServiceAudioUrl(template, values = {}) {
@@ -412,7 +425,7 @@ function voiceServicePlaceholders() {
 }
 
 function baseLanguage(value) {
-  return normalizeSelection(value).split("-")[0];
+  return normalizeSelection(value).toLowerCase().split("-")[0];
 }
 
 function normalizeConfidence(value) {
