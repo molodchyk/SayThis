@@ -30,7 +30,6 @@ export function createRuntimeAdapters(dependencies = {}) {
       setStorage: dependencies.setStorage,
       resolveSelection: workflows.resolveSelection,
       playResolvedResult: workflows.playResolvedResult,
-      speakFallback: workflows.speakFallback,
       lastSelectionKey: storageKeys.lastSelection,
       lastSourceKey: storageKeys.lastSource
     };

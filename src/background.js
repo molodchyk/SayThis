@@ -52,7 +52,6 @@ platform.addContextMenuClickedListener((info, tab) => {
     setStorage: platform.setStorage,
     resolveSelection,
     playResolvedResult,
-    speakFallback,
     lastResultKey: STORAGE_KEYS.lastResult
   });
 });
@@ -60,8 +59,7 @@ platform.addContextMenuClickedListener((info, tab) => {
 platform.addCommandListener((command) => {
   handleActiveSelectionCommandName(command, runtimeAdapters.activeSelectionDependencies({
     resolveSelection,
-    playResolvedResult,
-    speakFallback
+    playResolvedResult
   }));
 });
 
@@ -105,10 +103,6 @@ async function pullApprovedCommunityEntries() {
 
 function speakResult(result, overrides = {}) {
   return playbackSurface.speakResult(result, overrides);
-}
-
-function speakFallback(text) {
-  return playbackSurface.speakFallback(text);
 }
 
 async function playResolvedResult(result, tabId) {

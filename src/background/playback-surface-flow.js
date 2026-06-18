@@ -37,7 +37,6 @@ export function createPlaybackSurface(dependencies = {}) {
     playAudioOffscreen,
     playResolvedResult,
     showResultOnTab,
-    speakFallback,
     speakResult,
     stopOffscreenAudio,
     stopPlayback
@@ -144,14 +143,6 @@ export function createPlaybackSurface(dependencies = {}) {
       options,
       fallback: "guide"
     };
-  }
-
-  function speakFallback(text) {
-    dependencies.stopTts?.();
-    dependencies.speakTts?.(text, {
-      enqueue: false,
-      rate: 0.82
-    });
   }
 
   function shouldRequireVerifiedVoice(result, lang) {

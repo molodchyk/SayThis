@@ -151,8 +151,7 @@ test("does not guess with raw speech when keyboard resolution fails", async () =
     setStorage: async () => {},
     resolveSelection: async () => {
       throw new Error("offline");
-    },
-    speakFallback: (text) => calls.push(["speakFallback", text])
+    }
   });
 
   assert.equal(result.handled, false);

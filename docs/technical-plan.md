@@ -66,7 +66,7 @@ Chrome Manifest V3 components:
 - `scripts/audit-public-audio.mjs`: validates packaged public-audio file presence and release metadata before Chrome ZIP creation.
 - `scripts/smoke-loaded-extension.mjs`: opt-in Chrome or Edge launch smoke runner for service-worker, popup, options startup, and keyboard-overlay flow.
 - `Dockerfile.community`: builds the self-hostable community moderation service image.
-- `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
+- `test/resolver/core.test.js`: verifies resolver behavior and manifest capabilities.
 - `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
 Verified audio from resolver results is preferred when available. Browser speech is only a fallback when SayThis can verify a matching voice for the resolved language, or when it can speak a simple guide instead.

@@ -17,7 +17,7 @@ const AUDIO_RESULT = {
   }
 };
 
-test("speaks resolved results and fallback text through TTS adapters", async () => {
+test("speaks resolved results through verified TTS adapters", async () => {
   const calls = [];
   const surface = createPlaybackSurface({
     getTtsVoices: async () => [
@@ -28,13 +28,10 @@ test("speaks resolved results and fallback text through TTS adapters", async () 
   });
 
   await surface.speakResult(AUDIO_RESULT, { rate: 0.7 });
-  surface.speakFallback("Gnocchi");
 
   assert.deepEqual(calls, [
     ["stopTts"],
-    ["speakTts", "gnocchi", { enqueue: false, rate: 0.7, lang: "it-IT", voiceName: "Italian Default" }],
-    ["stopTts"],
-    ["speakTts", "Gnocchi", { enqueue: false, rate: 0.82 }]
+    ["speakTts", "gnocchi", { enqueue: false, rate: 0.7, lang: "it-IT", voiceName: "Italian Default" }]
   ]);
 });
 

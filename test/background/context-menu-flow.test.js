@@ -45,7 +45,6 @@ test("resolves, enriches, stores, and plays context menu selections", async () =
       return options.useOnline ? enriched : resolved;
     },
     playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
-    speakFallback: (text) => calls.push(["speakFallback", text]),
     lastResultKey: "lastResult"
   });
 
@@ -68,8 +67,7 @@ test("does not guess with raw speech when context menu resolution fails", async 
     setStorage: async () => {},
     resolveSelection: async () => {
       throw new Error("offline");
-    },
-    speakFallback: (text) => calls.push(["speakFallback", text])
+    }
   });
 
   assert.equal(result.handled, false);
