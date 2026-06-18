@@ -179,7 +179,9 @@
     for (const button of root.querySelectorAll('[data-action="alternate"]')) {
       button.addEventListener("click", () => {
         const index = Number(button.dataset.alternateIndex);
-        speakCandidate(preferredSpeechResult(result.alternateResults?.[index]), 0.82);
+        speakCandidate(preferredSpeechResult(result.alternateResults?.[index]), 0.82, {
+          replaceCurrent: false
+        });
       });
     }
     for (const button of root.querySelectorAll('[data-action="recording"]')) {
@@ -342,7 +344,7 @@
     }
 
     if (isSharedAudioCandidate(result)) {
-      ensureSharedAudio(result, rate).then((sharedResult) => {
+      ensureSharedAudio(result, rate, options).then((sharedResult) => {
         if (playAudio(sharedResult, rate)) {
           setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
           return;
@@ -381,13 +383,16 @@
     }
 
     if (!options.skipSharedAudio && isSharedAudioCandidate(result)) {
-      ensureSharedAudio(result, rate).then((sharedResult) => {
+      ensureSharedAudio(result, rate, options).then((sharedResult) => {
         if (playAudio(sharedResult, rate)) {
           setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
           return;
         }
 
-        speakCandidate(sharedResult, rate, { skipSharedAudio: true });
+        speakCandidate(sharedResult, rate, {
+          ...options,
+          skipSharedAudio: true
+        });
       });
       return;
     }
@@ -402,7 +407,7 @@
     });
   }
 
-  function ensureSharedAudio(result, rate) {
+  function ensureSharedAudio(result, rate, options = {}) {
     if (!isSharedAudioCandidate(result)) {
       return Promise.resolve(result);
     }
@@ -418,7 +423,9 @@
         return result;
       }
 
-      renderOverlay(response.result);
+      if (options.replaceCurrent !== false) {
+        renderOverlay(response.result);
+      }
       return response.result;
     });
   }
@@ -434,9 +441,10 @@
     }
 
     if (!options.skipSharedAudio && isGeneratedAudioItem(audio) && isSharedAudioCandidate(result)) {
-      ensureSharedAudio(result, rate).then((sharedResult) => {
+      ensureSharedAudio(result, rate, options).then((sharedResult) => {
         const sharedAudio = getBestAudio(sharedResult);
         playAudioItem(sharedAudio || audio, sharedResult || result, rate, {
+          ...options,
           skipSharedAudio: true
         });
       });

@@ -305,17 +305,19 @@ function speakAlternate(index, rate) {
     return;
   }
 
-  speakResultCandidate(preferredSpeechResultForResult(alternate), rate, "Speaking alternate");
+  speakResultCandidate(preferredSpeechResultForResult(alternate), rate, "Speaking alternate", {
+    replaceCurrent: false
+  });
 }
 
-async function speakResultCandidate(result, rate, statusBase = "Speaking") {
+async function speakResultCandidate(result, rate, statusBase = "Speaking", options = {}) {
   const text = normalizeSelection(selectionInput.value || result?.query || result?.sourceForm || result?.display);
   if (!text) {
     setStatus("No selected text.");
     return;
   }
 
-  const sharedAudioResult = await ensureSharedAudio(result, rate);
+  const sharedAudioResult = await ensureSharedAudio(result, rate, options);
   if (playAudio(sharedAudioResult, rate)) {
     setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
     return;
@@ -331,7 +333,7 @@ async function speakResultCandidate(result, rate, statusBase = "Speaking") {
     : response.error || "Speech failed.");
 }
 
-async function ensureSharedAudio(result, rate) {
+async function ensureSharedAudio(result, rate, options = {}) {
   if (!isSharedAudioCandidate(result)) {
     return result;
   }
@@ -350,8 +352,10 @@ async function ensureSharedAudio(result, rate) {
     return result;
   }
 
-  currentResult = response.result;
-  renderResult(currentResult);
+  if (options.replaceCurrent !== false) {
+    currentResult = response.result;
+    renderResult(currentResult);
+  }
   return response.result;
 }
 
@@ -366,7 +370,7 @@ function playAudioItem(audio, result, rate, options = {}) {
   }
 
   if (!options.skipSharedAudio && isGeneratedAudioItem(audio) && isSharedAudioCandidate(result)) {
-    ensureSharedAudio(result, rate).then((sharedResult) => {
+    ensureSharedAudio(result, rate, options).then((sharedResult) => {
       const sharedAudio = getBestAudio(sharedResult);
       playAudioItem(sharedAudio || audio, sharedResult || result, rate, {
         ...options,

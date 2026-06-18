@@ -103,7 +103,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(resultView, /playbackItems/);
   assert.match(resultView, /speechResultForPlaybackItem/);
   assert.match(resultView, /normalizeLanguageHints/);
-  assert.match(source, /speakCandidate\(preferredSpeechResult\(result\.alternateResults\?\.\[index\]\), 0\.82\)/);
+  assert.match(source, /speakCandidate\(preferredSpeechResult\(result\.alternateResults\?\.\[index\]\), 0\.82, \{\s*replaceCurrent: false\s*\}\)/);
   assert.match(source, /speechResultForPlaybackItem\(result, item\)/);
   assert.match(source, /item\?\.kind !== "audio"/);
   assert.match(source, /playAudioItem\(item, result, 0\.82\)/);
@@ -444,6 +444,7 @@ test("popup source-audio failure uses speech fallback", async () => {
   assert.match(resultSource, /speakAlternate\(item\.index, 0\.82\)/);
   assert.match(resultSource, /item\.kind !== "audio"/);
   assert.match(source, /replaceCurrent: false/);
+  assert.match(source, /ensureSharedAudio\(result, rate, options\)/);
   assert.match(resultSource, /playAudioItem\(item, result, 0\.82\)/);
   assert.match(source, /Audio failed\. Using speech fallback\./);
   assert.match(source, /Speaking guide\./);

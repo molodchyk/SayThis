@@ -6,6 +6,7 @@
 - Reuses approved shared audio artifacts before any provider generation.
 - Reuses reviewed shared audio across alternate spellings when the resolved source form and base language match.
 - Shows source-form speech rows for abbreviations and other same-language resolved readings.
+- Keeps the primary result visible when playing shared audio for an alternate candidate.
 - Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
 - Keeps verified recording labels when generated fallback samples are also available.
 - Labels generated fallback playback separately from source-backed recordings in the popup and on-page card.
