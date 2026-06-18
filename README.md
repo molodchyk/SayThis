@@ -100,6 +100,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
 - Forvo audio paths are preserved as long source URLs for playback.
 - Forvo results preserve additional same-word, same-language recordings for source-backed practice options.
+- Forvo recordings are ranked as native-speaker audio ahead of generic verified recordings.
 - Forvo lookup can use lookup language hints when no Forvo-specific language filter is set.
 - Popup and on-page cards expose playable recording choices when a result has multiple audio sources.
 - Source-form, alias, and variant-guided pronunciation-audio lookup that tries resolved spellings before raw selected text.

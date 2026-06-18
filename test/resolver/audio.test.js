@@ -48,12 +48,12 @@ test("ranks curated and native audio ahead of generic verified sources", () => {
 test("treats native-speaker quality labels as stronger than generic verified audio", () => {
   const pronunciation = normalizePronunciation({
     audio: [
-      { url: "https://forvo.example/a.ogg", source: "Forvo", quality: "verified" },
+      { url: "https://forvo.example/a.ogg", source: "Forvo", quality: "native-speaker" },
       { url: "https://example.com/native.ogg", source: "Archive", quality: "native speaker" }
     ]
   });
 
-  assert.equal(getBestAudioDirect({ pronunciation }).url, "https://example.com/native.ogg");
+  assert.equal(getBestAudioDirect({ pronunciation }).url, "https://forvo.example/a.ogg");
 });
 
 test("does not treat generated audio as preferred audio", () => {

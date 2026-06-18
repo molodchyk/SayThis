@@ -144,6 +144,7 @@ test("builds a verified-audio result from Forvo payload", () => {
   assert.equal(result.languageName, "Italian");
   assert.equal(result.pronunciation.audio[0].url, "https://audio.example/chiaroscuro.ogg");
   assert.equal(result.pronunciation.audio[0].source, "Forvo");
+  assert.equal(result.pronunciation.audio[0].quality, "native-speaker");
   assert.ok(result.evidence.includes("Pronunciation audio from Forvo"));
   assert.ok(result.sources.some((source) => source.label === "Pronunciations by Forvo"));
 });

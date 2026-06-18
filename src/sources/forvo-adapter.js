@@ -212,7 +212,7 @@ function forvoAudioItem(item = {}) {
     url: audioUrl,
     label: normalizeSelection(label),
     source: "Forvo",
-    quality: "verified"
+    quality: "native-speaker"
   };
 }
 

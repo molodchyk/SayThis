@@ -160,6 +160,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - DBpedia-compatible lookup preserves redirect labels as variants for later pronunciation-audio lookup.
 - Optional Forvo pronunciation-audio lookup with user-provided API key and attribution links.
 - Forvo lookup preserves additional same-word, same-language recordings on the resolved result.
+- Forvo recordings are ranked as native-speaker audio ahead of generic verified recordings.
 - Forvo lookup can use lookup language hints when no dedicated Forvo language filter is set.
 - Popup and on-page result cards expose playable recording choices when multiple audio sources are available.
 - Source-form, alias, and variant-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
