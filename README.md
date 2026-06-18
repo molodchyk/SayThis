@@ -160,8 +160,8 @@ MVP quality bar: SayThis should prefer verified recordings from source-backed se
 - Pronunciation graph: `docs/pronunciation-graph.md`
 - Product brief: `docs/product-brief.md`
 - Privacy policy: `PRIVACY.md` and `docs/privacy-policy.md`
-- SWOT analysis: `docs/swot-analysis.md`
-- Research notes: `docs/research-notes.md`
+- SWOT analysis: `docs/product/swot-analysis.md`
+- Research notes: `docs/product/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
 - Browser extension playbook: `C:\Users\molod\Documents\Personal\settings\browser-extension-playbook.md`
 - Community service: `docs/community-service.md`
