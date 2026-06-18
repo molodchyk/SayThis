@@ -1,3 +1,7 @@
+import {
+  hasPreferredAudio
+} from "../resolver-core.js";
+
 export async function resolvePlayableResult(selectedText, result, options = {}, dependencies = {}) {
   if (!result) {
     return result;
@@ -19,5 +23,5 @@ export async function resolvePlayableResult(selectedText, result, options = {}, 
 }
 
 export function hasPlayableAudio(result = {}) {
-  return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
+  return hasPreferredAudio(result);
 }

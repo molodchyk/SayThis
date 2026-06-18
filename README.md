@@ -188,6 +188,8 @@ The first useful version should be narrow and trusted:
 - Treat each useful lookup as a reusable pronunciation-graph entry, not a chat response or a closed-list item.
 - Treat community submissions as structured pronunciation knowledge: source form, root, domain hint, audio, guide, variant, source, and trust signal.
 - Prefer curated or native-speaker audio over generated voices.
+- Use detected or resolved language to feed source forms into optional voice-service fallback, but cache generated results and keep them below recordings.
+- Add cost controls before enabling any shared paid voice provider.
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 

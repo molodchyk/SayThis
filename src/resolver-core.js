@@ -28,6 +28,8 @@ import {
 } from "./resolver/values.js";
 import {
   getBestAudio,
+  hasGeneratedAudio,
+  hasPreferredAudio,
   mapResultAudioUrls,
   mergeAudioItems,
   normalizePronunciation
@@ -53,7 +55,7 @@ export {
 export { orthographicLanguageHint } from "./resolver/orthography.js";
 export { initialismGuide } from "./resolver/abbreviation.js";
 export { sourceLabelForStatus } from "./resolver/status.js";
-export { getBestAudio, mapResultAudioUrls, rankedAudioItems } from "./resolver/audio.js";
+export { getBestAudio, hasGeneratedAudio, hasPreferredAudio, mapResultAudioUrls, rankedAudioItems } from "./resolver/audio.js";
 export {
   applyCommunitySummary,
   hasCommunityPronunciationData,

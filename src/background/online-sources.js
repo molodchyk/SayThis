@@ -1,4 +1,6 @@
 import {
+  hasGeneratedAudio,
+  hasPreferredAudio,
   mergeRemoteResult,
   normalizeSelection
 } from "../resolver-core.js";
@@ -94,7 +96,7 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
   const preAudioResult = [refinedStructuredResult, forvoResult, context.localResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
-  const commonsAudioResult = !hasPlayableAudio(preAudioResult)
+  const commonsAudioResult = !hasPreferredAudio(preAudioResult)
     ? await resolveWithCommonsAudioCandidates(text, preAudioResult)
     : null;
   const audioBaseResult = [preAudioResult, commonsAudioResult]
@@ -121,7 +123,7 @@ export function onlineLookupLanguageHints(configuredHints = [], localResult = {}
 }
 
 export function resolveWithVoiceService(text, result, settings = {}) {
-  if (!settings.voiceServiceUrlTemplate || hasPlayableAudio(result)) {
+  if (!settings.voiceServiceUrlTemplate || hasPreferredAudio(result) || hasGeneratedAudio(result)) {
     return null;
   }
 
@@ -562,8 +564,4 @@ function normalizeLanguageHint(value) {
     .replace(/_/g, "-")
     .match(/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/)?.[0]
     ?.split("-")[0] || "";
-}
-
-function hasPlayableAudio(result = {}) {
-  return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
 }

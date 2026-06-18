@@ -1,4 +1,6 @@
 import {
+  hasGeneratedAudio,
+  hasPreferredAudio,
   mapResultAudioUrls,
   mergeRemoteResult,
   normalizeSelection,
@@ -107,7 +109,11 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
 }
 
 function shouldRefreshCachedResult(result, options = {}) {
-  return options.useOnline === true && !hasVerifiedAudio(result);
+  if (options.useOnline === true) {
+    return !hasPreferredAudio(result);
+  }
+
+  return hasGeneratedAudio(result) && !hasPreferredAudio(result);
 }
 
 function withEvidence(result, item) {
@@ -117,20 +123,10 @@ function withEvidence(result, item) {
   };
 }
 
-function hasPlayableAudio(result = {}) {
-  return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
-}
-
-function hasVerifiedAudio(result = {}) {
-  const audio = Array.isArray(result?.pronunciation?.audio) ? result.pronunciation.audio : [];
-  return audio.some((item) => item?.url && item.quality === "verified") ||
-    (result.sourceStatus === "verified-audio" && audio.some((item) => item?.url));
-}
-
 function shouldUseOnlineForPronunciation(selectedText, result = {}) {
   return Boolean(
     selectedText &&
-    !hasPlayableAudio(result) &&
+    !hasPreferredAudio(result) &&
     (result?.sourceStatus === "best-effort-fallback" ||
       (!normalizeSelection(result?.pronunciation?.simple) &&
         !normalizeSelection(result?.pronunciation?.ipa)))

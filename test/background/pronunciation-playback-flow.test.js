@@ -5,12 +5,18 @@ import {
   resolvePlayableResult
 } from "../../src/background/pronunciation-playback-flow.js";
 
-test("detects playable pronunciation audio", () => {
+test("detects preferred pronunciation audio", () => {
   assert.equal(hasPlayableAudio({
     pronunciation: {
-      audio: [{ url: "https://audio.example/item.ogg" }]
+      audio: [{ url: "https://audio.example/item.ogg", quality: "verified" }]
     }
   }), true);
+  assert.equal(hasPlayableAudio({
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://voice.example/item.ogg", quality: "generated" }]
+    }
+  }), false);
   assert.equal(hasPlayableAudio({
     pronunciation: {
       audio: [{ label: "missing url" }]
@@ -40,11 +46,39 @@ test("retries no-audio results online with local context", async () => {
   assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: result }]]);
 });
 
+test("retries generated-audio results before playback", async () => {
+  const calls = [];
+  const generated = {
+    display: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://voice.example/item.ogg", quality: "generated" }]
+    }
+  };
+  const verified = {
+    display: "Exampletown",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/item.ogg", quality: "verified" }]
+    }
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", generated, {}, {
+    resolveSelection: async (text, options) => {
+      calls.push([text, options]);
+      return verified;
+    }
+  });
+
+  assert.equal(playable, verified);
+  assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: generated }]]);
+});
+
 test("keeps current result when audio exists or retry fails", async () => {
   const audioResult = {
     display: "Exampletown",
     pronunciation: {
-      audio: [{ url: "https://audio.example/item.ogg" }]
+      audio: [{ url: "https://audio.example/item.ogg", quality: "verified" }]
     }
   };
   const noAudioResult = { display: "Exampletown" };

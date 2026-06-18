@@ -2,10 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   getBestAudio,
+  hasGeneratedAudio,
+  hasPreferredAudio,
   rankedAudioItems
 } from "../../src/resolver-core.js";
 import {
   getBestAudio as getBestAudioDirect,
+  hasGeneratedAudio as hasGeneratedAudioDirect,
+  hasPreferredAudio as hasPreferredAudioDirect,
   mapResultAudioUrls as mapResultAudioUrlsDirect,
   mergeAudioItems,
   normalizePronunciation,
@@ -30,6 +34,8 @@ test("ranks curated and native audio ahead of generic verified sources", () => {
   assert.equal(pronunciation.audio[3].quality, "generated");
   assert.equal(getBestAudioDirect({ pronunciation }).url, "assets/audio/public/a-curated.ogg");
   assert.equal(getBestAudio({ pronunciation }).url, "assets/audio/public/a-curated.ogg");
+  assert.equal(hasPreferredAudioDirect({ pronunciation }), true);
+  assert.equal(hasPreferredAudio({ pronunciation }), true);
   assert.deepEqual(rankedAudioItems(pronunciation.audio).map((item) => item.quality), ["curated", "verified", "verified", "generated"]);
   assert.deepEqual(rankedAudioItemsDirect(pronunciation.audio).map((item) => item.quality), ["curated", "verified", "verified", "generated"]);
 
@@ -48,4 +54,31 @@ test("treats native-speaker quality labels as stronger than generic verified aud
   });
 
   assert.equal(getBestAudioDirect({ pronunciation }).url, "https://example.com/native.ogg");
+});
+
+test("does not treat generated audio as preferred audio", () => {
+  const result = {
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/a.ogg",
+        source: "Voice service",
+        quality: "generated"
+      }]
+    }
+  };
+
+  assert.equal(hasPreferredAudioDirect(result), false);
+  assert.equal(hasPreferredAudio(result), false);
+  assert.equal(hasGeneratedAudioDirect(result), true);
+  assert.equal(hasGeneratedAudio(result), true);
+});
+
+test("does not treat empty generated-audio status as reusable generated audio", () => {
+  assert.equal(hasGeneratedAudioDirect({
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: []
+    }
+  }), false);
 });

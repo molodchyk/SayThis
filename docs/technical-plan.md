@@ -69,6 +69,7 @@ Chrome Manifest V3 components:
 - `test/resolver/core.test.js`: verifies resolver behavior and manifest capabilities.
 - `test/resolver/audio.test.js`: verifies pronunciation-audio normalization, URL mapping, deduplication, and curated/native ranking.
 - `test/resolver/status.test.js`: verifies source-status, confidence, and compatibility exports for resolver status helpers.
+- `test/background/sources/commons-audio-source.test.js`: verifies Commons audio URL planning, pronunciation evidence filters, and language-prefix ranking.
 - `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
 Verified audio from resolver results is preferred when available. Browser speech is only a fallback when SayThis can verify a matching voice for the resolved language, or when it can speak a simple guide instead.
@@ -197,12 +198,14 @@ Verified audio from resolver results is preferred when available. Browser speech
    - domain-specific term sources
 5. Resolve native/source form and candidate languages.
 6. Query pronunciation sources for native audio.
-7. Use verified matching browser speech for the resolved source form when native audio is unavailable, or guide speech when a matching voice cannot be verified.
+7. Use cached generated audio or verified matching browser speech for the resolved source form when native audio is unavailable, or guide speech when a matching voice cannot be verified.
 8. Show confidence and source labels.
 9. Collect correction, confirmation, or missing-entry feedback.
 10. Cache successful lookups locally.
 
 For Latin-script input, entity or term resolution should happen before generic language detection. A romanized term can look like many languages, but a matched entity can provide a reliable native/source form.
+
+Detected-language voice generation is useful for rare terms when it speaks the resolved source form with a matching locale. It remains generated evidence, not preferred evidence. Cache generated voice-service results by lookup and provider scope, reuse them when source refresh finds no better recording, and add quota or paid-access controls before exposing any shared paid voice backend.
 
 The resolver keeps useful displaced candidates on the winning result so the UI can show ambiguity when structured sources disagree or a higher-confidence audio source outranks another source-backed match. A single early language guess should not decide the result for rare terms.
 

@@ -10,6 +10,25 @@ export function getBestAudio(result) {
   return rankedAudioItems(audio)[0] || null;
 }
 
+export function hasPreferredAudio(result) {
+  const audio = result?.pronunciation?.audio;
+  if (!Array.isArray(audio) || !audio.length) {
+    return false;
+  }
+
+  return rankedAudioItems(audio).some((item) => isPreferredAudioItem(item, result?.sourceStatus));
+}
+
+export function hasGeneratedAudio(result) {
+  const audio = result?.pronunciation?.audio;
+  if (!Array.isArray(audio) || !audio.length) {
+    return false;
+  }
+
+  return audio.some((item) => item?.url && normalizeSelection(item.quality).toLowerCase() === "generated") ||
+    (result?.sourceStatus === "generated-audio" && audio.some((item) => item?.url));
+}
+
 export function mapResultAudioUrls(result, resolveUrl) {
   if (!result?.pronunciation?.audio?.length || typeof resolveUrl !== "function") {
     return result;
@@ -65,6 +84,16 @@ export function rankedAudioItems(audio = []) {
 
 function audioScore(item = {}) {
   return qualityScore(item.quality) + sourceScore(item.source || item.label);
+}
+
+function isPreferredAudioItem(item = {}, sourceStatus = "") {
+  const quality = normalizeSelection(item.quality).toLowerCase();
+  if (!item.url || quality === "generated") {
+    return false;
+  }
+
+  return qualityScore(quality) >= 85 ||
+    ["verified-audio", "community-confirmed"].includes(normalizeSelection(sourceStatus));
 }
 
 function qualityScore(value) {

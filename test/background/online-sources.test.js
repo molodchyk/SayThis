@@ -12,10 +12,6 @@ import {
   resolveWithOnlineSources,
   resolveWithVoiceService
 } from "../../src/background/online-sources.js";
-import {
-  buildCommonsAudioSearchUrl,
-  resolveWithCommonsAudioLookup
-} from "../../src/background/sources/commons-audio-source.js";
 
 test("adds local fallback language to online lookup hints", () => {
   assert.deepEqual(onlineLookupLanguageHints(["tr", "pl"], {
@@ -332,6 +328,29 @@ test("does not build voice-service audio when a recording exists", async () => {
   }), null);
 });
 
+test("does not rebuild voice-service audio when generated audio already exists", async () => {
+  const generated = createRemoteStructuredResult("Exampletown", {
+    id: "voice:exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://cached.example/przykladowo.ogg",
+        label: "Cached voice",
+        source: "Voice service",
+        quality: "generated"
+      }]
+    }
+  });
+
+  assert.equal(resolveWithVoiceService("Exampletown", generated, {
+    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+  }), null);
+});
+
 test("does not build voice-service audio for best-effort fallback results", async () => {
   const fallback = resolveTerm("Exampleterm", { entries: [] });
 
@@ -420,166 +439,76 @@ test("uses Commons audio before generated voice-service audio", async () => {
   }
 });
 
-test("builds Commons audio search URLs for file namespace lookup", () => {
-  const url = new URL(buildCommonsAudioSearchUrl("Przykladowo"));
-
-  assert.equal(url.origin, "https://commons.wikimedia.org");
-  assert.equal(url.pathname, "/w/api.php");
-  assert.equal(url.searchParams.get("generator"), "search");
-  assert.equal(url.searchParams.get("gsrsearch"), "filetype:audio Przykladowo");
-  assert.equal(url.searchParams.get("gsrnamespace"), "6");
-  assert.equal(url.searchParams.get("prop"), "imageinfo");
-  assert.equal(url.searchParams.get("iiprop"), "url|mime|mediatype|extmetadata");
-});
-
-test("falls back to broad Commons search when audio-constrained search misses", async () => {
+test("uses Commons audio before cached generated context audio", async () => {
   const originalFetch = globalThis.fetch;
+  const generated = createRemoteStructuredResult("Exampletown", {
+    id: "voice:exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/przykladowo.ogg",
+        label: "Voice service",
+        source: "Voice service",
+        quality: "generated"
+      }]
+    },
+    evidence: ["Generated voice"]
+  });
   const searches = [];
 
   try {
     globalThis.fetch = async (url) => {
       const parsed = new URL(url);
-      searches.push(parsed.searchParams.get("gsrsearch"));
-      return jsonResponse(searches.length === 1
-        ? { query: { pages: {} } }
-        : {
+
+      if (parsed.host === "www.wikidata.org") {
+        return jsonResponse({ search: [] });
+      }
+
+      if (parsed.host.endsWith(".wiktionary.org")) {
+        return jsonResponse({
+          query: {
+            pages: [{ missing: true }]
+          }
+        });
+      }
+
+      if (parsed.host === "commons.wikimedia.org") {
+        searches.push(parsed.searchParams.get("gsrsearch"));
+        return jsonResponse({
           query: {
             pages: {
               1: {
                 index: 1,
-                title: "File:En-us-Exampletown.ogg",
+                title: "File:Pl-Przykladowo.ogg",
                 imageinfo: [{
-                  url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/En-us-Exampletown.ogg",
-                  descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Exampletown.ogg",
+                  url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/Pl-Przykladowo.ogg",
+                  descriptionurl: "https://commons.wikimedia.org/wiki/File:Pl-Przykladowo.ogg",
                   mime: "audio/ogg",
                   mediatype: "AUDIO",
                   extmetadata: {
-                    ObjectName: { value: "En-us-Exampletown.ogg" }
+                    ObjectName: { value: "Pl-Przykladowo.ogg" }
                   }
                 }]
               }
             }
           }
         });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
     };
 
-    const result = await resolveWithCommonsAudioLookup("Exampletown", "Exampletown", "en");
+    const result = await resolveWithOnlineSources("Exampletown", {}, {}, {
+      localResult: generated
+    });
 
-    assert.deepEqual(searches, ["filetype:audio Exampletown", "Exampletown"]);
+    assert.ok(searches.includes("filetype:audio Przykladowo"));
     assert.equal(result.sourceStatus, "verified-audio");
-    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/a/a1/En-us-Exampletown.ogg");
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test("rejects generic Commons audio without pronunciation evidence", async () => {
-  const originalFetch = globalThis.fetch;
-
-  try {
-    globalThis.fetch = async () => jsonResponse({
-      query: {
-        pages: {
-          1: {
-            index: 1,
-            title: "File:Exampletown anthem.ogg",
-            imageinfo: [{
-              url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/Exampletown_anthem.ogg",
-              descriptionurl: "https://commons.wikimedia.org/wiki/File:Exampletown_anthem.ogg",
-              mime: "audio/ogg",
-              mediatype: "AUDIO",
-              extmetadata: {
-                ObjectName: { value: "Exampletown anthem.ogg" },
-                ImageDescription: { value: "Anthem of Exampletown" }
-              }
-            }]
-          }
-        }
-      }
-    });
-
-    const result = await resolveWithCommonsAudioLookup("Exampletown", "Exampletown", "en");
-
-    assert.equal(result, null);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test("rejects Commons audio with a conflicting language prefix", async () => {
-  const originalFetch = globalThis.fetch;
-
-  try {
-    globalThis.fetch = async () => jsonResponse({
-      query: {
-        pages: {
-          1: {
-            index: 1,
-            title: "File:En-us-Przykladowo.ogg",
-            imageinfo: [{
-              url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/En-us-Przykladowo.ogg",
-              descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Przykladowo.ogg",
-              mime: "audio/ogg",
-              mediatype: "AUDIO",
-              extmetadata: {
-                ObjectName: { value: "En-us-Przykladowo.ogg" }
-              }
-            }]
-          }
-        }
-      }
-    });
-
-    const result = await resolveWithCommonsAudioLookup("Exampletown", "Przykladowo", "pl");
-
-    assert.equal(result, null);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test("prefers Commons recordings that match the resolved language", async () => {
-  const originalFetch = globalThis.fetch;
-
-  try {
-    globalThis.fetch = async () => jsonResponse({
-      query: {
-        pages: {
-          1: {
-            index: 1,
-            title: "File:En-us-Gnocchi.ogg",
-            imageinfo: [{
-              url: "https://upload.wikimedia.org/wikipedia/commons/e/e1/En-us-Gnocchi.ogg",
-              descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Gnocchi.ogg",
-              mime: "audio/ogg",
-              mediatype: "AUDIO",
-              extmetadata: {
-                ObjectName: { value: "En-us-Gnocchi.ogg" }
-              }
-            }]
-          },
-          2: {
-            index: 2,
-            title: "File:It-Gnocchi.oga",
-            imageinfo: [{
-              url: "https://upload.wikimedia.org/wikipedia/commons/i/i1/It-Gnocchi.oga",
-              descriptionurl: "https://commons.wikimedia.org/wiki/File:It-Gnocchi.oga",
-              mime: "audio/ogg",
-              mediatype: "AUDIO",
-              extmetadata: {
-                ObjectName: { value: "It-Gnocchi.oga" }
-              }
-            }]
-          }
-        }
-      }
-    });
-
-    const result = await resolveWithCommonsAudioLookup("gnocchi", "gnocchi", "it");
-
-    assert.equal(result.sourceStatus, "verified-audio");
-    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/i/i1/It-Gnocchi.oga");
-    assert.equal(result.sources[0].url, "https://commons.wikimedia.org/wiki/File:It-Gnocchi.oga");
+    assert.equal(result.pronunciation.audio[0].quality, "verified");
+    assert.equal(result.pronunciation.audio.some((item) => item.quality === "generated"), false);
   } finally {
     globalThis.fetch = originalFetch;
   }
