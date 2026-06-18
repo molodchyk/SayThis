@@ -136,6 +136,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Pure resolver text helpers split into a narrow module behind compatibility exports.
 - Pure resolver value sanitizers split into a narrow module.
 - Pure resolver audio helpers split into a narrow module.
+- Pure resolver merge helpers split into a narrow module.
 - Pure resolver community-memory helpers split into a narrow module.
 
 Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken. Paid-provider generation belongs behind service-side controls, with useful generated samples saved as shared reviewed audio artifacts.
