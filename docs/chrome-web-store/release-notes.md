@@ -13,6 +13,7 @@
 - Avoids generated fallback audio for plain English same-text structured results.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Uses one-off lookup hints to prefer matching Wiktionary language sections and source-form edition retries.
+- Requires word-boundary matches before treating Wikimedia Commons audio as verified pronunciation audio.
 - Rejects region-specific browser voices from the wrong locale variant when using verified speech fallback.
 - Filters on-page guide speech so explanatory guide notes are not offered as spoken fallback.
 - Ignores incompatible provider voice overrides so generated fallback audio follows the resolved TTS locale.

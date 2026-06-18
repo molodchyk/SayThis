@@ -158,7 +158,7 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
     !lookupKey ||
     hasConflictingLanguagePrefix(fileName, language) ||
     !pronunciationScore ||
-    !matchText.includes(lookupKey) ||
+    !keyContainsLookup(matchText, lookupKey) ||
     (!mime.startsWith("audio/") && mediaType !== "audio")
   ) {
     return null;
@@ -191,7 +191,7 @@ function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
 
   score += scorePronunciationSignal(page, lookupWord, language);
 
-  if (lookupKey && createLookupKey(fileName).includes(lookupKey)) {
+  if (lookupKey && keyContainsLookup(createLookupKey(fileName), lookupKey)) {
     score += 8;
   }
 
@@ -206,7 +206,7 @@ function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
   }
 
   const languageName = createLookupKey(languageNameFromCode(languageCode));
-  if (languageName && matchText.includes(languageName)) {
+  if (languageName && keyContainsLookup(matchText, languageName)) {
     score += 12;
   }
 
@@ -227,7 +227,7 @@ function scorePronunciationSignal(page = {}, lookupWord, language = "") {
     commonsExtText(page.imageinfo?.[0]?.extmetadata)
   ].map(stripMarkup).join(" "));
 
-  if (!lookupKey || !text.includes(lookupKey)) {
+  if (!lookupKey || !keyContainsLookup(text, lookupKey)) {
     return 0;
   }
 
@@ -235,7 +235,7 @@ function scorePronunciationSignal(page = {}, lookupWord, language = "") {
     return 40;
   }
 
-  if (filePrefix && fileKey.includes(lookupKey)) {
+  if (filePrefix && keyContainsLookup(fileKey, lookupKey)) {
     if (languageCode && filePrefix !== languageCode) {
       return 0;
     }
@@ -257,6 +257,26 @@ function hasPronunciationText(text) {
     "spoken pronunciation",
     "spoken word"
   ].some((phrase) => text.includes(createLookupKey(phrase)));
+}
+
+function keyContainsLookup(textKey, lookupKey) {
+  const text = boundaryLookupKey(textKey);
+  const lookup = boundaryLookupKey(lookupKey);
+  if (!text || !lookup) {
+    return false;
+  }
+
+  return text === lookup ||
+    text.startsWith(`${lookup} `) ||
+    text.endsWith(` ${lookup}`) ||
+    text.includes(` ${lookup} `);
+}
+
+function boundaryLookupKey(value) {
+  return createLookupKey(value)
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function isLinguaLibreFile(fileName) {

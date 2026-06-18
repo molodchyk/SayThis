@@ -91,6 +91,39 @@ test("rejects generic Commons audio without pronunciation evidence", async () =>
   }
 });
 
+test("rejects Commons audio when the lookup only appears inside a longer word", async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async () => jsonResponse({
+      query: {
+        pages: {
+          1: {
+            index: 1,
+            title: "File:En-us-Roman.ogg",
+            imageinfo: [{
+              url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/En-us-Roman.ogg",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Roman.ogg",
+              mime: "audio/ogg",
+              mediatype: "AUDIO",
+              extmetadata: {
+                ObjectName: { value: "En-us-Roman.ogg" },
+                ImageDescription: { value: "Roman pronunciation" }
+              }
+            }]
+          }
+        }
+      }
+    });
+
+    const result = await resolveWithCommonsAudioLookup("Roma", "Roma", "en");
+
+    assert.equal(result, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("rejects Commons audio with a conflicting language prefix", async () => {
   const originalFetch = globalThis.fetch;
 
