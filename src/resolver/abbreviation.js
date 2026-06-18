@@ -11,6 +11,11 @@ export function initialismGuide(value) {
     return "";
   }
 
+  const connectorGuide = connectorInitialismGuide(text);
+  if (connectorGuide) {
+    return connectorGuide;
+  }
+
   const letters = initialismLetters(text);
   return letters.length >= 2
     ? letters.join(" ")
@@ -46,6 +51,60 @@ function initialismLetters(text) {
   }
 
   return [];
+}
+
+function connectorInitialismGuide(text) {
+  if (!/[&+]/.test(text)) {
+    return "";
+  }
+
+  const tokens = [];
+  let chunk = "";
+
+  for (const char of text) {
+    if (char === "&" || char === "+") {
+      if (chunk) {
+        const chunkTokens = connectorChunkTokens(chunk);
+        if (!chunkTokens.length) {
+          return "";
+        }
+        tokens.push(...chunkTokens);
+        chunk = "";
+      }
+
+      tokens.push(char === "&" ? "and" : "plus");
+    } else {
+      chunk += char;
+    }
+  }
+
+  if (chunk) {
+    const chunkTokens = connectorChunkTokens(chunk);
+    if (!chunkTokens.length) {
+      return "";
+    }
+    tokens.push(...chunkTokens);
+  }
+
+  const spokenTokens = tokens.filter((token) => token !== "and" && token !== "plus");
+  return spokenTokens.length && tokens.length >= 2
+    ? tokens.join(" ")
+    : "";
+}
+
+function connectorChunkTokens(chunk) {
+  const compact = chunk.replace(/[.\-_/]+/g, "");
+  const letters = compact.match(/[A-Za-z]/g) || [];
+  const digits = compact.match(/[0-9]/g) || [];
+  if (!compact || letters.length + digits.length !== compact.length || letters.length + digits.length > 8) {
+    return [];
+  }
+
+  if (letters.length + digits.length === 1) {
+    return compact.split("").map((item) => item.toUpperCase());
+  }
+
+  return initialismLetters(compact);
 }
 
 function isDottedInitialism(text) {

@@ -13,8 +13,6 @@ test("builds letter guides for compact initialisms", () => {
   assert.equal(initialismGuide("U.S."), "U S");
   assert.equal(initialismGuide("U. S."), "U S");
   assert.equal(initialismGuide("U. S. A."), "U S A");
-  assert.equal(initialismGuide("S&P"), "S P");
-  assert.equal(initialismGuide("S & P"), "S P");
   assert.equal(initialismGuide("P / L"), "P L");
   assert.equal(initialismGuide("PhD"), "P H D");
   assert.equal(initialismGuide("pH"), "P H");
@@ -24,8 +22,19 @@ test("builds letter guides for compact initialisms", () => {
   assert.equal(initialismGuide("eGFR"), "E G F R");
 });
 
+test("keeps connector words in common abbreviation guides", () => {
+  assert.equal(initialismGuide("S&P"), "S and P");
+  assert.equal(initialismGuide("S & P"), "S and P");
+  assert.equal(initialismGuide("M&A"), "M and A");
+  assert.equal(initialismGuide("R&D"), "R and D");
+  assert.equal(initialismGuide("AT&T"), "A T and T");
+  assert.equal(initialismGuide("C++"), "C plus plus");
+  assert.equal(initialismGuide("A+B"), "A plus B");
+});
+
 test("avoids spelling likely acronym words", () => {
   assert.equal(initialismGuide("NASA"), "");
+  assert.equal(initialismGuide("NASA&ESA"), "");
   assert.equal(initialismGuide("OpenAI"), "");
   assert.equal(initialismGuide("OAuth"), "");
   assert.equal(initialismGuide("iPhone"), "");
@@ -55,9 +64,9 @@ test("uses spaced punctuation initialism guides for unresolved local fallback sp
   const speech = resultToSpeechOptions(result);
 
   assert.equal(result.category, "abbreviation");
-  assert.equal(result.pronunciation.simple, "S P");
-  assert.equal(result.speakText, "S P");
-  assert.equal(speech.text, "S P");
+  assert.equal(result.pronunciation.simple, "S and P");
+  assert.equal(result.speakText, "S and P");
+  assert.equal(speech.text, "S and P");
 });
 
 test("uses technical mixed-case initialism guides for unresolved local fallback speech", () => {
