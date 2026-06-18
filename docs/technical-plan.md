@@ -155,7 +155,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Popup and on-page result cards expose playable recording choices when multiple audio sources are available.
 - Source-form, alias, and variant-guided pronunciation-audio lookup after structured resolution, with raw selected text as fallback.
 - Forvo candidate planning can retry configured-language lookups with resolved source-language hints.
-- Matching verified audio is merged onto structured results so source context, IPA, and origin are preserved.
+- Matching verified audio is merged onto structured results by source form, alias, or variant so source context, IPA, and origin are preserved.
 - Optional Nominatim-compatible gazetteer lookup from a configured HTTPS endpoint, with OpenStreetMap attribution links.
 - Gazetteer lookup accepts language hints for request language order and source-form scoring.
 - Gazetteer lookup can preserve alternate and historical place names as variants for audio lookup and review.

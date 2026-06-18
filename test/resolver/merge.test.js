@@ -69,6 +69,44 @@ test("merges verified audio into a matching structured result", () => {
   assert.deepEqual(merged.alternateResults, []);
 });
 
+test("merges verified audio from a variant into the structured result", () => {
+  const structured = createRemoteStructuredResult("Exampleterm", {
+    id: "wikidata:exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Canonicalform",
+    aliases: ["Example alias"],
+    variants: ["Recordedform"],
+    language: "pl",
+    category: "structured source match",
+    origin: "source-backed context",
+    evidence: ["Structured source candidate"]
+  });
+  const audio = createRemoteStructuredResult("Recordedform", {
+    id: "commons:recordedform",
+    display: "Recordedform",
+    sourceForm: "Recordedform",
+    language: "pl",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/recordedform.ogg",
+        label: "Pronunciation audio",
+        quality: "verified"
+      }]
+    },
+    evidence: ["Pronunciation audio from source"]
+  });
+  const merged = mergeRemoteResult(structured, audio);
+
+  assert.equal(merged.id, "wikidata:exampleterm");
+  assert.equal(merged.sourceStatus, "verified-audio");
+  assert.equal(merged.origin, "source-backed context");
+  assert.deepEqual(merged.variants, ["Recordedform"]);
+  assert.equal(getBestAudio(merged).url, "https://example.com/recordedform.ogg");
+  assert.ok(merged.evidence.includes("Structured source candidate"));
+  assert.ok(merged.evidence.includes("Pronunciation audio from source"));
+  assert.deepEqual(merged.alternateResults, []);
+});
+
 test("merges generated audio into a matching structured result", () => {
   const structured = createRemoteStructuredResult("Exampleterm", {
     id: "remote:structured",

@@ -134,7 +134,8 @@ function pronunciationTargetKeys(result = {}) {
     result.sourceForm,
     result.display,
     result.query,
-    ...(Array.isArray(result.aliases) ? result.aliases : [])
+    ...(Array.isArray(result.aliases) ? result.aliases : []),
+    ...(Array.isArray(result.variants) ? result.variants : [])
   ]
     .map(createLookupKey)
     .filter(Boolean);
