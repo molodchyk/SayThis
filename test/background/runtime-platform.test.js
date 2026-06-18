@@ -97,8 +97,8 @@ test("maps background platform adapters to browser APIs", async () => {
     }
   };
   const platform = createBackgroundPlatformAdapters(chromeApi, {
-    fetch: async url => {
-      calls.push(["fetch", url]);
+    fetch: async (url, options) => {
+      calls.push(["fetch", url, options]);
       return { ok: true };
     },
     clients: {
@@ -124,7 +124,11 @@ test("maps background platform adapters to browser APIs", async () => {
   assert.equal(platform.hasOffscreenAudioSupport(), true);
   assert.equal(await platform.hasOffscreenDocument(), true);
   await platform.createOffscreenDocument({ url: BACKGROUND_OFFSCREEN_AUDIO_URL });
-  await platform.fetch("https://example.test/data.json");
+  await platform.fetch("https://example.test/data.json", {
+    method: "POST",
+    headers: { Authorization: "Bearer token" },
+    body: "{}"
+  });
   await platform.matchClients();
   assert.deepEqual(await platform.getTtsVoices(), [{ voiceName: "Italian", lang: "it-IT" }]);
   platform.stopTts();
@@ -141,7 +145,11 @@ test("maps background platform adapters to browser APIs", async () => {
     ["sendRuntimeMessage", { type: "SAYTHIS_STOP" }],
     ["hasDocument"],
     ["createOffscreenDocument", { url: BACKGROUND_OFFSCREEN_AUDIO_URL }],
-    ["fetch", "https://example.test/data.json"],
+    ["fetch", "https://example.test/data.json", {
+      method: "POST",
+      headers: { Authorization: "Bearer token" },
+      body: "{}"
+    }],
     ["matchClients"],
     ["getTtsVoices"],
     ["stopTts"],
