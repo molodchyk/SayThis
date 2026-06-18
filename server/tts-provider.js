@@ -1,8 +1,8 @@
 import { generatedAudioArtifactFromBody } from "./community-audio-artifacts.js";
 import {
-  baseVoiceLocale,
   normalizeVoiceLocale,
-  preferredVoiceNamesForLocale
+  preferredVoiceNamesForLocale,
+  voiceLocaleMatchesRequest
 } from "../src/shared/voice-preferences.js";
 
 const DEFAULT_GOOGLE_TTS_ENDPOINT = "https://texttospeech.googleapis.com/v1/text:synthesize";
@@ -163,15 +163,7 @@ function isVoiceNameCompatibleWithLocale(voiceName, locale) {
     return true;
   }
 
-  if (voiceLocale === locale) {
-    return true;
-  }
-
-  if (voiceLocale.includes("-") && locale.includes("-")) {
-    return false;
-  }
-
-  return baseVoiceLocale(voiceLocale) === baseVoiceLocale(locale);
+  return voiceLocaleMatchesRequest(voiceLocale, locale);
 }
 
 function localeFromGoogleVoiceName(value) {

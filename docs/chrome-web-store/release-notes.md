@@ -13,6 +13,7 @@
 - Avoids generated fallback audio for plain English same-text structured results.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Uses one-off lookup hints to prefer matching Wiktionary language sections and source-form edition retries.
+- Rejects region-specific browser voices from the wrong locale variant when using verified speech fallback.
 - Ignores incompatible provider voice overrides so generated fallback audio follows the resolved TTS locale.
 - Keeps provider generation behind service-side opt-in, rate limits, and required bearer-token controls.
 - Updates the Chrome extension and package version to 1.0.0.

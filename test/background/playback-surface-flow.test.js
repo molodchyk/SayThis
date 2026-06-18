@@ -294,11 +294,13 @@ test("selects exact and base-language TTS voices deterministically", () => {
   const voices = [
     { voiceName: "English Default", lang: "en-US" },
     { voiceName: "Polish Base", lang: "pl" },
-    { voiceName: "Polish Exact", lang: "pl-PL" }
+    { voiceName: "Polish Exact", lang: "pl-PL" },
+    { voiceName: "Portuguese Portugal", lang: "pt-PT" }
   ];
 
   assert.equal(selectTtsVoiceName(voices, "pl-PL"), "Polish Exact");
   assert.equal(selectTtsVoiceName(voices, "pl-CA"), "Polish Base");
+  assert.equal(selectTtsVoiceName(voices, "pt-BR"), "");
   assert.equal(selectTtsVoiceName(voices, "ja-JP"), "");
 });
 

@@ -4,7 +4,8 @@ import {
   baseVoiceLocale,
   normalizeVoiceLocale,
   preferredVoiceNamesForLocale,
-  preferredVoiceScoreForLabel
+  preferredVoiceScoreForLabel,
+  voiceLocaleMatchesRequest
 } from "../../src/shared/voice-preferences.js";
 
 const UK_UA_CHIRP3_HD_VOICES = [
@@ -35,6 +36,14 @@ test("normalizes voice locales for matching browser and provider voices", () => 
   assert.equal(normalizeVoiceLocale("PL-pl"), "pl-PL");
   assert.equal(baseVoiceLocale("uk-UA"), "uk");
   assert.equal(normalizeVoiceLocale("not a locale"), "");
+});
+
+test("matches voice locales without crossing regional variants", () => {
+  assert.equal(voiceLocaleMatchesRequest("pt-BR", "pt-BR"), true);
+  assert.equal(voiceLocaleMatchesRequest("pt", "pt-BR"), true);
+  assert.equal(voiceLocaleMatchesRequest("pt-BR", "pt"), true);
+  assert.equal(voiceLocaleMatchesRequest("pt-PT", "pt-BR"), false);
+  assert.equal(voiceLocaleMatchesRequest("en-US", "pt-BR"), false);
 });
 
 test("scores preferred voice labels by configured order", () => {

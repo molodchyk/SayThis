@@ -65,6 +65,24 @@ export function baseVoiceLocale(value) {
   return normalizeVoiceLocale(value).split("-")[0];
 }
 
+export function voiceLocaleMatchesRequest(voiceLocale, requestedLocale) {
+  const voice = normalizeVoiceLocale(voiceLocale);
+  const requested = normalizeVoiceLocale(requestedLocale);
+  if (!voice || !requested) {
+    return false;
+  }
+
+  if (voice === requested) {
+    return true;
+  }
+
+  if (baseVoiceLocale(voice) !== baseVoiceLocale(requested)) {
+    return false;
+  }
+
+  return !voice.includes("-") || !requested.includes("-");
+}
+
 export function normalizeVoiceName(value) {
   return String(value || "")
     .trim()

@@ -18,7 +18,8 @@ import {
 import {
   baseVoiceLocale,
   normalizeVoiceLocale,
-  preferredVoiceScoreForLabel
+  preferredVoiceScoreForLabel,
+  voiceLocaleMatchesRequest
 } from "../shared/voice-preferences.js";
 import {
   playAudioItemOffscreen as playAudioItemOffscreenFlow,
@@ -328,9 +329,8 @@ export function selectTtsVoiceName(voices = [], lang = "") {
   return voices
     .map((voice, index) => {
       const voiceLang = normalizeVoiceLocale(voice?.lang);
-      const voiceBase = baseVoiceLocale(voiceLang);
       const exactScore = voiceLang === requested ? 100 : 0;
-      const baseScore = !exactScore && voiceBase === requestedBase ? 50 : 0;
+      const baseScore = !exactScore && voiceLocaleMatchesRequest(voiceLang, requested) ? 50 : 0;
       const score = exactScore || baseScore;
       if (!score || !voice?.voiceName) {
         return null;

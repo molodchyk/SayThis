@@ -141,11 +141,13 @@ test("speaks source forms with matching Web Speech voices", async () => {
 test("selects exact Web Speech voices before base-language matches", () => {
   const voices = [
     { name: "Base", lang: "pl" },
-    { name: "Exact", lang: "pl-PL" }
+    { name: "Exact", lang: "pl-PL" },
+    { name: "Portuguese Portugal", lang: "pt-PT" }
   ];
 
   assert.equal(selectSpeechSynthesisVoice(voices, "pl-PL").name, "Exact");
   assert.equal(selectSpeechSynthesisVoice(voices, "pl-CA").name, "Base");
+  assert.equal(selectSpeechSynthesisVoice(voices, "pt-BR"), null);
   assert.equal(selectSpeechSynthesisVoice(voices, "ja-JP"), null);
   assert.equal(clampSpeechRate(9), 1.4);
 });

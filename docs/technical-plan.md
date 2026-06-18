@@ -81,7 +81,7 @@ Chrome Manifest V3 components:
 - `test/background/sources/commons-audio-source.test.js`: verifies Commons audio URL planning, pronunciation evidence filters, and language-prefix ranking.
 - `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
-Verified audio from resolver results is preferred when available. Browser speech is only a fallback when SayThis can verify a matching voice for the resolved language, or when it can speak a simple guide instead.
+Verified audio from resolver results is preferred when available. Browser speech is only a fallback when SayThis can verify a matching voice for the resolved language, or when it can speak a simple guide instead. Matching accepts exact locale voices and base-only voices, but rejects region-specific voices from a different locale variant.
 
 ## Implemented MVP
 
