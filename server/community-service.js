@@ -1,5 +1,4 @@
 import { createServer } from "node:http";
-import { createHash, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -27,6 +26,14 @@ import {
   createConfiguredTtsProvider,
   generatedAudioArtifactFromTts
 } from "./tts-provider.js";
+import {
+  adminTokenMatches,
+  corsAllowOrigin,
+  createMemoryRateLimiter,
+  normalizeAllowedOrigins,
+  requestOriginAllowed
+} from "./request-policy.js";
+import { handleSharedAudioRequest } from "./shared-audio-request.js";
 import { renderAdminPage } from "./admin-page.js";
 
 const DEFAULT_PORT = 8787;
@@ -36,6 +43,14 @@ const DEFAULT_RATE_WINDOW_MS = 60 * 1000;
 const DEFAULT_MAX_PENDING_SUBMISSIONS = 1000;
 const DEFAULT_MAX_REJECTED_SUBMISSIONS = 1000;
 const DEFAULT_ALLOWED_ORIGINS = ["*"];
+
+export {
+  adminTokenMatches,
+  corsAllowOrigin,
+  createMemoryRateLimiter,
+  normalizeAllowedOrigins,
+  requestOriginAllowed
+} from "./request-policy.js";
 
 export async function handleCommunityRequest(request, store, options = {}) {
   const url = new URL(request.url, "http://localhost");
@@ -73,7 +88,7 @@ export async function handleCommunityRequest(request, store, options = {}) {
     return jsonResponse(200, state, approvedEntriesPayload(state));
   }
 
-  if (method === "POST" && url.pathname === "/community") {
+  if (method === "POST" && url.pathname === "/community" && !isSharedAudioRequestPath(url)) {
     const maxBodyBytes = normalizePositiveInteger(options.maxBodyBytes, DEFAULT_MAX_BODY_BYTES);
     if (bodyByteLength(request.body) > maxBodyBytes) {
       return jsonResponse(413, state, { error: "body-too-large" });
@@ -99,6 +114,15 @@ export async function handleCommunityRequest(request, store, options = {}) {
       duplicate: Boolean(result.duplicate),
       reason: result.reason || ""
     });
+  }
+
+  if (method === "POST" && isSharedAudioRequestPath(url)) {
+    const result = await handleSharedAudioRequest(request, state, {
+      ...options,
+      authorizeGeneration: (value) => authorizeSharedAudioGeneration(value, options),
+      checkRateLimit: (value) => checkSubmissionRate(value, options)
+    });
+    return jsonResponse(result.status, result.store, result.body);
   }
 
   if (method === "GET" && url.pathname === "/admin/pending") {
@@ -245,6 +269,12 @@ export async function createCommunityServer(options = {}) {
   const allowedOrigins = normalizeAllowedOrigins(
     options.allowedOrigins ?? process.env.SAYTHIS_ALLOWED_ORIGINS
   );
+  const publicAudioGenerationEnabled = normalizeBoolean(
+    options.publicAudioGenerationEnabled ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED
+  );
+  const publicAudioGenerationToken = String(
+    options.publicAudioGenerationToken ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN ?? ""
+  ).trim();
   const trustProxyHeaders = options.trustProxyHeaders ?? process.env.SAYTHIS_TRUST_PROXY_HEADERS === "1";
   let store = await readStore(storePath);
   const runStoreOperation = createStoreOperationQueue();
@@ -283,6 +313,8 @@ export async function createCommunityServer(options = {}) {
           maxAudioBytes,
           publicBaseUrl,
           ttsProvider,
+          publicAudioGenerationEnabled,
+          publicAudioGenerationToken,
           allowedOrigins,
           rateLimiter,
           trustProxyHeaders
@@ -312,77 +344,6 @@ export async function main() {
   server.listen(port, () => {
     console.log(`SayThis community service listening on http://127.0.0.1:${port}`);
   });
-}
-
-export function createMemoryRateLimiter(options = {}) {
-  const limit = normalizePositiveInteger(options.limit, DEFAULT_RATE_LIMIT);
-  const windowMs = normalizePositiveInteger(options.windowMs, DEFAULT_RATE_WINDOW_MS);
-  const now = typeof options.now === "function" ? options.now : Date.now;
-  const buckets = new Map();
-
-  return {
-    check(key) {
-      if (!key || limit < 1) {
-        return { ok: true, retryAfterMs: 0 };
-      }
-
-      const timestamp = now();
-      const existing = buckets.get(key);
-      if (!existing || timestamp >= existing.resetAt) {
-        buckets.set(key, {
-          count: 1,
-          resetAt: timestamp + windowMs
-        });
-        return { ok: true, retryAfterMs: 0 };
-      }
-
-      existing.count += 1;
-      if (existing.count <= limit) {
-        return { ok: true, retryAfterMs: 0 };
-      }
-
-      return {
-        ok: false,
-        retryAfterMs: Math.max(0, existing.resetAt - timestamp)
-      };
-    }
-  };
-}
-
-export function normalizeAllowedOrigins(value) {
-  const raw = Array.isArray(value)
-    ? value
-    : String(value || "").split(",");
-  const origins = raw
-    .map((item) => normalizeOrigin(item))
-    .filter(Boolean);
-
-  return origins.length ? [...new Set(origins)] : DEFAULT_ALLOWED_ORIGINS;
-}
-
-export function corsAllowOrigin(requestOrigin, allowedOrigins = DEFAULT_ALLOWED_ORIGINS) {
-  const origins = normalizeAllowedOrigins(allowedOrigins);
-  if (origins.includes("*")) {
-    return "*";
-  }
-
-  const origin = normalizeOrigin(requestOrigin);
-  return origin && origins.includes(origin) ? origin : "";
-}
-
-export function requestOriginAllowed(requestOrigin, allowedOrigins = DEFAULT_ALLOWED_ORIGINS) {
-  const origin = normalizeOrigin(requestOrigin);
-  return !origin || Boolean(corsAllowOrigin(origin, allowedOrigins));
-}
-
-export function adminTokenMatches(authorizationHeader, adminToken) {
-  const expectedToken = String(adminToken || "");
-  const providedToken = bearerTokenFromAuthorization(authorizationHeader);
-  if (!expectedToken || !providedToken) {
-    return false;
-  }
-
-  return timingSafeEqual(sha256(providedToken), sha256(expectedToken));
 }
 
 function jsonResponse(status, store, body) {
@@ -427,6 +388,17 @@ function authorize(request, options) {
   return { ok: true };
 }
 
+function authorizeSharedAudioGeneration(request, options = {}) {
+  const token = String(options.publicAudioGenerationToken || "").trim();
+  if (!token) {
+    return { ok: true };
+  }
+
+  return adminTokenMatches(request.headers?.authorization || request.headers?.Authorization || "", token)
+    ? { ok: true }
+    : { ok: false, status: 401, error: "unauthorized" };
+}
+
 function checkRequestOrigin(request, allowedOrigins) {
   const origin = request.headers?.origin || request.headers?.Origin || "";
   return {
@@ -469,6 +441,11 @@ function parseJsonBody(body) {
   } catch {
     return {};
   }
+}
+
+function isSharedAudioRequestPath(url) {
+  return url.pathname === "/audio/generate" ||
+    url.searchParams.get("action") === "audio";
 }
 
 async function readRequestBody(request, maxBodyBytes) {
@@ -558,35 +535,12 @@ function normalizePositiveInteger(value, fallback) {
   return Math.floor(number);
 }
 
-function normalizeOrigin(value) {
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return "";
+function normalizeBoolean(value) {
+  if (typeof value === "boolean") {
+    return value;
   }
 
-  if (raw === "*") {
-    return "*";
-  }
-
-  try {
-    const url = new URL(raw);
-    if (["chrome-extension:", "moz-extension:"].includes(url.protocol) && url.host) {
-      return `${url.protocol}//${url.host}`;
-    }
-
-    return url.origin === "null" ? "" : url.origin;
-  } catch {
-    return "";
-  }
-}
-
-function bearerTokenFromAuthorization(value) {
-  const match = String(value || "").match(/^Bearer\s+(.+)$/);
-  return match ? match[1] : "";
-}
-
-function sha256(value) {
-  return createHash("sha256").update(String(value)).digest();
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

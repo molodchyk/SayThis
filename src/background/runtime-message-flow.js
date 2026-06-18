@@ -103,6 +103,24 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     return true;
   }
 
+  if (message?.type === MESSAGE_TYPES.requestSharedAudio) {
+    const selectedText = normalizeSelection(message.text);
+    if (!selectedText) {
+      sendResponse({ ok: false, error: "No text selected." });
+      return true;
+    }
+
+    respondWithResult(
+      typeof dependencies.requestSharedAudio === "function"
+        ? dependencies.requestSharedAudio(selectedText, message.result || null, { rate: message.rate })
+        : Promise.reject(new Error("Shared audio unavailable.")),
+      sendResponse,
+      (result) => ({ ok: true, result }),
+      "Shared audio failed."
+    );
+    return true;
+  }
+
   return false;
 }
 

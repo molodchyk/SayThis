@@ -131,6 +131,37 @@ test("routes extension-owned audio playback messages", async () => {
   assert.deepEqual(responses, [{ ok: true }]);
 });
 
+test("routes shared audio request messages", async () => {
+  const responses = [];
+  const calls = [];
+  const result = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL"
+  };
+  const shared = {
+    ...result,
+    sourceStatus: "generated-audio"
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.requestSharedAudio,
+    text: "Exampletown",
+    result,
+    rate: 0.82
+  }, (value) => responses.push(value), {
+    requestSharedAudio: async (text, item, options) => {
+      calls.push(["requestSharedAudio", text, item, options]);
+      return shared;
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [["requestSharedAudio", "Exampletown", result, { rate: 0.82 }]]);
+  assert.deepEqual(responses, [{ ok: true, result: shared }]);
+});
+
 test("reports missing matching voice from speak messages", async () => {
   const responses = [];
   const handled = handleRuntimeMessage({

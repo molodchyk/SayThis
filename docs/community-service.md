@@ -15,6 +15,8 @@ $env:SAYTHIS_PUBLIC_BASE_URL = "https://example.com"
 $env:SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN = ""
 $env:SAYTHIS_GOOGLE_TTS_VOICE = ""
 $env:SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING = "MP3"
+$env:SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED = "0"
+$env:SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN = ""
 $env:SAYTHIS_RATE_LIMIT = "20"
 $env:SAYTHIS_RATE_WINDOW_MS = "60000"
 $env:SAYTHIS_MAX_PENDING_SUBMISSIONS = "1000"
@@ -57,6 +59,23 @@ Fetch a reviewed shared audio artifact:
 GET /audio/<artifact-id>
 ```
 
+Request shared audio for a resolved pronunciation entry:
+
+```http
+POST /community?action=audio
+Content-Type: application/json
+
+{
+  "term": "Exampletown",
+  "lookupKey": "exampletown",
+  "sourceForm": "Przykladowo",
+  "language": "pl",
+  "ttsLang": "pl-PL"
+}
+```
+
+The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set. If `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN` is set, generation requests must include `Authorization: Bearer <token>`. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
+
 The extension submits only term-level pronunciation metadata. It does not submit page URLs or browsing history.
 
 The public submission endpoint rejects oversized bodies and limits repeated submissions per client. Defaults:
@@ -64,10 +83,12 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_MAX_BODY_BYTES`: `16384`
 - `SAYTHIS_MAX_AUDIO_BYTES`: `524288`
 - `SAYTHIS_PUBLIC_BASE_URL`: required before storing shared generated-audio artifacts
-- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: bearer token for admin-only Google-compatible speech generation
+- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: bearer token for Google-compatible speech generation
 - `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional override for the Google-compatible speech endpoint
 - `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice name override
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`
+- `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: `0` by default; set to `1` only when shared provider generation should be available
+- `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: optional bearer token for shared provider generation
 - `SAYTHIS_RATE_LIMIT`: `20`
 - `SAYTHIS_RATE_WINDOW_MS`: `60000`
 - `SAYTHIS_MAX_PENDING_SUBMISSIONS`: `1000`

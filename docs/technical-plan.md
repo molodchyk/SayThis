@@ -54,7 +54,7 @@ Chrome Manifest V3 components:
 - `offscreen/runtime-message-flow.js`: owns offscreen play/stop message routing and response shaping.
 - `offscreen/runtime-adapters.js`: owns offscreen runtime listener registration.
 - `community-sync.js`: builds privacy-scoped feedback submissions, manages a retry queue, and flushes to an opt-in HTTPS endpoint.
-- `server/community-service.js`: dependency-free Node community service for submission intake, moderation, approved-entry serving, shared audio serving, and admin-only provider generation routing.
+- `server/community-service.js`: dependency-free Node community service for submission intake, moderation, approved-entry serving, shared audio serving, moderator provider generation, and opt-in shared provider generation.
 - `server/community-audio-artifacts.js`: normalizes generated-audio artifact bodies, public artifact metadata, HTTPS base URLs, and audio MIME types.
 - `server/community-audio-store.js`: stores reviewed generated-audio artifacts and publishes approved shared entries that point at those artifacts.
 - `server/community-store.js`: pure store logic for pending, approved, and rejected community data.
@@ -181,7 +181,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Community service request-size limits, in-memory public submission rate limiting, and configurable pending-queue caps.
 - Community service serialized store writes for overlapping public or moderator requests.
 - Community service proxy IP headers are ignored for rate limiting unless explicitly enabled.
-- Community service can store reviewed generated-audio artifacts, generate provider audio through an admin-only route, serve artifacts with immutable cache headers, and publish their URLs through approved entries.
+- Community service can store reviewed generated-audio artifacts, generate provider audio through moderator or explicitly enabled shared routes, serve artifacts with immutable cache headers, and publish their URLs through approved entries.
 - Community service container image and deployment notes.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with verified matching browser voice or guide speech fallback.
@@ -203,14 +203,14 @@ Verified audio from resolver results is preferred when available. Browser speech
    - domain-specific term sources
 5. Resolve native/source form and candidate languages.
 6. Query pronunciation sources for native audio.
-7. Use a shared reviewed generated-audio artifact, admin-generated provider audio, or verified matching browser speech for the resolved source form when native audio is unavailable, or guide speech when a matching voice cannot be verified.
+7. Use a shared reviewed generated-audio artifact, service-generated provider audio, or verified matching browser speech for the resolved source form when native audio is unavailable, or guide speech when a matching voice cannot be verified.
 8. Show confidence and source labels.
 9. Collect correction, confirmation, or missing-entry feedback.
 10. Cache successful lookups locally.
 
 For Latin-script input, entity or term resolution should happen before generic language detection. A romanized term can look like many languages, but a matched entity can provide a reliable native/source form.
 
-Detected-language voice generation is useful for rare terms when it speaks the resolved source form with a matching locale. It remains generated evidence, not preferred evidence. Store useful generated samples as moderated shared audio artifacts, publish their audio URLs through approved entries, and keep paid provider generation behind token-protected moderator controls until quota or paid-access controls exist.
+Detected-language voice generation is useful for rare terms when it speaks the resolved source form with a matching locale. It remains generated evidence, not preferred evidence. Store useful generated samples as moderated shared audio artifacts, publish their audio URLs through approved entries, and keep paid provider generation behind service-side opt-in, rate limits, and optional bearer-token controls until quota or paid-access controls exist.
 
 Provider-specific voice inventories and cost notes belong in ignored `private/` notes until there is a reviewed public provider policy.
 

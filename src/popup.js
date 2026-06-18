@@ -12,6 +12,7 @@ import {
   createFeedbackMessage,
   createPlayAudioMessage,
   createResolveMessage,
+  createRequestSharedAudioMessage,
   createSpeakMessage,
   createStopMessage
 } from "./message-contracts.js";
@@ -133,6 +134,8 @@ async function speakSelection(rate) {
       currentResult = refreshed;
     }
   }
+
+  currentResult = await ensureSharedAudio(currentResult, rate);
 
   if (playAudio(currentResult, rate)) {
     setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
@@ -307,14 +310,44 @@ async function speakResultCandidate(result, rate, statusBase = "Speaking") {
     return;
   }
 
+  const sharedAudioResult = await ensureSharedAudio(result, rate);
+  if (playAudio(sharedAudioResult, rate)) {
+    setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+    return;
+  }
+
   const response = await sendMessage(createSpeakMessage(text, {
-    result,
+    result: sharedAudioResult,
     rate
   }));
 
   setStatus(response.ok
     ? speakingStatus(response, rate, statusBase)
     : response.error || "Speech failed.");
+}
+
+async function ensureSharedAudio(result, rate) {
+  if (!isSharedAudioCandidate(result)) {
+    return result;
+  }
+
+  const text = normalizeSelection(selectionInput.value || result?.query || result?.display || result?.sourceForm);
+  if (!text) {
+    return result;
+  }
+
+  setStatus("Requesting shared voice.");
+  const response = await sendMessage(createRequestSharedAudioMessage(text, {
+    result,
+    rate
+  }));
+  if (!response.ok || !getBestAudio(response.result)) {
+    return result;
+  }
+
+  currentResult = response.result;
+  renderResult(currentResult);
+  return response.result;
 }
 
 function playAudio(result, rate) {
@@ -359,6 +392,21 @@ function playAudioItem(audio, result, rate, options = {}) {
 
 function isGeneratedAudioItem(audio = {}) {
   return String(audio.quality || "").trim().toLowerCase() === "generated";
+}
+
+function isSharedAudioCandidate(result = {}) {
+  return Boolean(
+    result &&
+    !getBestAudio(result) &&
+    normalizeSelection(result.sourceForm || result.display || result.query) &&
+    normalizeSelection(result.ttsLang) &&
+    baseLanguage(result.ttsLang) !== "en" &&
+    !["", "unknown", "best-effort-fallback"].includes(normalizeSelection(result.sourceStatus))
+  );
+}
+
+function baseLanguage(value) {
+  return normalizeSelection(value).toLowerCase().split(/[-_]/)[0];
 }
 
 function stopAudio() {

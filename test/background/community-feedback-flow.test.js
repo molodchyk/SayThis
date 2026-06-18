@@ -5,6 +5,8 @@ import {
   flushCommunitySync,
   postCommunitySubmission,
   pullApprovedCommunityEntries,
+  requestSharedAudioEntry,
+  requestSharedAudioForResult,
   saveFeedback
 } from "../../src/background/community-feedback-flow.js";
 
@@ -192,6 +194,98 @@ test("uses injected fetch for community HTTP helpers", async () => {
   assert.equal(requests[1].options.method, "GET");
   assert.equal(requests[1].options.headers.Accept, "application/json");
   assert.deepEqual(payload, { entries: {} });
+});
+
+test("requests shared audio, stores approved entry, and refreshes the result", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const calls = [];
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...baseResult,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, { rate: 0.82 }, {
+    ...storage.dependencies,
+    fetch: async (url, options) => {
+      calls.push(["fetch", url, JSON.parse(options.body)]);
+      return {
+        ok: true,
+        async json() {
+          return {
+            entry: {
+              term: "Exampletown",
+              lookupKey: "exampletown",
+              sourceForm: "Przykladowo",
+              language: "pl",
+              ttsLang: "pl-PL",
+              audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+              sourceStatus: "generated-audio",
+              trustSignals: ["generated-audio", "audio-backed"]
+            }
+          };
+        }
+      };
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    }
+  });
+
+  assert.equal(result, refreshed);
+  assert.equal(calls[0][0], "fetch");
+  assert.equal(calls[0][1], "https://example.com/community?action=audio");
+  assert.equal(calls[0][2].sourceForm, "Przykladowo");
+  assert.equal(calls[0][2].ttsLang, "pl-PL");
+  assert.equal(storage.state.approvedCommunityEntries.exampletown.sourceStatus, "generated-audio");
+  assert.equal(storage.state.lastResult, refreshed);
+});
+
+test("builds shared audio HTTP requests", async () => {
+  const payload = await requestSharedAudioEntry("https://example.com/community?client=public", {
+    term: "Exampletown",
+    lookupKey: "exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL"
+  }, {
+    fetch: async (url, options) => {
+      assert.equal(url, "https://example.com/community?client=public&action=audio");
+      assert.equal(options.method, "POST");
+      assert.equal(options.headers.Accept, "application/json");
+      assert.equal(JSON.parse(options.body).sourceForm, "Przykladowo");
+      return {
+        ok: true,
+        async json() {
+          return {
+            entry: {
+              audioUrl: "https://example.com/audio/aud_1234567890abcdef"
+            }
+          };
+        }
+      };
+    }
+  });
+
+  assert.equal(payload.entry.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
 });
 
 function storageHarness(initial = {}) {

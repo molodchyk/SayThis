@@ -336,6 +336,49 @@ test("keeps trust signals on approved community entries", () => {
   assert.equal(result.pronunciation.simple, "kee-ah-roh-SKOO-roh");
 });
 
+test("preserves generated shared audio metadata on approved community entries", () => {
+  const result = resolveTerm("Exampletown", {
+    entries: [],
+    communityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://community.example/audio/aud_1234567890abcdef",
+        trustSignals: ["moderator-reviewed", "generated-audio", "audio-backed"],
+        sourceStatus: "generated-audio"
+      }
+    }
+  });
+
+  assert.equal(result.sourceStatus, "generated-audio");
+  assert.equal(result.sourceLabel, "Generated audio");
+  assert.equal(result.ttsLang, "pl-PL");
+  assert.equal(result.pronunciation.audio[0].quality, "generated");
+  assert.equal(result.pronunciation.audio[0].label, "Generated shared audio");
+  assert.equal(resultToSpeechOptions(result).options.lang, "pl-PL");
+});
+
+test("treats reviewed non-generated community audio as verified audio", () => {
+  const result = resolveTerm("Exampletown", {
+    entries: [],
+    communityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        sourceForm: "Exampletown",
+        language: "it",
+        audioUrl: "https://community.example/audio/exampletown.ogg",
+        trustSignals: ["moderator-reviewed", "source-backed", "audio-backed"]
+      }
+    }
+  });
+
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.pronunciation.audio[0].quality, "verified");
+  assert.equal(getBestAudio(result).quality, "verified");
+});
+
 test("creates speech options from resolved source form", () => {
   const result = resolveTerm("gnocchi", { entries: seedData.entries });
   const speech = resultToSpeechOptions(result, { rate: 0.62 });
@@ -512,6 +555,42 @@ test("merges generated audio into a matching structured result", () => {
   assert.equal(merged.sourceStatus, "generated-audio");
   assert.equal(merged.sourceLabel, "Generated audio");
   assert.equal(merged.pronunciation.audio[0].quality, "generated");
+});
+
+test("preserves generated audio when a structured refresh has no recording", () => {
+  const generated = createRemoteStructuredResult("Exampleterm", {
+    id: "voice:sourceform",
+    display: "Sourceform",
+    sourceForm: "Sourceform",
+    language: "pl",
+    sourceStatus: "generated-audio",
+    confidence: "low",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/speak?text=Sourceform&lang=pl-PL",
+        label: "Voice service audio",
+        quality: "generated"
+      }]
+    },
+    evidence: ["Generated shared audio"]
+  });
+  const structured = createRemoteStructuredResult("Exampleterm", {
+    id: "remote:structured",
+    display: "Exampleterm",
+    sourceForm: "Sourceform",
+    language: "pl",
+    confidence: "medium",
+    evidence: ["Structured source candidate"]
+  });
+  const merged = mergeRemoteResult(generated, structured);
+
+  assert.equal(merged.id, "remote:structured");
+  assert.equal(merged.sourceStatus, "generated-audio");
+  assert.equal(merged.sourceForm, "Sourceform");
+  assert.equal(merged.pronunciation.audio[0].quality, "generated");
+  assert.equal(merged.pronunciation.audio[0].url, "https://voice.example/speak?text=Sourceform&lang=pl-PL");
+  assert.ok(merged.evidence.includes("Structured source candidate"));
+  assert.ok(merged.evidence.includes("Generated shared audio"));
 });
 
 test("preserves useful displaced remote candidates", () => {

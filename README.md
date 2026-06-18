@@ -121,6 +121,8 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service serializes store writes so concurrent submissions do not overwrite pending entries.
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
 - Community service can store reviewed generated-audio artifacts and publish shared audio URLs through approved entries.
+- Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
+- Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
 - Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
 - Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.
@@ -136,7 +138,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Pure resolver audio helpers split into a narrow module.
 - Pure resolver community-memory helpers split into a narrow module.
 
-Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken. Paid-provider generation belongs behind moderator controls, with useful generated samples saved as shared reviewed audio artifacts.
+Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken. Paid-provider generation belongs behind service-side controls, with useful generated samples saved as shared reviewed audio artifacts.
 
 MVP quality bar: SayThis should prefer verified recordings from source-backed services. If no recording is available, it may use a verified matching browser voice for the resolved source form. If the browser cannot verify a matching voice, SayThis should use the simple guide when present or report that speech is unavailable instead of playing a misleading fallback voice.
 

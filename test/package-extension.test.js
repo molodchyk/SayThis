@@ -83,7 +83,7 @@ test("excludes private and licensed package data even when present locally", asy
 });
 
 test("creates deterministic package name and zip envelope", () => {
-  assert.equal(packageNameFromManifest(manifest), "saythis-chrome-v0.1.0.zip");
+  assert.equal(packageNameFromManifest(manifest), "saythis-chrome-v1.0.0.zip");
 
   const zip = createZip([
     { path: "manifest.json", data: Buffer.from("{}") },

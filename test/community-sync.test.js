@@ -51,6 +51,7 @@ test("creates privacy-scoped community submissions", () => {
     sourceForm: "chiaroscuro",
     aliases: ["light-dark", "chiaro scuro"],
     language: "it",
+    ttsLang: "it-IT",
     root: "chiaro + oscuro",
     domainHint: "art history",
     simple: "kee-ah-roh-SKOO-roh",
@@ -63,6 +64,7 @@ test("creates privacy-scoped community submissions", () => {
     aliases: ["chiaro scuro"],
     variants: ["studio variant", "studio variant", "regional variant"],
     language: "it",
+    ttsLang: "it-IT",
     languageName: "Italian",
     origin: "Italian art term",
     root: "chiaro + oscuro",
@@ -83,6 +85,7 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(submission.lookupKey, "chiaroscuro");
   assert.equal(submission.kind, "correction");
   assert.equal(submission.correction.language, "it");
+  assert.equal(submission.correction.ttsLang, "it-IT");
   assert.deepEqual(submission.correction.aliases, ["light-dark", "chiaro scuro"]);
   assert.equal(submission.correction.root, "chiaro + oscuro");
   assert.equal(submission.correction.domainHint, "art history");
@@ -92,6 +95,7 @@ test("creates privacy-scoped community submissions", () => {
   assert.deepEqual(submission.result.variants, ["studio variant", "regional variant"]);
   assert.equal(submission.result.origin, "Italian art term");
   assert.equal(submission.result.root, "chiaro + oscuro");
+  assert.equal(submission.result.ttsLang, "it-IT");
   assert.equal(submission.result.domainHint, "visual arts");
   assert.equal(submission.result.ipa, "kjaroˈskuːro");
   assert.equal(submission.result.simple, "kee-ah-roh-SKOO-roh");
@@ -226,6 +230,7 @@ test("normalizes queued submissions without request metadata", () => {
     kind: "correction",
     correction: {
       sourceForm: " chiaroscuro ",
+      ttsLang: " it-IT ",
       aliases: "light-dark; light-dark",
       root: " chiaro + oscuro ",
       domainHint: " art history ",
@@ -238,6 +243,7 @@ test("normalizes queued submissions without request metadata", () => {
       display: "chiaroscuro",
       sourceForm: "chiaroscuro",
       language: "it",
+      ttsLang: "it-IT",
       root: "chiaro + oscuro",
       domainHint: "visual arts",
       variants: ["regional variant", "regional variant"],
@@ -266,11 +272,13 @@ test("normalizes queued submissions without request metadata", () => {
   assert.equal(queue[0].attempts, 2);
   assert.deepEqual(queue[0].correction.aliases, ["light-dark"]);
   assert.equal(queue[0].correction.root, "chiaro + oscuro");
+  assert.equal(queue[0].correction.ttsLang, "it-IT");
   assert.equal(queue[0].correction.domainHint, "art history");
   assert.deepEqual(queue[0].correction.variants, ["studio variant"]);
   assert.equal(queue[0].correction.sourceUrl, "https://example.com/source");
   assert.equal(queue[0].result.id, "wiktionary:chiaroscuro");
   assert.equal(queue[0].result.root, "chiaro + oscuro");
+  assert.equal(queue[0].result.ttsLang, "it-IT");
   assert.equal(queue[0].result.domainHint, "visual arts");
   assert.deepEqual(queue[0].result.variants, ["regional variant"]);
   assert.equal(queue[0].result.variantNote, "Regional studio variant");
@@ -288,6 +296,7 @@ test("normalizes approved community entries", () => {
       trustSignals: ["source-backed", "source-backed", "moderator-reviewed"],
       sourceForm: "chiaroscuro",
       language: "it",
+      ttsLang: "it-IT",
       root: "chiaro + oscuro",
       domainHint: "art history",
       variants: "studio variant; regional variant; studio variant",
@@ -296,7 +305,8 @@ test("normalizes approved community entries", () => {
       ipa: "kjaroˈskuːro",
       simple: "kee-ah-roh-SKOO-roh",
       audioUrl: "https://example.com/chiaroscuro.ogg",
-      sourceUrl: "https://example.com/chiaroscuro"
+      sourceUrl: "https://example.com/chiaroscuro",
+      sourceStatus: "verified-audio"
     }]
   });
 
@@ -305,6 +315,8 @@ test("normalizes approved community entries", () => {
   assert.deepEqual(entries.chiaroscuro.aliases, ["light-dark"]);
   assert.deepEqual(entries.chiaroscuro.trustSignals, ["source-backed", "moderator-reviewed"]);
   assert.equal(entries.chiaroscuro.language, "it");
+  assert.equal(entries.chiaroscuro.ttsLang, "it-IT");
+  assert.equal(entries.chiaroscuro.sourceStatus, "verified-audio");
   assert.equal(entries.chiaroscuro.root, "chiaro + oscuro");
   assert.equal(entries.chiaroscuro.domainHint, "art history");
   assert.deepEqual(entries.chiaroscuro.variants, ["studio variant", "regional variant"]);

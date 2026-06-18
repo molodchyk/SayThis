@@ -20,6 +20,7 @@ import {
 import {
   flushCommunitySync as flushCommunitySyncFlow,
   pullApprovedCommunityEntries as pullApprovedCommunityEntriesFlow,
+  requestSharedAudioForResult as requestSharedAudioForResultFlow,
   saveFeedback as saveFeedbackFlow
 } from "./background/community-feedback-flow.js";
 import {
@@ -51,6 +52,7 @@ platform.addContextMenuClickedListener((info, tab) => {
     normalizeSelection,
     setStorage: platform.setStorage,
     resolveSelection,
+    requestSharedAudio,
     playResolvedResult,
     lastResultKey: STORAGE_KEYS.lastResult
   });
@@ -59,6 +61,7 @@ platform.addContextMenuClickedListener((info, tab) => {
 platform.addCommandListener((command) => {
   handleActiveSelectionCommandName(command, runtimeAdapters.activeSelectionDependencies({
     resolveSelection,
+    requestSharedAudio,
     playResolvedResult
   }));
 });
@@ -101,6 +104,16 @@ async function pullApprovedCommunityEntries() {
   });
 }
 
+async function requestSharedAudio(text, result, options = {}) {
+  return requestSharedAudioForResultFlow(text, result, options, {
+    getStorage: platform.getStorage,
+    setStorage: platform.setStorage,
+    fetch: platform.fetch,
+    resolveSelection,
+    storageKeys: STORAGE_KEYS
+  });
+}
+
 function speakResult(result, overrides = {}) {
   return playbackSurface.speakResult(result, overrides);
 }
@@ -125,6 +138,7 @@ function runtimeMessageDependencies() {
     stopPlayback,
     saveFeedback,
     flushCommunitySync,
-    pullApprovedCommunityEntries
+    pullApprovedCommunityEntries,
+    requestSharedAudio
   };
 }

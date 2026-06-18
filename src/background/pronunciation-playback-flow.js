@@ -7,18 +7,31 @@ export async function resolvePlayableResult(selectedText, result, options = {}, 
     return result;
   }
 
-  if (hasPlayableAudio(result) || options.useOnline === true) {
+  if (hasPlayableAudio(result)) {
     return result;
   }
 
+  let playableResult = result;
   try {
-    return await dependencies.resolveSelection?.(selectedText, {
-      ...options,
-      useOnline: true,
-      localResult: result
-    }) || result;
+    if (options.useOnline !== true) {
+      playableResult = await dependencies.resolveSelection?.(selectedText, {
+        ...options,
+        useOnline: true,
+        localResult: result
+      }) || result;
+    }
   } catch {
-    return result;
+    playableResult = result;
+  }
+
+  if (hasPlayableAudio(playableResult) || typeof dependencies.requestSharedAudio !== "function") {
+    return playableResult;
+  }
+
+  try {
+    return await dependencies.requestSharedAudio(selectedText, playableResult, options) || playableResult;
+  } catch {
+    return playableResult;
   }
 }
 

@@ -27,7 +27,7 @@ community_audio:
 Reviewed generated-audio artifacts may be hosted by a configured community service for shared reuse. They are term-level pronunciation artifacts and do not include page URLs, browsing history, full page text, or user recordings.
 
 community_provider_generation:
-If a community service operator uses the admin-only provider generation route, only pronunciation text, locale, optional voice name, and speaking rate are sent to the configured speech provider.
+If a community service operator uses moderator or explicitly enabled shared provider generation, only pronunciation text, locale, optional voice name, and speaking rate are sent to the configured speech provider.
 
 remote_code:
 no

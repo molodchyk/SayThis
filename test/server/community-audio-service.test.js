@@ -94,6 +94,8 @@ test("stores generated audio artifacts as shared approved pronunciation audio", 
   assert.match(response.body.artifact.audioUrl, /^https:\/\/community\.example\/audio\/aud_[a-f0-9]{32}$/);
   assert.equal(response.body.entry.lookupKey, "exampletown");
   assert.equal(response.body.entry.audioUrl, response.body.artifact.audioUrl);
+  assert.equal(response.body.entry.ttsLang, "pl-PL");
+  assert.equal(response.body.entry.sourceStatus, "generated-audio");
   assert.deepEqual(response.body.entry.trustSignals, [
     "moderator-reviewed",
     "generated-audio",
@@ -174,12 +176,111 @@ test("generates provider audio and stores it as a shared artifact", async () => 
     rate: undefined
   });
   assert.equal(response.body.artifact.provider, "pl-PL-TestVoice");
+  assert.equal(response.body.entry.ttsLang, "pl-PL");
+  assert.equal(response.body.entry.sourceStatus, "generated-audio");
   assert.equal(response.body.entry.audioUrl, response.body.artifact.audioUrl);
   assert.deepEqual(response.body.entry.trustSignals, [
     "moderator-reviewed",
     "generated-audio",
     "audio-backed"
   ]);
+});
+
+test("reuses approved audio through the public shared audio action", async () => {
+  const audioBytes = Buffer.from("shared sample");
+  let response = await handleCommunityRequest({
+    method: "POST",
+    url: "/admin/audio-artifacts",
+    headers: { authorization: "Bearer secret" },
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL",
+      provider: "Example voice",
+      mimeType: "audio/ogg",
+      dataBase64: audioBytes.toString("base64")
+    })
+  }, createEmptyStore(), {
+    adminToken: "secret",
+    publicBaseUrl: "https://community.example"
+  });
+
+  response = await handleCommunityRequest({
+    method: "POST",
+    url: "/community?action=audio",
+    headers: {},
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    })
+  }, response.store);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.reused, true);
+  assert.equal(response.body.generated, false);
+  assert.equal(response.body.entry.audioUrl, response.store.approved.exampletown.audioUrl);
+});
+
+test("public shared audio action generates only when enabled", async () => {
+  const disabled = await handleCommunityRequest({
+    method: "POST",
+    url: "/community?action=audio",
+    headers: {},
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    })
+  }, createEmptyStore(), {
+    publicBaseUrl: "https://community.example"
+  });
+
+  assert.equal(disabled.status, 404);
+  assert.equal(disabled.body.error, "shared-audio-not-found");
+
+  const ttsProvider = {
+    async synthesize() {
+      return {
+        ok: true,
+        audio: {
+          mimeType: "audio/ogg",
+          dataBase64: Buffer.from("generated shared sample").toString("base64")
+        },
+        voice: {
+          languageCode: "pl-PL",
+          name: "pl-PL-TestVoice"
+        }
+      };
+    }
+  };
+  const generated = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: {},
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicBaseUrl: "https://community.example",
+    ttsProvider
+  });
+
+  assert.equal(generated.status, 200);
+  assert.equal(generated.body.generated, true);
+  assert.equal(generated.body.entry.sourceStatus, "generated-audio");
+  assert.equal(generated.body.entry.audioUrl, generated.body.artifact.audioUrl);
 });
 
 test("generates provider audio from a pending submission and clears it", async () => {

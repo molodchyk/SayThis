@@ -28,7 +28,6 @@ import {
 } from "./resolver/values.js";
 import {
   getBestAudio,
-  hasGeneratedAudio,
   hasPreferredAudio,
   mapResultAudioUrls,
   mergeAudioItems,
@@ -103,6 +102,10 @@ export function mergeRemoteResult(localResult, remoteResult) {
 
   if (shouldMergeAudioIntoResult(localResult, remoteResult)) {
     return withAlternateResults(mergeAudioIntoResult(localResult, remoteResult), remoteResult.alternateResults || []);
+  }
+
+  if (shouldMergeAudioIntoResult(remoteResult, localResult)) {
+    return withAlternateResults(mergeAudioIntoResult(remoteResult, localResult), localResult.alternateResults || []);
   }
 
   if (remoteRank > localRank) {
@@ -245,10 +248,21 @@ function createEntryResult(query, lookupKey, scriptInfo, entry) {
 function createCommunityResult(query, lookupKey, scriptInfo, entry) {
   const confirmations = Number(entry.confirmations || 0);
   const corrections = Number(entry.corrections || 0);
-  const sourceStatus = confirmations >= 2 ? "community-confirmed" : "structured-source";
+  const entryStatus = normalizeSourceStatus(entry.sourceStatus);
+  const trustSignals = normalizeTrustSignals(entry.trustSignals);
+  const hasGeneratedAudio = entryStatus === "generated-audio" || trustSignals.includes("generated-audio");
+  const hasReviewedAudio = Boolean(entry.audioUrl && trustSignals.includes("audio-backed") && (
+    trustSignals.includes("moderator-reviewed") || trustSignals.includes("source-backed")
+  ));
+  const sourceStatus = hasGeneratedAudio
+    ? "generated-audio"
+    : hasReviewedAudio
+      ? "verified-audio"
+      : confirmations >= 2 ? "community-confirmed" : "structured-source";
   const confidence = confirmations >= 2 ? "medium" : "low";
   const sourceForm = normalizeSelection(entry.sourceForm || entry.term || query);
   const language = normalizeLanguage(entry.language);
+  const audioQuality = hasGeneratedAudio ? "generated" : hasReviewedAudio ? "verified" : "";
 
   return normalizeResult({
     id: `community:${lookupKey}`,
@@ -263,7 +277,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     queryScript: scriptInfo.script,
     language,
     languageName: entry.languageName || languageNameFromCode(language),
-    ttsLang: ttsLangFromLanguage(language),
+    ttsLang: entry.ttsLang || ttsLangFromLanguage(language),
     category: "community-entry",
     origin: entry.origin || "",
     root: normalizeSelection(entry.root),
@@ -272,7 +286,12 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     pronunciation: {
       ipa: entry.ipa || "",
       simple: entry.simple || "",
-      audio: entry.audioUrl ? [{ url: entry.audioUrl, label: "Community audio source" }] : []
+      audio: entry.audioUrl ? [{
+        url: entry.audioUrl,
+        label: hasGeneratedAudio ? "Generated shared audio" : "Community audio source",
+        source: hasGeneratedAudio ? "SayThis shared audio" : "Community audio source",
+        quality: audioQuality
+      }] : []
     },
     confidence,
     sourceStatus,

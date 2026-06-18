@@ -197,6 +197,7 @@ function normalizeResultMetadata(result = null) {
     sourceForm: normalizeSelection(result.sourceForm),
     aliases: normalizeAliases(result.aliases),
     language: normalizeSelection(result.language),
+    ttsLang: normalizeSelection(result.ttsLang),
     languageName: normalizeSelection(result.languageName),
     origin: normalizeSelection(result.origin),
     root: normalizeSelection(result.root),
@@ -253,6 +254,7 @@ function normalizeCorrection(value = {}) {
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
     language: normalizeSelection(value.language),
+    ttsLang: normalizeSelection(value.ttsLang),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -287,6 +289,7 @@ function normalizeApprovedEntry(entry = {}, fallbackLookupKey = "") {
     sourceForm: normalizeSelection(entry.sourceForm),
     aliases: normalizeAliases(entry.aliases),
     language: normalizeSelection(entry.language),
+    ttsLang: normalizeSelection(entry.ttsLang),
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
     root: normalizeSelection(entry.root),
@@ -298,6 +301,7 @@ function normalizeApprovedEntry(entry = {}, fallbackLookupKey = "") {
     sourceUrl: normalizeHttpsUrl(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
     trustSignals: normalizeTrustSignals(entry.trustSignals),
+    sourceStatus: normalizeSelection(entry.sourceStatus),
     approvedAt: normalizeSelection(entry.approvedAt),
     updatedAt: normalizeSelection(entry.updatedAt || entry.approvedAt)
   };
@@ -308,7 +312,7 @@ function hasApprovedEntryContent(entry = {}) {
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
     normalizeVariants(entry.variants).length ||
-    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.domainHint || entry.ipa || entry.simple || entry.variantNote) ||
+    normalizeSelection(entry.language || entry.ttsLang || entry.languageName || entry.origin || entry.root || entry.domainHint || entry.ipa || entry.simple || entry.variantNote || entry.sourceStatus) ||
     normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     clampNumber(entry.confirmations, 0, 100000) ||
@@ -339,7 +343,7 @@ function normalizeStoredFeedbackKind(kind) {
 }
 
 function hasCorrectionDetail(correction = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "root", "domainHint", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+  return ["sourceForm", "language", "ttsLang", "languageName", "origin", "root", "domainHint", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field])) ||
     Boolean(normalizeAliases(correction.aliases).length) ||
     Boolean(normalizeVariants(correction.variants).length);

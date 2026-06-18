@@ -41,6 +41,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     sourceForm: existing.sourceForm || "",
     aliases: normalizeAliases(existing.aliases),
     language: existing.language || "",
+    ttsLang: existing.ttsLang || "",
     languageName: existing.languageName || "",
     origin: existing.origin || "",
     root: existing.root || "",
@@ -69,7 +70,7 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
     }
   } else if (feedback.kind === "correction") {
     next.corrections += 1;
-    for (const field of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "domainHint", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
+    for (const field of ["sourceForm", "aliases", "language", "ttsLang", "languageName", "origin", "root", "domainHint", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]) {
       const value = field === "aliases" || field === "variants"
         ? normalizeAliases(feedback[field])
         : field === "audioUrl" || field === "sourceUrl"
@@ -106,7 +107,7 @@ export function findCommunityEntry(lookupKey, entries = {}) {
 }
 
 export function hasCommunityPronunciationData(entry = {}) {
-  return Boolean(entry.sourceForm || entry.language || entry.root || normalizeAliases(entry.variants).length || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
+  return Boolean(entry.sourceForm || entry.language || entry.ttsLang || entry.root || normalizeAliases(entry.variants).length || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote);
 }
 
 export function withCommunitySummary(result, communityEntry) {
@@ -164,6 +165,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     sourceForm: normalizeSelection(entry.sourceForm),
     aliases: normalizeAliases(entry.aliases),
     language: normalizeLanguage(entry.language),
+    ttsLang: normalizeLanguage(entry.ttsLang),
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
     root: normalizeSelection(entry.root),
@@ -176,6 +178,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     variantNote: normalizeSelection(entry.variantNote),
     request: normalizeRequest(entry.request),
     trustSignals: normalizeTrustSignals(entry.trustSignals),
+    sourceStatus: normalizeSelection(entry.sourceStatus),
     createdAt: normalizeSelection(entry.createdAt),
     updatedAt: normalizeSelection(entry.updatedAt)
   };
@@ -186,7 +189,7 @@ function hasCommunityEntryContent(entry = {}) {
     normalizeSelection(entry.lookupKey || entry.term || entry.display || entry.sourceForm) ||
     normalizeAliases(entry.aliases).length ||
     normalizeAliases(entry.variants).length ||
-    normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.domainHint || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote) ||
+    normalizeSelection(entry.language || entry.ttsLang || entry.languageName || entry.origin || entry.root || entry.domainHint || entry.ipa || entry.simple || entry.audioUrl || entry.sourceUrl || entry.variantNote || entry.sourceStatus) ||
     hasRequestDetail(normalizeRequest(entry.request)) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     normalizeCount(entry.confirmations) ||
@@ -229,6 +232,7 @@ function normalizeRequest(value = {}) {
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
     language: normalizeLanguage(value.language),
+    ttsLang: normalizeLanguage(value.ttsLang),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -250,6 +254,7 @@ function mergeRequest(existing = {}, incoming = {}) {
     sourceForm: incoming.sourceForm || existing.sourceForm || "",
     aliases: normalizeAliases([...existingAliases, ...incomingAliases]),
     language: incoming.language || existing.language || "",
+    ttsLang: incoming.ttsLang || existing.ttsLang || "",
     languageName: incoming.languageName || existing.languageName || "",
     origin: incoming.origin || existing.origin || "",
     root: incoming.root || existing.root || "",
@@ -267,6 +272,7 @@ function hasRequestDetail(request = {}) {
     request.sourceForm ||
     normalizeAliases(request.aliases).length ||
     request.language ||
+    request.ttsLang ||
     request.languageName ||
     request.origin ||
     request.root ||

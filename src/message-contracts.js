@@ -9,6 +9,7 @@ export const MESSAGE_TYPES = Object.freeze({
   feedback: "SAYTHIS_FEEDBACK",
   flushSync: "SAYTHIS_FLUSH_SYNC",
   pullApproved: "SAYTHIS_PULL_APPROVED",
+  requestSharedAudio: "SAYTHIS_REQUEST_SHARED_AUDIO",
   showResult: "SAYTHIS_SHOW_RESULT",
   playAudio: "SAYTHIS_PLAY_AUDIO",
   offscreenPlayAudio: "SAYTHIS_OFFSCREEN_PLAY_AUDIO",
@@ -62,6 +63,15 @@ export function createFlushSyncMessage() {
 
 export function createPullApprovedMessage() {
   return { type: MESSAGE_TYPES.pullApproved };
+}
+
+export function createRequestSharedAudioMessage(text, options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.requestSharedAudio,
+    text: normalizeSelection(text),
+    result: options.result && typeof options.result === "object" ? options.result : undefined,
+    rate: normalizeRate(options.rate)
+  });
 }
 
 export function createShowResultMessage(result, options = {}) {

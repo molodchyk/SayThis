@@ -1,6 +1,7 @@
 import {
   applyCommunitySummary,
   createLookupKey,
+  getBestAudio,
   hasCommunityPronunciationData,
   normalizeSelection,
   updateCommunityEntries
@@ -10,6 +11,7 @@ import {
   enqueueSubmissionWhenEnabled,
   flushSubmissionQueue,
   mergeApprovedEntries,
+  normalizeApprovedEntries,
   pullApprovedEntries,
   syncSummary
 } from "../community-sync.js";
@@ -144,6 +146,62 @@ export async function pullApprovedCommunityEntries(dependencies = {}) {
   return summary;
 }
 
+export async function requestSharedAudioForResult(text, result = null, options = {}, dependencies = {}) {
+  const storageKeys = storageKeysFor(dependencies);
+  const selectedText = normalizeSelection(text);
+  const baseResult = result && typeof result === "object" ? result : null;
+  if (!selectedText) {
+    throw new Error("No text selected.");
+  }
+
+  if (getBestAudio(baseResult)) {
+    return baseResult;
+  }
+
+  const stored = await dependencies.getStorage([
+    storageKeys.approvedCommunityEntries,
+    storageKeys.settings
+  ]);
+  const settings = normalizeSettings(stored[storageKeys.settings]);
+  if (!settings.communityEndpoint) {
+    throw new Error("Shared audio endpoint is not configured.");
+  }
+
+  const body = sharedAudioRequestBody(selectedText, baseResult, options);
+  if (!body) {
+    throw new Error("Shared audio needs a resolved source form and language.");
+  }
+
+  const payload = await requestSharedAudioEntry(settings.communityEndpoint, body, dependencies);
+  const incoming = normalizeApprovedEntries({
+    entries: [payload.entry]
+  });
+  const approvedCommunityEntries = mergeApprovedEntries(
+    stored[storageKeys.approvedCommunityEntries],
+    incoming
+  );
+
+  await dependencies.setStorage({
+    [storageKeys.approvedCommunityEntries]: approvedCommunityEntries
+  });
+
+  const resolved = typeof dependencies.resolveSelection === "function"
+    ? await dependencies.resolveSelection(selectedText, {
+      useOnline: false,
+      localResult: baseResult
+    })
+    : baseResult;
+
+  if (resolved) {
+    await dependencies.setStorage({
+      [storageKeys.lastSelection]: selectedText,
+      [storageKeys.lastResult]: resolved
+    });
+  }
+
+  return resolved || baseResult;
+}
+
 export async function postCommunitySubmission(endpoint, submission, dependencies = {}) {
   const response = await fetcher(dependencies)(endpoint, {
     method: "POST",
@@ -156,6 +214,30 @@ export async function postCommunitySubmission(endpoint, submission, dependencies
   if (!response.ok) {
     throw new Error(`Community sync failed with ${response.status}`);
   }
+}
+
+export async function requestSharedAudioEntry(endpoint, body, dependencies = {}) {
+  const url = new URL(endpoint);
+  url.searchParams.set("action", "audio");
+  const response = await fetcher(dependencies)(url.toString(), {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Shared audio failed with ${response.status}`);
+  }
+
+  const payload = await response.json();
+  if (!payload?.entry?.audioUrl) {
+    throw new Error("Shared audio response did not include audio.");
+  }
+
+  return payload;
 }
 
 export async function fetchApprovedCommunityEntries(endpoint, dependencies = {}) {
@@ -194,6 +276,33 @@ function communityPoster(dependencies = {}) {
 function approvedEntryFetcher(dependencies = {}) {
   return dependencies.fetchApprovedCommunityEntries ||
     ((endpoint) => fetchApprovedCommunityEntries(endpoint, dependencies));
+}
+
+function sharedAudioRequestBody(selectedText, result = {}, options = {}) {
+  const sourceForm = normalizeSelection(result?.sourceForm || result?.display || selectedText);
+  const language = normalizeSelection(result?.language);
+  const ttsLang = normalizeSelection(result?.ttsLang || language);
+  const sourceStatus = normalizeSelection(result?.sourceStatus);
+  if (!sourceForm || !ttsLang || ["", "unknown", "best-effort-fallback"].includes(sourceStatus)) {
+    return null;
+  }
+
+  return {
+    term: normalizeSelection(result?.display || result?.query || selectedText),
+    lookupKey: createLookupKey(result?.lookupKey || selectedText),
+    sourceForm,
+    language,
+    ttsLang,
+    sourceUrl: firstSourceUrl(result),
+    rate: Number.isFinite(Number(options.rate)) ? Number(options.rate) : undefined
+  };
+}
+
+function firstSourceUrl(result = {}) {
+  const source = Array.isArray(result.sources)
+    ? result.sources.find((item) => item?.url)
+    : null;
+  return normalizeSelection(source?.url);
 }
 
 function fetcher(dependencies = {}) {

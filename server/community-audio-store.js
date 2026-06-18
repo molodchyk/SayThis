@@ -41,6 +41,27 @@ export function audioArtifactPayload(store, artifactId) {
   return id ? normalizeAudioArtifactMap(store?.audioArtifacts)[id] || null : null;
 }
 
+export function approvedAudioEntryForRequest(store, request = {}) {
+  const normalizedStore = normalizeAudioStore(store);
+  const lookupKey = createLookupKey(request.lookupKey || request.term || request.display || request.sourceForm);
+  if (!lookupKey) {
+    return null;
+  }
+
+  const entry = normalizedStore.approved[lookupKey];
+  if (!entry?.audioUrl) {
+    return null;
+  }
+
+  const requestedLang = baseLanguage(request.ttsLang || request.language);
+  const entryLang = baseLanguage(entry.ttsLang || entry.language);
+  if (requestedLang && entryLang && requestedLang !== entryLang) {
+    return null;
+  }
+
+  return entry;
+}
+
 export function normalizeAudioArtifactMap(value = {}) {
   if (!value || typeof value !== "object") {
     return {};
@@ -107,6 +128,7 @@ function approvedEntryFromGeneratedAudio(artifact, now) {
     sourceForm: artifact.sourceForm,
     aliases: [],
     language: artifact.language,
+    ttsLang: artifact.ttsLang,
     languageName: "",
     origin: "",
     root: "",
@@ -122,6 +144,7 @@ function approvedEntryFromGeneratedAudio(artifact, now) {
       "generated-audio",
       "audio-backed"
     ],
+    sourceStatus: "generated-audio",
     approvedAt: now,
     updatedAt: now
   };
@@ -165,6 +188,10 @@ function normalizeHttpsUrl(value) {
   } catch {
     return "";
   }
+}
+
+function baseLanguage(value) {
+  return normalizeSelection(value).toLowerCase().split(/[-_]/)[0];
 }
 
 function clampNumber(value, min, max) {

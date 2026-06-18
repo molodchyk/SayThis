@@ -8,6 +8,7 @@ import {
   createOffscreenStopAudioMessage,
   createPlayAudioMessage,
   createPullApprovedMessage,
+  createRequestSharedAudioMessage,
   createResolveMessage,
   createShowResultMessage,
   createSpeakMessage,
@@ -77,6 +78,24 @@ test("builds compact stop and sync messages", () => {
   assert.deepEqual(createStopMessage(), { type: MESSAGE_TYPES.stop });
   assert.deepEqual(createFlushSyncMessage(), { type: MESSAGE_TYPES.flushSync });
   assert.deepEqual(createPullApprovedMessage(), { type: MESSAGE_TYPES.pullApproved });
+});
+
+test("builds shared audio request messages", () => {
+  const result = {
+    query: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL"
+  };
+
+  assert.deepEqual(createRequestSharedAudioMessage(" Exampletown ", {
+    result,
+    rate: 0.2
+  }), {
+    type: MESSAGE_TYPES.requestSharedAudio,
+    text: "Exampletown",
+    result,
+    rate: 0.45
+  });
 });
 
 test("builds correction feedback payloads", () => {

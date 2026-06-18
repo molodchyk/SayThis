@@ -206,6 +206,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     sourceForm,
     aliases: firstAliasSet(override.aliases, correction.aliases, result.aliases),
     language: override.language || correction.language || result.language,
+    ttsLang: override.ttsLang || correction.ttsLang || result.ttsLang,
     languageName: override.languageName || correction.languageName || result.languageName,
     origin: override.origin || correction.origin || result.origin,
     root: override.root || correction.root || result.root,
@@ -217,6 +218,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     sourceUrl: override.sourceUrl || correction.sourceUrl || result.sourceUrl,
     variantNote: override.variantNote || correction.variantNote || result.variantNote,
     trustSignals: trustSignals.length ? trustSignals : defaultTrustSignals(submission, correction, result, override),
+    sourceStatus: override.sourceStatus || result.sourceStatus,
     approvedAt: now,
     updatedAt: now
   });
@@ -267,6 +269,7 @@ function normalizeCorrection(value = {}) {
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
     language: normalizeSelection(value.language),
+    ttsLang: normalizeSelection(value.ttsLang),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -291,6 +294,7 @@ function normalizeResultMetadata(value = {}) {
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
     language: normalizeSelection(value.language),
+    ttsLang: normalizeSelection(value.ttsLang),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -338,6 +342,7 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
     language: normalizeSelection(value.language),
+    ttsLang: normalizeSelection(value.ttsLang),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -349,6 +354,7 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote),
     trustSignals: normalizeTrustSignals(value.trustSignals),
+    sourceStatus: normalizeSelection(value.sourceStatus),
     approvedAt: normalizeSelection(value.approvedAt),
     updatedAt: normalizeSelection(value.updatedAt || value.approvedAt)
   };
@@ -359,7 +365,7 @@ function hasApprovedEntryContent(value = {}) {
     normalizeSelection(value.lookupKey || value.term || value.display || value.sourceForm) ||
     normalizeAliases(value.aliases).length ||
     normalizeVariants(value.variants).length ||
-    normalizeSelection(value.language || value.languageName || value.origin || value.root || value.domainHint || value.ipa || value.simple || value.variantNote) ||
+    normalizeSelection(value.language || value.ttsLang || value.languageName || value.origin || value.root || value.domainHint || value.ipa || value.simple || value.variantNote || value.sourceStatus) ||
     normalizeHttpsUrl(value.audioUrl || value.sourceUrl) ||
     normalizeTrustSignals(value.trustSignals).length ||
     clampNumber(value.confirmations, 0, 100000) ||
@@ -401,7 +407,7 @@ function normalizeKind(kind) {
 }
 
 function hasCorrectionDetail(correction = {}) {
-  return ["sourceForm", "language", "languageName", "origin", "root", "domainHint", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
+  return ["sourceForm", "language", "ttsLang", "languageName", "origin", "root", "domainHint", "ipa", "simple", "audioUrl", "sourceUrl", "variantNote"]
     .some((field) => Boolean(correction[field])) ||
     Boolean(normalizeAliases(correction.aliases).length) ||
     Boolean(normalizeVariants(correction.variants).length);

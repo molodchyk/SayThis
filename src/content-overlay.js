@@ -341,11 +341,30 @@
       return;
     }
 
-    speakCandidate(result, rate);
+    ensureSharedAudio(result, rate).then((sharedResult) => {
+      if (playAudio(sharedResult, rate)) {
+        setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+        return;
+      }
+
+      speakCandidate(sharedResult, rate, { skipSharedAudio: true });
+    });
   }
 
-  function speakCandidate(result, rate) {
+  function speakCandidate(result, rate, options = {}) {
     if (!result) {
+      return;
+    }
+
+    if (!options.skipSharedAudio && isSharedAudioCandidate(result)) {
+      ensureSharedAudio(result, rate).then((sharedResult) => {
+        if (playAudio(sharedResult, rate)) {
+          setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+          return;
+        }
+
+        speakCandidate(sharedResult, rate, { skipSharedAudio: true });
+      });
       return;
     }
 
@@ -356,6 +375,27 @@
       rate
     }).then((response) => {
       setStatus(response?.ok ? speakingStatus(response, rate) : response?.error || "Speech failed.");
+    });
+  }
+
+  function ensureSharedAudio(result, rate) {
+    if (!isSharedAudioCandidate(result)) {
+      return Promise.resolve(result);
+    }
+
+    setStatus("Requesting shared voice.");
+    return sendOverlayMessage({
+      type: "SAYTHIS_REQUEST_SHARED_AUDIO",
+      text: result.query || result.display || result.sourceForm,
+      result,
+      rate
+    }).then((response) => {
+      if (!response?.ok || !getBestAudio(response.result)) {
+        return result;
+      }
+
+      renderOverlay(response.result);
+      return response.result;
     });
   }
 
@@ -418,6 +458,21 @@
 
   function isGeneratedAudioItem(audio = {}) {
     return String(audio.quality || "").trim().toLowerCase() === "generated";
+  }
+
+  function isSharedAudioCandidate(result = {}) {
+    return Boolean(
+      result &&
+      !getBestAudio(result) &&
+      normalizeText(result.sourceForm || result.display || result.query) &&
+      normalizeText(result.ttsLang) &&
+      baseLanguage(result.ttsLang) !== "en" &&
+      !["", "unknown", "best-effort-fallback"].includes(normalizeText(result.sourceStatus))
+    );
+  }
+
+  function baseLanguage(value) {
+    return normalizeText(value).toLowerCase().split(/[-_]/)[0];
   }
 
   function stopAudio() {

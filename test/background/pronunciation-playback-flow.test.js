@@ -74,6 +74,41 @@ test("retries generated-audio results before playback", async () => {
   assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: generated }]]);
 });
 
+test("requests shared audio after online retry still has no preferred audio", async () => {
+  const calls = [];
+  const result = { display: "Exampletown", sourceStatus: "structured-source" };
+  const enriched = {
+    display: "Exampletown",
+    sourceStatus: "structured-source",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL"
+  };
+  const shared = {
+    ...enriched,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/generated.ogg", quality: "generated" }]
+    }
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", result, {}, {
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return enriched;
+    },
+    requestSharedAudio: async (text, item, options) => {
+      calls.push(["requestSharedAudio", text, item, options]);
+      return shared;
+    }
+  });
+
+  assert.equal(playable, shared);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: result }],
+    ["requestSharedAudio", "Exampletown", enriched, {}]
+  ]);
+});
+
 test("keeps current result when audio exists or retry fails", async () => {
   const audioResult = {
     display: "Exampletown",

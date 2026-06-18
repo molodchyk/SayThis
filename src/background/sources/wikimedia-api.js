@@ -1,6 +1,6 @@
 const WIKIMEDIA_API_HEADERS = Object.freeze({
   "Accept": "application/json",
-  "Api-User-Agent": "SayThis/0.1.0 (https://github.com/molodchyk/SayThis)"
+  "Api-User-Agent": "SayThis/1.0.0 (https://github.com/molodchyk/SayThis)"
 });
 
 export function fetchWikimediaApi(url, options = {}) {

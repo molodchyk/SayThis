@@ -29,6 +29,7 @@ export function createRuntimeAdapters(dependencies = {}) {
       readSelectionFromTab,
       setStorage: dependencies.setStorage,
       resolveSelection: workflows.resolveSelection,
+      requestSharedAudio: workflows.requestSharedAudio,
       playResolvedResult: workflows.playResolvedResult,
       lastSelectionKey: storageKeys.lastSelection,
       lastSourceKey: storageKeys.lastSource

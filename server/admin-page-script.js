@@ -146,7 +146,7 @@ async function rejectEntry(entry, article) {
 
 function collectFields(article) {
   const entry = {};
-  for (const name of ["sourceForm", "aliases", "language", "languageName", "origin", "root", "domainHint", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
+  for (const name of ["sourceForm", "aliases", "language", "ttsLang", "languageName", "origin", "root", "domainHint", "variants", "ipa", "simple", "audioUrl", "sourceUrl", "trustSignals", "variantNote"]) {
     const value = article.querySelector('[data-input="' + name + '"]')?.value.trim();
     if (value) {
       entry[name] = value;
