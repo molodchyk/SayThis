@@ -205,6 +205,67 @@ test("refreshes cached no-audio results for explicit online lookup", async () =>
   assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
 });
 
+test("refreshes cached generated audio for explicit online lookup", async () => {
+  const cachedGenerated = {
+    id: "voice:exampletown",
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    confidence: "medium",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/przykladowo.ogg",
+        label: "Voice service",
+        source: "Voice service",
+        quality: "generated"
+      }]
+    },
+    evidence: ["Generated voice"]
+  };
+  const verifiedRemote = createRemoteStructuredResult("Exampletown", {
+    id: "audio:exampletown",
+    display: "Przykladowo",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/przykladowo.ogg",
+        label: "Verified recording",
+        source: "Audio source",
+        quality: "verified"
+      }]
+    },
+    sourceStatus: "verified-audio",
+    evidence: ["Verified audio"]
+  });
+  const resultCache = upsertCachedResult({}, "Exampletown", cachedGenerated);
+  const calls = [];
+  const storedUpdates = [];
+
+  const result = await resolveSelection("Exampletown", { useOnline: true }, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false },
+      resultCache
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async (text, settings, credentials, context) => {
+      calls.push({ text, contextResult: context.localResult });
+      return verifiedRemote;
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].contextResult.sourceStatus, "generated-audio");
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.pronunciation.audio[0].quality, "verified");
+  assert.equal(result.pronunciation.audio.at(-1).quality, "generated");
+  assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
+});
+
 test("keeps cached pronunciation data when explicit online refresh fails", async () => {
   const cachedRemote = createRemoteStructuredResult("Exampletown", {
     id: "remote:exampletown",

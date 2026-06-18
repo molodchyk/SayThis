@@ -107,7 +107,7 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
 }
 
 function shouldRefreshCachedResult(result, options = {}) {
-  return options.useOnline === true && !hasPlayableAudio(result);
+  return options.useOnline === true && !hasVerifiedAudio(result);
 }
 
 function withEvidence(result, item) {
@@ -119,6 +119,12 @@ function withEvidence(result, item) {
 
 function hasPlayableAudio(result = {}) {
   return Boolean(result?.pronunciation?.audio?.some((item) => item?.url));
+}
+
+function hasVerifiedAudio(result = {}) {
+  const audio = Array.isArray(result?.pronunciation?.audio) ? result.pronunciation.audio : [];
+  return audio.some((item) => item?.url && item.quality === "verified") ||
+    (result.sourceStatus === "verified-audio" && audio.some((item) => item?.url));
 }
 
 function shouldUseOnlineForPronunciation(selectedText, result = {}) {
