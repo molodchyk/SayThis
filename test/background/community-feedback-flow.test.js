@@ -317,6 +317,53 @@ test("reuses local approved shared audio before requesting the endpoint", async 
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("reuses local approved shared audio when endpoint is not configured", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+        sourceStatus: "generated-audio",
+        trustSignals: ["moderator-reviewed", "generated-audio", "audio-backed"]
+      }
+    },
+    settings: {}
+  });
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...baseResult,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch without a configured endpoint");
+    },
+    resolveSelection: async () => refreshed
+  });
+
+  assert.equal(result, refreshed);
+  assert.equal(storage.state.lastResult, refreshed);
+});
+
 test("does not reuse local approved shared audio with a mismatched language", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {

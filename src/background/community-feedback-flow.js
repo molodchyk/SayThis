@@ -162,10 +162,6 @@ export async function requestSharedAudioForResult(text, result = null, options =
     storageKeys.approvedCommunityEntries,
     storageKeys.settings
   ]);
-  const settings = normalizeSettings(stored[storageKeys.settings]);
-  if (!settings.communityEndpoint) {
-    throw new Error("Shared audio endpoint is not configured.");
-  }
 
   const body = sharedAudioRequestBody(selectedText, baseResult, options);
   if (!body) {
@@ -175,6 +171,11 @@ export async function requestSharedAudioForResult(text, result = null, options =
   const localEntry = approvedAudioEntryForRequest(stored[storageKeys.approvedCommunityEntries], body);
   if (localEntry) {
     return refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
+  }
+
+  const settings = normalizeSettings(stored[storageKeys.settings]);
+  if (!settings.communityEndpoint) {
+    throw new Error("Shared audio endpoint is not configured.");
   }
 
   const payload = await requestSharedAudioEntry(settings.communityEndpoint, body, dependencies);
