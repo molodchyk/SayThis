@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
+import {
+  auditReleaseReadiness
+} from "../scripts/audit-release-readiness.mjs";
 
 test("README links the public privacy policy", async () => {
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
@@ -72,8 +76,12 @@ test("documents public audio release guardrails", async () => {
 test("runs release audits in non-browser CI", async () => {
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
   const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+  const failures = await auditReleaseReadiness(fileURLToPath(new URL("..", import.meta.url)));
 
   assert.match(readme, /release audits/);
+  assert.match(readme, /audit:release/);
   assert.match(workflow, /npm run audit:architecture/);
   assert.match(workflow, /npm run audit:public-audio/);
+  assert.match(workflow, /npm run audit:release/);
+  assert.deepEqual(failures, []);
 });

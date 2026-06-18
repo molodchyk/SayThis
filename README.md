@@ -225,6 +225,12 @@ Audit packaged public audio metadata:
 npm run audit:public-audio
 ```
 
+Run the release readiness audit:
+
+```powershell
+npm run audit:release
+```
+
 Run the architecture audit:
 
 ```powershell

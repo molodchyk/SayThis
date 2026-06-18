@@ -20,6 +20,7 @@ test("normalizes overlay result display helpers", () => {
         { label: "First", url: "ftp://bad.example/audio.ogg" },
         { label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" },
         { label: "Verified", url: "https://audio.example/verified.ogg", quality: "verified" },
+        { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
         { label: "Duplicate", url: "https://audio.example/verified.ogg" },
         { source: "Commons", url: "https://audio.example/commons.ogg" }
       ],
@@ -41,13 +42,15 @@ test("normalizes overlay result display helpers", () => {
   assert.equal(view.variantsTextFromResult(result), "regional; slow");
   assert.deepEqual(plain(view.trustSignalItems(result.trustSignals)), ["Trust: source-backed"]);
   assert.deepEqual(plain(view.variantItems(result.variants)), ["Variant: regional", "Variant: slow"]);
-  assert.equal(view.getBestAudio(result).label, "Verified");
+  assert.equal(view.getBestAudio(result).label, "Curated");
   assert.deepEqual(plain(view.audioItems(result)), [
+    { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },
     { label: "Commons", source: "Commons", url: "https://audio.example/commons.ogg", quality: "" },
     { label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" }
   ]);
   assert.deepEqual(plain(view.playbackItems(result)), [
+    { kind: "audio", label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { kind: "audio", label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },
     { kind: "audio", label: "Commons", source: "Commons", url: "https://audio.example/commons.ogg", quality: "" },
     { kind: "audio", label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" }
@@ -96,6 +99,7 @@ test("normalizes overlay result display helpers", () => {
   }).speakText, "Przykladowo");
   assert.deepEqual(plain(view.sourceItems(result)), [
     { label: "Wiktionary", url: "https://example.test/term" },
+    { label: "Curated", url: "https://audio.example/curated.ogg" },
     { label: "Verified", url: "https://audio.example/verified.ogg" },
     { label: "Commons", url: "https://audio.example/commons.ogg" },
     { label: "Generated voice", url: "https://audio.example/generated.ogg" }

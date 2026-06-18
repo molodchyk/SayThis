@@ -4,24 +4,39 @@ import {
   shouldRefreshBeforeSpeech
 } from "../../src/popup/speech-refresh.js";
 
-test("does not refresh speech when a result already has audio", () => {
+test("does not refresh speech when a result already has preferred audio", () => {
   assert.equal(shouldRefreshBeforeSpeech({
     pronunciation: {
-      audio: [{ url: "https://example.test/audio.ogg" }]
+      audio: [{ url: "https://example.test/audio.ogg", quality: "verified" }]
     }
   }), false);
 });
 
-test("does not refresh speech when a guide can be spoken", () => {
+test("refreshes speech when only a guide can be spoken", () => {
   assert.equal(shouldRefreshBeforeSpeech({
+    display: "Exampleterm",
     pronunciation: {
       simple: "eg-ZAM-pluh-term"
     }
-  }), false);
+  }), true);
+});
+
+test("refreshes generated audio before speech so recordings can replace it", () => {
+  assert.equal(shouldRefreshBeforeSpeech({
+    display: "Exampleterm",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/generated.ogg",
+        quality: "generated"
+      }]
+    }
+  }), true);
 });
 
 test("refreshes best-effort fallback even when a guide exists", () => {
   assert.equal(shouldRefreshBeforeSpeech({
+    display: "PNL",
     sourceStatus: "best-effort-fallback",
     pronunciation: {
       simple: "P N L"

@@ -31,5 +31,8 @@ jobs:
       - name: Run public audio audit
         run: npm run audit:public-audio
 
+      - name: Run release readiness audit
+        run: npm run audit:release
+
       - name: Build Chrome package
         run: npm run package:chrome
