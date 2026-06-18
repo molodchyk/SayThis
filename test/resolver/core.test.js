@@ -10,10 +10,8 @@ import {
   mapResultAudioUrls,
   mergeRemoteResult,
   normalizeCommunityEntries,
-  rankedAudioItems,
   resolveTerm,
   resultToSpeechOptions,
-  sourceLabelForStatus,
   updateCommunityEntries
 } from "../../src/resolver-core.js";
 import {
@@ -27,26 +25,12 @@ import {
   ttsLangFromLanguage
 } from "../../src/resolver/language.js";
 import {
-  confidenceRank,
-  normalizeConfidence,
-  normalizeSourceStatus,
-  sourceLabelForStatus as sourceLabelForStatusDirect,
-  strongerConfidence
-} from "../../src/resolver/status.js";
-import {
   normalizeAliases as normalizeValueAliases,
   normalizeCount as normalizeValueCount,
   normalizeLongValue,
   normalizeTrustSignals as normalizeValueTrustSignals,
   normalizeUrl as normalizeValueUrl
 } from "../../src/resolver/values.js";
-import {
-  getBestAudio as getBestAudioDirect,
-  mapResultAudioUrls as mapResultAudioUrlsDirect,
-  mergeAudioItems,
-  normalizePronunciation as normalizePronunciationDirect,
-  rankedAudioItems as rankedAudioItemsDirect
-} from "../../src/resolver/audio.js";
 import {
   applyCommunitySummary as applyCommunitySummaryDirect,
   communitySummary,
@@ -95,18 +79,6 @@ test("maps resolver language helpers from a narrow module", () => {
   assert.deepEqual(scriptHintForScript("Unknown"), {});
 });
 
-test("maps resolver status helpers from a narrow module", () => {
-  assert.equal(confidenceRank("high"), 5);
-  assert.equal(normalizeConfidence("unclear"), "unknown");
-  assert.equal(normalizeSourceStatus("verified-audio"), "verified-audio");
-  assert.equal(normalizeSourceStatus("generated-audio"), "generated-audio");
-  assert.equal(normalizeSourceStatus("generated"), "unknown");
-  assert.equal(strongerConfidence("low", "medium"), "medium");
-  assert.equal(sourceLabelForStatusDirect("generated-audio"), "Generated audio");
-  assert.equal(sourceLabelForStatusDirect("structured-source"), "Structured source");
-  assert.equal(sourceLabelForStatus("structured-source"), sourceLabelForStatusDirect("structured-source"));
-});
-
 test("normalizes resolver values from a narrow module", () => {
   assert.deepEqual(normalizeValueAliases("Alpha; Beta; Alpha"), ["Alpha", "Beta"]);
   assert.deepEqual(normalizeValueTrustSignals(["source-backed", "source-backed", "audio-backed"]), ["source-backed", "audio-backed"]);
@@ -115,32 +87,6 @@ test("normalizes resolver values from a narrow module", () => {
   assert.equal(normalizeLongValue(` ${"a".repeat(2050)} `).length, 2048);
   assert.equal(normalizeValueCount(12.8), 12);
   assert.equal(normalizeValueCount(-1), 0);
-});
-
-test("maps resolver audio helpers from a narrow module", () => {
-  const pronunciation = normalizePronunciationDirect({
-    ipa: "/a/",
-    audio: [
-      { url: "https://voice.example/a.ogg", label: " Generated ", source: " Voice service ", quality: "generated" },
-      { url: " assets/audio/public/a.ogg ", label: " One ", source: " Local ", quality: "verified" },
-      { url: "https://forvo.example/a.ogg", label: " Forvo ", source: " Forvo ", quality: "verified" },
-      { url: "", label: "empty" }
-    ]
-  });
-
-  assert.equal(pronunciation.ipa, "/a/");
-  assert.equal(pronunciation.audio.length, 3);
-  assert.equal(pronunciation.audio[0].url, "https://forvo.example/a.ogg");
-  assert.equal(pronunciation.audio[2].quality, "generated");
-  assert.equal(getBestAudioDirect({ pronunciation }).url, "https://forvo.example/a.ogg");
-  assert.equal(getBestAudio({ pronunciation }).url, "https://forvo.example/a.ogg");
-  assert.deepEqual(rankedAudioItems(pronunciation.audio).map((item) => item.quality), ["verified", "verified", "generated"]);
-  assert.deepEqual(rankedAudioItemsDirect(pronunciation.audio).map((item) => item.quality), ["verified", "verified", "generated"]);
-
-  const mapped = mapResultAudioUrlsDirect({ pronunciation }, (url) => `chrome-extension://id/${url}`);
-
-  assert.equal(mapped.pronunciation.audio[1].url, "chrome-extension://id/assets/audio/public/a.ogg");
-  assert.equal(mergeAudioItems([pronunciation.audio[0]], [pronunciation.audio[0]]).length, 1);
 });
 
 test("maps resolver community helpers from a narrow module", () => {

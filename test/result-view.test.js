@@ -124,6 +124,11 @@ test("builds playable audio items", () => {
         quality: "verified",
         url: "https://example.com/primary.ogg"
       }, {
+        label: "Curated pronunciation",
+        source: "SayThis",
+        quality: "curated",
+        url: "chrome-extension://id/curated.ogg"
+      }, {
         label: "Duplicate",
         url: "https://example.com/primary.ogg"
       }, {
@@ -137,6 +142,11 @@ test("builds playable audio items", () => {
   });
 
   assert.deepEqual(items, [{
+    label: "Curated pronunciation",
+    source: "SayThis",
+    quality: "curated",
+    url: "chrome-extension://id/curated.ogg"
+  }, {
     label: "Primary recording",
     source: "Forvo",
     quality: "verified",

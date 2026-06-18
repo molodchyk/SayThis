@@ -69,8 +69,16 @@ function audioScore(item = {}) {
 
 function qualityScore(value) {
   const quality = normalizeSelection(value).toLowerCase();
+  if (["curated", "native", "native speaker", "native-speaker"].includes(quality)) {
+    return 115;
+  }
+
   if (quality === "verified") {
     return 100;
+  }
+
+  if (["source-backed", "recorded"].includes(quality)) {
+    return 85;
   }
 
   if (quality === "generated") {
@@ -82,6 +90,17 @@ function qualityScore(value) {
 
 function sourceScore(value) {
   const source = normalizeSelection(value).toLowerCase();
+  if (
+    source.includes("saythis") ||
+    source.includes("curated") ||
+    source.includes("packaged") ||
+    source.includes("public audio")
+  ) {
+    return 12;
+  }
+  if (source.includes("native speaker")) {
+    return 10;
+  }
   if (source.includes("forvo")) {
     return 8;
   }
