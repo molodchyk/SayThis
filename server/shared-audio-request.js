@@ -9,6 +9,12 @@ import {
 import {
   generatedAudioArtifactFromTts
 } from "./tts-provider.js";
+import {
+  hasUsefulSharedAudioTarget
+} from "../src/result/shared-audio.js";
+import {
+  normalizeSelection
+} from "../src/resolver-core.js";
 
 const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
 
@@ -31,6 +37,10 @@ export async function handleSharedAudioRequest(request, store, options = {}) {
 
   if (!options.publicAudioGenerationEnabled) {
     return response(404, store, { error: "shared-audio-not-found" });
+  }
+
+  if (!isUsefulGenerationRequest(body)) {
+    return response(400, store, { error: "invalid-shared-audio-target" });
   }
 
   const auth = typeof options.authorizeGeneration === "function"
@@ -85,6 +95,19 @@ function parseJsonBody(body) {
   } catch {
     return {};
   }
+}
+
+function isUsefulGenerationRequest(body = {}) {
+  const selectedText = normalizeSelection(body.term || body.display || body.lookupKey);
+  const sourceForm = normalizeSelection(body.sourceForm || body.text);
+  const language = normalizeSelection(body.language);
+  const ttsLang = normalizeSelection(body.ttsLang || language);
+  return Boolean(
+    selectedText &&
+    sourceForm &&
+    ttsLang &&
+    hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang)
+  );
 }
 
 function bodyByteLength(body) {

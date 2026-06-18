@@ -36,6 +36,34 @@ test("does not reuse approved source-form audio across languages", async () => {
   assert.equal(response.body.error, "shared-audio-not-found");
 });
 
+test("rejects plain same-text English public audio generation", async () => {
+  const response = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: { authorization: "Bearer client-token" },
+    body: JSON.stringify({
+      term: "Exampleterm",
+      lookupKey: "exampleterm",
+      sourceForm: "Exampleterm",
+      language: "en",
+      ttsLang: "en-US"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicAudioGenerationToken: "client-token",
+    publicBaseUrl: "https://community.example",
+    ttsProvider: {
+      async synthesize() {
+        throw new Error("should not synthesize low-value shared audio target");
+      }
+    }
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "invalid-shared-audio-target");
+  assert.equal(Object.keys(response.store.approved).length, 0);
+});
+
 async function storeAudioArtifact(overrides = {}) {
   return handleCommunityRequest({
     method: "POST",

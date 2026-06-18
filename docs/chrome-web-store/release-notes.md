@@ -12,6 +12,7 @@
 - Keeps verified recording labels when generated fallback samples are also available.
 - Labels generated fallback playback separately from source-backed recordings in the popup and on-page card.
 - Avoids generated fallback audio for plain English same-text structured results.
+- Rejects public shared-audio generation for plain English same-text requests at the service boundary.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Uses one-off lookup hints to prefer matching Wiktionary language sections and source-form edition retries.
 - Prefers Wikidata pronunciation audio with matching language qualifiers before unqualified recordings.
