@@ -112,7 +112,7 @@
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
         ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><button type="button" data-action="alternate" data-alternate-index="${item.index}">Speak</button><strong>${escapeHtml(item.display || "Alternate")}</strong><span>${escapeHtml(item.summary)}</span></li>`).join("")}</ul>` : ""}
-        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation playback">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">${item.kind === "guide" ? "Speak" : "Play"}</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
+        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation playback">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">${item.kind === "audio" ? "Play" : "Speak"}</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <label class="hint-field">
           <span>Lookup hints</span>
@@ -180,7 +180,7 @@
       button.addEventListener("click", () => {
         const index = Number(button.dataset.audioIndex);
         const item = recordings[index];
-        if (item?.kind === "guide") {
+        if (item?.kind !== "audio") {
           speakCandidate(result, 0.82);
         } else if (playAudioItem(item, result, 0.82)) {
           setStatus("Playing recording.");
@@ -374,7 +374,7 @@
       }
 
       fallbackStarted = true;
-      setStatus("Audio failed. Using TTS fallback.");
+      setStatus("Audio failed. Using speech fallback.");
       sendOverlayMessage({
         type: "SAYTHIS_SPEAK",
         text: result.query || result.display,

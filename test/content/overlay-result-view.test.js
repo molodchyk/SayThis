@@ -50,10 +50,20 @@ test("normalizes overlay result display helpers", () => {
     { kind: "audio", label: "Commons", url: "https://audio.example/commons.ogg" }
   ]);
   assert.deepEqual(plain(view.playbackItems({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
     pronunciation: {
       simple: "eg-ZAM-pluh-term"
     }
   })), [{
+    kind: "speech",
+    label: "Source-form speech",
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }, {
     kind: "guide",
     label: "Guide speech",
     text: "eg-ZAM-pluh-term"

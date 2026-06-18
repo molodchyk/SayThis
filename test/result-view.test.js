@@ -142,8 +142,11 @@ test("builds playable audio items", () => {
   }]);
 });
 
-test("builds playback items from audio before guide speech", () => {
+test("builds playback items from audio before source speech and guide speech", () => {
   assert.deepEqual(playbackItemsForResult({
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
     pronunciation: {
       simple: "eg-ZAM-pluh-term",
       audio: [{
@@ -157,6 +160,26 @@ test("builds playback items from audio before guide speech", () => {
     source: "",
     quality: "",
     url: "https://example.com/primary.ogg"
+  }]);
+
+  assert.deepEqual(playbackItemsForResult({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term"
+    }
+  }), [{
+    kind: "speech",
+    label: "Source-form speech",
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }, {
+    kind: "guide",
+    label: "Guide speech",
+    text: "eg-ZAM-pluh-term"
   }]);
 
   assert.deepEqual(playbackItemsForResult({

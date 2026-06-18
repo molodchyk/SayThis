@@ -23,6 +23,9 @@ import {
 import {
   renderPopupResult
 } from "./popup/result-renderer.js";
+import {
+  shouldRefreshBeforeSpeech
+} from "./popup/speech-refresh.js";
 
 const selectionInput = document.getElementById("selection");
 const lookupHintsInput = document.getElementById("lookup-hints");
@@ -118,7 +121,7 @@ async function speakSelection(rate) {
     await resolveSelection();
   }
 
-  if (!getBestAudio(currentResult)) {
+  if (shouldRefreshBeforeSpeech(currentResult)) {
     const refreshed = await resolveSelection(true);
     if (refreshed) {
       currentResult = refreshed;
@@ -319,7 +322,7 @@ function playAudioItem(audio, result, rate, options = {}) {
   }
 
   const fallbackToSpeech = async () => {
-    setStatus("Audio failed. Using TTS fallback.");
+    setStatus("Audio failed. Using speech fallback.");
     const text = normalizeSelection(selectionInput.value);
     const response = await sendMessage(createSpeakMessage(text, {
       result,

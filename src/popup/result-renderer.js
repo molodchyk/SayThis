@@ -74,9 +74,9 @@ export function renderPopupResult(result, elements, actions = {}) {
     const button = doc.createElement("button");
     button.type = "button";
     button.className = "small secondary";
-    button.textContent = item.kind === "guide" ? "Speak" : "Play";
+    button.textContent = item.kind === "audio" ? "Play" : "Speak";
     button.addEventListener("click", () => {
-      if (item.kind === "guide") {
+      if (item.kind !== "audio") {
         speakResult(result, 0.82);
         return;
       }

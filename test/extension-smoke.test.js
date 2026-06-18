@@ -103,7 +103,7 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(resultView, /playbackItems/);
   assert.match(resultView, /normalizeLanguageHints/);
   assert.match(source, /speakCandidate\(result\.alternateResults\?\.\[index\], 0\.82\)/);
-  assert.match(source, /item\?\.kind === "guide"/);
+  assert.match(source, /item\?\.kind !== "audio"/);
   assert.match(source, /playAudioItem\(item, result, 0\.82\)/);
 
   for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "root", "domainHint", "variants", "audioUrl", "sourceUrl", "variantNote"]) {
@@ -424,7 +424,7 @@ test("background includes per-lookup hints in online settings", async () => {
   assert.match(source, /onlineCacheScope\(onlineSettings, credentials\)/);
 });
 
-test("popup source-audio failure falls back to TTS", async () => {
+test("popup source-audio failure uses speech fallback", async () => {
   const source = await readText("src/popup.js");
   const audioSource = await readText("src/popup/audio-playback.js");
   const resultSource = await readText("src/popup/result-renderer.js");
@@ -436,10 +436,10 @@ test("popup source-audio failure falls back to TTS", async () => {
   assert.match(source, /createPopupAudioPlayback/);
   assert.match(resultSource, /playbackItemsForResult/);
   assert.match(resultSource, /speakAlternate\(item\.index, 0\.82\)/);
-  assert.match(resultSource, /item\.kind === "guide"/);
+  assert.match(resultSource, /item\.kind !== "audio"/);
   assert.match(source, /replaceCurrent: false/);
   assert.match(resultSource, /playAudioItem\(item, result, 0\.82\)/);
-  assert.match(source, /Audio failed\. Using TTS fallback\./);
+  assert.match(source, /Audio failed\. Using speech fallback\./);
   assert.match(source, /Speaking guide\./);
   assert.match(source, /response\?\.speech\?\.fallback === "guide"/);
   assert.match(source, /const fallbackToSpeech = async \(\) =>/);
@@ -448,10 +448,10 @@ test("popup source-audio failure falls back to TTS", async () => {
   assert.match(audioSource, /fallbackStarted/);
 });
 
-test("overlay source-audio failure falls back to TTS", async () => {
+test("overlay source-audio failure uses speech fallback", async () => {
   const source = await readText("src/content-overlay.js");
 
-  assert.match(source, /Audio failed\. Using TTS fallback\./);
+  assert.match(source, /Audio failed\. Using speech fallback\./);
   assert.match(source, /Speaking guide\./);
   assert.match(source, /response\?\.speech\?\.fallback === "guide"/);
   assert.match(source, /const fallbackToSpeech = \(\) =>/);

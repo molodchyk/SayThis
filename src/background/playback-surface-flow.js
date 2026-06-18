@@ -69,12 +69,19 @@ export function createPlaybackSurface(dependencies = {}) {
     }
 
     const voice = await bestTtsVoice(speech.options.lang);
-    if (voice.checked && !voice.voiceName) {
+    if (!voice.voiceName && shouldRequireVerifiedVoice(result, speech.options.lang)) {
       const guideSpeech = await speakGuideFallback(result, speech.options.rate);
       if (guideSpeech) {
         return guideSpeech;
       }
 
+      return {
+        spoken: false,
+        error: `No verified browser voice for ${speech.options.lang}.`
+      };
+    }
+
+    if (voice.checked && !voice.voiceName) {
       return {
         spoken: false,
         error: `No matching browser voice for ${speech.options.lang}.`
@@ -128,6 +135,14 @@ export function createPlaybackSurface(dependencies = {}) {
       enqueue: false,
       rate: 0.82
     });
+  }
+
+  function shouldRequireVerifiedVoice(result, lang) {
+    return Boolean(
+      lang &&
+      baseVoiceLang(lang) !== "en" &&
+      normalizeSelection(result?.sourceForm || result?.speakText || result?.display || result?.query)
+    );
   }
 
   async function stopOffscreenAudio() {

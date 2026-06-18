@@ -13,9 +13,16 @@ export async function playResolvedResult(result, tabId, dependencies = {}) {
     }
   }
 
-  await dependencies.speakResult?.(result);
+  const speech = await dependencies.speakResult?.(result);
   dependencies.showResultOnTab?.(tabId, result);
-  return { mode: "tts" };
+  if (speech?.spoken === false) {
+    return {
+      mode: "speech-unavailable",
+      error: speech.error || "Speech unavailable."
+    };
+  }
+
+  return { mode: speech?.fallback === "guide" ? "guide" : "tts" };
 }
 
 export async function playAudioOffscreen(result, dependencies = {}, rate = 0.82) {

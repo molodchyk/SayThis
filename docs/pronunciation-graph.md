@@ -102,7 +102,7 @@ Moderation should turn those signals into approved entries only when they are so
 The practical target is not perfect universal language detection. The target is that most unfamiliar terms produce one of these useful outcomes:
 
 1. verified audio or a source-backed pronunciation
-2. a resolved source form with generated fallback audio
+2. a resolved source form with verified speech or guide fallback
 3. a low-confidence result with clear uncertainty
 4. a missing-entry request that improves the shared graph
 

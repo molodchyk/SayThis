@@ -54,17 +54,21 @@ export function audioItemsForResult(result, limit = 4) {
 export function playbackItemsForResult(result, limit = 4) {
   const audio = audioItemsForResult(result, limit)
     .map((item) => ({ ...item, kind: "audio" }));
+  const speech = sourceSpeechItemForResult(result);
   const guide = normalizeSelection(result?.pronunciation?.simple);
 
-  if (audio.length || !guide) {
+  if (audio.length) {
     return audio;
   }
 
-  return [{
+  return [
+    speech,
+    guide ? {
     kind: "guide",
     label: "Guide speech",
     text: guide
-  }];
+    } : null
+  ].filter(Boolean).slice(0, limit);
 }
 
 export function alternateItemsForResult(result, limit = 3) {
@@ -139,6 +143,27 @@ function normalizeAudioItem(item = {}) {
     quality: normalizeSelection(item.quality),
     url
   };
+}
+
+function sourceSpeechItemForResult(result = {}) {
+  const sourceForm = normalizeSelection(result.sourceForm || result.display || result.query);
+  const lang = normalizeSelection(result.ttsLang || result.language);
+  const selected = normalizeSelection(result.query || result.display);
+
+  if (!sourceForm || !lang || baseLanguage(lang) === "en") {
+    return null;
+  }
+
+  return {
+    kind: "speech",
+    label: selected && sourceForm !== selected ? "Source-form speech" : "Resolved speech",
+    text: sourceForm,
+    lang
+  };
+}
+
+function baseLanguage(value) {
+  return String(value || "").trim().toLowerCase().split(/[-_]/)[0];
 }
 
 function normalizeSourceItem(item = {}) {

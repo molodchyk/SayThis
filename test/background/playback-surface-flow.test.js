@@ -20,6 +20,9 @@ const AUDIO_RESULT = {
 test("speaks resolved results and fallback text through TTS adapters", async () => {
   const calls = [];
   const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "Italian Default", lang: "it-IT" }
+    ],
     stopTts: () => calls.push(["stopTts"]),
     speakTts: (text, options) => calls.push(["speakTts", text, options])
   });
@@ -29,7 +32,7 @@ test("speaks resolved results and fallback text through TTS adapters", async () 
 
   assert.deepEqual(calls, [
     ["stopTts"],
-    ["speakTts", "gnocchi", { enqueue: false, rate: 0.7, lang: "it-IT" }],
+    ["speakTts", "gnocchi", { enqueue: false, rate: 0.7, lang: "it-IT", voiceName: "Italian Default" }],
     ["stopTts"],
     ["speakTts", "Gnocchi", { enqueue: false, rate: 0.82 }]
   ]);
@@ -80,7 +83,28 @@ test("does not speak with a known non-matching TTS voice", async () => {
 
   assert.deepEqual(result, {
     spoken: false,
-    error: "No matching browser voice for pl-PL."
+    error: "No verified browser voice for pl-PL."
+  });
+  assert.deepEqual(calls, []);
+});
+
+test("does not speak non-English source forms through unverified TTS", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    ttsLang: "pl-PL"
+  });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "No verified browser voice for pl-PL."
   });
   assert.deepEqual(calls, []);
 });
@@ -118,6 +142,40 @@ test("speaks a guide when the resolved locale voice is missing", async () => {
   assert.deepEqual(calls, [
     ["stopTts"],
     ["speakTts", "p-shih-kla-doh-voh", { enqueue: false, rate: 0.8, lang: "en-US", voiceName: "English Default" }]
+  ]);
+});
+
+test("prefers guide speech when the target voice cannot be verified", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  }, { rate: 0.8 });
+
+  assert.deepEqual(result, {
+    spoken: true,
+    text: "p-shih-kla-doh-voh",
+    options: {
+      enqueue: false,
+      rate: 0.8,
+      lang: "en-US"
+    },
+    fallback: "guide"
+  });
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "p-shih-kla-doh-voh", { enqueue: false, rate: 0.8, lang: "en-US" }]
   ]);
 });
 

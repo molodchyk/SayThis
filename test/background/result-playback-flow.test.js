@@ -95,6 +95,26 @@ test("uses TTS directly when a result has no verified audio", async () => {
   ]);
 });
 
+test("reports unavailable speech without pretending playback succeeded", async () => {
+  const calls = [];
+  const result = await playResolvedResult({ display: "Exampletown" }, 7, {
+    getBestAudio: () => null,
+    showResultOnTab: async (tabId, value, options) => calls.push(["showResultOnTab", tabId, value.display, options || {}]),
+    speakResult: async () => ({
+      spoken: false,
+      error: "No verified browser voice for pl-PL."
+    })
+  });
+
+  assert.deepEqual(result, {
+    mode: "speech-unavailable",
+    error: "No verified browser voice for pl-PL."
+  });
+  assert.deepEqual(calls, [
+    ["showResultOnTab", 7, "Exampletown", {}]
+  ]);
+});
+
 test("plays audio through the offscreen document with normalized rate", async () => {
   const calls = [];
   const result = await playAudioOffscreen(AUDIO_RESULT, {

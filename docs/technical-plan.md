@@ -10,8 +10,8 @@ Chrome Manifest V3 components:
 - `background/runtime-message-flow.js`: owns service-worker runtime message routing, validation, response shaping, and error handling.
 - `background/runtime-adapters-flow.js`: owns seed-data fetch caching, active-tab lookup, selected-text extraction, and keyboard dependency wiring.
 - `background/runtime-platform.js`: owns service-worker Chrome API adapters, storage-key constants, listener registration wrappers, and dependency bundles.
-- `background/result-playback-flow.js`: owns result playback order across page overlay audio, offscreen audio, and TTS fallback.
-- `background/playback-surface-flow.js`: owns TTS calls, offscreen audio document lifecycle, page overlay injection, and playback-surface settings reads.
+- `background/result-playback-flow.js`: owns result playback order across page overlay audio, offscreen audio, and verified speech fallback.
+- `background/playback-surface-flow.js`: owns browser speech calls, offscreen audio document lifecycle, page overlay injection, and playback-surface settings reads.
 - `background/selection-resolver-flow.js`: owns local lookup, online lookup, cache use, packaged audio URL mapping, and result storage updates.
 - `background/community-feedback-flow.js`: owns local feedback storage, sync queue updates, approved-entry refresh, and feedback-triggered result updates.
 - `background/online-sources.js`: orchestrates optional online source lookups, source-form retries, and pronunciation-audio fallback candidates.
@@ -69,7 +69,7 @@ Chrome Manifest V3 components:
 - `test/resolver-core.test.js`: verifies resolver behavior and manifest capabilities.
 - `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
-Verified audio from resolver results is preferred when available. Chrome's `tts` API remains the fallback path.
+Verified audio from resolver results is preferred when available. Browser speech is only a fallback when SayThis can verify a matching voice for the resolved language, or when it can speak a simple guide instead.
 
 ## Implemented MVP
 
@@ -79,8 +79,8 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Runtime message handling has a narrow background router with deterministic validation and error-response tests.
 - Runtime browser adapters have a narrow background module with tests for seed-data caching, tab selection extraction, and keyboard dependency wiring.
 - Service-worker platform adapters have deterministic tests for storage, runtime, tabs, scripting, commands, context menus, TTS, offscreen APIs, and dependency bundles.
-- Result playback order has a narrow background module with deterministic overlay, offscreen, and TTS fallback tests.
-- Playback surface wiring has a narrow background module with tests for TTS, overlay injection, offscreen audio lifecycle, client detection, and stop handling.
+- Result playback order has a narrow background module with deterministic overlay, offscreen, and verified speech fallback tests.
+- Playback surface wiring has a narrow background module with tests for verified speech, overlay injection, offscreen audio lifecycle, client detection, and stop handling.
 - Offscreen audio playback has narrow modules with tests for playback-rate bounds, audio lifecycle, listener registration, and play/stop message responses.
 - Selection resolution has a narrow background module with tests for local lookup, online cache hits, remote cache writes, and online fallback evidence.
 - Community feedback and sync handling has a narrow background module with tests for local memory, queue updates, sync flush, approved-entry refresh, and HTTP wrappers.
@@ -103,7 +103,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Pronunciation-audio selection and normalization have a narrow pure module.
 - Local community-memory normalization and summaries have a narrow pure module.
 - Script-sensitive fallback for non-Latin selected text.
-- Latin orthography hints can guide fallback TTS and optional pronunciation-audio lookup when structured sources are absent.
+- Latin orthography hints can guide fallback speech policy and optional pronunciation-audio lookup when structured sources are absent.
 - Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.
 - Unknown local results automatically check public structured sources for pronunciation data; the popup `Online` action still forces a refresh.
 - Online source orchestration has a background-owned module outside the service-worker entry point.
@@ -176,8 +176,8 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
 - Community service proxy IP headers are ignored for rate limiting unless explicitly enabled.
 - Community service container image and deployment notes.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
-- Verified-audio playback from popup, page overlay, or offscreen audio document, with TTS playback from resolved source form as fallback.
-- Popup source-audio failures automatically fall back to TTS playback.
+- Verified-audio playback from popup, page overlay, or offscreen audio document, with verified matching browser voice or guide speech fallback.
+- Popup source-audio failures use the same verified speech policy.
 - Packaged public audio path rewriting for curated entries.
 - Public audio release audit for packaged recording metadata, file presence, and seed-reference coverage.
 - Chrome ZIP packaging from an explicit runtime-file allowlist with private, licensed, and raw data exclusions.
@@ -195,7 +195,7 @@ Verified audio from resolver results is preferred when available. Chrome's `tts`
    - domain-specific term sources
 5. Resolve native/source form and candidate languages.
 6. Query pronunciation sources for native audio.
-7. Generate TTS from the resolved source form if native audio is unavailable.
+7. Use verified matching browser speech for the resolved source form when native audio is unavailable, or guide speech when a matching voice cannot be verified.
 8. Show confidence and source labels.
 9. Collect correction, confirmation, or missing-entry feedback.
 10. Cache successful lookups locally.

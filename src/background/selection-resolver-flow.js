@@ -84,10 +84,10 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
       }
       result = mergeRemoteResult(localResult, remoteResult);
     } catch {
-      result = {
-        ...localResult,
-        evidence: [...(localResult.evidence || []), "Online lookup unavailable"]
-      };
+      result = withEvidence(
+        cached.hit ? mergeRemoteResult(localResult, cached.result) : localResult,
+        "Online lookup unavailable"
+      );
     }
   }
 
@@ -108,6 +108,13 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
 
 function shouldRefreshCachedResult(result, options = {}) {
   return options.useOnline === true && !hasPlayableAudio(result);
+}
+
+function withEvidence(result, item) {
+  return {
+    ...result,
+    evidence: [...new Set([...(result?.evidence || []), item].filter(Boolean))]
+  };
 }
 
 function hasPlayableAudio(result = {}) {

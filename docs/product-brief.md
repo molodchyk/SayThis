@@ -32,9 +32,9 @@ The first version should support:
 
 - Selection-based lookup from any web page.
 - Context menu and popup entry points.
-- A pronunciation resolver that checks local cache, structured sources, pronunciation databases, and generated fallback.
-- Native audio playback where available.
-- Source labels: verified audio, community confirmed, structured source, generated fallback, unknown.
+- A pronunciation resolver that checks local cache, structured sources, pronunciation databases, verified browser voices, and guide fallback.
+- Native or source-backed audio playback where available.
+- Source labels: verified audio, community confirmed, structured source, verified speech fallback, guide fallback, unknown.
 - Basic romanized-to-native-script matching after entity or term resolution.
 - A correction, confirmation, and missing-entry request flow.
 - Structured community entries for source form, language, origin or root, IPA, simple guide, audio source, and variant notes.
@@ -57,7 +57,7 @@ Every pronunciation result should expose its source and confidence:
 - `Community confirmed`: multiple trusted confirmations agree.
 - `Structured source match`: matched a trusted dictionary, gazetteer, knowledge graph, or pronunciation guide.
 - `Generated from source form`: generated speech from a resolved native/source form.
-- `Best-effort TTS`: fallback only.
+- `Guide or verified speech fallback`: used only when no verified recording is available.
 - `Unknown`: no confident answer.
 
 ## UX Shape

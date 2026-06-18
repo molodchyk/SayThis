@@ -101,6 +101,36 @@ test("renders guide speech when no recording exists", () => {
   assert.equal(spoken[0].rate, 0.82);
 });
 
+test("renders source-form speech before guide speech", () => {
+  const elements = createElements();
+  const spoken = [];
+
+  renderPopupResult({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    }
+  }, elements, {
+    document: fakeDocument(),
+    speakResult: (result, rate) => spoken.push({ result, rate })
+  });
+
+  assert.equal(elements.audioList.children[0].children[0].textContent, "Speak");
+  assert.equal(elements.audioList.children[0].children[1].textContent, "Source-form speech");
+  assert.equal(elements.audioList.children[1].children[0].textContent, "Speak");
+  assert.equal(elements.audioList.children[1].children[1].textContent, "Guide speech");
+
+  elements.audioList.children[0].children[0].events.click();
+
+  assert.equal(spoken.length, 1);
+  assert.equal(spoken[0].result.sourceForm, "Przykladowo");
+  assert.equal(spoken[0].rate, 0.82);
+});
+
 function sampleResult() {
   return {
     query: "Example",

@@ -93,8 +93,8 @@ SayThis should show confidence rather than hide uncertainty:
 1. `Verified native audio`: curated or strongly sourced audio from a native or domain-qualified speaker.
 2. `Community confirmed`: multiple independent confirmations agree.
 3. `Structured source match`: matched a trusted database, dictionary, gazetteer, or knowledge graph.
-4. `Generated from source form`: TTS generated from a resolved native/source form.
-5. `Best-effort fallback`: generated from the selected text with low confidence.
+4. `Verified speech fallback`: browser speech from a resolved source form only when a matching voice is available.
+5. `Guide fallback`: simple guide speech when no verified recording or matching voice is available.
 6. `Unknown`: no useful result.
 
 ## Strategic Direction

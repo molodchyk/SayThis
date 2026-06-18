@@ -181,6 +181,40 @@ test("refreshes cached no-audio results for explicit online lookup", async () =>
   assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
 });
 
+test("keeps cached pronunciation data when explicit online refresh fails", async () => {
+  const cachedRemote = createRemoteStructuredResult("Exampletown", {
+    id: "remote:exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh"
+    },
+    evidence: ["Cached source"]
+  });
+  const resultCache = upsertCachedResult({}, "Exampletown", cachedRemote);
+  const storedUpdates = [];
+
+  const result = await resolveSelection("Exampletown", { useOnline: true }, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false },
+      resultCache
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async () => {
+      throw new Error("remote down");
+    }
+  });
+
+  assert.equal(result.id, "remote:exampletown");
+  assert.equal(result.sourceForm, "Przykladowo");
+  assert.equal(result.pronunciation.simple, "p-shih-kla-doh-voh");
+  assert.ok(result.evidence.includes("Local lookup cache"));
+  assert.ok(result.evidence.includes("Online lookup unavailable"));
+  assert.equal(storedUpdates[0].lastResult.pronunciation.simple, "p-shih-kla-doh-voh");
+});
+
 test("uses supplied local result context for online lookup", async () => {
   const supplied = createRemoteStructuredResult("Exampletown", {
     id: "supplied:exampletown",

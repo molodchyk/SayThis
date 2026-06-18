@@ -16,8 +16,8 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Background-owned context-menu workflow coverage with deterministic fallback behavior.
 - Background-owned keyboard command routing and selection workflow coverage with deterministic fallback behavior.
 - Background-owned runtime message routing with deterministic validation and error responses.
-- Background-owned result playback flow for overlay audio, offscreen audio, and TTS fallback.
-- Background-owned playback surface wiring for TTS, offscreen audio lifecycle, and overlay injection.
+- Background-owned result playback flow for overlay audio, offscreen audio, and verified speech fallback.
+- Background-owned playback surface wiring for verified speech, offscreen audio lifecycle, and overlay injection.
 - Background-owned runtime adapters for seed-data loading, active-tab lookup, and tab selection extraction.
 - Background-owned platform adapters for service-worker storage, runtime, tab, scripting, command, menu, TTS, and offscreen APIs.
 - Background-owned selection resolution for local lookup, online lookup, cache use, and storage updates.
@@ -30,7 +30,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Packaged extension icons for toolbar and install surfaces.
 - Keyboard commands for selected text: `Alt+Shift+S` and online lookup with `Alt+Shift+O`.
 - A popup with selected-text capture and speak/stop controls.
-- Popup audio playback helper for browser `Audio` lifecycle, stop handling, and TTS fallback triggers.
+- Popup audio playback helper for browser `Audio` lifecycle, stop handling, and speech fallback triggers.
 - Popup result renderer for result fields, correction prefill, evidence, sources, alternate candidates, and audio choices.
 - Popup runtime adapters for active-tab selection, stored popup state, settings, runtime messaging, and lookup hints.
 - Options runtime adapters for storage, endpoint permissions, and background runtime messages.
@@ -105,8 +105,8 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Source-form and alias-guided gazetteer retries after structured lookup.
 - Local cache for successful online lookup results.
 - Imported lookup-cache results are allowlisted to pronunciation result fields while preserving trust and variant metadata.
-- Verified pronunciation-audio playback from structured sources when available, with Chrome TTS fallback.
-- Popup source-audio playback falls back to TTS automatically if the audio cannot start.
+- Verified pronunciation-audio playback from structured sources when available, with verified matching browser voice or guide speech fallback.
+- Popup source-audio playback falls back through the same verified speech policy if the audio cannot start.
 - Options for default online lookup, on-page card display, and local/shared community-memory data management.
 - Opt-in community sync endpoint with a local retry queue for correction submissions.
 - Privacy-scoped community submissions can carry resolver aliases, origin, root, domain hints, guides, audio, variants, and source links for moderator review.
@@ -125,7 +125,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
 - Packaged public-audio support for curated entries under `assets/audio/public/`.
-- Chrome TTS as a temporary local fallback.
+- Verified matching browser voice as a temporary local fallback when no recording is available.
 - Product, research, and technical planning docs.
 - A seed resolver dataset for pronunciation entries.
 - Pure resolver language helpers split into a narrow module.
@@ -135,7 +135,9 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Pure resolver audio helpers split into a narrow module.
 - Pure resolver community-memory helpers split into a narrow module.
 
-Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use synthetic TTS only as a clearly labeled fallback.
+Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken.
+
+MVP quality bar: SayThis should prefer verified recordings from source-backed services. If no recording is available, it may use a verified matching browser voice for the resolved source form. If the browser cannot verify a matching voice, SayThis should use the simple guide when present or report that speech is unavailable instead of playing a misleading fallback voice.
 
 ## Core Docs
 
@@ -143,14 +145,16 @@ Chrome TTS is not the final product. The intended product should prioritize cura
 - Product thesis: `docs/product-thesis.md`
 - Pronunciation graph: `docs/pronunciation-graph.md`
 - Product brief: `docs/product-brief.md`
-- Privacy policy: `docs/privacy-policy.md`
+- Privacy policy: `PRIVACY.md` and `docs/privacy-policy.md`
 - SWOT analysis: `docs/swot-analysis.md`
 - Research notes: `docs/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
-- Extension modularization playbook: `docs/extension-modularization-playbook.md`
+- Browser extension playbook: `C:\Users\molod\Documents\Personal\settings\browser-extension-playbook.md`
 - Community service: `docs/community-service.md`
 - Deployment: `docs/deployment.md`
 - Custom source: `docs/custom-source.md`
+- Chrome Web Store listing: `store-listing/chrome-web-store/listing/en.md`
+- Chrome Web Store review fields: `docs/chrome-web-store/`
 - Seed glossary: `data/pronunciation-seed.json`
 
 ## Load Locally
@@ -237,6 +241,20 @@ $env:SAYTHIS_ADMIN_TOKEN = "change-me"
 npm run community:serve
 ```
 
-## License
+## Privacy
 
-TBD.
+SayThis stores settings, local pronunciation memory, lookup cache data, and optional API keys in Chrome extension local storage. Online lookup sends only the selected term or resolved pronunciation candidate to source services. See `PRIVACY.md` for the browser permissions, network behavior, and user controls.
+
+## Open Source
+
+SayThis is open source under the GPL-3.0-only license:
+https://github.com/molodchyk/SayThis
+
+See `LICENSE` for the full license text.
+
+## Support
+
+If this extension saves you time and you want to support its development:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=000)](https://buymeacoffee.com/molodchyk)
+[![Patreon](https://img.shields.io/badge/Patreon-support-F96854?logo=patreon&logoColor=fff)](https://www.patreon.com/OMolodchyk)

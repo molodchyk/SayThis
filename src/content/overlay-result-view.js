@@ -65,17 +65,21 @@
 
   function playbackItems(result) {
     const audio = audioItems(result).map((item) => ({ ...item, kind: "audio" }));
+    const speech = sourceSpeechItem(result);
     const guide = normalizeText(result?.pronunciation?.simple);
 
-    if (audio.length || !guide) {
+    if (audio.length) {
       return audio;
     }
 
-    return [{
+    return [
+      speech,
+      guide ? {
       kind: "guide",
       label: "Guide speech",
       text: guide
-    }];
+      } : null
+    ].filter(Boolean);
   }
 
   function firstSourceUrl(result) {
@@ -188,6 +192,27 @@
       label: normalizeText(item?.label || item?.source || hostLabel(url) || "Pronunciation audio"),
       url
     };
+  }
+
+  function sourceSpeechItem(result = {}) {
+    const sourceForm = normalizeText(result.sourceForm || result.display || result.query);
+    const lang = normalizeText(result.ttsLang || result.language);
+    const selected = normalizeText(result.query || result.display);
+
+    if (!sourceForm || !lang || baseLanguage(lang) === "en") {
+      return null;
+    }
+
+    return {
+      kind: "speech",
+      label: selected && sourceForm !== selected ? "Source-form speech" : "Resolved speech",
+      text: sourceForm,
+      lang
+    };
+  }
+
+  function baseLanguage(value) {
+    return String(value || "").trim().toLowerCase().split(/[-_]/)[0];
   }
 
   function normalizeUrl(value) {
