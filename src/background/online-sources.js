@@ -36,6 +36,9 @@ import {
   buildDbpediaLookupUrl,
   buildDbpediaResult
 } from "./dbpedia-source.js";
+import {
+  resolveWithCommonsAudioCandidates
+} from "./sources/commons-audio-source.js";
 
 export async function resolveWithOnlineSources(text, settings = {}, credentials = {}, context = {}) {
   const languageHints = onlineLookupLanguageHints(settings.lookupLanguageHints, context.localResult);
@@ -85,14 +88,20 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
       lookupLanguageHints: languageHints
     })
     : null;
-  const audioBaseResult = [refinedStructuredResult, forvoResult, context.localResult]
+  const preAudioResult = [refinedStructuredResult, forvoResult, context.localResult]
+    .filter(Boolean)
+    .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
+  const commonsAudioResult = !hasPlayableAudio(preAudioResult)
+    ? await resolveWithCommonsAudioCandidates(text, preAudioResult)
+    : null;
+  const audioBaseResult = [preAudioResult, commonsAudioResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
   const voiceServiceResult = settings.voiceServiceEnabled
     ? resolveWithVoiceService(text, audioBaseResult, settings)
     : null;
 
-  return [refinedStructuredResult, forvoResult, voiceServiceResult]
+  return [refinedStructuredResult, forvoResult, commonsAudioResult, voiceServiceResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }

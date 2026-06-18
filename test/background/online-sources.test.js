@@ -11,6 +11,9 @@ import {
   resolveWithOnlineSources,
   resolveWithVoiceService
 } from "../../src/background/online-sources.js";
+import {
+  buildCommonsAudioSearchUrl
+} from "../../src/background/sources/commons-audio-source.js";
 
 test("adds local fallback language to online lookup hints", () => {
   assert.deepEqual(onlineLookupLanguageHints(["tr", "pl"], {
@@ -297,6 +300,92 @@ test("does not build voice-service audio when a recording exists", async () => {
   assert.equal(resolveWithVoiceService("Exampletown", recorded, {
     voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
   }), null);
+});
+
+test("uses Commons audio before generated voice-service audio", async () => {
+  const originalFetch = globalThis.fetch;
+  const structured = createRemoteStructuredResult("Exampletown", {
+    id: "remote:exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    languageName: "Polish",
+    ttsLang: "pl-PL",
+    category: "place"
+  });
+  const requestedUrls = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      requestedUrls.push(String(url));
+      const parsed = new URL(url);
+
+      if (parsed.host === "www.wikidata.org") {
+        return jsonResponse({ search: [] });
+      }
+
+      if (parsed.host.endsWith(".wiktionary.org")) {
+        return jsonResponse({
+          query: {
+            pages: [{ missing: true }]
+          }
+        });
+      }
+
+      if (parsed.host === "commons.wikimedia.org") {
+        assert.equal(parsed.searchParams.get("generator"), "search");
+        assert.equal(parsed.searchParams.get("gsrnamespace"), "6");
+        assert.equal(parsed.searchParams.get("gsrsearch"), "Przykladowo");
+        return jsonResponse({
+          query: {
+            pages: {
+              1: {
+                index: 1,
+                title: "File:Pl-Przykladowo.ogg",
+                imageinfo: [{
+                  url: "https://upload.wikimedia.org/wikipedia/commons/a/a1/Pl-Przykladowo.ogg",
+                  descriptionurl: "https://commons.wikimedia.org/wiki/File:Pl-Przykladowo.ogg",
+                  mime: "audio/ogg",
+                  mediatype: "AUDIO",
+                  extmetadata: {
+                    ObjectName: { value: "Pl-Przykladowo.ogg" }
+                  }
+                }]
+              }
+            }
+          }
+        });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const result = await resolveWithOnlineSources("Exampletown", {
+      voiceServiceEnabled: true,
+      voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+    }, {}, {
+      localResult: structured
+    });
+
+    assert.ok(requestedUrls.some((url) => url.startsWith("https://commons.wikimedia.org/w/api.php?")));
+    assert.equal(result.sourceStatus, "verified-audio");
+    assert.equal(result.sourceForm, "Przykladowo");
+    assert.equal(result.pronunciation.audio[0].source, "Wikimedia Commons");
+    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/a/a1/Pl-Przykladowo.ogg");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("builds Commons audio search URLs for file namespace lookup", () => {
+  const url = new URL(buildCommonsAudioSearchUrl("Przykladowo"));
+
+  assert.equal(url.origin, "https://commons.wikimedia.org");
+  assert.equal(url.pathname, "/w/api.php");
+  assert.equal(url.searchParams.get("generator"), "search");
+  assert.equal(url.searchParams.get("gsrnamespace"), "6");
+  assert.equal(url.searchParams.get("prop"), "imageinfo");
+  assert.equal(url.searchParams.get("iiprop"), "url|mime|mediatype|extmetadata");
 });
 
 function jsonResponse(payload) {
