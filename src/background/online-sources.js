@@ -82,7 +82,9 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
     ? await resolveWithDbpediaCandidates(text, structuredResult, settings.dbpediaEndpoint)
     : null;
   const wiktionaryCandidateResult = structuredResult
-    ? await resolveWithWiktionaryCandidates(text, structuredResult)
+    ? await resolveWithWiktionaryCandidates(text, structuredResult, {
+      languageHints
+    })
     : null;
   const refinedStructuredResult = [structuredResult, customSourceCandidateResult, nominatimCandidateResult, dbpediaCandidateResult, wiktionaryCandidateResult]
     .filter(Boolean)
@@ -258,7 +260,7 @@ export async function resolveWithWiktionaryLookup(selectedText, lookupWord, opti
   }
 
   return buildWiktionaryResult(selected, page.title || query, wikitext, {
-    preferredLanguage: options.language || options.preferredLanguage || sourceLanguage,
+    preferredLanguage: preferredWiktionaryLanguage(options, sourceLanguage),
     sourceLanguage
   });
 }
@@ -283,17 +285,24 @@ export async function resolveWithWiktionarySources(selectedText, lookupWord, opt
   return result;
 }
 
-export async function resolveWithWiktionaryCandidates(text, structuredResult) {
+export async function resolveWithWiktionaryCandidates(text, structuredResult, options = {}) {
   const query = normalizeSelection(text);
   if (!query) {
     return null;
   }
 
+  const languageHints = normalizedLanguageHints(options.languageHints);
   let result = null;
-  for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, { limit: 3 })) {
+  for (const candidate of additionalPronunciationLookupCandidates(query, structuredResult, {
+    limit: 3,
+    languageHints
+  })) {
+    const candidateHints = candidate.language
+      ? [candidate.language, ...languageHints]
+      : languageHints;
     const wiktionaryResult = await resolveSafely(resolveWithWiktionarySources, query, candidate.word, {
       language: candidate.language,
-      languageHints: [candidate.language]
+      languageHints: candidateHints
     });
     if (!wiktionaryResult) {
       continue;
@@ -555,6 +564,12 @@ function wikidataLookupLanguageHints(configuredHints = [], candidates = []) {
     ...normalizedLanguageHints(configuredHints),
     ...candidates.map((candidate) => candidate.language)
   ]);
+}
+
+function preferredWiktionaryLanguage(options = {}, sourceLanguage = "en") {
+  return normalizeLanguageHint(options.language || options.preferredLanguage) ||
+    normalizedLanguageHints(options.languageHints)[0] ||
+    normalizeLanguageHint(sourceLanguage);
 }
 
 function normalizeLanguageHint(value) {

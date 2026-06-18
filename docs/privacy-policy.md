@@ -24,7 +24,7 @@ The detailed local storage key map is documented in `docs/architecture/storage-o
 
 Remote lookup is user-triggered or opt-in. SayThis can send the selected term to these services:
 
-- Wikidata and Wiktionary lookup; lookup language hints may be sent as Wikidata API language parameters and may choose extra Wiktionary editions after English Wiktionary
+- Wikidata and Wiktionary lookup; lookup language hints may be sent as Wikidata API language parameters and may choose matching Wiktionary language sections or extra Wiktionary editions after English Wiktionary
 - Wikimedia Commons audio URLs when audio is played
 - Forvo lookup, only after the user enables Forvo and stores an API key; lookup language hints may be sent as Forvo language filters
 - a user-configured custom source endpoint
