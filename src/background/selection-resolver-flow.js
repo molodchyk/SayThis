@@ -124,10 +124,14 @@ function withEvidence(result, item) {
 }
 
 function shouldUseOnlineForPronunciation(selectedText, result = {}) {
+  const sourceStatus = normalizeSelection(result?.sourceStatus);
   return Boolean(
     selectedText &&
     !hasPreferredAudio(result) &&
-    (result?.sourceStatus === "best-effort-fallback" ||
+    (sourceStatus === "best-effort-fallback" ||
+      sourceStatus === "structured-source" ||
+      sourceStatus === "community-confirmed" ||
+      sourceStatus === "generated-audio" ||
       (!normalizeSelection(result?.pronunciation?.simple) &&
         !normalizeSelection(result?.pronunciation?.ipa)))
   );
