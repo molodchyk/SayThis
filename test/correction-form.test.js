@@ -58,6 +58,21 @@ test("prefills variant note aliases from resolver result", () => {
   assert.equal(values.variantNote, "Regional pronunciation variant");
 });
 
+test("does not prefill generated audio as a correction source", () => {
+  const values = correctionValuesFromResult({
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/generated.ogg",
+        label: "Generated audio",
+        quality: "generated"
+      }]
+    }
+  });
+
+  assert.equal(values.audioUrl, "");
+});
+
 test("builds correction feedback with audio source and variant note", () => {
   const feedback = correctionFeedbackFromValues({
     sourceForm: "  gnocchi ",

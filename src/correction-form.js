@@ -1,10 +1,11 @@
 import {
   getBestAudio,
+  hasPreferredAudio,
   normalizeSelection
 } from "./resolver-core.js";
 
 export function correctionValuesFromResult(result = {}) {
-  const bestAudio = getBestAudio(result);
+  const bestAudio = hasPreferredAudio(result) ? getBestAudio(result) : null;
   const sourceUrl = firstSourceUrl(result);
   return {
     sourceForm: normalizeSelection(result.sourceForm),

@@ -155,7 +155,8 @@ function sampleResult() {
       simple: "eg-ZEM-plum",
       audio: [{
         url: "https://example.test/audio.ogg",
-        label: "Recording"
+        label: "Recording",
+        quality: "verified"
       }]
     },
     evidence: ["Structured source"],

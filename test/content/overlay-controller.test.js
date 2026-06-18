@@ -262,6 +262,40 @@ test("generated recording row requests shared audio before playback", async () =
   assert.equal(sentMessages[1].message.audio.url, "https://audio.example/shared.ogg");
 });
 
+test("generated audio does not prefill correction audio source", () => {
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {},
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return {};
+    },
+    async sendRuntimeMessage() {
+      return { ok: true };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener(generatedResult(), { onlineChecked: true });
+
+  assert.match(fakeDom.root.innerHTML, /data-correction-field="audioUrl"[^>]*value=""/);
+  assert.doesNotMatch(fakeDom.root.innerHTML, /value="https:\/\/voice\.example\/generated\.ogg"/);
+});
+
 test("speak action refreshes generated audio before shared playback", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();

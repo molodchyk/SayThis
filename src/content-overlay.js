@@ -54,6 +54,7 @@
     const sources = sourceItems(result).slice(0, 2);
     const alternates = alternateItems(result).slice(0, 2);
     const recordings = playbackItems(result).slice(0, 4);
+    const correctionAudioUrl = hasPreferredAudio(result) ? getBestAudio(result)?.url : "";
     const community = result.community || {};
     const communityText = [
       community.confirmations ? `${community.confirmations} confirmation${community.confirmations === 1 ? "" : "s"}` : "",
@@ -142,7 +143,7 @@
             ${correctionInput("Root", "root", result.root, 160, "full")}
             ${correctionInput("Domain hint", "domainHint", result.domainHint, 160, "full")}
             ${correctionInput("Variants", "variants", variantsTextFromResult(result), 240, "full")}
-            ${correctionInput("Audio source", "audioUrl", getBestAudio(result)?.url, 2048, "full", "url")}
+            ${correctionInput("Audio source", "audioUrl", correctionAudioUrl, 2048, "full", "url")}
             ${correctionInput("Source link", "sourceUrl", firstSourceUrl(result), 2048, "full", "url")}
             ${correctionInput("Variant note", "variantNote", result.notes || result.variantNote, 160, "full")}
           </div>
