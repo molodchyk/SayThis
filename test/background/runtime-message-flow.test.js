@@ -77,6 +77,25 @@ test("speaks supplied runtime results without resolving again", async () => {
   assert.deepEqual(responses, [{ ok: true, result: resolved }]);
 });
 
+test("reports missing matching voice from speak messages", async () => {
+  const responses = [];
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    result: { display: "Exampletown", ttsLang: "pl-PL" }
+  }, (value) => responses.push(value), {
+    speakResult: async () => ({
+      spoken: false,
+      error: "No matching browser voice for pl-PL."
+    })
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(responses, [{ ok: false, error: "No matching browser voice for pl-PL." }]);
+});
+
 test("rejects speak messages without selected text", () => {
   const responses = [];
   const handled = handleRuntimeMessage({

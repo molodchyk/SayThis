@@ -47,17 +47,42 @@ test("uses a matching TTS voice for resolved source forms", async () => {
     speakTts: (text, options) => calls.push(["speakTts", text, options])
   });
 
-  await surface.speakResult({
+  const result = await surface.speakResult({
     display: "Exampletown",
     sourceForm: "Przykladowo",
     speakText: "Przykladowo",
     ttsLang: "pl-PL"
   }, { rate: 0.8 });
 
+  assert.equal(result.spoken, true);
   assert.deepEqual(calls, [
     ["stopTts"],
     ["speakTts", "Przykladowo", { enqueue: false, rate: 0.8, lang: "pl-PL", voiceName: "Polish Remote" }]
   ]);
+});
+
+test("does not speak with a known non-matching TTS voice", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    ttsLang: "pl-PL"
+  });
+
+  assert.deepEqual(result, {
+    spoken: false,
+    error: "No matching browser voice for pl-PL."
+  });
+  assert.deepEqual(calls, []);
 });
 
 test("selects exact and base-language TTS voices deterministically", () => {

@@ -349,6 +349,10 @@
       text: result.query || result.sourceForm || result.display,
       result,
       rate
+    }).then((response) => {
+      setStatus(response?.ok
+        ? rate < 0.7 ? "Speaking slowly." : "Speaking."
+        : response?.error || "Speech failed.");
     });
   }
 
@@ -375,6 +379,10 @@
         text: result.query || result.display,
         result,
         rate
+      }).then((response) => {
+        if (!response?.ok) {
+          setStatus(response?.error || "Speech failed.");
+        }
       });
     };
 

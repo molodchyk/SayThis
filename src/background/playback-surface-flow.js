@@ -67,13 +67,25 @@ export function createPlaybackSurface(dependencies = {}) {
       return;
     }
 
-    const voiceName = await bestTtsVoiceName(speech.options.lang);
-    const options = voiceName
-      ? { ...speech.options, voiceName }
+    const voice = await bestTtsVoice(speech.options.lang);
+    if (voice.checked && !voice.voiceName) {
+      return {
+        spoken: false,
+        error: `No matching browser voice for ${speech.options.lang}.`
+      };
+    }
+
+    const options = voice.voiceName
+      ? { ...speech.options, voiceName: voice.voiceName }
       : speech.options;
 
     dependencies.stopTts?.();
     dependencies.speakTts?.(speech.text, options);
+    return {
+      spoken: true,
+      text: speech.text,
+      options
+    };
   }
 
   function speakFallback(text) {
@@ -169,9 +181,9 @@ export function createPlaybackSurface(dependencies = {}) {
       : url;
   }
 
-  async function bestTtsVoiceName(lang) {
+  async function bestTtsVoice(lang) {
     if (!lang || typeof dependencies.getTtsVoices !== "function") {
-      return "";
+      return { checked: false, voiceName: "" };
     }
 
     if (!ttsVoicesPromise) {
@@ -179,7 +191,14 @@ export function createPlaybackSurface(dependencies = {}) {
     }
 
     const voices = await ttsVoicesPromise;
-    return selectTtsVoiceName(Array.isArray(voices) ? voices : [], lang);
+    if (!Array.isArray(voices) || !voices.length) {
+      return { checked: false, voiceName: "" };
+    }
+
+    return {
+      checked: true,
+      voiceName: selectTtsVoiceName(voices, lang)
+    };
   }
 }
 

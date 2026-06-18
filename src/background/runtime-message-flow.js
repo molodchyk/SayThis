@@ -31,7 +31,10 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       : dependencies.resolveSelection(selectedText, useOnlineMessageOptions(message));
     respondWithResult(
       resultPromise.then(async (result) => {
-        await dependencies.speakResult(result, { rate: message.rate, lang: message.lang });
+        const speech = await dependencies.speakResult(result, { rate: message.rate, lang: message.lang });
+        if (speech?.spoken === false) {
+          throw new Error(speech.error || "Speech failed.");
+        }
         return result;
       }),
       sendResponse,
