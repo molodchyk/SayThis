@@ -552,14 +552,14 @@ test("uses entity type claims to deprioritize disambiguation candidates", () => 
 test("plans bounded Wikidata search languages from selected script", () => {
   assert.deepEqual(wikidataSearchLanguages("Athens"), ["en"]);
   assert.deepEqual(wikidataSearchLanguages("Αθήνα"), ["en", "el"]);
-  assert.deepEqual(wikidataSearchLanguages("Москва"), ["en", "ru", "bg", "sr"]);
+  assert.deepEqual(wikidataSearchLanguages("Москва"), ["en", "ru", "bg", "sr", "uk"]);
   assert.deepEqual(wikidataSearchLanguages("東京"), ["en", "zh", "ja", "ko"]);
   assert.deepEqual(wikidataSearchLanguages("Athens", {
     languageHints: "pl, tr, pt-BR, pl, invalid!"
   }), ["en", "pl", "tr", "pt"]);
   assert.deepEqual(wikidataSearchLanguages("Москва", {
     languageHints: ["pl", "ru", "tr", "ja", "ko", "pt", "ro", "it"]
-  }), ["en", "ru", "bg", "sr", "pl", "tr", "ja", "ko"]);
+  }), ["en", "ru", "bg", "sr", "uk", "pl", "tr", "ja"]);
   assert.deepEqual(normalizeSearchLanguageHints([" PT_BR ", "bad!", "tr", "pt"]), ["pt", "tr"]);
 });
 

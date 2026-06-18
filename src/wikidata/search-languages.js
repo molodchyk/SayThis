@@ -5,7 +5,7 @@ import {
 const SCRIPT_SEARCH_LANGUAGES = {
   Arabic: ["ar", "fa"],
   Armenian: ["hy"],
-  Cyrillic: ["ru", "bg", "sr"],
+  Cyrillic: ["ru", "bg", "sr", "uk"],
   Devanagari: ["hi", "mr", "ne"],
   Greek: ["el"],
   Han: ["zh", "ja", "ko"],
