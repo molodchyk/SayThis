@@ -144,6 +144,7 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
   const mime = String(info.mime || "").toLowerCase();
   const mediaType = String(info.mediatype || "").toLowerCase();
   const fileName = stripMarkup(page.title).replace(/^File:/i, "");
+  const linguaLibre = isLinguaLibreFile(fileName);
   const lookupKey = createLookupKey(lookupWord);
   const pronunciationScore = scorePronunciationSignal(page, lookupWord, language);
   const matchText = createLookupKey([
@@ -167,9 +168,9 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
   return {
     audio: {
       url,
-      label: "Wikimedia Commons audio",
-      source: "Wikimedia Commons",
-      quality: "verified"
+      label: linguaLibre ? "Lingua Libre audio" : "Wikimedia Commons audio",
+      source: linguaLibre ? "Wikimedia Commons (Lingua Libre)" : "Wikimedia Commons",
+      quality: linguaLibre ? "native-speaker" : "verified"
     },
     sourceUrl
   };

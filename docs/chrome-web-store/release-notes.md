@@ -15,6 +15,7 @@
 - Uses one-off lookup hints to prefer matching Wiktionary language sections and source-form edition retries.
 - Prefers Wikidata pronunciation audio with matching language qualifiers before unqualified recordings.
 - Ranks Forvo recordings as native-speaker audio ahead of generic verified recordings.
+- Ranks Lingua Libre recordings found through Wikimedia Commons as native-speaker audio ahead of generic verified Commons recordings.
 - Requires word-boundary matches before treating Wikimedia Commons audio as verified pronunciation audio.
 - Rejects region-specific browser voices from the wrong locale variant when using verified speech fallback.
 - Filters on-page guide speech so explanatory guide notes are not offered as spoken fallback.

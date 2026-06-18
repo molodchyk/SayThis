@@ -203,6 +203,56 @@ test("prefers Commons recordings that match the resolved language", async () => 
   }
 });
 
+test("ranks Lingua Libre Commons recordings as native-speaker audio", async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async () => jsonResponse({
+      query: {
+        pages: {
+          1: {
+            index: 1,
+            title: "File:Fr-Exampletown.ogg",
+            imageinfo: [{
+              url: "https://upload.wikimedia.org/wikipedia/commons/f/f1/Fr-Exampletown.ogg",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:Fr-Exampletown.ogg",
+              mime: "audio/ogg",
+              mediatype: "AUDIO",
+              extmetadata: {
+                ObjectName: { value: "Fr-Exampletown.ogg" }
+              }
+            }]
+          },
+          2: {
+            index: 2,
+            title: "File:LL-Q150 (fra)-Speaker-Exampletown.wav",
+            imageinfo: [{
+              url: "https://upload.wikimedia.org/wikipedia/commons/l/l1/LL-Q150_fra-Speaker-Exampletown.wav",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:LL-Q150_(fra)-Speaker-Exampletown.wav",
+              mime: "audio/wav",
+              mediatype: "AUDIO",
+              extmetadata: {
+                ObjectName: { value: "LL-Q150 (fra)-Speaker-Exampletown.wav" }
+              }
+            }]
+          }
+        }
+      }
+    });
+
+    const result = await resolveWithCommonsAudioLookup("Exampletown", "Exampletown", "fr");
+
+    assert.equal(result.sourceStatus, "verified-audio");
+    assert.equal(result.pronunciation.audio[0].url, "https://upload.wikimedia.org/wikipedia/commons/l/l1/LL-Q150_fra-Speaker-Exampletown.wav");
+    assert.equal(result.pronunciation.audio[0].label, "Lingua Libre audio");
+    assert.equal(result.pronunciation.audio[0].source, "Wikimedia Commons (Lingua Libre)");
+    assert.equal(result.pronunciation.audio[0].quality, "native-speaker");
+    assert.equal(result.pronunciation.audio[1].quality, "verified");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 function jsonResponse(payload) {
   return {
     ok: true,
