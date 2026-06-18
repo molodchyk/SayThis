@@ -21,10 +21,19 @@ export async function auditReleaseReadiness(root = ROOT) {
   const privacy = await readText(root, "PRIVACY.md");
   const readme = await readText(root, "README.md");
   const listing = await readText(root, "store-listing/chrome-web-store/listing/en.md");
-  const privacyForm = await readText(root, "docs/chrome-web-store/privacy-form.md");
+  const privacyForm = await readText(root, "docs/chrome-web-store-privacy-form.md");
+  const nestedPrivacyForm = await readText(root, "docs/chrome-web-store/privacy-form.md");
   const reviewerNotes = await readText(root, "docs/chrome-web-store/reviewer-notes.md");
-  const extraFields = await readText(root, "docs/chrome-web-store/additional-fields.md");
+  const extraFields = await readText(root, "docs/chrome-web-store-additional-fields.md");
+  const nestedExtraFields = await readText(root, "docs/chrome-web-store/additional-fields.md");
+  const category = await readText(root, "docs/chrome-web-store-category.md");
+  const nestedCategory = await readText(root, "docs/chrome-web-store/category.md");
+  const optionsHtml = await readText(root, "src/options/options.html");
   const storeIconPath = "store-listing/chrome-web-store/media/icon-128.png";
+  const storeScreenshotPaths = [
+    "store-listing/chrome-web-store/media/screenshots/01-popup-lookup.png",
+    "store-listing/chrome-web-store/media/screenshots/02-options-controls.png"
+  ];
 
   if (packageJson.license !== "GPL-3.0-only") {
     fail("package.json license must be GPL-3.0-only.");
@@ -101,6 +110,9 @@ export async function auditReleaseReadiness(root = ROOT) {
   }
 
   await expectPngDimensions(root, storeIconPath, 128, 128, "StorePilot 128px icon", fail);
+  for (const path of storeScreenshotPaths) {
+    await expectPngDimensions(root, path, 1280, 800, `StorePilot screenshot ${path}`, fail);
+  }
 
   if (!reviewerNotes.includes("Default online sources")) {
     fail("Reviewer notes must describe default online sources.");
@@ -108,6 +120,28 @@ export async function auditReleaseReadiness(root = ROOT) {
 
   if (!extraFields.includes("homepage_url:\nhttps://github.com/molodchyk/SayThis")) {
     fail("Chrome Web Store fields must use the public homepage URL.");
+  }
+
+  if (!category.includes("Selected category: Tools")) {
+    fail("Chrome Web Store category document must use an explicit selected category.");
+  }
+
+  if (privacyForm !== nestedPrivacyForm) {
+    fail("Root and nested Chrome Web Store privacy forms must match.");
+  }
+
+  if (extraFields !== nestedExtraFields) {
+    fail("Root and nested Chrome Web Store additional fields must match.");
+  }
+
+  if (category !== nestedCategory) {
+    fail("Root and nested Chrome Web Store category docs must match.");
+  }
+
+  for (const id of ["clear-cache", "clear-memory", "clear-approved", "clear-sync"]) {
+    if (!optionsHtml.includes(`id="${id}"`)) {
+      fail(`Options page must expose reset control ${id}.`);
+    }
   }
 
   return failures;

@@ -167,6 +167,7 @@ MVP quality bar: SayThis should prefer verified recordings from source-backed se
 - Custom source: `docs/custom-source.md`
 - Chrome Web Store listing: `store-listing/chrome-web-store/listing/en.md`
 - Chrome Web Store review fields: `docs/chrome-web-store/`
+- StorePilot import fields: `docs/chrome-web-store-additional-fields.md`, `docs/chrome-web-store-category.md`, and `docs/chrome-web-store-privacy-form.md`
 - Seed glossary: `data/pronunciation-seed.json`
 
 ## Load Locally
