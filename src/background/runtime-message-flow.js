@@ -2,6 +2,7 @@ import {
   MESSAGE_TYPES
 } from "../message-contracts.js";
 import {
+  getBestAudio,
   normalizeSelection
 } from "../resolver-core.js";
 import {
@@ -36,6 +37,11 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     respondWithResult(
       resultPromise.then(async (result) => {
         const playableResult = await resolvePlayableResult(selectedText, result, options, dependencies);
+        const playback = await playResolvedAudio(playableResult, message.rate, dependencies);
+        if (playback) {
+          return { result: playableResult, speech: playback };
+        }
+
         const speech = await dependencies.speakResult(playableResult, { rate: message.rate, lang: message.lang });
         if (!speech || speech.spoken === false) {
           throw new Error(speech?.error || "Speech unavailable.");
@@ -127,6 +133,25 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
   }
 
   return false;
+}
+
+async function playResolvedAudio(result, rate, dependencies = {}) {
+  const audio = getBestAudio(result);
+  if (!audio?.url || typeof dependencies.playAudio !== "function") {
+    return null;
+  }
+
+  try {
+    const played = await dependencies.playAudio(audio, rate);
+    return played
+      ? {
+        fallback: "audio",
+        text: normalizeSelection(audio.label || audio.source || "Pronunciation audio")
+      }
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export function useOnlineMessageOptions(message = {}) {

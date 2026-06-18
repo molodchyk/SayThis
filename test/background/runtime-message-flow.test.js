@@ -77,7 +77,7 @@ test("speaks supplied runtime results when refresh is unavailable", async () => 
   assert.deepEqual(responses, [{ ok: true, result: resolved }]);
 });
 
-test("refreshes supplied runtime speak results before speech", async () => {
+test("plays refreshed runtime audio before speech fallback", async () => {
   const responses = [];
   const calls = [];
   const supplied = {
@@ -106,9 +106,12 @@ test("refreshes supplied runtime speak results before speech", async () => {
       calls.push(["resolveSelection", text, options]);
       return refreshed;
     },
-    speakResult: async (result, options) => {
-      calls.push(["speakResult", result, options]);
-      return { spoken: true, text: result.sourceForm };
+    playAudio: async (audio, rate) => {
+      calls.push(["playAudio", audio, rate]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when refreshed audio plays");
     }
   });
 
@@ -117,18 +120,19 @@ test("refreshes supplied runtime speak results before speech", async () => {
   assert.equal(handled, true);
   assert.deepEqual(calls, [
     ["resolveSelection", "Exampletown", { useOnline: true, localResult: supplied }],
-    ["speakResult", refreshed, { rate: 0.82, lang: undefined }]
+    ["playAudio", refreshed.pronunciation.audio[0], 0.82]
   ]);
   assert.deepEqual(responses, [{
     ok: true,
     result: refreshed,
     speech: {
-      text: "Przykladowo"
+      fallback: "audio",
+      text: "Pronunciation audio"
     }
   }]);
 });
 
-test("requests shared audio for runtime speak results before speech", async () => {
+test("plays shared audio for runtime speak results before speech fallback", async () => {
   const responses = [];
   const calls = [];
   const supplied = {
@@ -161,6 +165,67 @@ test("requests shared audio for runtime speak results before speech", async () =
       calls.push(["requestSharedAudio", text, result, options]);
       return shared;
     },
+    playAudio: async (audio, rate) => {
+      calls.push(["playAudio", audio, rate]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when shared audio plays");
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: supplied }],
+    ["requestSharedAudio", "Exampletown", supplied, {}],
+    ["playAudio", shared.pronunciation.audio[0], 0.62]
+  ]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    result: shared,
+    speech: {
+      fallback: "audio",
+      text: "Pronunciation audio"
+    }
+  }]);
+});
+
+test("falls back to speech when refreshed runtime audio cannot play", async () => {
+  const responses = [];
+  const calls = [];
+  const supplied = {
+    display: "Exampletown",
+    sourceForm: "Exampletown",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...supplied,
+    sourceForm: "Przykladowo",
+    pronunciation: {
+      audio: [{
+        label: "Native recording",
+        url: "https://example.com/przykladowo.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    result: supplied,
+    rate: 0.82
+  }, (value) => responses.push(value), {
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    },
+    playAudio: async (audio, rate) => {
+      calls.push(["playAudio", audio, rate]);
+      return false;
+    },
     speakResult: async (result, options) => {
       calls.push(["speakResult", result, options]);
       return { spoken: true, text: result.sourceForm };
@@ -172,12 +237,12 @@ test("requests shared audio for runtime speak results before speech", async () =
   assert.equal(handled, true);
   assert.deepEqual(calls, [
     ["resolveSelection", "Exampletown", { useOnline: true, localResult: supplied }],
-    ["requestSharedAudio", "Exampletown", supplied, {}],
-    ["speakResult", shared, { rate: 0.62, lang: undefined }]
+    ["playAudio", refreshed.pronunciation.audio[0], 0.82],
+    ["speakResult", refreshed, { rate: 0.82, lang: undefined }]
   ]);
   assert.deepEqual(responses, [{
     ok: true,
-    result: shared,
+    result: refreshed,
     speech: {
       text: "Przykladowo"
     }

@@ -445,6 +445,10 @@ function updateButtonState() {
 }
 
 function speakingStatus(response, rate, base = "Speaking") {
+  if (response?.speech?.fallback === "audio") {
+    return rate < 0.7 ? "Playing audio slowly." : "Playing audio.";
+  }
+
   const guide = response?.speech?.fallback === "guide";
   if (guide) {
     return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";

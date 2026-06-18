@@ -16,7 +16,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Background-owned context-menu workflow coverage with deterministic fallback behavior.
 - Background-owned keyboard command routing and selection workflow coverage with deterministic fallback behavior.
 - Background-owned runtime message routing with deterministic validation and error responses.
-- Runtime speak messages reuse the same online-refresh and shared-audio policy before falling back to speech.
+- Runtime speak messages refresh online, play available audio, and reuse shared audio before falling back to speech.
 - Background-owned result playback flow for overlay audio, offscreen audio, and verified speech fallback.
 - Background-owned playback surface wiring for verified speech, offscreen audio lifecycle, and overlay injection.
 - Background-owned runtime adapters for seed-data loading, active-tab lookup, and tab selection extraction.
