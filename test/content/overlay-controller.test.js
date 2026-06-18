@@ -6,7 +6,7 @@ import {
   flushPromises,
   overlaySource,
   resultViewSource
-} from "./overlay-test-harness.js";
+} from "../../test-support/content/overlay-test-harness.js";
 
 test("source-form playback row sends a speak message", async () => {
   const sentMessages = [];
