@@ -8,7 +8,7 @@ import {
   preferredSpeechResultForResult,
   speechResultForPlaybackItem,
   sourceItemsForResult
-} from "../src/result-view.js";
+} from "../../src/result/view.js";
 
 test("builds evidence items with community context", () => {
   const items = evidenceItemsForResult({

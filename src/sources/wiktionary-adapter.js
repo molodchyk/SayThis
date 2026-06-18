@@ -2,9 +2,9 @@ import {
   createLookupKey,
   createRemoteStructuredResult,
   normalizeSelection
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 import { commonsRedirectUrl } from "./wikidata-adapter.js";
-import { variantsFromWiktionaryText } from "./wiktionary/variants.js";
+import { variantsFromWiktionaryText } from "../wiktionary/variants.js";
 
 const LANGUAGE_CODES = {
   Arabic: "ar",

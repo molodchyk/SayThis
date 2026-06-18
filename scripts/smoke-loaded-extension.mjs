@@ -74,8 +74,8 @@ export async function runLoadedExtensionSmoke(options = {}) {
       throw new Error("Could not determine extension id.");
     }
 
-    const popup = await inspectExtensionPage(port, extensionId, "src/popup.html");
-    const optionsPage = await inspectExtensionPage(port, extensionId, "src/options.html");
+    const popup = await inspectExtensionPage(port, extensionId, "src/popup/popup.html");
+    const optionsPage = await inspectExtensionPage(port, extensionId, "src/options/options.html");
 
     assertPage(popup, {
       title: "SayThis",

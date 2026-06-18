@@ -3,22 +3,22 @@ import {
   createLookupKey,
   detectScript,
   normalizeSelection
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 import {
   normalizeSearchLanguageHints as normalizeWikidataSearchLanguageHints
-} from "./wikidata/search-languages.js";
+} from "../wikidata/search-languages.js";
 import {
   wikidataClaimedLanguage,
   wikidataResultLanguage
-} from "./wikidata/language-claims.js";
+} from "../wikidata/language-claims.js";
 import {
   wikidataEntityType
-} from "./wikidata/entity-types.js";
+} from "../wikidata/entity-types.js";
 
 export {
   normalizeSearchLanguageHints,
   wikidataSearchLanguages
-} from "./wikidata/search-languages.js";
+} from "../wikidata/search-languages.js";
 
 const NATIVE_LABEL = "P1705";
 const NATIVE_NAME = "P1559";

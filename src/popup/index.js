@@ -1,13 +1,13 @@
-import { getBestAudio, hasPreferredAudio, normalizeSelection } from "./resolver-core.js";
+import { getBestAudio, hasPreferredAudio, normalizeSelection } from "../resolver-core.js";
 import {
   playbackItemsForResult,
   preferredSpeechResultForResult,
   speechResultForPlaybackItem
-} from "./result-view.js";
+} from "../result/view.js";
 import {
   correctionFeedbackFromValues,
   hasCorrectionDetail
-} from "./correction-form.js";
+} from "../correction-form.js";
 import {
   createFeedbackMessage,
   createPlayAudioMessage,
@@ -15,7 +15,7 @@ import {
   createRequestSharedAudioMessage,
   createSpeakMessage,
   createStopMessage
-} from "./message-contracts.js";
+} from "../message-contracts.js";
 import {
   lookupHintsFromValue,
   readActiveTabSelection,
@@ -23,16 +23,16 @@ import {
   readStoredPopupState,
   sendRuntimeMessage,
   writeActiveTabPopupState
-} from "./popup/runtime-adapters.js";
+} from "./runtime-adapters.js";
 import {
   createPopupAudioPlayback
-} from "./popup/audio-playback.js";
+} from "./audio-playback.js";
 import {
   renderPopupResult
-} from "./popup/result-renderer.js";
+} from "./result-renderer.js";
 import {
   shouldRefreshBeforeSpeech
-} from "./popup/speech-refresh.js";
+} from "./speech-refresh.js";
 
 const selectionInput = document.getElementById("selection");
 const lookupHintsInput = document.getElementById("lookup-hints");

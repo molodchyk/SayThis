@@ -3,7 +3,7 @@ import {
   createRemoteStructuredResult,
   detectScript,
   normalizeSelection
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 
 const DEFAULT_LIMIT = 5;
 const LOCAL_NAME_KEYS = new Set(["name", "official_name", "loc_name", "short_name"]);

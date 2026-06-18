@@ -27,22 +27,24 @@ Chrome Manifest V3 components:
 - `resolver/text.js`: pure selected-text normalization, lookup-key generation, and script detection helpers re-exported by `resolver-core.js`.
 - `resolver/transliteration.js`: pure Latin-to-Cyrillic lookup candidate generation for bounded source-form retries.
 - `resolver/values.js`: pure URL, count, alias, trust-signal, and long-field normalization helpers used by resolver data.
-- `wikidata-adapter.js`: extracts source forms, native-name style claims, string-valued name claims, sitelink titles, aliases, variants, IPA, and pronunciation audio from Wikidata entities.
+- `sources/wikidata-adapter.js`: extracts source forms, native-name style claims, string-valued name claims, sitelink titles, aliases, variants, IPA, and pronunciation audio from Wikidata entities.
 - `wikidata/search-languages.js`: plans bounded Wikidata search languages from selected script and explicit user hints.
 - `wikidata/language-claims.js`: maps selected Wikidata language and country claims into bounded result-language hints.
 - `wikidata/entity-types.js`: maps selected Wikidata instance, subclass, field, and main-subject claims into bounded result categories and ranking signals.
-- `wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, pronunciation-relevant etymology, and alternative written forms from Wiktionary wikitext.
+- `sources/wiktionary-adapter.js`: extracts dictionary-term IPA, pronunciation audio, language, pronunciation-relevant etymology, and alternative written forms from Wiktionary wikitext.
 - `wiktionary/variants.js`: pure parser for bounded Wiktionary alternative-form and variant-section entries.
-- `nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
-- `forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
-- `custom-source-adapter.js`: extracts domain-specific pronunciation entries from a configured structured JSON endpoint.
+- `sources/nominatim-adapter.js`: extracts place-name source forms and OpenStreetMap attribution from Nominatim-compatible search results.
+- `sources/forvo-adapter.js`: extracts verified pronunciation audio from Forvo word-pronunciation API payloads.
+- `sources/custom-source-adapter.js`: extracts domain-specific pronunciation entries from a configured structured JSON endpoint.
 - `pronunciation-source-plan.js`: orders pronunciation-audio lookup candidates from resolved source forms, aliases, variants, alternates, and raw selected text.
-- `popup.html/js/css`: captures current selection, shows the resolver card, and provides speak/slow/stop plus correction controls.
+- `result/cache.js`: owns local lookup-cache normalization, import/export shaping, and result-cache summaries.
+- `result/view.js`: owns shared result display helpers used by popup and overlay renderers.
+- `popup/popup.html`, `popup/index.js`, and `popup/popup.css`: capture current selection, show the resolver card, and provide speak/slow/stop plus correction controls.
 - `popup/audio-playback.js`: owns popup browser `Audio` element lifecycle, playback-rate mapping, stop handling, and single fallback trigger behavior.
 - `popup/result-renderer.js`: owns popup result field rendering, correction prefill, evidence lists, source links, alternate candidates, and audio choices.
 - `popup/runtime-adapters.js`: owns popup active-tab selection reads, stored popup state, settings reads, runtime-message responses, and lookup-hint normalization.
 - `correction-form.js`: normalizes correction-form prefill and submission data.
-- `options.html/js/css`: manages remote-lookup behavior, on-page card display, and local community-memory data.
+- `options/options.html`, `options/index.js`, and `options/options.css`: manage remote-lookup behavior, on-page card display, and local community-memory data.
 - `options/runtime-adapters.js`: owns options-page storage calls, optional endpoint permission requests, stale permission cleanup, and runtime-message responses.
 - `options/summary-view.js`: owns options-page summary labels for cache, sync, approved entries, and local memory.
 - `content-overlay.js`: shows a compact on-page resolver card with playback, online lookup, structured correction, and quick-feedback actions after context-menu or keyboard-command use.

@@ -1,7 +1,7 @@
 import {
   normalizeSelection,
   rankedAudioItems
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 
 export function evidenceItemsForResult(result, limit = 6) {
   const community = result?.community || {};

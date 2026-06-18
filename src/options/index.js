@@ -1,20 +1,20 @@
 import {
   normalizeCommunityEntries
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 import {
   normalizeResultCache
-} from "./result-cache.js";
+} from "../result/cache.js";
 import {
   normalizeApprovedEntries,
   normalizeSubmissionQueue
-} from "./community-sync.js";
+} from "../community-sync.js";
 import {
   FORVO_API_ORIGIN
-} from "./forvo-adapter.js";
+} from "../sources/forvo-adapter.js";
 import {
   createFlushSyncMessage,
   createPullApprovedMessage
-} from "./message-contracts.js";
+} from "../message-contracts.js";
 import {
   createOptionsRuntimeAdapters,
   OPTIONS_STORAGE_KEYS as STORAGE_KEYS,
@@ -23,7 +23,7 @@ import {
   requestEndpointPermission,
   sendRuntimeMessage,
   writeOptionsStorage
-} from "./options/runtime-adapters.js";
+} from "./runtime-adapters.js";
 import {
   approvedSummaryText as approvedSummaryLabel,
   cacheSummaryText as cacheSummaryLabel,
@@ -31,7 +31,7 @@ import {
   memorySummaryText,
   summarizeQueue,
   syncSummaryText as syncSummaryLabel
-} from "./options/summary-view.js";
+} from "./summary-view.js";
 import {
   normalizeApiKey,
   normalizeCredentials,
@@ -41,7 +41,7 @@ import {
   normalizeLanguageCode,
   normalizeSettings,
   normalizeShortText
-} from "./shared/settings.js";
+} from "../shared/settings.js";
 
 const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");

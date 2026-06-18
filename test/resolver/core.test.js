@@ -44,7 +44,7 @@ const manifest = JSON.parse(await readFile(new URL("../../manifest.json", import
 
 test("manifest exposes extension resolver capabilities", () => {
   assert.equal(manifest.manifest_version, 3);
-  assert.equal(manifest.options_ui.page, "src/options.html");
+  assert.equal(manifest.options_ui.page, "src/options/options.html");
   assert.ok(manifest.permissions.includes("contextMenus"));
   assert.ok(manifest.permissions.includes("offscreen"));
   assert.ok(manifest.permissions.includes("storage"));

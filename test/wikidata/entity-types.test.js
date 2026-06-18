@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   buildWikidataResult,
   selectBestWikidataResult
-} from "../../src/wikidata-adapter.js";
+} from "../../src/sources/wikidata-adapter.js";
 
 test("uses domain claims to rank generic concept candidates", () => {
   const result = buildWikidataResult("Homology", {

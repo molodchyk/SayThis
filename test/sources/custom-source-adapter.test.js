@@ -7,7 +7,7 @@ import {
   buildCustomSourceUrl,
   normalizeVoiceServiceUrlTemplate,
   selectBestCustomEntry
-} from "../src/custom-source-adapter.js";
+} from "../../src/sources/custom-source-adapter.js";
 
 test("builds a custom source lookup URL", () => {
   const url = new URL(buildCustomSourceUrl("chiaroscuro", "https://example.com/saythis/search?pack=art"));

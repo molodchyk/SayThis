@@ -5,7 +5,7 @@ import {
 } from "../../src/resolver-core.js";
 import {
   upsertCachedResult
-} from "../../src/result-cache.js";
+} from "../../src/result/cache.js";
 import {
   onlineSettingsForRequest,
   resolveSelection

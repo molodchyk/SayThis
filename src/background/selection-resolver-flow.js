@@ -10,7 +10,7 @@ import {
   isCacheableResult,
   readCachedResult,
   upsertCachedResult
-} from "../result-cache.js";
+} from "../result/cache.js";
 import {
   normalizeCredentials,
   normalizeLanguageHints,

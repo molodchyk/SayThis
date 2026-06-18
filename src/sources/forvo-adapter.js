@@ -2,7 +2,7 @@ import {
   createLookupKey,
   createRemoteStructuredResult,
   normalizeSelection
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 
 export const FORVO_API_ORIGIN = "https://apifree.forvo.com/";
 

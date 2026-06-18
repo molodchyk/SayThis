@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildWikidataResult
-} from "../../src/wikidata-adapter.js";
+} from "../../src/sources/wikidata-adapter.js";
 
 test("uses string-valued name claims as source-form candidates", () => {
   const result = buildWikidataResult("University of Padua", {

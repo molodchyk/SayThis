@@ -5,7 +5,7 @@ import {
   buildForvoWordPronunciationsUrl,
   FORVO_API_ORIGIN,
   selectBestForvoItem
-} from "../src/forvo-adapter.js";
+} from "../../src/sources/forvo-adapter.js";
 
 test("builds a Forvo word-pronunciations API URL", () => {
   const url = buildForvoWordPronunciationsUrl("chiaroscuro", " api-key ", {

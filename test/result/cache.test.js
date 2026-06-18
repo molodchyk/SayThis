@@ -6,11 +6,11 @@ import {
   readCachedResult,
   resultCacheSummary,
   upsertCachedResult
-} from "../src/result-cache.js";
+} from "../../src/result/cache.js";
 import {
   createRemoteStructuredResult,
   resolveTerm
-} from "../src/resolver-core.js";
+} from "../../src/resolver-core.js";
 
 test("stores and reads cacheable online results by lookup key", () => {
   const remote = createRemoteStructuredResult("chiaroscuro", {

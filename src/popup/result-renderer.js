@@ -4,7 +4,7 @@ import {
   playbackItemsForResult,
   speechResultForPlaybackItem,
   sourceItemsForResult
-} from "../result-view.js";
+} from "../result/view.js";
 import {
   correctionValuesFromResult
 } from "../correction-form.js";

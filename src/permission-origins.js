@@ -3,7 +3,7 @@ import {
 } from "./community-sync.js";
 import {
   FORVO_API_ORIGIN
-} from "./forvo-adapter.js";
+} from "./sources/forvo-adapter.js";
 
 export function remotePermissionOrigins(settings = {}, credentials = {}) {
   const origins = [];

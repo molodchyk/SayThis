@@ -1,7 +1,7 @@
 import {
   createLookupKey,
   normalizeSelection
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 
 export const RESULT_CACHE_SCHEMA_VERSION = 1;
 export const DEFAULT_RESULT_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;

@@ -5,7 +5,7 @@ import {
   buildNominatimSearchUrl,
   nominatimAcceptLanguage,
   selectBestNominatimPlace
-} from "../src/nominatim-adapter.js";
+} from "../../src/sources/nominatim-adapter.js";
 
 test("builds a conservative Nominatim-compatible search URL", () => {
   const url = new URL(buildNominatimSearchUrl("Athens", "https://example.com/search", {

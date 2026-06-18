@@ -6,7 +6,7 @@ import {
   parseWiktionaryPronunciation,
   wiktionaryPageUrl,
   wiktionarySourceLanguages
-} from "../src/wiktionary-adapter.js";
+} from "../../src/sources/wiktionary-adapter.js";
 
 const CHIAROSCURO_WIKITEXT = `
 ==English==

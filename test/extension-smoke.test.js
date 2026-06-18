@@ -13,8 +13,8 @@ const packageFiles = new Set(await collectPackageFiles(root));
 
 test("popup and options pages provide every JavaScript-bound element id", async () => {
   for (const page of [
-    { html: "src/popup.html", script: "src/popup.js" },
-    { html: "src/options.html", script: "src/options.js" }
+    { html: "src/popup/popup.html", script: "src/popup/index.js" },
+    { html: "src/options/options.html", script: "src/options/index.js" }
   ]) {
     const htmlIds = new Set(idsInHtml(await readText(page.html)));
     const scriptIds = idsFromGetElementById(await readText(page.script));
@@ -358,8 +358,8 @@ test("online source resolver tries hinted Wiktionary editions", async () => {
 });
 
 test("options page exposes shared-entry data controls", async () => {
-  const html = await readText("src/options.html");
-  const source = await readText("src/options.js");
+  const html = await readText("src/options/options.html");
+  const source = await readText("src/options/index.js");
   const summarySource = await readText("src/options/summary-view.js");
 
   assert.match(html, /id="auto-speak-popup"/);
@@ -401,8 +401,8 @@ test("background uses shared community pronunciation-data policy", async () => {
 });
 
 test("popup quick feedback labels match their feedback kinds", async () => {
-  const html = await readText("src/popup.html");
-  const source = await readText("src/popup.js");
+  const html = await readText("src/popup/popup.html");
+  const source = await readText("src/popup/index.js");
 
   assert.match(html, /id="lookup-hints"/);
   assert.match(source, /lookupHintsInput/);
@@ -427,10 +427,10 @@ test("background includes per-lookup hints in online settings", async () => {
 });
 
 test("popup source-audio failure uses speech fallback", async () => {
-  const source = await readText("src/popup.js");
+  const source = await readText("src/popup/index.js");
   const audioSource = await readText("src/popup/audio-playback.js");
   const resultSource = await readText("src/popup/result-renderer.js");
-  const html = await readText("src/popup.html");
+  const html = await readText("src/popup/popup.html");
 
   assert.match(html, /id="audio-list"/);
   assert.match(source, /autoSpeakPopup/);

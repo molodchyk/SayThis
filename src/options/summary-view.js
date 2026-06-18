@@ -1,6 +1,6 @@
 import {
   resultCacheSummary
-} from "../result-cache.js";
+} from "../result/cache.js";
 
 export function memorySummaryText(entries = {}) {
   const values = Object.values(entries || {});

@@ -7,21 +7,21 @@ import {
 import {
   selectBestWikidataResult,
   wikidataSearchLanguages
-} from "../wikidata-adapter.js";
+} from "../sources/wikidata-adapter.js";
 import {
   buildWiktionaryApiUrl,
   buildWiktionaryResult,
   wiktionarySourceLanguages
-} from "../wiktionary-adapter.js";
+} from "../sources/wiktionary-adapter.js";
 import {
   buildNominatimResult,
   buildNominatimSearchUrl,
   nominatimAcceptLanguage
-} from "../nominatim-adapter.js";
+} from "../sources/nominatim-adapter.js";
 import {
   buildForvoResult,
   buildForvoWordPronunciationsUrl
-} from "../forvo-adapter.js";
+} from "../sources/forvo-adapter.js";
 import {
   additionalPronunciationLookupCandidates,
   pronunciationLookupCandidates
@@ -33,7 +33,7 @@ import {
   buildCustomSourceResult,
   buildCustomSourceUrl,
   buildVoiceServiceResult
-} from "../custom-source-adapter.js";
+} from "../sources/custom-source-adapter.js";
 import {
   buildDbpediaLookupUrl,
   buildDbpediaResult

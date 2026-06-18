@@ -6,7 +6,7 @@ import {
   normalizeSearchLanguageHints,
   selectBestWikidataResult,
   wikidataSearchLanguages
-} from "../src/wikidata-adapter.js";
+} from "../../src/sources/wikidata-adapter.js";
 
 test("prefers native label claims over English labels", () => {
   const result = buildWikidataResult("Athens", {

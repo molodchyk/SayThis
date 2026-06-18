@@ -2,7 +2,7 @@ import {
   createLookupKey,
   createRemoteStructuredResult,
   normalizeSelection
-} from "./resolver-core.js";
+} from "../resolver-core.js";
 
 const VALID_CONFIDENCE = new Set(["high", "medium", "low", "unknown"]);
 const VALID_SOURCE_STATUS = new Set([

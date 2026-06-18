@@ -26,7 +26,7 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/content/overlay-runtime-adapters.js"));
   assert.ok(files.includes("src/content/overlay-result-view.js"));
   assert.ok(files.includes("src/content/overlay-style.js"));
-  assert.ok(files.includes("src/custom-source-adapter.js"));
+  assert.ok(files.includes("src/sources/custom-source-adapter.js"));
   assert.ok(files.includes("src/message-contracts.js"));
   assert.ok(files.includes("src/permission-origins.js"));
   assert.ok(files.includes("src/pronunciation-source-plan.js"));
@@ -38,8 +38,8 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/resolver/values.js"));
   assert.ok(files.includes("src/shared/settings.js"));
   assert.ok(files.includes("src/wikidata/entity-types.js"));
-  assert.ok(files.includes("src/forvo-adapter.js"));
-  assert.ok(files.includes("src/nominatim-adapter.js"));
+  assert.ok(files.includes("src/sources/forvo-adapter.js"));
+  assert.ok(files.includes("src/sources/nominatim-adapter.js"));
   assert.ok(files.includes("src/offscreen/audio-playback-flow.js"));
   assert.ok(files.includes("src/offscreen/runtime-adapters.js"));
   assert.ok(files.includes("src/offscreen/runtime-message-flow.js"));
@@ -47,7 +47,7 @@ test("collects only extension runtime package files", async () => {
   assert.ok(files.includes("src/options/summary-view.js"));
   assert.ok(files.includes("src/popup/audio-playback.js"));
   assert.ok(files.includes("src/popup/result-renderer.js"));
-  assert.ok(files.includes("src/popup.html"));
+  assert.ok(files.includes("src/popup/popup.html"));
   assert.ok(files.includes("src/offscreen-audio.html"));
   assert.ok(files.includes("data/public-audio-manifest.json"));
   assert.ok(files.includes("data/pronunciation-seed.json"));
