@@ -105,6 +105,10 @@ function speakResult(result, overrides = {}) {
   return playbackSurface.speakResult(result, overrides);
 }
 
+function playAudio(audio, rate) {
+  return playbackSurface.playAudioItemOffscreen(audio, rate);
+}
+
 async function playResolvedResult(result, tabId) {
   return playbackSurface.playResolvedResult(result, tabId);
 }
@@ -117,6 +121,7 @@ function runtimeMessageDependencies() {
   return {
     resolveSelection,
     speakResult,
+    playAudio,
     stopPlayback,
     saveFeedback,
     flushCommunitySync,

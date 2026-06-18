@@ -56,6 +56,42 @@ test("routes offscreen stop-audio messages", () => {
   assert.deepEqual(responses, [{ ok: true }]);
 });
 
+test("routes offscreen Web Speech messages", async () => {
+  const calls = [];
+  const responses = [];
+  const handled = handleOffscreenAudioMessage({
+    type: MESSAGE_TYPES.offscreenSpeak,
+    text: "Przykladowo",
+    lang: "pl-PL",
+    rate: 0.8
+  }, (response) => responses.push(response), {
+    speakText: async (text, options) => {
+      calls.push(["speakText", text, options]);
+      return {
+        text,
+        lang: options.lang,
+        voiceName: "Polish Web Voice"
+      };
+    }
+  });
+
+  await flushPromises();
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [["speakText", "Przykladowo", {
+    lang: "pl-PL",
+    rate: 0.8
+  }]]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    speech: {
+      text: "Przykladowo",
+      lang: "pl-PL",
+      voiceName: "Polish Web Voice"
+    }
+  }]);
+});
+
 test("ignores unknown offscreen messages", () => {
   assert.equal(handleOffscreenAudioMessage({ type: "OTHER" }, () => {
     throw new Error("should not respond");

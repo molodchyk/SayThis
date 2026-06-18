@@ -10,6 +10,11 @@ The service is dependency-free Node.js. It receives privacy-scoped correction su
 $env:SAYTHIS_ADMIN_TOKEN = "change-me"
 $env:SAYTHIS_STORE = "data/community-store.json"
 $env:SAYTHIS_MAX_BODY_BYTES = "16384"
+$env:SAYTHIS_MAX_AUDIO_BYTES = "524288"
+$env:SAYTHIS_PUBLIC_BASE_URL = "https://example.com"
+$env:SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN = ""
+$env:SAYTHIS_GOOGLE_TTS_VOICE = ""
+$env:SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING = "MP3"
 $env:SAYTHIS_RATE_LIMIT = "20"
 $env:SAYTHIS_RATE_WINDOW_MS = "60000"
 $env:SAYTHIS_MAX_PENDING_SUBMISSIONS = "1000"
@@ -46,11 +51,23 @@ Fetch approved entries:
 GET /community?action=approved
 ```
 
+Fetch a reviewed shared audio artifact:
+
+```http
+GET /audio/<artifact-id>
+```
+
 The extension submits only term-level pronunciation metadata. It does not submit page URLs or browsing history.
 
 The public submission endpoint rejects oversized bodies and limits repeated submissions per client. Defaults:
 
 - `SAYTHIS_MAX_BODY_BYTES`: `16384`
+- `SAYTHIS_MAX_AUDIO_BYTES`: `524288`
+- `SAYTHIS_PUBLIC_BASE_URL`: required before storing shared generated-audio artifacts
+- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: bearer token for admin-only Google-compatible speech generation
+- `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional override for the Google-compatible speech endpoint
+- `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice name override
+- `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`
 - `SAYTHIS_RATE_LIMIT`: `20`
 - `SAYTHIS_RATE_WINDOW_MS`: `60000`
 - `SAYTHIS_MAX_PENDING_SUBMISSIONS`: `1000`
@@ -131,7 +148,47 @@ Content-Type: application/json
 }
 ```
 
-The `/admin` page uses these same endpoints. It can approve submissions with edited source form, aliases, language, origin, root, domain hint, variants, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields.
+Store a reviewed generated-audio artifact:
+
+```http
+POST /admin/audio-artifacts
+Content-Type: application/json
+Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
+
+{
+  "term": "Exampletown",
+  "lookupKey": "exampletown",
+  "sourceForm": "Przykladowo",
+  "language": "pl",
+  "ttsLang": "pl-PL",
+  "provider": "Example voice",
+  "mimeType": "audio/ogg",
+  "dataBase64": "<base64 audio bytes>"
+}
+```
+
+The service stores the bytes under `/audio/<artifact-id>`, adds an approved shared entry with that audio URL, and serves the artifact with immutable public cache headers. This path is moderator-only so generated samples can be checked, cost-controlled, and reused by every client through approved-entry refresh.
+
+Generate provider audio and store it as a reviewed artifact:
+
+```http
+POST /admin/generate-audio-artifact
+Content-Type: application/json
+Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
+
+{
+  "term": "Exampletown",
+  "lookupKey": "exampletown",
+  "sourceForm": "Przykladowo",
+  "language": "pl",
+  "ttsLang": "pl-PL",
+  "voiceName": "pl-PL-ExampleVoice"
+}
+```
+
+This endpoint is admin-only and requires `SAYTHIS_PUBLIC_BASE_URL` plus a configured provider token. It sends only the source form or term text, locale, optional voice name, and speaking rate to the provider. The returned audio is stored once as `/audio/<artifact-id>` and published through an approved shared entry, so clients reuse the shared sample instead of regenerating it.
+
+The `/admin` page supports pending submission review. It can approve submissions with edited source form, aliases, language, origin, root, domain hint, variants, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields. Generated-audio artifact endpoints are available as token-protected HTTP endpoints for now.
 
 ## Storage
 
@@ -139,6 +196,7 @@ The service writes a JSON store containing:
 
 - `pending`: unreviewed submissions
 - `approved`: approved shared entries keyed by lookup key
+- `audioArtifacts`: reviewed generated-audio artifacts keyed by artifact id
 - `rejected`: rejected submission summaries
 
 The built-in Node service serializes store writes in process so overlapping requests do not overwrite pending entries.

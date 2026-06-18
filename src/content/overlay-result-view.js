@@ -222,6 +222,8 @@
     const url = normalizeUrl(item?.url);
     return {
       label: normalizeText(item?.label || item?.source || hostLabel(url) || "Pronunciation audio"),
+      source: normalizeText(item?.source),
+      quality: normalizeText(item?.quality),
       url
     };
   }

@@ -3,8 +3,10 @@ import test from "node:test";
 import {
   createFeedbackMessage,
   createFlushSyncMessage,
+  createOffscreenSpeakMessage,
   createOffscreenPlayAudioMessage,
   createOffscreenStopAudioMessage,
+  createPlayAudioMessage,
   createPullApprovedMessage,
   createResolveMessage,
   createShowResultMessage,
@@ -169,6 +171,20 @@ test("builds overlay and offscreen audio messages", () => {
     type: MESSAGE_TYPES.offscreenPlayAudio,
     audio,
     playbackRate: 0.45
+  });
+  assert.deepEqual(createPlayAudioMessage(audio, { rate: 0.2 }), {
+    type: MESSAGE_TYPES.playAudio,
+    audio,
+    rate: 0.45
+  });
+  assert.deepEqual(createOffscreenSpeakMessage(" Przykladowo ", {
+    lang: "pl-PL",
+    rate: 0.8
+  }), {
+    type: MESSAGE_TYPES.offscreenSpeak,
+    text: "Przykladowo",
+    lang: "pl-PL",
+    rate: 0.8
   });
   assert.deepEqual(createOffscreenStopAudioMessage(), {
     type: MESSAGE_TYPES.offscreenStopAudio

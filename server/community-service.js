@@ -12,6 +12,20 @@ import {
   pendingPayload,
   rejectSubmission
 } from "./community-store.js";
+import {
+  DEFAULT_MAX_AUDIO_BYTES,
+  generatedAudioArtifactFromBody,
+  normalizeHttpsEndpoint,
+  publicAudioArtifact
+} from "./community-audio-artifacts.js";
+import {
+  audioArtifactPayload,
+  upsertGeneratedAudioArtifact
+} from "./community-audio-store.js";
+import {
+  createConfiguredTtsProvider,
+  generatedAudioArtifactFromTts
+} from "./tts-provider.js";
 import { renderAdminPage } from "./admin-page.js";
 
 const DEFAULT_PORT = 8787;
@@ -41,6 +55,17 @@ export async function handleCommunityRequest(request, store, options = {}) {
 
   if (method === "GET" && url.pathname === "/admin") {
     return htmlResponse(200, state, renderAdminPage());
+  }
+
+  if (method === "GET" && url.pathname.startsWith("/audio/")) {
+    const artifact = audioArtifactPayload(state, decodeURIComponent(url.pathname.slice("/audio/".length)));
+    if (!artifact) {
+      return jsonResponse(404, state, { error: "audio-not-found" });
+    }
+
+    return binaryResponse(200, state, Buffer.from(artifact.dataBase64, "base64"), artifact.mimeType, {
+      cacheControl: "public, max-age=31536000, immutable"
+    });
   }
 
   if (method === "GET" && url.searchParams.get("action") === "approved") {
@@ -99,6 +124,58 @@ export async function handleCommunityRequest(request, store, options = {}) {
     });
   }
 
+  if (method === "POST" && url.pathname === "/admin/audio-artifacts") {
+    const auth = authorize(request, options);
+    if (!auth.ok) {
+      return jsonResponse(auth.status, state, { error: auth.error });
+    }
+
+    const maxAudioBytes = normalizePositiveInteger(options.maxAudioBytes, DEFAULT_MAX_AUDIO_BYTES);
+    const body = parseJsonBody(request.body);
+    const artifact = generatedAudioArtifactFromBody(body, {
+      maxAudioBytes,
+      publicBaseUrl: options.publicBaseUrl
+    });
+    if (!artifact.ok) {
+      return jsonResponse(artifact.status, state, { error: artifact.error });
+    }
+
+    const result = upsertGeneratedAudioArtifact(state, artifact.value, new Date().toISOString());
+    return jsonResponse(result.accepted ? 200 : 400, result.store, {
+      accepted: result.accepted,
+      reason: result.reason || "",
+      artifact: publicAudioArtifact(result.artifact),
+      entry: result.entry || null
+    });
+  }
+
+  if (method === "POST" && url.pathname === "/admin/generate-audio-artifact") {
+    const auth = authorize(request, options);
+    if (!auth.ok) {
+      return jsonResponse(auth.status, state, { error: auth.error });
+    }
+
+    const maxAudioBytes = normalizePositiveInteger(options.maxAudioBytes, DEFAULT_MAX_AUDIO_BYTES);
+    const body = parseJsonBody(request.body);
+    const artifact = await generatedAudioArtifactFromTts(body, {
+      maxAudioBytes,
+      publicBaseUrl: options.publicBaseUrl,
+      ttsProvider: options.ttsProvider
+    });
+    if (!artifact.ok) {
+      return jsonResponse(artifact.status, state, { error: artifact.error });
+    }
+
+    const result = upsertGeneratedAudioArtifact(state, artifact.value, new Date().toISOString());
+    return jsonResponse(result.accepted ? 200 : 400, result.store, {
+      accepted: result.accepted,
+      reason: result.reason || "",
+      artifact: publicAudioArtifact(result.artifact),
+      entry: result.entry || null,
+      voice: artifact.voice || null
+    });
+  }
+
   if (method === "POST" && url.pathname === "/admin/reject") {
     const auth = authorize(request, options);
     if (!auth.ok) {
@@ -137,6 +214,18 @@ export async function createCommunityServer(options = {}) {
     options.maxRejectedSubmissions ?? process.env.SAYTHIS_MAX_REJECTED_SUBMISSIONS,
     DEFAULT_MAX_REJECTED_SUBMISSIONS
   );
+  const maxAudioBytes = normalizePositiveInteger(
+    options.maxAudioBytes ?? process.env.SAYTHIS_MAX_AUDIO_BYTES,
+    DEFAULT_MAX_AUDIO_BYTES
+  );
+  const publicBaseUrl = normalizeHttpsEndpoint(options.publicBaseUrl ?? process.env.SAYTHIS_PUBLIC_BASE_URL);
+  const ttsProvider = options.ttsProvider || createConfiguredTtsProvider({
+    accessToken: options.googleTtsAccessToken ?? process.env.SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN,
+    endpoint: options.googleTtsEndpoint ?? process.env.SAYTHIS_GOOGLE_TTS_ENDPOINT,
+    defaultVoiceName: options.googleTtsVoice ?? process.env.SAYTHIS_GOOGLE_TTS_VOICE,
+    audioEncoding: options.googleTtsAudioEncoding ?? process.env.SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING,
+    fetch: options.fetch
+  });
   const rateLimiter = options.rateLimiter || createMemoryRateLimiter({
     limit: normalizePositiveInteger(
       options.rateLimit ?? process.env.SAYTHIS_RATE_LIMIT,
@@ -155,9 +244,13 @@ export async function createCommunityServer(options = {}) {
   const runStoreOperation = createStoreOperationQueue();
 
   const server = createServer(async (request, response) => {
+    const requestPath = new URL(request.url || "/", "http://localhost").pathname;
+    const requestMaxBodyBytes = requestPath === "/admin/audio-artifacts"
+      ? Math.max(maxBodyBytes, Math.ceil(maxAudioBytes * 1.5) + 4096)
+      : maxBodyBytes;
     let body = "";
     try {
-      body = await readRequestBody(request, maxBodyBytes);
+      body = await readRequestBody(request, requestMaxBodyBytes);
     } catch (error) {
       if (error?.code === "body-too-large") {
         sendJsonResponse(response, 413, { error: "body-too-large" });
@@ -181,6 +274,9 @@ export async function createCommunityServer(options = {}) {
           maxBodyBytes,
           maxPendingSubmissions,
           maxRejectedSubmissions,
+          maxAudioBytes,
+          publicBaseUrl,
+          ttsProvider,
           allowedOrigins,
           rateLimiter,
           trustProxyHeaders
@@ -301,6 +397,16 @@ function htmlResponse(status, store, body) {
   };
 }
 
+function binaryResponse(status, store, body, contentType, options = {}) {
+  return {
+    status,
+    store,
+    body,
+    contentType,
+    cacheControl: options.cacheControl || "no-store"
+  };
+}
+
 function authorize(request, options) {
   const token = options.adminToken || "";
   if (!token) {
@@ -403,7 +509,7 @@ function sendCommunityResponse(response, result, options = {}) {
   const allowOrigin = corsAllowOrigin(options.requestOrigin, options.allowedOrigins);
   const headers = {
     "Content-Type": contentType,
-    "Cache-Control": "no-store",
+    "Cache-Control": result.cacheControl || "no-store",
     "Access-Control-Allow-Headers": "content-type, authorization",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
   };
@@ -418,6 +524,11 @@ function sendCommunityResponse(response, result, options = {}) {
 
   if (contentType.startsWith("text/html")) {
     response.end(String(result.body || ""));
+    return;
+  }
+
+  if (Buffer.isBuffer(result.body)) {
+    response.end(result.body);
     return;
   }
 

@@ -133,6 +133,46 @@ test("does not speak with a known non-matching TTS voice", async () => {
   assert.deepEqual(calls, []);
 });
 
+test("uses offscreen Web Speech when extension TTS lacks a matching voice", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    hasOffscreenAudioSupport: () => true,
+    hasOffscreenDocument: () => true,
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    sendRuntimeMessage: async (message) => {
+      calls.push(["sendRuntimeMessage", message]);
+      return {
+        ok: true,
+        speech: {
+          text: "Przykladowo",
+          voiceName: "Polish Web Voice"
+        }
+      };
+    },
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: () => {
+      throw new Error("should not use extension TTS");
+    }
+  });
+
+  const result = await surface.speakResult({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    speakText: "Przykladowo",
+    ttsLang: "pl-PL"
+  }, { rate: 0.8 });
+
+  assert.equal(result.spoken, true);
+  assert.equal(result.fallback, "web-speech");
+  assert.equal(result.options.voiceName, "Polish Web Voice");
+  assert.equal(calls[0][0], "sendRuntimeMessage");
+  assert.equal(calls[0][1].type, "SAYTHIS_OFFSCREEN_SPEAK");
+  assert.equal(calls[0][1].text, "Przykladowo");
+  assert.equal(calls[0][1].lang, "pl-PL");
+});
+
 test("does not speak non-English source forms through unverified TTS", async () => {
   const calls = [];
   const surface = createPlaybackSurface({
@@ -298,7 +338,7 @@ test("plays verified audio through the offscreen document", async () => {
   assert.deepEqual(calls[0], ["createOffscreenDocument", {
     url: "src/offscreen-audio.html",
     reasons: ["AUDIO_PLAYBACK"],
-    justification: "Play pronunciation audio when a page overlay is unavailable."
+    justification: "Play pronunciation audio and matching voice speech when a page overlay is unavailable."
   }]);
   assert.equal(calls[1][0], "sendRuntimeMessage");
   assert.equal(calls[1][1].type, MESSAGE_TYPES.offscreenPlayAudio);

@@ -30,6 +30,10 @@ Online lookup can send the selected term or resolved pronunciation candidate to:
 
 Community sync sends only the selected term, feedback type, correction or missing-entry fields, and resolver metadata. SayThis does not send page URLs, browsing history, full page text, or full documents.
 
+Reviewed generated-audio artifacts may be hosted by a configured community service for shared reuse. Those artifacts are keyed to term-level pronunciation metadata and do not include page URLs, browsing history, full page text, or user recordings.
+
+If a community service operator uses the admin-only provider generation route, the service sends only the source form or term text, locale, optional voice name, and speaking rate to the configured speech provider.
+
 ## Permissions
 
 - `activeTab`: read the current selection after user action.

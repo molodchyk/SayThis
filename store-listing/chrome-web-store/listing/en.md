@@ -17,6 +17,7 @@ Features:
 - resolved source form, language, confidence, evidence, and source links
 - optional lookup language hints for ambiguous text
 - local correction, confirm, missing, and wrong-result feedback
+- reviewed shared audio entries from an optional community endpoint
 - optional Forvo, custom source, place-name, and community endpoints
 - no ads, analytics, or tracking
 

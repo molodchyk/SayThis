@@ -10,6 +10,7 @@ import {
 } from "./correction-form.js";
 import {
   createFeedbackMessage,
+  createPlayAudioMessage,
   createResolveMessage,
   createSpeakMessage,
   createStopMessage
@@ -344,7 +345,20 @@ function playAudioItem(audio, result, rate, options = {}) {
     }
   };
 
+  if (isGeneratedAudioItem(audio)) {
+    sendMessage(createPlayAudioMessage(audio, { rate })).then((response) => {
+      if (!response?.ok) {
+        fallbackToSpeech();
+      }
+    });
+    return true;
+  }
+
   return audioPlayback.playUrl(audio.url, rate, fallbackToSpeech);
+}
+
+function isGeneratedAudioItem(audio = {}) {
+  return String(audio.quality || "").trim().toLowerCase() === "generated";
 }
 
 function stopAudio() {

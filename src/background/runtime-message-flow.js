@@ -48,6 +48,21 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     return true;
   }
 
+  if (message?.type === MESSAGE_TYPES.playAudio) {
+    respondWithResult(
+      Promise.resolve(dependencies.playAudio?.(message.audio, message.rate)).then((played) => {
+        if (!played) {
+          throw new Error("Audio playback failed.");
+        }
+        return true;
+      }),
+      sendResponse,
+      () => ({ ok: true }),
+      "Audio playback failed."
+    );
+    return true;
+  }
+
   if (message?.type === MESSAGE_TYPES.stop) {
     respondWithResult(
       Promise.resolve(dependencies.stopPlayback()).catch(() => null),

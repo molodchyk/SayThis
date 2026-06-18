@@ -43,14 +43,14 @@ test("normalizes overlay result display helpers", () => {
   assert.deepEqual(plain(view.variantItems(result.variants)), ["Variant: regional", "Variant: slow"]);
   assert.equal(view.getBestAudio(result).label, "Verified");
   assert.deepEqual(plain(view.audioItems(result)), [
-    { label: "Verified", url: "https://audio.example/verified.ogg" },
-    { label: "Commons", url: "https://audio.example/commons.ogg" },
-    { label: "Generated voice", url: "https://audio.example/generated.ogg" }
+    { label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },
+    { label: "Commons", source: "Commons", url: "https://audio.example/commons.ogg", quality: "" },
+    { label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" }
   ]);
   assert.deepEqual(plain(view.playbackItems(result)), [
-    { kind: "audio", label: "Verified", url: "https://audio.example/verified.ogg" },
-    { kind: "audio", label: "Commons", url: "https://audio.example/commons.ogg" },
-    { kind: "audio", label: "Generated voice", url: "https://audio.example/generated.ogg" }
+    { kind: "audio", label: "Verified", source: "", url: "https://audio.example/verified.ogg", quality: "verified" },
+    { kind: "audio", label: "Commons", source: "Commons", url: "https://audio.example/commons.ogg", quality: "" },
+    { kind: "audio", label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" }
   ]);
   assert.deepEqual(plain(view.playbackItems({
     query: "Exampletown",

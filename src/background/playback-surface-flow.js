@@ -5,6 +5,7 @@ import {
 } from "../resolver-core.js";
 import {
   createOffscreenPlayAudioMessage,
+  createOffscreenSpeakMessage,
   createOffscreenStopAudioMessage,
   createShowResultMessage
 } from "../message-contracts.js";
@@ -12,6 +13,7 @@ import {
   normalizeSettings
 } from "../shared/settings.js";
 import {
+  playAudioItemOffscreen as playAudioItemOffscreenFlow,
   playAudioOffscreen as playAudioOffscreenFlow,
   playResolvedResult as playResolvedResultFlow
 } from "./result-playback-flow.js";
@@ -34,6 +36,7 @@ export function createPlaybackSurface(dependencies = {}) {
     ensureOffscreenAudioDocument,
     getSettings,
     hasOffscreenAudioDocument,
+    playAudioItemOffscreen,
     playAudioOffscreen,
     playResolvedResult,
     showResultOnTab,
@@ -61,6 +64,15 @@ export function createPlaybackSurface(dependencies = {}) {
     }, rate);
   }
 
+  async function playAudioItemOffscreen(audio, rate = 0.82) {
+    return playAudioItemOffscreenFlow(audio, {
+      hasOffscreenAudioSupport: () => Boolean(dependencies.hasOffscreenAudioSupport?.()),
+      ensureOffscreenAudioDocument,
+      sendOffscreenPlayAudioMessage: (audioItem, playbackRate) =>
+        dependencies.sendRuntimeMessage?.(createOffscreenPlayAudioMessage(audioItem, playbackRate))
+    }, rate);
+  }
+
   async function speakResult(result, overrides = {}) {
     const speech = resultToSpeechOptions(result, overrides);
     if (!speech.text) {
@@ -72,6 +84,11 @@ export function createPlaybackSurface(dependencies = {}) {
 
     const voice = await bestTtsVoice(speech.options.lang);
     if (!voice.voiceName && shouldRequireVerifiedVoice(result, speech.options.lang)) {
+      const offscreenSpeech = await speakTextOffscreen(speech.text, speech.options);
+      if (offscreenSpeech?.spoken) {
+        return offscreenSpeech;
+      }
+
       const guideSpeech = await speakGuideFallback(result, speech.options.rate);
       if (guideSpeech) {
         return guideSpeech;
@@ -108,6 +125,40 @@ export function createPlaybackSurface(dependencies = {}) {
       text: speech.text,
       options
     };
+  }
+
+  async function speakTextOffscreen(text, options = {}) {
+    if (!dependencies.hasOffscreenAudioSupport?.()) {
+      return null;
+    }
+
+    try {
+      await ensureOffscreenAudioDocument();
+      const response = await dependencies.sendRuntimeMessage?.(createOffscreenSpeakMessage(text, options));
+      if (!response?.ok) {
+        return {
+          spoken: false,
+          error: response?.error || "Web speech failed."
+        };
+      }
+
+      return {
+        spoken: true,
+        text: response.speech?.text || text,
+        options: {
+          enqueue: false,
+          rate: options.rate,
+          lang: options.lang,
+          ...(response.speech?.voiceName ? { voiceName: response.speech.voiceName } : {})
+        },
+        fallback: "web-speech"
+      };
+    } catch (error) {
+      return {
+        spoken: false,
+        error: error?.message || "Web speech failed."
+      };
+    }
   }
 
   async function speakGuideFallback(result, rate) {
@@ -179,7 +230,7 @@ export function createPlaybackSurface(dependencies = {}) {
       offscreenCreatePromise = dependencies.createOffscreenDocument?.({
         url: offscreenAudioUrl,
         reasons: ["AUDIO_PLAYBACK"],
-        justification: "Play pronunciation audio when a page overlay is unavailable."
+        justification: "Play pronunciation audio and matching voice speech when a page overlay is unavailable."
       })?.finally(() => {
         offscreenCreatePromise = null;
       });

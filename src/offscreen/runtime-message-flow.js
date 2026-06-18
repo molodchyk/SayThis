@@ -23,5 +23,22 @@ export function handleOffscreenAudioMessage(message, sendResponse, playback = {}
     return true;
   }
 
+  if (message?.type === MESSAGE_TYPES.offscreenSpeak) {
+    playback.speakText?.(message.text, {
+      lang: message.lang,
+      rate: message.rate
+    })
+      .then((speech) => {
+        sendResponse?.({ ok: true, speech });
+      })
+      .catch((error) => {
+        sendResponse?.({
+          ok: false,
+          error: error?.message || "Web speech failed."
+        });
+      });
+    return true;
+  }
+
   return false;
 }

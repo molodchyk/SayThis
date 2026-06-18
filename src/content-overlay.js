@@ -392,6 +392,19 @@
     };
 
     stopAudio();
+    if (isGeneratedAudioItem(audio)) {
+      sendOverlayMessage({
+        type: "SAYTHIS_PLAY_AUDIO",
+        audio,
+        rate
+      }).then((response) => {
+        if (!response?.ok) {
+          fallbackToSpeech();
+        }
+      });
+      return true;
+    }
+
     audioPlayer = new Audio(audio.url);
     audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
     audioPlayer.addEventListener("error", () => {
@@ -401,6 +414,10 @@
       fallbackToSpeech();
     });
     return true;
+  }
+
+  function isGeneratedAudioItem(audio = {}) {
+    return String(audio.quality || "").trim().toLowerCase() === "generated";
   }
 
   function stopAudio() {

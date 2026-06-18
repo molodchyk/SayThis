@@ -56,6 +56,38 @@ test("uses offscreen audio when overlay autoplay cannot be injected", async () =
   ]);
 });
 
+test("uses offscreen audio before overlay autoplay for generated audio", async () => {
+  const generated = {
+    display: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/example.ogg",
+        quality: "generated"
+      }]
+    }
+  };
+  const calls = [];
+  const result = await playResolvedResult(generated, 7, {
+    getBestAudio: (value) => value.pronunciation.audio[0],
+    showResultOnTab: async (tabId, value, options) => {
+      calls.push(["showResultOnTab", tabId, value.display, options || {}]);
+      return true;
+    },
+    playAudioOffscreen: async (value) => {
+      calls.push(["playAudioOffscreen", value.display]);
+      return true;
+    },
+    speakResult: () => calls.push(["speakResult"])
+  });
+
+  assert.deepEqual(result, { mode: "offscreen-audio" });
+  assert.deepEqual(calls, [
+    ["playAudioOffscreen", "Exampletown"],
+    ["showResultOnTab", 7, "Exampletown", {}]
+  ]);
+});
+
 test("falls back to TTS when no verified audio can play", async () => {
   const calls = [];
   const result = await playResolvedResult(AUDIO_RESULT, 7, {

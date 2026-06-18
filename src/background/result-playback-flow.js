@@ -1,15 +1,23 @@
 export async function playResolvedResult(result, tabId, dependencies = {}) {
   const audio = dependencies.getBestAudio?.(result);
   if (audio) {
-    const shown = await dependencies.showResultOnTab?.(tabId, result, { autoPlay: true });
-    if (shown) {
-      return { mode: "overlay-audio" };
-    }
-
-    const played = await dependencies.playAudioOffscreen?.(result);
-    if (played) {
+    if (isGeneratedAudio(audio, result)) {
+      const played = await dependencies.playAudioOffscreen?.(result);
       dependencies.showResultOnTab?.(tabId, result);
-      return { mode: "offscreen-audio" };
+      if (played) {
+        return { mode: "offscreen-audio" };
+      }
+    } else {
+      const shown = await dependencies.showResultOnTab?.(tabId, result, { autoPlay: true });
+      if (shown) {
+        return { mode: "overlay-audio" };
+      }
+
+      const played = await dependencies.playAudioOffscreen?.(result);
+      if (played) {
+        dependencies.showResultOnTab?.(tabId, result);
+        return { mode: "offscreen-audio" };
+      }
     }
   }
 
@@ -27,6 +35,10 @@ export async function playResolvedResult(result, tabId, dependencies = {}) {
 
 export async function playAudioOffscreen(result, dependencies = {}, rate = 0.82) {
   const audio = dependencies.getBestAudio?.(result);
+  return playAudioItemOffscreen(audio, dependencies, rate);
+}
+
+export async function playAudioItemOffscreen(audio, dependencies = {}, rate = 0.82) {
   if (!audio?.url || !dependencies.hasOffscreenAudioSupport?.()) {
     return false;
   }
@@ -41,4 +53,9 @@ export async function playAudioOffscreen(result, dependencies = {}, rate = 0.82)
   } catch {
     return false;
   }
+}
+
+function isGeneratedAudio(audio = {}, result = {}) {
+  return String(audio.quality || "").trim().toLowerCase() === "generated" ||
+    result?.sourceStatus === "generated-audio";
 }

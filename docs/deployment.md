@@ -14,6 +14,8 @@ Run it locally:
 docker run --rm -p 8787:8787 `
   -e SAYTHIS_ADMIN_TOKEN="change-me" `
   -e SAYTHIS_ALLOWED_ORIGINS="chrome-extension://<extension-id>" `
+  -e SAYTHIS_PUBLIC_BASE_URL="https://example.com" `
+  -e SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN="" `
   -v saythis-community-data:/data `
   saythis-community
 ```
@@ -25,12 +27,20 @@ Use the public HTTPS `/community` URL as the extension community endpoint.
 - `SAYTHIS_ADMIN_TOKEN`: required for `/admin/pending`, `/admin/approve`, and `/admin/reject`.
 - `SAYTHIS_ALLOWED_ORIGINS`: set to the extension origin and any trusted admin origins.
 - `SAYTHIS_STORE`: defaults to `/data/community-store.json` in the image.
+- `SAYTHIS_PUBLIC_BASE_URL`: required before moderator-approved generated-audio artifacts can be stored and shared.
+- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional bearer token for admin-only provider generation.
+- `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional Google-compatible speech endpoint override.
+- `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice override.
+- `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`; defaults to `MP3`.
+
+Provider generation is only exposed through token-protected moderator endpoints. Public clients consume approved audio URLs after review; they do not call the paid provider directly.
 
 ## Abuse Controls
 
 These defaults can be tuned per deployment:
 
 - `SAYTHIS_MAX_BODY_BYTES`: `16384`
+- `SAYTHIS_MAX_AUDIO_BYTES`: `524288`
 - `SAYTHIS_RATE_LIMIT`: `20`
 - `SAYTHIS_RATE_WINDOW_MS`: `60000`
 - `SAYTHIS_MAX_PENDING_SUBMISSIONS`: `1000`

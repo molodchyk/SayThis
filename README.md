@@ -120,6 +120,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service can reject browser-originated requests outside configured allowed origins.
 - Community service serializes store writes so concurrent submissions do not overwrite pending entries.
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
+- Community service can store reviewed generated-audio artifacts and publish shared audio URLs through approved entries.
 - Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
 - Architecture audit for file-size and folder-density budgets with an explicit current-debt baseline.
@@ -135,7 +136,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Pure resolver audio helpers split into a narrow module.
 - Pure resolver community-memory helpers split into a narrow module.
 
-Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken.
+Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken. Paid-provider generation belongs behind moderator controls, with useful generated samples saved as shared reviewed audio artifacts.
 
 MVP quality bar: SayThis should prefer verified recordings from source-backed services. If no recording is available, it may use a verified matching browser voice for the resolved source form. If the browser cannot verify a matching voice, SayThis should use the simple guide when present or report that speech is unavailable instead of playing a misleading fallback voice.
 
@@ -188,7 +189,8 @@ The first useful version should be narrow and trusted:
 - Treat each useful lookup as a reusable pronunciation-graph entry, not a chat response or a closed-list item.
 - Treat community submissions as structured pronunciation knowledge: source form, root, domain hint, audio, guide, variant, source, and trust signal.
 - Prefer curated or native-speaker audio over generated voices.
-- Use detected or resolved language to feed source forms into optional voice-service fallback, but cache generated results and keep them below recordings.
+- Use detected or resolved language to feed source forms into optional voice-service fallback, but publish useful generated results as reviewed shared audio artifacts and keep them below recordings.
+- Promote useful generated samples into moderated shared audio artifacts so one reviewed generation can be reused by every client.
 - Add cost controls before enabling any shared paid voice provider.
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.

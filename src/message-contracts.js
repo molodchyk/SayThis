@@ -10,7 +10,9 @@ export const MESSAGE_TYPES = Object.freeze({
   flushSync: "SAYTHIS_FLUSH_SYNC",
   pullApproved: "SAYTHIS_PULL_APPROVED",
   showResult: "SAYTHIS_SHOW_RESULT",
+  playAudio: "SAYTHIS_PLAY_AUDIO",
   offscreenPlayAudio: "SAYTHIS_OFFSCREEN_PLAY_AUDIO",
+  offscreenSpeak: "SAYTHIS_OFFSCREEN_SPEAK",
   offscreenStopAudio: "SAYTHIS_OFFSCREEN_STOP_AUDIO"
 });
 
@@ -70,11 +72,28 @@ export function createShowResultMessage(result, options = {}) {
   });
 }
 
+export function createPlayAudioMessage(audio, options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.playAudio,
+    audio: audio && typeof audio === "object" ? audio : undefined,
+    rate: normalizeRate(options.rate)
+  });
+}
+
 export function createOffscreenPlayAudioMessage(audio, playbackRate) {
   return compactMessage({
     type: MESSAGE_TYPES.offscreenPlayAudio,
     audio: audio && typeof audio === "object" ? audio : undefined,
     playbackRate: normalizeRate(playbackRate)
+  });
+}
+
+export function createOffscreenSpeakMessage(text, options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.offscreenSpeak,
+    text: normalizeSelection(text),
+    lang: normalizeLanguageOption(options.lang),
+    rate: normalizeRate(options.rate)
   });
 }
 

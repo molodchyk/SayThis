@@ -106,6 +106,31 @@ test("returns guide speech metadata from speak messages", async () => {
   }]);
 });
 
+test("routes extension-owned audio playback messages", async () => {
+  const responses = [];
+  const calls = [];
+  const audio = {
+    url: "https://voice.example/item.ogg",
+    quality: "generated"
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.playAudio,
+    audio,
+    rate: 0.7
+  }, (value) => responses.push(value), {
+    playAudio: async (item, rate) => {
+      calls.push(["playAudio", item, rate]);
+      return true;
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [["playAudio", audio, 0.7]]);
+  assert.deepEqual(responses, [{ ok: true }]);
+});
+
 test("reports missing matching voice from speak messages", async () => {
   const responses = [];
   const handled = handleRuntimeMessage({

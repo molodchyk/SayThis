@@ -8,11 +8,11 @@ Browser voice availability varies by operating system and installed voices. SayT
 
 ## Network Behavior
 
-Default online sources are Wikidata, Wiktionary, Wikimedia Commons, and Wikimedia upload URLs. Optional endpoints for Forvo, community sync, custom sources, DBpedia-compatible lookup, and Nominatim-compatible lookup require user configuration.
+Default online sources are Wikidata, Wiktionary, Wikimedia Commons, and Wikimedia upload URLs. Optional endpoints for Forvo, community sync, custom sources, DBpedia-compatible lookup, and Nominatim-compatible lookup require user configuration. A configured community endpoint may host reviewed generated-audio artifacts for shared reuse.
 
 ## Page Limitations
 
-Some pages block extension script injection. When the on-page result card cannot be injected, SayThis can still use the popup and offscreen audio path for verified recordings.
+Some pages block extension script injection. When the on-page result card cannot be injected, SayThis can still use the popup and offscreen path for recordings and matching browser voices.
 
 ## Incognito
 

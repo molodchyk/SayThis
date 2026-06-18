@@ -9,7 +9,7 @@ permission.contextMenus:
 Used to add selected-text pronunciation actions.
 
 permission.offscreen:
-Used to play verified audio when the page card cannot play it directly.
+Used to play verified audio and matching browser voices when the page card cannot play it directly.
 
 permission.scripting:
 Used to read selected text and inject the on-page result card after a user action.
@@ -22,6 +22,12 @@ Used to play verified matching browser voices or simple guides when no recording
 
 host_permission:
 Default host access is limited to Wikidata, Wiktionary, Wikimedia Commons, and Wikimedia upload URLs. Optional HTTPS host access is requested only for user-configured endpoints.
+
+community_audio:
+Reviewed generated-audio artifacts may be hosted by a configured community service for shared reuse. They are term-level pronunciation artifacts and do not include page URLs, browsing history, full page text, or user recordings.
+
+community_provider_generation:
+If a community service operator uses the admin-only provider generation route, only pronunciation text, locale, optional voice name, and speaking rate are sent to the configured speech provider.
 
 remote_code:
 no

@@ -2,6 +2,7 @@ import {
   createLookupKey,
   normalizeSelection
 } from "../src/resolver-core.js";
+import { normalizeAudioArtifactMap } from "./community-audio-store.js";
 
 export const STORE_SCHEMA_VERSION = 1;
 
@@ -12,6 +13,7 @@ export function createEmptyStore(now = new Date().toISOString()) {
     updatedAt: now,
     pending: [],
     approved: {},
+    audioArtifacts: {},
     rejected: []
   };
 }
@@ -27,6 +29,7 @@ export function normalizeStore(value, now = new Date().toISOString()) {
     updatedAt: normalizeSelection(value.updatedAt) || now,
     pending: Array.isArray(value.pending) ? value.pending.map(normalizeSubmission).filter(Boolean) : [],
     approved: normalizeApprovedMap(value.approved),
+    audioArtifacts: normalizeAudioArtifactMap(value.audioArtifacts),
     rejected: Array.isArray(value.rejected) ? value.rejected.map(normalizeRejection).filter(Boolean) : []
   };
 }
