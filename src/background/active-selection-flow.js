@@ -316,7 +316,8 @@ function immediatePlaybackOptions(options = {}) {
     ? options
     : {
       ...options,
-      skipOnlineRetry: true
+      skipOnlineRetry: true,
+      sharedAudioLocalOnly: true
     };
 }
 

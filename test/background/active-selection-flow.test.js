@@ -563,6 +563,67 @@ test("plays immediate keyboard selections without hidden online retry", async ()
   ]);
 });
 
+test("plain keyboard command only checks local shared audio after local resolution", async () => {
+  const calls = [];
+  const resolved = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "structured-source"
+  };
+
+  const result = await handleActiveSelectionCommand({
+    source: "keyboard"
+  }, {
+    getActiveTab: async () => ({ id: 7 }),
+    readSelectionFromTab: async (tabId) => {
+      calls.push(["readSelectionFromTab", tabId]);
+      return "Exampletown";
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return null;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    directSharedAudioWaitMs: 25,
+    lastSelectionKey: "lastSelection",
+    lastSourceKey: "lastSource",
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, resolved);
+  assert.deepEqual(compactTraceCalls(calls), [
+    ["readSelectionFromTab", 7],
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard" }],
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      trace: { action: "keyboard" },
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", {
+      source: "keyboard",
+      useOnline: false,
+      trace: { action: "keyboard" }
+    }],
+    ["requestSharedAudio", "Exampletown", resolved, {
+      source: "keyboard",
+      trace: { action: "keyboard" },
+      sharedAudioLocalOnly: true
+    }],
+    ["playResolvedResult", resolved, 7]
+  ]);
+});
+
 test("does not guess with raw speech when keyboard resolution fails", async () => {
   const calls = [];
   const result = await handleActiveSelectionCommand({ source: "keyboard" }, {
