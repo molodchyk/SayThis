@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   createFeedbackMessage,
   createFlushSyncMessage,
+  createGetDebugStateMessage,
   createOffscreenSpeakMessage,
   createOffscreenPlayAudioMessage,
   createOffscreenStopAudioMessage,
@@ -84,6 +85,7 @@ test("builds compact stop and sync messages", () => {
   assert.deepEqual(createStopMessage(), { type: MESSAGE_TYPES.stop });
   assert.deepEqual(createFlushSyncMessage(), { type: MESSAGE_TYPES.flushSync });
   assert.deepEqual(createPullApprovedMessage(), { type: MESSAGE_TYPES.pullApproved });
+  assert.deepEqual(createGetDebugStateMessage(), { type: MESSAGE_TYPES.getDebugState });
 });
 
 test("builds shared audio request messages", () => {

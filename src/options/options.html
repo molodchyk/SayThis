@@ -122,6 +122,26 @@
         </div>
         <p id="approved-summary" class="summary">No approved shared entries.</p>
       </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Advanced Debug</h2>
+            <p id="debug-summary" class="summary">Diagnostics are hidden.</p>
+          </div>
+          <button id="toggle-debug" type="button" class="secondary">Advanced</button>
+        </div>
+        <div id="debug-panel" class="debug-panel" hidden>
+          <div class="actions">
+            <button id="refresh-debug" type="button">Refresh Diagnostics</button>
+            <button id="copy-debug" type="button" class="secondary">Copy JSON</button>
+          </div>
+          <label class="field">
+            <span>Diagnostic output</span>
+            <textarea id="debug-output" rows="18" readonly spellcheck="false"></textarea>
+          </label>
+        </div>
+      </section>
     </main>
 
     <script type="module" src="index.js"></script>

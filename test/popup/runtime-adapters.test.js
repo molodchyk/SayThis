@@ -29,6 +29,10 @@ test("creates popup runtime adapters from Chrome APIs", async () => {
       query: async (query) => {
         calls.push(["queryTabs", query]);
         return [{ id: 7 }];
+      },
+      create: async (details) => {
+        calls.push(["createTab", details]);
+        return { id: 8 };
       }
     },
     scripting: {
@@ -38,6 +42,10 @@ test("creates popup runtime adapters from Chrome APIs", async () => {
       }
     },
     runtime: {
+      getURL: (path) => {
+        calls.push(["getRuntimeUrl", path]);
+        return `chrome-extension://id/${path}`;
+      },
       lastError: null,
       sendMessage: (message, callback) => {
         calls.push(["sendMessage", message]);
@@ -54,7 +62,9 @@ test("creates popup runtime adapters from Chrome APIs", async () => {
   assert.deepEqual(await adapters.getStorage(["settings"]), { ok: true });
   await adapters.setStorage({ lastSelection: "Gnocchi" });
   assert.deepEqual(await adapters.queryTabs({ active: true }), [{ id: 7 }]);
+  assert.deepEqual(await adapters.createTab({ url: "chrome-extension://id/options.html" }), { id: 8 });
   assert.deepEqual(await adapters.executeScript({ target: { tabId: 7 } }), [{ result: "Gnocchi" }]);
+  assert.equal(adapters.getRuntimeUrl("src/options/options.html"), "chrome-extension://id/src/options/options.html");
   assert.deepEqual(await sendRuntimeMessage({ type: "SAYTHIS_STOP" }, adapters), { ok: true });
   assert.deepEqual(await openExtensionOptions(adapters), { ok: true });
   assert.equal(adapters.lastError(), null);
@@ -62,7 +72,9 @@ test("creates popup runtime adapters from Chrome APIs", async () => {
     ["getStorage", ["settings"]],
     ["setStorage", { lastSelection: "Gnocchi" }],
     ["queryTabs", { active: true }],
+    ["createTab", { url: "chrome-extension://id/options.html" }],
     ["executeScript", { tabId: 7 }],
+    ["getRuntimeUrl", "src/options/options.html"],
     ["sendMessage", { type: "SAYTHIS_STOP" }],
     ["openOptionsPage"]
   ]);
@@ -197,6 +209,15 @@ test("opens extension options with error normalization", async () => {
     openOptionsPage: () => Promise.resolve(),
     lastError: () => null
   }), { ok: true });
+
+  const openedTabs = [];
+  assert.deepEqual(await openExtensionOptions({
+    getRuntimeUrl: (path) => `chrome-extension://id/${path}`,
+    createTab: async (details) => openedTabs.push(details)
+  }, { pageHash: "debug" }), { ok: true });
+  assert.deepEqual(openedTabs, [{
+    url: "chrome-extension://id/src/options/options.html#debug"
+  }]);
 
   assert.deepEqual(await openExtensionOptions({
     openOptionsPage: (respond) => respond(),

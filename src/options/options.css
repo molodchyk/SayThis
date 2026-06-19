@@ -51,6 +51,19 @@ p,
   background: #ffffff;
 }
 
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-head > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
 .toggle {
   display: flex;
   align-items: center;
@@ -114,6 +127,19 @@ textarea {
   resize: vertical;
 }
 
+textarea[readonly] {
+  background: #fbfbf8;
+}
+
+.debug-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.debug-panel[hidden] {
+  display: none;
+}
+
 input[type="password"],
 input[type="text"],
 input[type="url"] {
@@ -145,6 +171,7 @@ input[type="url"] {
   }
 
   textarea,
+  textarea[readonly],
   input[type="password"],
   input[type="text"],
   input[type="url"] {

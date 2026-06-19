@@ -31,6 +31,12 @@ body {
   gap: 4px;
 }
 
+.header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
 h1,
 p {
   margin: 0;
@@ -117,6 +123,12 @@ button.secondary {
   padding: 0;
   font-size: 18px;
   line-height: 1;
+}
+
+.header-button {
+  height: 34px;
+  padding: 0 9px;
+  font-size: 12px;
 }
 
 .small {

@@ -382,8 +382,14 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(html, /id="shared-audio-enabled"/);
   assert.match(html, /id="pull-approved"/);
   assert.match(html, /id="clear-approved"/);
+  assert.match(html, /id="toggle-debug"/);
+  assert.match(html, /id="debug-panel"/);
+  assert.match(html, /id="debug-output"/);
   assert.match(source, /communityPullEnabled/);
   assert.match(source, /communityAudioEnabled/);
+  assert.match(source, /createGetDebugStateMessage/);
+  assert.match(source, /refreshDebugDiagnostics/);
+  assert.match(source, /debugSummaryText/);
   assert.match(source, /pullEnabled/);
   assert.match(source, /sharedAudioEnabled/);
   assert.match(source, /normalizeApprovedEntries/);
@@ -428,8 +434,11 @@ test("popup quick feedback labels match their feedback kinds", async () => {
   const source = await readText("src/popup/index.js");
 
   assert.match(html, /id="lookup-hints"/);
+  assert.match(html, /id="open-debug"/);
   assert.match(html, /id="open-options"/);
   assert.match(source, /lookupHintsInput/);
+  assert.match(source, /openDebugButton/);
+  assert.match(source, /openExtensionOptions\(runtimeAdapters, \{ pageHash: "debug" \}\)/);
   assert.match(source, /openOptionsButton/);
   assert.match(source, /openExtensionOptions\(runtimeAdapters\)/);
   assert.match(source, /languageHints/);

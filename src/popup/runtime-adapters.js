@@ -19,7 +19,9 @@ export function createPopupRuntimeAdapters(runtime = globalThis.chrome) {
     getStorage: (keys) => runtime?.storage?.local?.get(keys),
     setStorage: (value) => runtime?.storage?.local?.set(value),
     queryTabs: (query) => runtime?.tabs?.query(query),
+    createTab: (details) => runtime?.tabs?.create?.(details),
     executeScript: (details) => runtime?.scripting?.executeScript(details),
+    getRuntimeUrl: (path) => runtime?.runtime?.getURL?.(path),
     sendMessage: (message, callback) => runtime?.runtime?.sendMessage(message, callback),
     openOptionsPage: (callback) => runtime?.runtime?.openOptionsPage(callback),
     lastError: () => runtime?.runtime?.lastError
@@ -101,8 +103,32 @@ export function sendRuntimeMessage(message, dependencies = {}) {
   });
 }
 
-export function openExtensionOptions(dependencies = {}) {
+export function openExtensionOptions(dependencies = {}, options = {}) {
   return new Promise((resolve) => {
+    const pageHash = normalizePageHash(options.pageHash);
+    if (
+      pageHash &&
+      typeof dependencies.getRuntimeUrl === "function" &&
+      typeof dependencies.createTab === "function"
+    ) {
+      try {
+        const maybePromise = dependencies.createTab({
+          url: dependencies.getRuntimeUrl(`src/options/options.html#${pageHash}`)
+        });
+        if (maybePromise && typeof maybePromise.then === "function") {
+          maybePromise
+            .then(() => resolve({ ok: true }))
+            .catch((error) => resolve({ ok: false, error: error?.message || "Options unavailable." }));
+          return;
+        }
+
+        resolve({ ok: true });
+      } catch (error) {
+        resolve({ ok: false, error: error?.message || "Options unavailable." });
+      }
+      return;
+    }
+
     if (typeof dependencies.openOptionsPage !== "function") {
       resolve({ ok: false, error: "Options unavailable." });
       return;
@@ -131,6 +157,13 @@ export function openExtensionOptions(dependencies = {}) {
 
 export function lookupHintsFromValue(value) {
   return normalizeLanguageHints(value);
+}
+
+function normalizePageHash(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^#/, "")
+    .match(/^[a-z0-9-]{1,40}$/i)?.[0] || "";
 }
 
 function isPlainObject(value) {

@@ -12,6 +12,7 @@ import {
   FORVO_API_ORIGIN
 } from "../sources/forvo-adapter.js";
 import {
+  createGetDebugStateMessage,
   createFlushSyncMessage,
   createPullApprovedMessage
 } from "../message-contracts.js";
@@ -75,6 +76,12 @@ const pullApprovedButton = document.getElementById("pull-approved");
 const clearApprovedButton = document.getElementById("clear-approved");
 const clearSyncButton = document.getElementById("clear-sync");
 const approvedSummary = document.getElementById("approved-summary");
+const toggleDebugButton = document.getElementById("toggle-debug");
+const debugPanel = document.getElementById("debug-panel");
+const refreshDebugButton = document.getElementById("refresh-debug");
+const copyDebugButton = document.getElementById("copy-debug");
+const debugSummary = document.getElementById("debug-summary");
+const debugOutput = document.getElementById("debug-output");
 
 init();
 
@@ -105,6 +112,9 @@ flushSyncButton.addEventListener("click", flushSync);
 pullApprovedButton.addEventListener("click", pullApproved);
 clearApprovedButton.addEventListener("click", clearApprovedEntries);
 clearSyncButton.addEventListener("click", clearSyncQueue);
+toggleDebugButton.addEventListener("click", toggleDebugPanel);
+refreshDebugButton.addEventListener("click", refreshDebugDiagnostics);
+copyDebugButton.addEventListener("click", copyDebugDiagnostics);
 
 async function init() {
   const stored = await readOptionsStorage([
@@ -143,6 +153,9 @@ async function init() {
   renderSyncSummary(stored[STORAGE_KEYS.syncSummary], stored[STORAGE_KEYS.syncQueue]);
   renderApprovedSummary(stored[STORAGE_KEYS.approvedCommunityEntries], stored[STORAGE_KEYS.communityPullState]);
   setStatus("Settings loaded.");
+  if (globalThis.location?.hash === "#debug") {
+    await openDebugPanel();
+  }
 }
 
 async function saveSettings() {
@@ -345,6 +358,57 @@ async function clearApprovedEntries() {
   setStatus("Approved shared entries cleared.");
 }
 
+async function toggleDebugPanel() {
+  if (debugPanel.hidden) {
+    await openDebugPanel();
+    return;
+  }
+
+  debugPanel.hidden = true;
+  toggleDebugButton.textContent = "Advanced";
+  debugSummary.textContent = "Diagnostics are hidden.";
+}
+
+async function openDebugPanel() {
+  debugPanel.hidden = false;
+  toggleDebugButton.textContent = "Hide";
+  await refreshDebugDiagnostics();
+}
+
+async function refreshDebugDiagnostics() {
+  debugSummary.textContent = "Loading diagnostics.";
+  const response = await sendMessage(createGetDebugStateMessage());
+  if (!response.ok) {
+    debugOutput.value = "";
+    debugSummary.textContent = response.error || "Diagnostics unavailable.";
+    setStatus(response.error || "Diagnostics unavailable.");
+    return;
+  }
+
+  debugOutput.value = JSON.stringify(response.diagnostics, null, 2);
+  debugSummary.textContent = debugSummaryText(response.diagnostics);
+  setStatus("Diagnostics refreshed.");
+}
+
+async function copyDebugDiagnostics() {
+  if (!debugOutput.value) {
+    setStatus("No diagnostics to copy.");
+    return;
+  }
+
+  try {
+    if (typeof globalThis.navigator?.clipboard?.writeText !== "function") {
+      throw new Error("Clipboard unavailable.");
+    }
+    await globalThis.navigator.clipboard.writeText(debugOutput.value);
+    setStatus("Diagnostics copied.");
+  } catch {
+    debugOutput.focus();
+    debugOutput.select();
+    setStatus("Diagnostics selected.");
+  }
+}
+
 function renderSummary(entries) {
   memorySummary.textContent = memorySummaryText(entries);
 }
@@ -451,4 +515,25 @@ function sendMessage(message) {
 
 function optionsRuntimeAdapters() {
   return createOptionsRuntimeAdapters();
+}
+
+function debugSummaryText(diagnostics = {}) {
+  if (!diagnostics.lastResult) {
+    return "No resolved result has been stored yet.";
+  }
+
+  const speech = diagnostics.speechPlan || {};
+  if (!speech.lang) {
+    return "Last result has no resolved speech locale.";
+  }
+
+  if (!speech.totalVoiceCount) {
+    return "No browser voices were reported.";
+  }
+
+  if (!speech.hasSelectedVoice) {
+    return `No matching browser voice for ${speech.lang}.`;
+  }
+
+  return `Voice ready: ${speech.selectedVoice}.`;
 }

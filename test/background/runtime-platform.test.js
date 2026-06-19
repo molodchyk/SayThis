@@ -52,6 +52,7 @@ test("maps background platform adapters to browser APIs", async () => {
       createDocument: async options => calls.push(["createOffscreenDocument", options])
     },
     runtime: {
+      getManifest: () => ({ name: "SayThis", version: "1.0.0", manifest_version: 3 }),
       getURL: url => `chrome-extension://id/${url}`,
       sendMessage: async message => {
         calls.push(["sendRuntimeMessage", message]);
@@ -120,6 +121,7 @@ test("maps background platform adapters to browser APIs", async () => {
   await platform.executeScript({ files: ["src/content-overlay.js"] });
   await platform.sendTabMessage(7, { type: "SAYTHIS_SHOW_RESULT" });
   await platform.sendRuntimeMessage({ type: "SAYTHIS_STOP" });
+  assert.deepEqual(platform.getManifest(), { name: "SayThis", version: "1.0.0", manifest_version: 3 });
   assert.equal(platform.getRuntimeUrl("data/pronunciation-seed.json"), "chrome-extension://id/data/pronunciation-seed.json");
   assert.equal(platform.hasOffscreenAudioSupport(), true);
   assert.equal(await platform.hasOffscreenDocument(), true);

@@ -41,6 +41,7 @@ import {
 
 const selectionInput = document.getElementById("selection");
 const lookupHintsInput = document.getElementById("lookup-hints");
+const openDebugButton = document.getElementById("open-debug");
 const openOptionsButton = document.getElementById("open-options");
 const resolveButton = document.getElementById("resolve");
 const onlineButton = document.getElementById("resolve-online");
@@ -93,6 +94,7 @@ init();
 
 resolveButton.addEventListener("click", () => resolveSelection());
 onlineButton.addEventListener("click", () => resolveSelection(true));
+openDebugButton.addEventListener("click", () => openDebugOptions());
 openOptionsButton.addEventListener("click", () => openOptions());
 
 speakButton.addEventListener("click", () => speakSelection(0.82));
@@ -237,6 +239,11 @@ async function saveFeedback(feedback) {
 async function openOptions() {
   const response = await openExtensionOptions(runtimeAdapters);
   setStatus(response.ok ? "Options opened." : response.error || "Options unavailable.");
+}
+
+async function openDebugOptions() {
+  const response = await openExtensionOptions(runtimeAdapters, { pageHash: "debug" });
+  setStatus(response.ok ? "Debug opened." : response.error || "Options unavailable.");
 }
 
 function renderResult(result) {

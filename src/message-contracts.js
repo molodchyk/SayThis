@@ -8,6 +8,7 @@ export const MESSAGE_TYPES = Object.freeze({
   stop: "SAYTHIS_STOP",
   feedback: "SAYTHIS_FEEDBACK",
   flushSync: "SAYTHIS_FLUSH_SYNC",
+  getDebugState: "SAYTHIS_GET_DEBUG_STATE",
   pullApproved: "SAYTHIS_PULL_APPROVED",
   requestSharedAudio: "SAYTHIS_REQUEST_SHARED_AUDIO",
   showResult: "SAYTHIS_SHOW_RESULT",
@@ -64,6 +65,10 @@ export function createFlushSyncMessage() {
 
 export function createPullApprovedMessage() {
   return { type: MESSAGE_TYPES.pullApproved };
+}
+
+export function createGetDebugStateMessage() {
+  return { type: MESSAGE_TYPES.getDebugState };
 }
 
 export function createRequestSharedAudioMessage(text, options = {}) {

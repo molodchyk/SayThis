@@ -1,5 +1,7 @@
 import {
-  normalizeSelection
+  getBestAudio,
+  normalizeSelection,
+  resultToSpeechOptions
 } from "./resolver-core.js";
 import {
   contextMenuDefinitions,
@@ -27,6 +29,12 @@ import {
   createPlaybackSurface
 } from "./background/playback-surface-flow.js";
 import {
+  buildDebugDiagnostics,
+  summarizeAudioForDebug,
+  summarizeResultForDebug,
+  summarizeSpeechForDebug
+} from "./background/debug-diagnostics-flow.js";
+import {
   createRuntimeAdapters
 } from "./background/runtime-adapters-flow.js";
 import {
@@ -39,6 +47,7 @@ import {
 const platform = createBackgroundPlatformAdapters();
 const playbackSurface = createPlaybackSurface(createPlaybackSurfacePlatformDependencies(platform, STORAGE_KEYS));
 const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDependencies(platform, STORAGE_KEYS));
+const debugEvents = [];
 
 platform.addInstalledListener(() => {
   for (const item of contextMenuDefinitions()) {
@@ -69,13 +78,31 @@ platform.addCommandListener((command) => {
 platform.addMessageListener((message, _sender, sendResponse) => handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
 
 async function resolveSelection(text, options = {}) {
-  return resolveSelectionFlow(text, options, {
-    getStorage: platform.getStorage,
-    setStorage: platform.setStorage,
-    loadSeedData: runtimeAdapters.loadSeedData,
-    getRuntimeUrl: platform.getRuntimeUrl,
-    storageKeys: STORAGE_KEYS
+  const startedAt = Date.now();
+  recordDebugEvent("resolve:start", {
+    text: normalizeSelection(text),
+    options: debugOptions(options)
   });
+  try {
+    const result = await resolveSelectionFlow(text, options, {
+      getStorage: platform.getStorage,
+      setStorage: platform.setStorage,
+      loadSeedData: runtimeAdapters.loadSeedData,
+      getRuntimeUrl: platform.getRuntimeUrl,
+      storageKeys: STORAGE_KEYS
+    });
+    recordDebugEvent("resolve:result", {
+      elapsedMs: Date.now() - startedAt,
+      result: summarizeResultForDebug(result)
+    });
+    return result;
+  } catch (error) {
+    recordDebugEvent("resolve:error", {
+      elapsedMs: Date.now() - startedAt,
+      error: errorMessage(error)
+    });
+    throw error;
+  }
 }
 
 async function saveFeedback(text, feedback) {
@@ -105,21 +132,78 @@ async function pullApprovedCommunityEntries() {
 }
 
 async function requestSharedAudio(text, result, options = {}) {
-  return requestSharedAudioForResultFlow(text, result, options, {
-    getStorage: platform.getStorage,
-    setStorage: platform.setStorage,
-    fetch: platform.fetch,
-    resolveSelection,
-    storageKeys: STORAGE_KEYS
+  const startedAt = Date.now();
+  recordDebugEvent("shared-audio:start", {
+    text: normalizeSelection(text),
+    options: debugOptions(options),
+    result: summarizeResultForDebug(result)
   });
+  try {
+    const sharedResult = await requestSharedAudioForResultFlow(text, result, options, {
+      getStorage: platform.getStorage,
+      setStorage: platform.setStorage,
+      fetch: platform.fetch,
+      resolveSelection,
+      storageKeys: STORAGE_KEYS
+    });
+    recordDebugEvent("shared-audio:result", {
+      elapsedMs: Date.now() - startedAt,
+      audio: summarizeAudioForDebug(getBestAudio(sharedResult)),
+      result: summarizeResultForDebug(sharedResult)
+    });
+    return sharedResult;
+  } catch (error) {
+    recordDebugEvent("shared-audio:error", {
+      elapsedMs: Date.now() - startedAt,
+      error: errorMessage(error)
+    });
+    throw error;
+  }
 }
 
-function speakResult(result, overrides = {}) {
-  return playbackSurface.speakResult(result, overrides);
+async function speakResult(result, overrides = {}) {
+  const startedAt = Date.now();
+  recordDebugEvent("speech:start", {
+    overrides: debugOptions(overrides),
+    plan: speechPlanSummary(result, overrides),
+    result: summarizeResultForDebug(result)
+  });
+  try {
+    const speech = await playbackSurface.speakResult(result, overrides);
+    recordDebugEvent("speech:result", {
+      elapsedMs: Date.now() - startedAt,
+      speech: summarizeSpeechForDebug(speech)
+    });
+    return speech;
+  } catch (error) {
+    recordDebugEvent("speech:error", {
+      elapsedMs: Date.now() - startedAt,
+      error: errorMessage(error)
+    });
+    throw error;
+  }
 }
 
-function playAudio(audio, rate) {
-  return playbackSurface.playAudioItemOffscreen(audio, rate);
+async function playAudio(audio, rate) {
+  const startedAt = Date.now();
+  recordDebugEvent("audio:start", {
+    audio: summarizeAudioForDebug(audio),
+    rate
+  });
+  try {
+    const played = await playbackSurface.playAudioItemOffscreen(audio, rate);
+    recordDebugEvent("audio:result", {
+      elapsedMs: Date.now() - startedAt,
+      played
+    });
+    return played;
+  } catch (error) {
+    recordDebugEvent("audio:error", {
+      elapsedMs: Date.now() - startedAt,
+      error: errorMessage(error)
+    });
+    throw error;
+  }
 }
 
 async function playResolvedResult(result, tabId) {
@@ -128,6 +212,16 @@ async function playResolvedResult(result, tabId) {
 
 async function stopPlayback() {
   return playbackSurface.stopPlayback();
+}
+
+async function getDebugState() {
+  return buildDebugDiagnostics({
+    getStorage: platform.getStorage,
+    getTtsVoices: platform.getTtsVoices,
+    getManifest: platform.getManifest,
+    getDebugEvents: () => debugEvents,
+    storageKeys: STORAGE_KEYS
+  });
 }
 
 function runtimeMessageDependencies() {
@@ -139,6 +233,47 @@ function runtimeMessageDependencies() {
     saveFeedback,
     flushCommunitySync,
     pullApprovedCommunityEntries,
-    requestSharedAudio
+    requestSharedAudio,
+    getDebugState
   };
+}
+
+function recordDebugEvent(kind, payload = {}) {
+  debugEvents.push({
+    at: new Date().toISOString(),
+    kind,
+    ...payload
+  });
+  while (debugEvents.length > 30) {
+    debugEvents.shift();
+  }
+}
+
+function speechPlanSummary(result, overrides = {}) {
+  try {
+    const speech = resultToSpeechOptions(result, overrides);
+    return {
+      text: speech.text,
+      lang: speech.options?.lang || "",
+      rate: speech.options?.rate
+    };
+  } catch {
+    return null;
+  }
+}
+
+function debugOptions(options = {}) {
+  return {
+    useOnline: Object.prototype.hasOwnProperty.call(options, "useOnline")
+      ? Boolean(options.useOnline)
+      : undefined,
+    skipSharedAudio: Boolean(options.skipSharedAudio),
+    rate: options.rate,
+    lang: options.lang,
+    languageHints: Array.isArray(options.languageHints) ? options.languageHints : undefined
+  };
+}
+
+function errorMessage(error) {
+  return error?.message || String(error || "Unknown error");
 }

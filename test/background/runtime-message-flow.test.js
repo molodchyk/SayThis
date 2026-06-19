@@ -382,6 +382,26 @@ test("routes shared audio request messages", async () => {
   assert.deepEqual(responses, [{ ok: true, result: shared }]);
 });
 
+test("routes debug diagnostics messages", async () => {
+  const responses = [];
+  const diagnostics = {
+    speechPlan: {
+      lang: "pl-PL",
+      selectedVoice: "Polish Remote"
+    }
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.getDebugState
+  }, (value) => responses.push(value), {
+    getDebugState: async () => diagnostics
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(responses, [{ ok: true, diagnostics }]);
+});
+
 test("reports missing matching voice from speak messages", async () => {
   const responses = [];
   const handled = handleRuntimeMessage({

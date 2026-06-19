@@ -114,6 +114,18 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     return true;
   }
 
+  if (message?.type === MESSAGE_TYPES.getDebugState) {
+    respondWithResult(
+      typeof dependencies.getDebugState === "function"
+        ? dependencies.getDebugState()
+        : Promise.reject(new Error("Debug diagnostics unavailable.")),
+      sendResponse,
+      (diagnostics) => ({ ok: true, diagnostics }),
+      "Debug diagnostics failed."
+    );
+    return true;
+  }
+
   if (message?.type === MESSAGE_TYPES.requestSharedAudio) {
     const selectedText = normalizeSelection(message.text);
     if (!selectedText) {
