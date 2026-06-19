@@ -41,6 +41,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     };
     startPreparingPlayback(dependencies, message.trace);
     let directSharedAudioResult = null;
+    let resolvedPlayableResult = null;
     let storedPlayableResult = null;
     const storedResultPromise = message.result
       ? Promise.resolve(null)
@@ -62,6 +63,16 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       ? Promise.resolve(message.result)
       : withHandledRejection(waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
         .then((result) => result || dependencies.resolveSelection(selectedText, options)));
+    const resolvedPlayablePromise = message.result
+      ? Promise.resolve(null)
+      : withHandledRejection(resolvedSelectionPromise.then(async (result) => {
+        const playableResult = await resolvePlayableResult(selectedText, result, {
+          ...options,
+          skipSharedAudio: true
+        }, dependencies);
+        resolvedPlayableResult = getBestAudio(playableResult)?.url ? playableResult : null;
+        return resolvedPlayableResult;
+      }));
     const resultPromise = message.result
       ? Promise.resolve(message.result)
       : firstNonNullResult([
@@ -69,13 +80,18 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         promiseWithinWait(
           directSharedAudioPromise,
           dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS
+        ),
+        promiseWithinWait(
+          resolvedPlayablePromise,
+          dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS
         )
       ]).then((fastResult) => fastResult || resolvedSelectionPromise);
     respondWithResult(
       resultPromise.then(async (result) => {
         const isDirectSharedAudio = directSharedAudioResult && directSharedAudioResult === result;
+        const isResolvedPlayable = resolvedPlayableResult && resolvedPlayableResult === result;
         const isStoredAudio = storedPlayableResult && storedPlayableResult === result;
-        const playableResult = isStoredAudio || isDirectSharedAudio
+        const playableResult = isStoredAudio || isDirectSharedAudio || isResolvedPlayable
           ? result
           : await resolvePlayableResult(selectedText, result, options, dependencies);
         const playback = await playResolvedAudio(playableResult, message.rate, dependencies, message.trace);
