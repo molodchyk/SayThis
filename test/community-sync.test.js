@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createCommunitySubmission,
+  DEFAULT_COMMUNITY_ENDPOINT,
   endpointOriginPattern,
   enqueueSubmission,
   enqueueSubmissionWhenEnabled,
@@ -13,6 +14,15 @@ import {
   pullApprovedEntries,
   syncSummary
 } from "../src/community-sync.js";
+
+test("defaults to hosted read-only community audio", () => {
+  assert.deepEqual(normalizeSyncSettings({}), {
+    communityAudioEnabled: true,
+    communitySyncEnabled: false,
+    communityPullEnabled: true,
+    communityEndpoint: DEFAULT_COMMUNITY_ENDPOINT
+  });
+});
 
 test("normalizes sync settings conservatively", () => {
   assert.deepEqual(normalizeSyncSettings({

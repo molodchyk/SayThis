@@ -50,6 +50,8 @@ test("manifest exposes extension resolver capabilities", () => {
   assert.ok(manifest.host_permissions.includes("https://*.wiktionary.org/*"));
   assert.equal(manifest.host_permissions.includes("https://*/*"), false);
   assert.ok(manifest.optional_host_permissions.includes("https://*/*"));
+  assert.ok(manifest.host_permissions.includes("https://api.molodchyk.com/*"));
+  assert.ok(manifest.host_permissions.includes("https://audio.molodchyk.com/*"));
   assert.ok(manifest.host_permissions.includes("https://commons.wikimedia.org/*"));
   assert.ok(manifest.content_security_policy.extension_pages.includes("media-src 'self' https:"));
   assert.ok(manifest.web_accessible_resources[0].resources.includes("assets/audio/public/*"));

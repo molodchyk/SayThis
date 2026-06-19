@@ -61,6 +61,8 @@
     "tts"
   ],
   "host_permissions": [
+    "https://api.molodchyk.com/*",
+    "https://audio.molodchyk.com/*",
     "https://www.wikidata.org/*",
     "https://*.wiktionary.org/*",
     "https://commons.wikimedia.org/*",

@@ -5,6 +5,7 @@ import {
   normalizeResultCache
 } from "../result/cache.js";
 import {
+  DEFAULT_COMMUNITY_ENDPOINT,
   normalizeApprovedEntries,
   normalizeCommunityEndpoint,
   normalizeSubmissionQueue
@@ -85,8 +86,6 @@ const refreshDebugButton = document.getElementById("refresh-debug");
 const copyDebugButton = document.getElementById("copy-debug");
 const debugSummary = document.getElementById("debug-summary");
 const debugOutput = document.getElementById("debug-output");
-const DEFAULT_COMMUNITY_ENDPOINT = "https://api.molodchyk.com/community";
-
 init();
 
 onlineDefault.addEventListener("change", saveSettings);

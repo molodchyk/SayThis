@@ -4,11 +4,13 @@ import {
   rankedAudioItems
 } from "./resolver-core.js";
 
+export const DEFAULT_COMMUNITY_ENDPOINT = "https://api.molodchyk.com/community";
+
 export const DEFAULT_SYNC_SETTINGS = {
-  communityAudioEnabled: false,
+  communityAudioEnabled: true,
   communitySyncEnabled: false,
-  communityPullEnabled: false,
-  communityEndpoint: ""
+  communityPullEnabled: true,
+  communityEndpoint: DEFAULT_COMMUNITY_ENDPOINT
 };
 
 const MAX_QUEUE_SIZE = 250;
@@ -17,12 +19,16 @@ const FEEDBACK_KINDS = new Set(["confirm", "wrong", "missing", "correction"]);
 const STRUCTURED_FEEDBACK_KINDS = new Set(["missing", "correction"]);
 
 export function normalizeSyncSettings(settings = {}) {
-  const endpoint = normalizeCommunityEndpoint(settings.communityEndpoint);
+  const hasExplicitEndpoint = Object.prototype.hasOwnProperty.call(settings, "communityEndpoint");
+  const endpoint = normalizeCommunityEndpoint(hasExplicitEndpoint
+    ? settings.communityEndpoint
+    : DEFAULT_COMMUNITY_ENDPOINT);
   const hasExplicitAudioSetting = Object.prototype.hasOwnProperty.call(settings, "communityAudioEnabled");
+  const hasExplicitPullSetting = Object.prototype.hasOwnProperty.call(settings, "communityPullEnabled");
   return {
     communityAudioEnabled: Boolean((hasExplicitAudioSetting ? settings.communityAudioEnabled : endpoint) && endpoint),
     communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint),
-    communityPullEnabled: Boolean(settings.communityPullEnabled && endpoint),
+    communityPullEnabled: Boolean((hasExplicitPullSetting ? settings.communityPullEnabled : !hasExplicitEndpoint) && endpoint),
     communityEndpoint: endpoint
   };
 }
