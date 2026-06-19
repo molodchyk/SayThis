@@ -34,9 +34,6 @@ export async function resolveWithCommonsAudioCandidates(text, structuredResult) 
     }
 
     result = mergeRemoteResult(result, audioResult);
-    if (result?.sourceStatus === "verified-audio") {
-      return result;
-    }
   }
 
   return result;

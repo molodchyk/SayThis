@@ -2,8 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildCommonsAudioSearchUrl,
+  resolveWithCommonsAudioCandidates,
   resolveWithCommonsAudioLookup
 } from "../../../src/background/sources/commons-audio-source.js";
+import {
+  getBestAudio
+} from "../../../src/resolver-core.js";
 
 test("builds Commons audio search URLs for file namespace lookup", () => {
   const url = new URL(buildCommonsAudioSearchUrl("Przykladowo"));
@@ -285,6 +289,81 @@ test("ranks Lingua Libre Commons recordings as native-speaker audio", async () =
     assert.equal(result.pronunciation.audio[0].source, "Wikimedia Commons (Lingua Libre)");
     assert.equal(result.pronunciation.audio[0].quality, "native-speaker");
     assert.equal(result.pronunciation.audio[1].quality, "verified");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("continues Commons candidate lookup after ordinary verified audio to find stronger source-backed audio", async () => {
+  const originalFetch = globalThis.fetch;
+  const searches = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      const search = parsed.searchParams.get("gsrsearch");
+      searches.push(search);
+
+      if (search === "filetype:audio Displaytown") {
+        return jsonResponse({
+          query: {
+            pages: {
+              1: {
+                index: 1,
+                title: "File:En-us-Displaytown.ogg",
+                imageinfo: [{
+                  url: "https://upload.wikimedia.org/wikipedia/commons/d/d1/En-us-Displaytown.ogg",
+                  descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Displaytown.ogg",
+                  mime: "audio/ogg",
+                  mediatype: "AUDIO",
+                  extmetadata: {
+                    ObjectName: { value: "En-us-Displaytown.ogg" }
+                  }
+                }]
+              }
+            }
+          }
+        });
+      }
+
+      if (search === "filetype:audio Guideform") {
+        return jsonResponse({
+          query: {
+            pages: {
+              2: {
+                index: 2,
+                title: "File:En-us-Guideform_pronunciation_(Voice_of_America).ogg",
+                imageinfo: [{
+                  url: "https://upload.wikimedia.org/wikipedia/commons/g/g1/En-us-Guideform_pronunciation_%28Voice_of_America%29.ogg",
+                  descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Guideform_pronunciation_(Voice_of_America).ogg",
+                  mime: "audio/ogg",
+                  mediatype: "AUDIO",
+                  extmetadata: {
+                    ObjectName: { value: "En-us-Guideform pronunciation" },
+                    ImageDescription: { value: "Voice of America pronunciation of Guideform" }
+                  }
+                }]
+              }
+            }
+          }
+        });
+      }
+
+      return jsonResponse({ query: { pages: {} } });
+    };
+
+    const result = await resolveWithCommonsAudioCandidates("Displaytown", {
+      display: "Displaytown",
+      sourceForm: "Displaytown",
+      aliases: ["Guideform"],
+      language: "en"
+    });
+
+    assert.deepEqual(searches, ["filetype:audio Displaytown", "filetype:audio Guideform"]);
+    assert.equal(result.sourceStatus, "verified-audio");
+    assert.equal(getBestAudio(result).quality, "source-backed");
+    assert.equal(getBestAudio(result).url, "https://upload.wikimedia.org/wikipedia/commons/g/g1/En-us-Guideform_pronunciation_%28Voice_of_America%29.ogg");
+    assert.deepEqual(result.pronunciation.audio.map((item) => item.quality), ["source-backed", "verified"]);
   } finally {
     globalThis.fetch = originalFetch;
   }
