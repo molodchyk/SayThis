@@ -57,6 +57,8 @@ Production playback should be direct and cacheable:
 
 Use `SAYTHIS_AUDIO_PUBLIC_BASE_URL` with object storage for hosted deployments so audio does not stream through the community API on every playback. See `docs/architecture/shared-audio-storage.md` for the full storage and speed contract.
 
+Launch reminder: do not ship with an R2 `r2.dev` public development URL as the audio origin. It is useful for testing, but production should use a custom domain on the same bucket, for example `https://audio.example.com/`, with `SAYTHIS_AUDIO_PUBLIC_BASE_URL` updated to that custom-domain origin.
+
 ## Abuse Controls
 
 These defaults can be tuned per deployment:

@@ -37,6 +37,8 @@ This stores bytes on disk and keeps only `storageKey` in the community metadata 
 
 Use an object storage bucket with a public audio base URL. Cloudflare R2 is a good fit because it is S3-compatible and can serve public objects without routing every playback through the application server.
 
+Cloudflare's `r2.dev` public development URL is acceptable only for proving the upload and playback pipeline. It is rate-limited and does not support production Cloudflare features such as normal caching controls, Access, or WAF rules. Before any public launch, connect a custom domain to the R2 bucket and change only `SAYTHIS_AUDIO_PUBLIC_BASE_URL` to that custom-domain origin.
+
 ```powershell
 $env:SAYTHIS_AUDIO_PUBLIC_BASE_URL="https://audio.example.com/"
 $env:SAYTHIS_AUDIO_S3_ENDPOINT="https://<account>.r2.cloudflarestorage.com"
