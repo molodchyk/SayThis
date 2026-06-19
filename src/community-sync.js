@@ -1,6 +1,7 @@
 import {
   createLookupKey,
-  normalizeSelection
+  normalizeSelection,
+  rankedAudioItems
 } from "./resolver-core.js";
 
 export const DEFAULT_SYNC_SETTINGS = {
@@ -324,8 +325,14 @@ function hasApprovedEntryContent(entry = {}) {
 
 function firstResultAudioUrl(result = {}) {
   const audio = Array.isArray(result.pronunciation?.audio) ? result.pronunciation.audio : [];
-  const item = audio.find((candidate) => candidate?.url);
-  return normalizeHttpsUrl(item?.url);
+  for (const item of rankedAudioItems(audio)) {
+    const url = normalizeHttpsUrl(item?.url);
+    if (url) {
+      return url;
+    }
+  }
+
+  return "";
 }
 
 function firstResultSourceUrl(result = {}) {

@@ -107,6 +107,28 @@ test("creates privacy-scoped community submissions", () => {
   assert.equal(Object.hasOwn(submission, "pageUrl"), false);
 });
 
+test("stores the best shareable result audio in community submissions", () => {
+  const submission = createCommunitySubmission("Chiaroscuro", { kind: "confirm" }, {
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/generated.ogg",
+        quality: "generated",
+        source: "Cloud TTS"
+      }, {
+        url: "chrome-extension://extension-id/curated.ogg",
+        quality: "curated",
+        source: "Packaged audio"
+      }, {
+        url: "https://example.com/source-backed.ogg",
+        quality: "source-backed",
+        source: "Wiktionary"
+      }]
+    }
+  });
+
+  assert.equal(submission.result.audioUrl, "https://example.com/source-backed.ogg");
+});
+
 test("drops empty correction submissions before sync queueing", () => {
   const submission = createCommunitySubmission("gnocchi", { kind: "correction" });
   const queued = enqueueSubmission([], submission);
