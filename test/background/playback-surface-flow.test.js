@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  setTimeout as delay
+} from "node:timers/promises";
+import {
   MESSAGE_TYPES
 } from "../../src/message-contracts.js";
 import {
@@ -563,6 +566,48 @@ test("plays verified audio through the offscreen document", async () => {
   assert.equal(calls[1][1].type, MESSAGE_TYPES.offscreenPlayAudio);
   assert.equal(calls[1][1].audio.url, "https://example.test/gnocchi.ogg");
   assert.equal(calls[1][1].playbackRate, 0.75);
+});
+
+test("reuses in-flight offscreen creation before probing again", async () => {
+  const calls = [];
+  let finishCreate;
+  const createCompleted = new Promise((resolve) => {
+    finishCreate = resolve;
+  });
+  const surface = createPlaybackSurface({
+    hasOffscreenAudioSupport: () => true,
+    hasOffscreenDocument: () => {
+      calls.push(["hasOffscreenDocument"]);
+      return false;
+    },
+    createOffscreenDocument: async (options) => {
+      calls.push(["createOffscreenDocument", options]);
+      await createCompleted;
+    },
+    sendRuntimeMessage: async (message) => {
+      calls.push(["sendRuntimeMessage", message]);
+      return { ok: true };
+    }
+  });
+
+  const prepare = surface.ensureOffscreenAudioDocument();
+  await delay(0);
+  const played = surface.playAudioOffscreen(AUDIO_RESULT, 0.82);
+  await delay(0);
+
+  assert.deepEqual(calls.map(([kind]) => kind), [
+    "hasOffscreenDocument",
+    "createOffscreenDocument"
+  ]);
+
+  finishCreate();
+  await prepare;
+  assert.equal(await played, true);
+  assert.deepEqual(calls.map(([kind]) => kind), [
+    "hasOffscreenDocument",
+    "createOffscreenDocument",
+    "sendRuntimeMessage"
+  ]);
 });
 
 test("can detect an offscreen document through matched clients", async () => {

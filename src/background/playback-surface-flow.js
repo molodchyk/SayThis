@@ -381,19 +381,22 @@ export function createPlaybackSurface(dependencies = {}) {
   }
 
   async function ensureOffscreenAudioDocument() {
+    if (offscreenCreatePromise) {
+      await offscreenCreatePromise;
+      return;
+    }
+
     if (await hasOffscreenAudioDocument()) {
       return;
     }
 
-    if (!offscreenCreatePromise) {
-      offscreenCreatePromise = dependencies.createOffscreenDocument?.({
-        url: offscreenAudioUrl,
-        reasons: ["AUDIO_PLAYBACK"],
-        justification: "Play pronunciation audio and matching voice speech when a page overlay is unavailable."
-      })?.finally(() => {
-        offscreenCreatePromise = null;
-      });
-    }
+    offscreenCreatePromise = dependencies.createOffscreenDocument?.({
+      url: offscreenAudioUrl,
+      reasons: ["AUDIO_PLAYBACK"],
+      justification: "Play pronunciation audio and matching voice speech when a page overlay is unavailable."
+    })?.finally(() => {
+      offscreenCreatePromise = null;
+    });
 
     await offscreenCreatePromise;
   }
