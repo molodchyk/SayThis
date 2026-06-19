@@ -428,6 +428,8 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(runtimeSource, /ui:selection-auto-speak/);
   assert.match(source, /lastSentKey/);
   assert.match(source, /lastSentAt/);
+  assert.match(source, /scheduledCheckAt/);
+  assert.match(source, /scheduledCheckAt <= dueAt/);
   assert.match(source, /isSuppressedRepeat/);
   assert.match(source, /settingsPromise/);
   assert.match(source, /readStoredSettings/);

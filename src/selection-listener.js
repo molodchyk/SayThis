@@ -14,6 +14,7 @@
   const chromeApi = globalThis.chrome;
 
   let timerId = null;
+  let scheduledCheckAt = 0;
   let lastSentKey = "";
   let lastSentAt = 0;
   let lastSettings = null;
@@ -40,17 +41,26 @@
   });
 
   function scheduleSelectionCheck(delayMs) {
+    const now = Date.now();
+    const dueAt = now + Math.max(0, Number(delayMs) || 0);
+    if (timerId !== null && scheduledCheckAt && scheduledCheckAt <= dueAt) {
+      return;
+    }
+
     clearScheduledCheck();
+    scheduledCheckAt = dueAt;
     timerId = setTimeout(() => {
       timerId = null;
+      scheduledCheckAt = 0;
       speakStableSelection();
-    }, delayMs);
+    }, Math.max(0, dueAt - now));
   }
 
   function clearScheduledCheck() {
-    if (timerId) {
+    if (timerId !== null) {
       clearTimeout(timerId);
       timerId = null;
+      scheduledCheckAt = 0;
     }
   }
 
