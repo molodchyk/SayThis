@@ -43,7 +43,8 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       ...useOnlineMessageOptions(message),
       ...(shouldPreferImmediatePlayback(message) ? {
         useOnline: false,
-        skipOnlineRetry: true
+        skipOnlineRetry: true,
+        skipSharedAudio: true
       } : {}),
       ...(message.trace ? { trace: message.trace } : {})
     };

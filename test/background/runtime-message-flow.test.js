@@ -604,6 +604,74 @@ test("runtime speak plays resolved audio before slow direct shared-audio miss", 
   finishDirect();
 });
 
+test("select-to-hear does not make a second shared-audio request after direct lookup misses", async () => {
+  const responses = [];
+  const calls = [];
+  const resolved = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const trace = {
+    id: "trace-direct-miss",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return null;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playAudio: async () => {
+      throw new Error("no audio should be available");
+    },
+    speakResult: async (result, options) => {
+      calls.push(["speakResult", result, options]);
+      return {
+        spoken: true,
+        text: result.sourceForm
+      };
+    },
+    directSharedAudioWaitMs: 25,
+    storedResultGraceMs: 5,
+    lastResultKey: "lastResult"
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, resolved);
+  assert.deepEqual(responses[0].speech, { text: "Przykladowo" });
+  assert.deepEqual(calls, [
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
+    ["speakResult", resolved, { rate: 0.82, lang: undefined, trace }]
+  ]);
+});
+
 test("runtime speak starts playback preparation before resolving", async () => {
   const responses = [];
   const calls = [];
