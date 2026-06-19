@@ -11,10 +11,33 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
   let speechUtterance = null;
 
   return {
+    debugState,
     playAudio,
     speakText,
     stopAudio
   };
+
+  async function debugState(options = {}) {
+    const lang = normalizeSpeechLang(options.lang);
+    const synth = speechSynthesisFor(dependencies);
+    const Utterance = utteranceConstructorFor(dependencies);
+    const voices = synth && Utterance
+      ? await speechSynthesisVoices(synth, dependencies)
+      : [];
+    const selectedVoice = selectSpeechSynthesisVoice(voices, lang);
+    const matchingVoices = matchingSpeechSynthesisVoices(voices, lang);
+
+    return {
+      speechSynthesisAvailable: Boolean(synth),
+      utteranceAvailable: Boolean(Utterance),
+      requestedLang: lang,
+      selectedVoice: selectedVoice ? summarizeVoice(selectedVoice) : null,
+      matchingVoiceCount: matchingVoices.length,
+      voiceCount: voices.length,
+      matchingVoices: matchingVoices.slice(0, 20),
+      voices: voices.map(summarizeVoice).slice(0, 80)
+    };
+  }
 
   async function playAudio(audio, playbackRate = 1) {
     const url = String(audio?.url || "");
@@ -133,6 +156,44 @@ export function selectSpeechSynthesisVoice(voices = [], lang = "") {
     })
     .filter(Boolean)
     .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.voice || null;
+}
+
+export function matchingSpeechSynthesisVoices(voices = [], lang = "") {
+  const requested = normalizeVoiceLocale(lang);
+  const requestedBase = baseVoiceLocale(requested);
+  if (!requested || !requestedBase) {
+    return [];
+  }
+
+  return voices
+    .map((voice, index) => {
+      const voiceLang = normalizeVoiceLocale(voice?.lang);
+      const exactScore = voiceLang === requested ? 100 : 0;
+      const baseScore = !exactScore && voiceLocaleMatchesRequest(voiceLang, requested) ? 50 : 0;
+      const score = exactScore || baseScore;
+      if (!score || !(voice?.name || voice?.voiceName)) {
+        return null;
+      }
+
+      return {
+        voice: summarizeVoice(voice),
+        score: score + preferredVoiceScoreForLabel(`${voice?.name || ""} ${voice?.voiceName || ""}`, requested) + (voice.default ? 10 : 0),
+        index
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ voice }) => voice);
+}
+
+function summarizeVoice(voice = {}) {
+  return {
+    name: normalizeSpeechText(voice.name || voice.voiceName),
+    lang: normalizeSpeechLang(voice.lang),
+    default: Boolean(voice.default),
+    localService: typeof voice.localService === "boolean" ? voice.localService : undefined,
+    voiceURI: normalizeSpeechText(voice.voiceURI)
+  };
 }
 
 function createAudio(url, dependencies = {}) {

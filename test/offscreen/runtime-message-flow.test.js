@@ -25,6 +25,35 @@ test("routes offscreen play-audio messages", async () => {
   assert.deepEqual(responses, [{ ok: true }]);
 });
 
+test("routes offscreen debug-state messages", async () => {
+  const calls = [];
+  const responses = [];
+  const handled = handleOffscreenAudioMessage({
+    type: MESSAGE_TYPES.offscreenDebugState,
+    lang: "pl-PL"
+  }, (response) => responses.push(response), {
+    debugState: async (options) => {
+      calls.push(["debugState", options]);
+      return {
+        requestedLang: options.lang,
+        voiceCount: 2
+      };
+    }
+  });
+
+  await flushPromises();
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [["debugState", { lang: "pl-PL" }]]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    debug: {
+      requestedLang: "pl-PL",
+      voiceCount: 2
+    }
+  }]);
+});
+
 test("reports offscreen play-audio failures", async () => {
   const responses = [];
   const handled = handleOffscreenAudioMessage({

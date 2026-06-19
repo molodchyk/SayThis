@@ -55,6 +55,7 @@ export async function buildDebugDiagnostics(dependencies = {}) {
     : null;
   const voices = await readTtsVoices(dependencies);
   const speechPlan = speechPlanFor(lastResult, voices);
+  const offscreenSpeech = await offscreenSpeechDiagnostics(dependencies, speechPlan?.lang);
   const approvedEntries = normalizeApprovedEntries({
     entries: stored[storageKeys.approvedCommunityEntries]
   });
@@ -80,6 +81,7 @@ export async function buildDebugDiagnostics(dependencies = {}) {
     settings: settingsSummary(settings),
     lastResult: summarizeResultForDebug(lastResult),
     speechPlan,
+    offscreenSpeech,
     playback: playbackSummary(lastResult),
     recentEvents: recentEvents(dependencies)
   };
@@ -186,6 +188,21 @@ async function readTtsVoices(dependencies = {}) {
       : [];
   } catch {
     return [];
+  }
+}
+
+async function offscreenSpeechDiagnostics(dependencies = {}, lang = "") {
+  if (typeof dependencies.getOffscreenDebugState !== "function") {
+    return null;
+  }
+
+  try {
+    return await dependencies.getOffscreenDebugState(lang);
+  } catch (error) {
+    return {
+      supported: false,
+      error: normalizeSelection(error?.message || "Offscreen diagnostics failed.")
+    };
   }
 }
 

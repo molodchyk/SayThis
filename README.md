@@ -34,6 +34,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - A popup with selected-text capture and speak/stop controls.
 - Popup header shortcut for opening extension options.
 - Popup Debug shortcut and options-page advanced diagnostics for inspecting the last result, speech locale, selected voice, matching voice list, audio choice, shared-audio state, and recent playback events.
+- Advanced diagnostics can probe the offscreen Web Speech page for voice availability, selected voice, matching voices, and offscreen speech errors.
 - Popup audio playback helper for browser `Audio` lifecycle, stop handling, and speech fallback triggers.
 - Popup result renderer for result fields, correction prefill, evidence, sources, alternate candidates, and audio choices.
 - Popup runtime adapters for active-tab selection, stored popup state, settings, runtime messaging, and lookup hints.

@@ -4,6 +4,7 @@ import {
   clampPlaybackRate,
   clampSpeechRate,
   createOffscreenAudioPlayback,
+  matchingSpeechSynthesisVoices,
   selectSpeechSynthesisVoice
 } from "../../src/offscreen/audio-playback-flow.js";
 
@@ -138,6 +139,33 @@ test("speaks source forms with matching Web Speech voices", async () => {
   ]);
 });
 
+test("reports offscreen Web Speech debug state", async () => {
+  const synth = {
+    getVoices: () => [
+      { name: "English", lang: "en-US" },
+      { name: "Polish", lang: "pl-PL", default: true, localService: false, voiceURI: "voice:polish" }
+    ]
+  };
+  function Utterance(text) {
+    this.text = text;
+  }
+  const playback = createOffscreenAudioPlayback({
+    speechSynthesis: synth,
+    SpeechSynthesisUtterance: Utterance
+  });
+
+  const debug = await playback.debugState({ lang: "pl-PL" });
+
+  assert.equal(debug.speechSynthesisAvailable, true);
+  assert.equal(debug.utteranceAvailable, true);
+  assert.equal(debug.requestedLang, "pl-PL");
+  assert.equal(debug.voiceCount, 2);
+  assert.equal(debug.matchingVoiceCount, 1);
+  assert.equal(debug.selectedVoice.name, "Polish");
+  assert.equal(debug.matchingVoices[0].name, "Polish");
+  assert.equal(debug.voices[1].voiceURI, "voice:polish");
+});
+
 test("selects exact Web Speech voices before base-language matches", () => {
   const voices = [
     { name: "Base", lang: "pl" },
@@ -149,6 +177,7 @@ test("selects exact Web Speech voices before base-language matches", () => {
   assert.equal(selectSpeechSynthesisVoice(voices, "pl-CA").name, "Base");
   assert.equal(selectSpeechSynthesisVoice(voices, "pt-BR"), null);
   assert.equal(selectSpeechSynthesisVoice(voices, "ja-JP"), null);
+  assert.deepEqual(matchingSpeechSynthesisVoices(voices, "pl-CA").map((voice) => voice.name), ["Base"]);
   assert.equal(clampSpeechRate(9), 1.4);
 });
 

@@ -17,6 +17,7 @@
 - Shows source-form speech rows for abbreviations and other same-language resolved readings.
 - Adds an upper-right popup shortcut to open extension options.
 - Adds an upper-right popup Debug shortcut and an options-page advanced diagnostics panel for inspecting the last result, speech locale, selected voice, audio choice, shared-audio state, and recent playback events.
+- Adds offscreen Web Speech voice diagnostics so missing-voice failures show the offscreen voice inventory and exact speech error.
 - Keeps the primary result visible when playing shared audio for an alternate candidate.
 - Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
 - Keeps verified recording labels when generated fallback samples are also available.

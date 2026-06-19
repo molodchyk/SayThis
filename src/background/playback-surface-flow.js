@@ -6,6 +6,7 @@ import {
   resultToSpeechOptions
 } from "../resolver-core.js";
 import {
+  createOffscreenDebugStateMessage,
   createOffscreenPlayAudioMessage,
   createOffscreenSpeakMessage,
   createOffscreenStopAudioMessage,
@@ -48,6 +49,7 @@ export function createPlaybackSurface(dependencies = {}) {
 
   return {
     ensureOffscreenAudioDocument,
+    getOffscreenDebugState,
     getSettings,
     hasOffscreenAudioDocument,
     playAudioItemOffscreen,
@@ -171,21 +173,36 @@ export function createPlaybackSurface(dependencies = {}) {
   }
 
   async function speakTextOffscreen(text, options = {}) {
+    recordPlaybackDebug("offscreen-speech:start", {
+      text: normalizeSelection(text),
+      options: {
+        lang: options.lang,
+        rate: options.rate
+      }
+    });
+
     if (!dependencies.hasOffscreenAudioSupport?.()) {
-      return null;
+      const result = {
+        spoken: false,
+        error: "Offscreen audio unavailable."
+      };
+      recordPlaybackDebug("offscreen-speech:skipped", result);
+      return result;
     }
 
     try {
       await ensureOffscreenAudioDocument();
       const response = await dependencies.sendRuntimeMessage?.(createOffscreenSpeakMessage(text, options));
       if (!response?.ok) {
-        return {
+        const result = {
           spoken: false,
           error: response?.error || "Web speech failed."
         };
+        recordPlaybackDebug("offscreen-speech:error", result);
+        return result;
       }
 
-      return {
+      const result = {
         spoken: true,
         text: response.speech?.text || text,
         options: {
@@ -196,11 +213,15 @@ export function createPlaybackSurface(dependencies = {}) {
         },
         fallback: "web-speech"
       };
+      recordPlaybackDebug("offscreen-speech:result", result);
+      return result;
     } catch (error) {
-      return {
+      const result = {
         spoken: false,
         error: error?.message || "Web speech failed."
       };
+      recordPlaybackDebug("offscreen-speech:error", result);
+      return result;
     }
   }
 
@@ -323,6 +344,36 @@ export function createPlaybackSurface(dependencies = {}) {
     await stopOffscreenAudio();
   }
 
+  async function getOffscreenDebugState(lang = "") {
+    if (!dependencies.hasOffscreenAudioSupport?.()) {
+      return {
+        supported: false,
+        error: "Offscreen audio unavailable."
+      };
+    }
+
+    try {
+      await ensureOffscreenAudioDocument();
+      const response = await dependencies.sendRuntimeMessage?.(createOffscreenDebugStateMessage({ lang }));
+      if (!response?.ok) {
+        return {
+          supported: true,
+          error: response?.error || "Offscreen diagnostics unavailable."
+        };
+      }
+
+      return {
+        supported: true,
+        ...response.debug
+      };
+    } catch (error) {
+      return {
+        supported: true,
+        error: error?.message || "Offscreen diagnostics unavailable."
+      };
+    }
+  }
+
   async function ensureOffscreenAudioDocument() {
     if (await hasOffscreenAudioDocument()) {
       return;
@@ -415,6 +466,10 @@ export function createPlaybackSurface(dependencies = {}) {
       checked: true,
       voiceName: selectTtsVoiceName(voices, lang)
     };
+  }
+
+  function recordPlaybackDebug(kind, payload = {}) {
+    dependencies.onDebugEvent?.(kind, payload);
   }
 }
 

@@ -67,6 +67,16 @@ test("builds speech and voice diagnostics from stored result", async () => {
       { voiceName: "English Default", lang: "en-US" },
       { voiceName: "Polish Remote", lang: "pl-PL", remote: true }
     ],
+    getOffscreenDebugState: async (lang) => ({
+      supported: true,
+      requestedLang: lang,
+      voiceCount: 3,
+      matchingVoiceCount: 1,
+      selectedVoice: {
+        name: "Polish Web",
+        lang
+      }
+    }),
     getDebugEvents: () => [{
       kind: "speech:result",
       speech: {
@@ -89,6 +99,9 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.speechPlan.lang, "pl-PL");
   assert.equal(diagnostics.speechPlan.selectedVoice, "Polish Remote");
   assert.equal(diagnostics.speechPlan.matchingVoiceCount, 1);
+  assert.equal(diagnostics.offscreenSpeech.supported, true);
+  assert.equal(diagnostics.offscreenSpeech.requestedLang, "pl-PL");
+  assert.equal(diagnostics.offscreenSpeech.selectedVoice.name, "Polish Web");
   assert.equal(diagnostics.playback.sharedAudioCandidate, true);
   assert.equal(diagnostics.recentEvents.length, 1);
 });

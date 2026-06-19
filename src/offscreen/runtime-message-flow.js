@@ -3,6 +3,22 @@ import {
 } from "../message-contracts.js";
 
 export function handleOffscreenAudioMessage(message, sendResponse, playback = {}) {
+  if (message?.type === MESSAGE_TYPES.offscreenDebugState) {
+    playback.debugState?.({
+      lang: message.lang
+    })
+      .then((debug) => {
+        sendResponse?.({ ok: true, debug });
+      })
+      .catch((error) => {
+        sendResponse?.({
+          ok: false,
+          error: error?.message || "Offscreen diagnostics failed."
+        });
+      });
+    return true;
+  }
+
   if (message?.type === MESSAGE_TYPES.offscreenPlayAudio) {
     playback.playAudio?.(message.audio, message.playbackRate)
       .then(() => {

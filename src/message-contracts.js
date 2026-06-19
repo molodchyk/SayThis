@@ -13,6 +13,7 @@ export const MESSAGE_TYPES = Object.freeze({
   requestSharedAudio: "SAYTHIS_REQUEST_SHARED_AUDIO",
   showResult: "SAYTHIS_SHOW_RESULT",
   playAudio: "SAYTHIS_PLAY_AUDIO",
+  offscreenDebugState: "SAYTHIS_OFFSCREEN_DEBUG_STATE",
   offscreenPlayAudio: "SAYTHIS_OFFSCREEN_PLAY_AUDIO",
   offscreenSpeak: "SAYTHIS_OFFSCREEN_SPEAK",
   offscreenStopAudio: "SAYTHIS_OFFSCREEN_STOP_AUDIO"
@@ -101,6 +102,13 @@ export function createOffscreenPlayAudioMessage(audio, playbackRate) {
     type: MESSAGE_TYPES.offscreenPlayAudio,
     audio: audio && typeof audio === "object" ? audio : undefined,
     playbackRate: normalizeRate(playbackRate)
+  });
+}
+
+export function createOffscreenDebugStateMessage(options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.offscreenDebugState,
+    lang: normalizeLanguageOption(options.lang)
   });
 }
 

@@ -4,6 +4,7 @@ import {
   createFeedbackMessage,
   createFlushSyncMessage,
   createGetDebugStateMessage,
+  createOffscreenDebugStateMessage,
   createOffscreenSpeakMessage,
   createOffscreenPlayAudioMessage,
   createOffscreenStopAudioMessage,
@@ -198,6 +199,12 @@ test("builds overlay and offscreen audio messages", () => {
     type: MESSAGE_TYPES.offscreenPlayAudio,
     audio,
     playbackRate: 0.45
+  });
+  assert.deepEqual(createOffscreenDebugStateMessage({
+    lang: "pl-PL"
+  }), {
+    type: MESSAGE_TYPES.offscreenDebugState,
+    lang: "pl-PL"
   });
   assert.deepEqual(createPlayAudioMessage(audio, { rate: 0.2 }), {
     type: MESSAGE_TYPES.playAudio,

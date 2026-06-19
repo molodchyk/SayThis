@@ -45,7 +45,10 @@ import {
 } from "./background/runtime-platform.js";
 
 const platform = createBackgroundPlatformAdapters();
-const playbackSurface = createPlaybackSurface(createPlaybackSurfacePlatformDependencies(platform, STORAGE_KEYS));
+const playbackSurface = createPlaybackSurface({
+  ...createPlaybackSurfacePlatformDependencies(platform, STORAGE_KEYS),
+  onDebugEvent: recordPlaybackDebugEvent
+});
 const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDependencies(platform, STORAGE_KEYS));
 const debugEvents = [];
 
@@ -219,6 +222,7 @@ async function getDebugState() {
     getStorage: platform.getStorage,
     getTtsVoices: platform.getTtsVoices,
     getManifest: platform.getManifest,
+    getOffscreenDebugState: playbackSurface.getOffscreenDebugState,
     getDebugEvents: () => debugEvents,
     storageKeys: STORAGE_KEYS
   });
@@ -247,6 +251,10 @@ function recordDebugEvent(kind, payload = {}) {
   while (debugEvents.length > 30) {
     debugEvents.shift();
   }
+}
+
+function recordPlaybackDebugEvent(kind, payload = {}) {
+  recordDebugEvent(kind, payload);
 }
 
 function speechPlanSummary(result, overrides = {}) {
