@@ -107,6 +107,7 @@ test("documents community service deployment artifacts", async () => {
   assert.match(deployment, /SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token/);
   assert.match(communityService, /Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>/);
   assert.match(releaseNotes, /required bearer-token controls/);
+  assert.match(releaseNotes, /Preserves returned shared audio/);
   assert.match(dockerfile, /SAYTHIS_STORE=\/data\/community-store\.json/);
   assert.match(dockerfile, /server\/community-service\.js/);
   assert.match(dockerignore, /assets\/audio\/private/);

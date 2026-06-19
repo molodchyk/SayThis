@@ -135,6 +135,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
 - Shared audio requests reuse locally approved shared artifacts before contacting the endpoint again, even after endpoint access is disabled.
 - Shared audio reuse can match lookup key, term, source form, alias, or variant when the base language matches, and stores a selected-key alias so refreshed results can play the shared sample.
+- Returned shared audio is attached to the current result when resolver refresh does not surface it immediately, so the same click can still play the approved sample.
 - Generated provider/shared audio is blocked when a non-English resolved language would be routed through an English TTS locale.
 - Legacy direct audio URL templates are ignored; provider generation runs through shared-audio endpoints so useful samples can be reused.
 - Generated fallback samples do not relabel a result that already has a verified or native-speaker recording.

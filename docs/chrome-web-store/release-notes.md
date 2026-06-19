@@ -5,6 +5,7 @@
 - Adds shared generated audio requests through the configured community endpoint.
 - Reuses approved shared audio artifacts before any provider generation.
 - Reuses reviewed shared audio across alternate spellings when the resolved source form and base language match.
+- Preserves returned shared audio on the current result when local refresh does not expose it immediately.
 - Keeps connector words in abbreviation guides for forms like M&A, R&D, and C++.
 - Shows source-form speech rows for abbreviations and other same-language resolved readings.
 - Keeps the primary result visible when playing shared audio for an alternate candidate.

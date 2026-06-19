@@ -13,7 +13,8 @@ Chrome Manifest V3 components:
 - `background/result-playback-flow.js`: owns result playback order across page overlay audio, offscreen audio, and verified speech fallback.
 - `background/playback-surface-flow.js`: owns browser speech calls, offscreen audio document lifecycle, page overlay injection, and playback-surface settings reads.
 - `background/selection-resolver-flow.js`: owns local lookup, online lookup, cache use, packaged audio URL mapping, and result storage updates.
-- `background/community-feedback-flow.js`: owns local feedback storage, sync queue updates, approved-entry refresh, and feedback-triggered result updates.
+- `background/community-feedback-flow.js`: owns local feedback storage, sync queue updates, approved-entry refresh, shared-audio request orchestration, and feedback-triggered result updates.
+- `background/community/shared-audio-result.js`: attaches approved shared audio entries to the active result when resolver refresh does not surface returned audio immediately.
 - `background/online-sources.js`: orchestrates optional online source lookups, source-form retries, and pronunciation-audio fallback candidates.
 - `background/dbpedia-source.js`: extracts source-form, entity-context, source-link, and redirect-label variant signals from DBpedia Lookup-compatible JSON.
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
@@ -200,6 +201,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Legacy direct audio URL templates are retired from the client path; generated provider output is requested through the shared-audio endpoint so reusable artifacts can be reviewed, served, and refreshed like other approved entries.
 - Shared generated-audio reuse checks exact lookup keys first, then term, source form, alias, and variant keys only when the base language matches.
 - Shared-audio requests check locally approved shared artifacts before requiring or contacting the configured endpoint again.
+- Shared-audio requests attach the returned approved audio to the active result if the follow-up local resolver refresh is stale or unavailable, so playback does not fall through to weaker speech after a successful shared-audio response.
 - Community service container image and deployment notes.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with verified matching browser voice or guide speech fallback.
