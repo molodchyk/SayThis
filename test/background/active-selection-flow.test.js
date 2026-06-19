@@ -385,6 +385,54 @@ test("plain keyboard command reuses matching stored audio without online enrichm
   ]);
 });
 
+test("keyboard playback does not wait for selection bookkeeping", async () => {
+  const calls = [];
+  const stored = {
+    query: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/stored.mp3", quality: "generated" }]
+    }
+  };
+
+  const result = await Promise.race([
+    handleActiveSelectionCommand({
+      source: "keyboard"
+    }, {
+      getActiveTab: async () => ({ id: 7 }),
+      readSelectionFromTab: async (tabId) => {
+        calls.push(["readSelectionFromTab", tabId]);
+        return "Exampletown";
+      },
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return { lastResult: stored };
+      },
+      setStorage: (value) => {
+        calls.push(["setStorage", value]);
+        return new Promise(() => {});
+      },
+      resolveSelection: async () => {
+        throw new Error("should not resolve when stored audio matches");
+      },
+      playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+      lastSelectionKey: "lastSelection",
+      lastSourceKey: "lastSource",
+      lastResultKey: "lastResult"
+    }),
+    delay(25).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.deepEqual(calls, [
+    ["readSelectionFromTab", 7],
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard" }],
+    ["getStorage", ["lastResult"]],
+    ["playResolvedResult", stored, 7]
+  ]);
+});
+
 test("enriches no-audio keyboard selections before playback", async () => {
   const calls = [];
   const resolved = { display: "Gnocchi", sourceStatus: "structured-source" };

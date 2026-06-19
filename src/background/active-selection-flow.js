@@ -42,7 +42,7 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
     });
     startPreparingPlayback(dependencies, trace);
 
-    await dependencies.setStorage?.({
+    setStorageBestEffort(dependencies, {
       [dependencies.lastSelectionKey || "lastSelection"]: selectedText,
       [dependencies.lastSourceKey || "lastSource"]: options.source || "keyboard"
     });
@@ -314,6 +314,17 @@ function compactOptions(options = {}) {
   return Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   );
+}
+
+function setStorageBestEffort(dependencies = {}, value = {}) {
+  try {
+    const stored = dependencies.setStorage?.(value);
+    if (stored && typeof stored.catch === "function") {
+      stored.catch(() => {});
+    }
+  } catch {
+    // Storage bookkeeping should not block pronunciation.
+  }
 }
 
 function recordStoredResultHit(selectedText, result = {}, dependencies = {}, trace = null) {

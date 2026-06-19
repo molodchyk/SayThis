@@ -28,7 +28,7 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
     });
     startPreparingPlayback(dependencies, trace);
 
-    await dependencies.setStorage?.({
+    setStorageBestEffort(dependencies, {
       lastSelection: selectedText,
       lastSource: action.source
     });
@@ -44,7 +44,7 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
     const candidate = await firstContextMenuAudioCandidate(selectedText, options, dependencies, trace);
     if (candidate?.result) {
       const storedResult = candidate.result;
-      await dependencies.setStorage?.({
+      setStorageBestEffort(dependencies, {
         [dependencies.lastResultKey || "lastResult"]: storedResult
       });
       await dependencies.playResolvedResult?.(storedResult, tab?.id, trace);
@@ -53,7 +53,7 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
 
     const result = await dependencies.resolveSelection(selectedText, options);
     const playableResult = await resolvePlayableResult(selectedText, result, options, dependencies);
-    await dependencies.setStorage?.({
+    setStorageBestEffort(dependencies, {
       [dependencies.lastResultKey || "lastResult"]: playableResult
     });
     await dependencies.playResolvedResult?.(playableResult, tab?.id, trace);
@@ -76,7 +76,7 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
   const playedImmediate = Boolean(getBestAudio(immediateResult)?.url);
 
   if (playedImmediate) {
-    await dependencies.setStorage?.({
+    setStorageBestEffort(dependencies, {
       [dependencies.lastResultKey || "lastResult"]: immediateResult
     });
     await dependencies.playResolvedResult?.(immediateResult, tabId, trace);
@@ -99,7 +99,7 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
       useOnline: true,
       trace
     }, dependencies);
-    await dependencies.setStorage?.({
+    setStorageBestEffort(dependencies, {
       [dependencies.lastResultKey || "lastResult"]: playableResult
     });
     dependencies.recordDebugEvent?.("online-refresh:result", {
@@ -291,6 +291,17 @@ function compactOptions(options = {}) {
   return Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   );
+}
+
+function setStorageBestEffort(dependencies = {}, value = {}) {
+  try {
+    const stored = dependencies.setStorage?.(value);
+    if (stored && typeof stored.catch === "function") {
+      stored.catch(() => {});
+    }
+  } catch {
+    // Storage bookkeeping should not block pronunciation.
+  }
 }
 
 function recordStoredResultHit(selectedText, result = {}, dependencies = {}, trace = null) {

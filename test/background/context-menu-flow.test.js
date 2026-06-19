@@ -309,6 +309,51 @@ test("plain context menu reuses matching stored audio without online enrichment"
   ]);
 });
 
+test("context menu playback does not wait for selection bookkeeping", async () => {
+  const calls = [];
+  const stored = {
+    query: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/stored.mp3", quality: "generated" }]
+    }
+  };
+
+  const result = await Promise.race([
+    handleContextMenuClick({ menuItemId: "say", selectionText: "Exampletown" }, { id: 42 }, {
+      resolveOptionsForMenuId: () => ({
+        ok: true,
+        source: "context-menu",
+        options: { useOnline: false }
+      }),
+      normalizeSelection: (value) => String(value || "").trim(),
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return { lastResult: stored };
+      },
+      setStorage: (value) => {
+        calls.push(["setStorage", value]);
+        return new Promise(() => {});
+      },
+      resolveSelection: async () => {
+        throw new Error("should not resolve when stored audio matches");
+      },
+      playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+      lastResultKey: "lastResult"
+    }),
+    delay(25).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.deepEqual(calls, [
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu" }],
+    ["getStorage", ["lastResult"]],
+    ["setStorage", { lastResult: stored }],
+    ["playResolvedResult", stored, 42]
+  ]);
+});
+
 test("does not guess with raw speech when context menu resolution fails", async () => {
   const calls = [];
   const result = await handleContextMenuClick({ menuItemId: "say", selectionText: "Gnocchi" }, {}, {
