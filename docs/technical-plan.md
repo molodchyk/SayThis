@@ -156,6 +156,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Wiktionary pronunciation-audio extraction preserves multiple Commons recordings from one language section.
 - Lingua Libre recordings found through Commons-backed sources are ranked as native-speaker audio ahead of generic verified recordings.
 - Source-backed pronunciation-guide recordings found through Commons-backed sources are ranked ahead of generic verified recordings, even when their guide file prefix differs from the resolved source language.
+- Generic verified dictionary audio does not stop target-language edition or source-form retries.
 - Generic verified dictionary audio does not block a Commons check for source-backed or native recordings.
 - Source-form and alias-guided Wiktionary retries after other structured sources resolve a better lookup form.
 - Optional structured custom source lookup for domain-specific pronunciation entries.

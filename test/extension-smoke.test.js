@@ -348,7 +348,7 @@ test("online source resolver tries hinted Wiktionary editions", async () => {
       languageHints: ["pl"]
     });
 
-    assert.deepEqual(requestedHosts, ["pl.wiktionary.org"]);
+    assert.deepEqual(requestedHosts, ["pl.wiktionary.org", "en.wiktionary.org"]);
     assert.equal(result.language, "pl");
     assert.equal(result.sourceStatus, "verified-audio");
     assert.equal(result.sources[0].url, "https://pl.wiktionary.org/wiki/przyklad");

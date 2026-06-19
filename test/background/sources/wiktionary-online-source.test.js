@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  getBestAudio
+} from "../../../src/resolver-core.js";
+import {
   resolveWithWiktionary,
   resolveWithWiktionaryCandidates
 } from "../../../src/background/online-sources.js";
@@ -92,7 +95,7 @@ test("passes lookup language hints to Wiktionary source-form retries", async () 
       languageHints: ["pl"]
     });
 
-    assert.deepEqual(requestedEditions, ["pl"]);
+    assert.deepEqual(requestedEditions, ["pl", "en"]);
     assert.equal(result.sourceForm, "Exampleform");
     assert.equal(result.language, "pl");
     assert.equal(result.sourceStatus, "verified-audio");
@@ -139,6 +142,95 @@ test("keeps target-language Wiktionary result ahead of later mismatched audio", 
     assert.equal(result.sourceStatus, "structured-source");
     assert.equal(result.pronunciation.ipa, "/ɛkˈzam.plɛ/");
     assert.deepEqual(result.pronunciation.audio, []);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("continues target-language Wiktionary editions after generic audio to find native-speaker audio", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedEditions = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      const sourceLanguage = parsed.host.split(".")[0];
+      requestedEditions.push(sourceLanguage);
+
+      return jsonResponse({
+        query: {
+          pages: [{
+            title: "Exampleterm",
+            revisions: [{
+              slots: {
+                main: {
+                  content: sourceLanguage === "pl"
+                    ? `==Wymowa==\n* {{IPA|pl|/ɛkˈzam.plɛ/}}\n* {{audio|pl|Pl-exampleterm.ogg|Audio}}`
+                    : `==Polish==\n===Pronunciation===\n* {{IPA|pl|/ɛkˈzam.plɛ/}}\n* {{audio|pl|LL-Q809 (pol)-Speaker-Exampleterm.wav|Audio}}`
+                }
+              }
+            }]
+          }]
+        }
+      });
+    };
+
+    const result = await resolveWithWiktionary("Exampleterm", {
+      languageHints: ["pl"]
+    });
+
+    assert.deepEqual(requestedEditions, ["pl", "en"]);
+    assert.equal(result.language, "pl");
+    assert.equal(getBestAudio(result).quality, "native-speaker");
+    assert.equal(result.pronunciation.audio[0].url.includes("LL-Q809%20(pol)-Speaker-Exampleterm.wav"), true);
+    assert.equal(result.pronunciation.audio[1].quality, "verified");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("continues Wiktionary source-form retries after generic audio to find native-speaker audio", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedTitles = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      const title = parsed.searchParams.get("titles");
+      requestedTitles.push(title);
+
+      return jsonResponse({
+        query: {
+          pages: [{
+            title,
+            revisions: [{
+              slots: {
+                main: {
+                  content: title === "Genericform"
+                    ? `==Wymowa==\n* {{audio|pl|Pl-genericform.ogg|Audio}}`
+                    : `==Wymowa==\n* {{audio|pl|LL-Q809 (pol)-Speaker-Nativeform.wav|Audio}}`
+                }
+              }
+            }]
+          }]
+        }
+      });
+    };
+
+    const result = await resolveWithWiktionaryCandidates("Exampleterm", {
+      display: "Exampleterm",
+      sourceForm: "Genericform",
+      aliases: ["Nativeform"],
+      language: "pl",
+      sourceStatus: "structured-source"
+    });
+
+    assert.deepEqual(requestedTitles, ["Genericform", "Genericform", "Nativeform"]);
+    assert.equal(result.sourceForm, "Genericform");
+    assert.equal(result.language, "pl");
+    assert.equal(getBestAudio(result).quality, "native-speaker");
+    assert.equal(result.pronunciation.audio[0].url.includes("LL-Q809%20(pol)-Speaker-Nativeform.wav"), true);
+    assert.equal(result.pronunciation.audio[1].quality, "verified");
   } finally {
     globalThis.fetch = originalFetch;
   }

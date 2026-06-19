@@ -260,14 +260,14 @@ export async function resolveWithWiktionarySources(selectedText, lookupWord, opt
 
     if (matchesPreferredWiktionaryLanguage(wiktionaryResult, preferredLanguage)) {
       preferredResult = mergeRemoteResult(preferredResult, wiktionaryResult);
-      if (preferredResult?.sourceStatus === "verified-audio") {
+      if (hasTopTierAudio(preferredResult)) {
         return preferredResult;
       }
       continue;
     }
 
     result = mergeRemoteResult(result, wiktionaryResult);
-    if (!preferredLanguage && result?.sourceStatus === "verified-audio") {
+    if (!preferredLanguage && hasTopTierAudio(result)) {
       return result;
     }
   }
@@ -299,7 +299,7 @@ export async function resolveWithWiktionaryCandidates(text, structuredResult, op
     }
 
     result = mergeRemoteResult(result, wiktionaryResult);
-    if (result?.sourceStatus === "verified-audio") {
+    if (hasTopTierAudio(result)) {
       return result;
     }
   }
