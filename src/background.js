@@ -66,6 +66,8 @@ platform.addContextMenuClickedListener((info, tab) => {
     resolveSelection,
     requestSharedAudio,
     playResolvedResult,
+    showResultOnTab,
+    recordDebugEvent,
     lastResultKey: STORAGE_KEYS.lastResult
   });
 });
@@ -74,7 +76,9 @@ platform.addCommandListener((command) => {
   handleActiveSelectionCommandName(command, runtimeAdapters.activeSelectionDependencies({
     resolveSelection,
     requestSharedAudio,
-    playResolvedResult
+    playResolvedResult,
+    showResultOnTab,
+    recordDebugEvent
   }));
 });
 
@@ -215,8 +219,12 @@ async function playAudio(audio, rate, trace) {
   }
 }
 
-async function playResolvedResult(result, tabId) {
-  return playbackSurface.playResolvedResult(result, tabId);
+async function playResolvedResult(result, tabId, trace) {
+  return playbackSurface.playResolvedResult(result, tabId, trace);
+}
+
+async function showResultOnTab(tabId, result, options = {}) {
+  return playbackSurface.showResultOnTab(tabId, result, options);
 }
 
 async function stopPlayback() {

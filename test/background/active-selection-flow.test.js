@@ -50,7 +50,8 @@ test("routes online keyboard command names through active-selection handling", a
   assert.deepEqual(calls, [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard-online" }],
-    ["resolveSelection", "Gnocchi", { useOnline: true }],
+    ["resolveSelection", "Gnocchi", { useOnline: false }],
+    ["resolveSelection", "Gnocchi", { useOnline: true, localResult: resolved }],
     ["playResolvedResult", resolved, 7]
   ]);
 });
@@ -99,8 +100,59 @@ test("resolves, stores, and plays keyboard selections", async () => {
   assert.deepEqual(calls, [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard-online" }],
-    ["resolveSelection", "Gnocchi", { useOnline: true }],
+    ["resolveSelection", "Gnocchi", { useOnline: false }],
+    ["resolveSelection", "Gnocchi", { useOnline: true, localResult: resolved }],
     ["playResolvedResult", resolved, 7]
+  ]);
+});
+
+test("online keyboard command plays shared audio before refreshing the result", async () => {
+  const calls = [];
+  const local = { display: "Exampletown", sourceStatus: "structured-source" };
+  const shared = {
+    display: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/shared.mp3", quality: "generated" }]
+    }
+  };
+  const refreshed = { display: "Exampletown", sourceStatus: "structured-source" };
+
+  const result = await handleActiveSelectionCommand({
+    source: "keyboard-online",
+    useOnline: true
+  }, {
+    getActiveTab: async () => ({ id: 7 }),
+    readSelectionFromTab: async (tabId) => {
+      calls.push(["readSelectionFromTab", tabId]);
+      return "Exampletown";
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return options.useOnline ? refreshed : local;
+    },
+    requestSharedAudio: async (text, value) => {
+      calls.push(["requestSharedAudio", text, value]);
+      return value === local ? shared : value;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    showResultOnTab: async (tabId, value) => calls.push(["showResultOnTab", tabId, value]),
+    lastSelectionKey: "lastSelection",
+    lastSourceKey: "lastSource"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, refreshed);
+  assert.deepEqual(calls, [
+    ["readSelectionFromTab", 7],
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard-online" }],
+    ["resolveSelection", "Exampletown", { useOnline: false }],
+    ["requestSharedAudio", "Exampletown", local],
+    ["playResolvedResult", shared, 7],
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: local }],
+    ["requestSharedAudio", "Exampletown", refreshed],
+    ["showResultOnTab", 7, refreshed]
   ]);
 });
 

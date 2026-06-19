@@ -1,8 +1,8 @@
-export async function playResolvedResult(result, tabId, dependencies = {}) {
+export async function playResolvedResult(result, tabId, dependencies = {}, trace = null) {
   const audio = dependencies.getBestAudio?.(result);
   if (audio && shouldAutoPlayAudio(audio, result, dependencies)) {
     if (isGeneratedAudio(audio, result)) {
-      const played = await dependencies.playAudioOffscreen?.(result);
+      const played = await dependencies.playAudioOffscreen?.(result, 0.82, trace);
       dependencies.showResultOnTab?.(tabId, result);
       if (played) {
         return { mode: "offscreen-audio" };
@@ -13,7 +13,7 @@ export async function playResolvedResult(result, tabId, dependencies = {}) {
         return { mode: "overlay-audio" };
       }
 
-      const played = await dependencies.playAudioOffscreen?.(result);
+      const played = await dependencies.playAudioOffscreen?.(result, 0.82, trace);
       if (played) {
         dependencies.showResultOnTab?.(tabId, result);
         return { mode: "offscreen-audio" };

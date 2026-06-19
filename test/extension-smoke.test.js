@@ -141,7 +141,7 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /createPlaybackSurface\(\{/);
   assert.match(source, /createPlaybackSurfacePlatformDependencies\(platform, STORAGE_KEYS\)/);
   assert.match(source, /onDebugEvent: recordPlaybackDebugEvent/);
-  assert.match(source, /playbackSurface\.playResolvedResult\(result, tabId\)/);
+  assert.match(source, /playbackSurface\.playResolvedResult\(result, tabId, trace\)/);
   assert.match(playbackSurface, /playResolvedResultFlow\(result, tabId, \{/);
   assert.match(playbackSurface, /createOffscreenPlayAudioMessage/);
   assert.match(playbackSurface, /createShowResultMessage/);

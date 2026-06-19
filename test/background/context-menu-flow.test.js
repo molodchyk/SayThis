@@ -59,6 +59,54 @@ test("resolves, enriches, stores, and plays context menu selections", async () =
   ]);
 });
 
+test("online context menu plays shared audio before refreshing the result", async () => {
+  const calls = [];
+  const local = { display: "Exampletown", sourceStatus: "structured-source" };
+  const shared = {
+    display: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/shared.mp3", quality: "generated" }]
+    }
+  };
+  const refreshed = { display: "Exampletown", sourceStatus: "structured-source" };
+
+  const result = await handleContextMenuClick({ menuItemId: "say-online", selectionText: " Exampletown " }, { id: 42 }, {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu-online",
+      options: { useOnline: true }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return options.useOnline ? refreshed : local;
+    },
+    requestSharedAudio: async (text, value) => {
+      calls.push(["requestSharedAudio", text, value]);
+      return value === local ? shared : value;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    showResultOnTab: async (tabId, value) => calls.push(["showResultOnTab", tabId, value]),
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, refreshed);
+  assert.deepEqual(calls, [
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu-online" }],
+    ["resolveSelection", "Exampletown", { useOnline: false }],
+    ["requestSharedAudio", "Exampletown", local],
+    ["setStorage", { lastResult: shared }],
+    ["playResolvedResult", shared, 42],
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: local }],
+    ["requestSharedAudio", "Exampletown", refreshed],
+    ["setStorage", { lastResult: refreshed }],
+    ["showResultOnTab", 42, refreshed]
+  ]);
+});
+
 test("does not guess with raw speech when context menu resolution fails", async () => {
   const calls = [];
   const result = await handleContextMenuClick({ menuItemId: "say", selectionText: "Gnocchi" }, {}, {

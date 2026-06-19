@@ -61,14 +61,14 @@ export function createPlaybackSurface(dependencies = {}) {
     stopPlayback
   };
 
-  async function playResolvedResult(result, tabId) {
+  async function playResolvedResult(result, tabId, trace) {
     return playResolvedResultFlow(result, tabId, {
       getBestAudio,
       hasPreferredAudio,
       showResultOnTab,
       playAudioOffscreen,
       speakResult
-    });
+    }, trace);
   }
 
   async function playAudioOffscreen(result, rate = 0.82, trace) {
