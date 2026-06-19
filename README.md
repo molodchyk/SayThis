@@ -27,7 +27,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Shared runtime message builders for popup, options, offscreen-audio, and background commands.
 - Shared settings and credential normalization for the background worker and options page.
 - Static Chrome-surface smoke tests for HTML bindings, packaged files, and module imports.
-- Optional loaded-extension Chrome smoke runner for popup/options/service-worker startup and keyboard-overlay checks.
+- Optional loaded-extension Chrome smoke runner for service-worker startup, context-menu registration, popup/options pages, and keyboard-overlay checks.
 - Packaged extension icons for toolbar and install surfaces.
 - Keyboard commands for selected text: `Alt+Shift+S` and online lookup with `Alt+Shift+O`.
 - A popup with selected-text capture and speak/stop controls.
@@ -264,7 +264,7 @@ $env:SAYTHIS_SMOKE_LAUNCH = "1"
 npm run smoke:chrome
 ```
 
-By default this command skips without launching Chrome or Edge. Set `SAYTHIS_SMOKE_LAUNCH=1` only when you want a separate temporary smoke profile. Set `SAYTHIS_CHROME_PATH` if Chrome or Edge is not found automatically. Set `SAYTHIS_SMOKE_HEADLESS=0` for a visible local run, `SAYTHIS_SMOKE_REQUIRED=1` when extension startup must fail instead of skipping, or `SAYTHIS_SMOKE_OVERLAY_REQUIRED=1` when the keyboard-overlay path must fail instead of skipping. The CLI leaves the launched smoke profile open for manual review.
+By default this command skips without launching Chrome or Edge. Set `SAYTHIS_SMOKE_LAUNCH=1` only when you want a separate temporary smoke profile. Set `SAYTHIS_CHROME_PATH` if Chrome or Edge is not found automatically. Set `SAYTHIS_SMOKE_HEADLESS=0` for a visible local run, `SAYTHIS_SMOKE_REQUIRED=1` when extension startup must fail instead of skipping, or `SAYTHIS_SMOKE_OVERLAY_REQUIRED=1` when the keyboard-overlay path must fail instead of skipping. The smoke runner also verifies that the loaded service worker registered the expected context-menu entries. The CLI leaves the launched smoke profile open for manual review.
 
 Run the community moderation service locally:
 

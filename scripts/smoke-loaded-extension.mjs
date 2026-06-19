@@ -7,6 +7,7 @@ import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import net from "node:net";
+import { contextMenuDefinitions } from "../src/extension-actions.js";
 
 const DEFAULT_TIMEOUT_MS = 20000;
 const OVERLAY_TIMEOUT_MS = 7000;
@@ -76,6 +77,7 @@ export async function runLoadedExtensionSmoke(options = {}) {
 
     const popup = await inspectExtensionPage(port, extensionId, "src/popup/popup.html");
     const optionsPage = await inspectExtensionPage(port, extensionId, "src/options/options.html");
+    const contextMenus = await inspectContextMenus(worker, options);
 
     assertPage(popup, {
       title: "SayThis",
@@ -94,6 +96,7 @@ export async function runLoadedExtensionSmoke(options = {}) {
       extensionId,
       serviceWorker: worker.url,
       pages: [popup.url, optionsPage.url],
+      contextMenus,
       overlay,
       profileDir: closeLaunchedBrowser ? "" : profileDir
     };
@@ -208,6 +211,78 @@ async function inspectExtensionPage(port, extensionId, path) {
   } finally {
     client.close();
   }
+}
+
+async function inspectContextMenus(workerTarget, options = {}) {
+  const timeoutMs = Number(options.contextMenuTimeoutMs || 3000);
+  const client = await connectCdp(workerTarget.webSocketDebuggerUrl);
+  try {
+    await client.call("Runtime.enable");
+    const items = await waitForContextMenus(client, timeoutMs);
+    return {
+      skipped: false,
+      items
+    };
+  } finally {
+    client.close();
+  }
+}
+
+async function waitForContextMenus(client, timeoutMs) {
+  const startedAt = Date.now();
+  let lastItems = [];
+  while (Date.now() - startedAt < timeoutMs) {
+    lastItems = await client.evaluate(contextMenuProbeExpression());
+    if (lastItems.every((item) => item.ok)) {
+      return lastItems;
+    }
+
+    await delay(100);
+  }
+
+  const missing = lastItems.filter((item) => !item.ok);
+  throw new Error(`Context menu registration missing: ${missing.map((item) => `${item.id}${item.error ? ` (${item.error})` : ""}`).join(", ")}`);
+}
+
+export function expectedContextMenuItems() {
+  return contextMenuDefinitions().map((item) => ({
+    id: item.id,
+    title: item.title
+  }));
+}
+
+export function contextMenuProbeExpression(items = expectedContextMenuItems()) {
+  return `(() => new Promise((resolve) => {
+  const items = ${JSON.stringify(items)};
+  const api = globalThis.chrome?.contextMenus;
+  const runtime = globalThis.chrome?.runtime;
+  if (!api?.update) {
+    resolve(items.map((item) => ({
+      ...item,
+      ok: false,
+      error: "chrome.contextMenus.update unavailable"
+    })));
+    return;
+  }
+
+  const results = [];
+  let pending = items.length;
+  for (const item of items) {
+    api.update(item.id, { title: item.title }, () => {
+      const error = runtime?.lastError?.message || "";
+      results.push({
+        id: item.id,
+        title: item.title,
+        ok: !error,
+        error
+      });
+      pending -= 1;
+      if (pending === 0) {
+        resolve(results);
+      }
+    });
+  }
+}))()`;
 }
 
 async function inspectKeyboardOverlay(port, options = {}) {
@@ -492,9 +567,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const overlayStatus = result.overlay?.skipped
       ? `; overlay skipped: ${result.overlay.reason}`
       : "; overlay ok";
+    const contextMenuStatus = result.contextMenus?.items?.length
+      ? "; context menus ok"
+      : "";
     const profileStatus = result.profileDir
       ? `; close the smoke profile manually: ${result.profileDir}`
       : "";
-    console.log(`loaded ${result.extensionId} in ${result.product}${overlayStatus}${profileStatus}`);
+    console.log(`loaded ${result.extensionId} in ${result.product}${contextMenuStatus}${overlayStatus}${profileStatus}`);
   }
 }

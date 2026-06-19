@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  contextMenuProbeExpression,
+  expectedContextMenuItems,
   runLoadedExtensionSmoke,
   shouldCloseLaunchedBrowser
 } from "../scripts/smoke-loaded-extension.mjs";
@@ -33,4 +35,21 @@ test("loaded-extension smoke does not close from environment settings", () => {
 test("loaded-extension smoke close remains explicit for direct callers", () => {
   assert.equal(shouldCloseLaunchedBrowser({ closeLaunchedBrowser: true }), true);
   assert.equal(shouldCloseLaunchedBrowser({ closeLaunchedBrowser: false }), false);
+});
+
+test("loaded-extension smoke probes registered context menu entries", () => {
+  const items = expectedContextMenuItems();
+  assert.deepEqual(items, [{
+    id: "saythis-pronounce-selection",
+    title: "SayThis: pronounce \"%s\""
+  }, {
+    id: "saythis-pronounce-selection-online",
+    title: "SayThis: online lookup and pronounce \"%s\""
+  }]);
+
+  const expression = contextMenuProbeExpression(items);
+  assert.match(expression, /chrome\.contextMenus/);
+  assert.match(expression, /saythis-pronounce-selection/);
+  assert.match(expression, /saythis-pronounce-selection-online/);
+  assert.doesNotMatch(expression, /remove/);
 });

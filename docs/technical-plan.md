@@ -74,7 +74,7 @@ Chrome Manifest V3 components:
 - `scripts/package-extension.mjs`: builds a deterministic Chrome ZIP from runtime extension files.
 - `scripts/audit-architecture.mjs`: checks file-size, folder-density, and browser API adapter-boundary budgets against the modularization playbook baseline.
 - `scripts/audit-public-audio.mjs`: validates packaged public-audio file presence and release metadata before Chrome ZIP creation.
-- `scripts/smoke-loaded-extension.mjs`: opt-in Chrome or Edge launch smoke runner for service-worker, popup, options startup, and keyboard-overlay flow.
+- `scripts/smoke-loaded-extension.mjs`: opt-in Chrome or Edge launch smoke runner for service-worker startup, context-menu registration, popup/options pages, and keyboard-overlay flow.
 - `Dockerfile.community`: builds the self-hostable community moderation service image.
 - `test/resolver/core.test.js`: verifies resolver behavior and manifest capabilities.
 - `test/resolver/audio.test.js`: verifies pronunciation-audio normalization, URL mapping, deduplication, and curated/native ranking.
@@ -109,7 +109,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Shared runtime message builders with unit tests for popup, options, offscreen-audio, and service-worker commands.
 - Shared settings and credential normalization for the background worker and options page.
 - Static smoke tests for popup/options DOM bindings, manifest-linked files, extension page scripts, and runtime import resolution.
-- Optional loaded-extension smoke runner for service-worker, popup, options startup, and keyboard-overlay flow in a separate opt-in Chrome or Edge profile.
+- Optional loaded-extension smoke runner for service-worker startup, context-menu registration, popup/options pages, and keyboard-overlay flow in a separate opt-in Chrome or Edge profile.
 - Packaged PNG icons for toolbar and install surfaces.
 - Local resolver over bundled entries and local community memory.
 - Language names, speech locales, and script hints have a narrow pure module.
@@ -317,4 +317,3 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 
 - Keep broadening online entity scoring with more structured-source signals.
 - Add actual curated public audio files after source/license review.
-- Add loaded-extension smoke coverage for the context-menu flow.
