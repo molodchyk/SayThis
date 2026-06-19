@@ -122,6 +122,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Imported lookup-cache results are allowlisted to pronunciation result fields while preserving trust and variant metadata.
 - Verified pronunciation-audio playback from structured sources when available, with verified matching browser voice or guide speech fallback.
 - Speak retries online before playing generic verified recordings so native/source-backed audio can replace them when available.
+- Popup and on-page Speak use the same top-tier audio rule before playing local recording URLs.
 - Popup source-audio playback falls back through the same verified speech policy if the audio cannot start.
 - Browser speech is blocked when a non-English resolved language would be routed through an English voice, except for explicit simple guide speech.
 - Options for default online lookup, on-page card display, and local/shared community-memory data management.

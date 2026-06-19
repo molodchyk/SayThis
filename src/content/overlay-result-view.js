@@ -32,6 +32,11 @@
     return rankedAudioItems(audio).some((item) => isPreferredAudioItem(item, result?.sourceStatus));
   }
 
+  function hasTopTierAudio(result) {
+    const bestAudio = getBestAudio(result);
+    return Boolean(bestAudio && qualityScore(bestAudio.quality) >= 105);
+  }
+
   function isSharedAudioCandidate(result = {}, selectedText = "") {
     const sourceForm = normalizeText(result?.sourceForm || result?.display || result?.query);
     const ttsLang = normalizeText(result?.ttsLang || result?.language);
@@ -318,12 +323,12 @@
       return 115;
     }
 
-    if (quality === "verified") {
-      return 100;
+    if (["source-backed", "recorded"].includes(quality)) {
+      return 105;
     }
 
-    if (["source-backed", "recorded"].includes(quality)) {
-      return 85;
+    if (quality === "verified") {
+      return 100;
     }
 
     if (quality === "generated") {
@@ -455,6 +460,7 @@
     firstSourceUrl,
     getBestAudio,
     hasPreferredAudio,
+    hasTopTierAudio,
     isSharedAudioCandidate,
     normalizeAliases,
     normalizeLanguageHints,

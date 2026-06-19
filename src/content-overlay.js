@@ -20,6 +20,10 @@
     firstSourceUrl,
     getBestAudio,
     hasPreferredAudio = (result) => Boolean(getBestAudio(result)),
+    hasTopTierAudio = (result) => {
+      const quality = String(getBestAudio(result)?.quality || "").trim().toLowerCase();
+      return ["curated", "native", "native speaker", "native-speaker", "source-backed", "recorded"].includes(quality);
+    },
     isSharedAudioCandidate: sharedAudioCandidateForResult = () => false,
     normalizeAliases,
     normalizeLanguageHints,
@@ -335,7 +339,7 @@
   }
 
   function speak(result, rate, options = {}) {
-    if (!options.onlineChecked && !hasPreferredAudio(result)) {
+    if (!options.onlineChecked && !hasTopTierAudio(result)) {
       resolveOnline(result, {
         autoPlay: true,
         rate

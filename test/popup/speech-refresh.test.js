@@ -4,12 +4,21 @@ import {
   shouldRefreshBeforeSpeech
 } from "../../src/popup/speech-refresh.js";
 
-test("does not refresh speech when a result already has preferred audio", () => {
+test("does not refresh speech when a result already has top-tier audio", () => {
   assert.equal(shouldRefreshBeforeSpeech({
+    pronunciation: {
+      audio: [{ url: "https://example.test/audio.ogg", quality: "native-speaker" }]
+    }
+  }), false);
+});
+
+test("refreshes generic verified audio before speech", () => {
+  assert.equal(shouldRefreshBeforeSpeech({
+    display: "Exampleterm",
     pronunciation: {
       audio: [{ url: "https://example.test/audio.ogg", quality: "verified" }]
     }
-  }), false);
+  }), true);
 });
 
 test("refreshes speech when only a guide can be spoken", () => {

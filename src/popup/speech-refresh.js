@@ -1,12 +1,12 @@
 import {
-  hasPreferredAudio,
+  hasTopTierAudio,
   normalizeSelection
 } from "../resolver-core.js";
 
 export function shouldRefreshBeforeSpeech(result) {
   return Boolean(
     result &&
-    !hasPreferredAudio(result) &&
+    !hasTopTierAudio(result) &&
     (hasGeneratedAudio(result) ||
       result.sourceStatus === "best-effort-fallback" ||
       normalizeSelection(result.sourceForm || result.display || result.query))

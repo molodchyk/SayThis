@@ -26,6 +26,7 @@
 - Continues custom-source retries after generic audio when a later source-form or alias can provide native/source-backed pack audio.
 - Explicit online refresh retries cached generic verified audio so stronger source-backed or native recordings can replace it.
 - Speak retries online before playing generic verified recordings so native/source-backed audio can replace them when available.
+- Popup and on-page Speak use the same top-tier audio rule before playing local recording URLs.
 - Uses one-off lookup hints to prefer matching Wiktionary language sections, continue target-language edition retries after generic audio, and avoid later mismatched dictionary audio.
 - Prefers Wikidata pronunciation audio with matching language qualifiers before unqualified recordings.
 - Ranks Forvo recordings as native-speaker audio ahead of generic verified recordings.
