@@ -63,6 +63,11 @@ test("maps background platform adapters to browser APIs", async () => {
           listeners.installed = listener;
         }
       },
+      onStartup: {
+        addListener: listener => {
+          listeners.startup = listener;
+        }
+      },
       onMessage: {
         addListener: listener => {
           listeners.message = listener;
@@ -114,6 +119,7 @@ test("maps background platform adapters to browser APIs", async () => {
   platform.addContextMenuClickedListener(() => "context");
   platform.addInstalledListener(() => "installed");
   platform.addMessageListener(() => "message");
+  platform.addStartupListener(() => "startup");
   platform.createContextMenu({ id: "saythis" });
   await platform.getStorage(["settings"]);
   await platform.setStorage({ settings: {} });
@@ -136,7 +142,7 @@ test("maps background platform adapters to browser APIs", async () => {
   platform.stopTts();
   assert.deepEqual(await platform.speakTts("gnocchi", { rate: 0.82 }), { ok: true });
 
-  assert.deepEqual(Object.keys(listeners).sort(), ["command", "contextMenu", "installed", "message"]);
+  assert.deepEqual(Object.keys(listeners).sort(), ["command", "contextMenu", "installed", "message", "startup"]);
   assert.deepEqual(calls, [
     ["createContextMenu", { id: "saythis" }],
     ["getStorage", ["settings"]],

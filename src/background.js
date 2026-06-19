@@ -29,6 +29,10 @@ import {
   createPlaybackSurface
 } from "./background/playback-surface-flow.js";
 import {
+  activateSelectionListenerOnOpenTabs,
+  registerContextMenus
+} from "./background/install-activation-flow.js";
+import {
   buildDebugDiagnostics,
   summarizeAudioForDebug,
   summarizeResultForDebug,
@@ -53,9 +57,14 @@ const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDepend
 const debugEvents = [];
 
 platform.addInstalledListener(() => {
-  for (const item of contextMenuDefinitions()) {
-    platform.createContextMenu(item);
-  }
+  registerContextMenus(contextMenuDefinitions(), {
+    createContextMenu: platform.createContextMenu
+  });
+  activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
+});
+
+platform.addStartupListener(() => {
+  activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
 });
 
 platform.addContextMenuClickedListener((info, tab) => {
@@ -284,6 +293,14 @@ function runtimeMessageDependencies() {
     preparePlayback,
     getStorage: platform.getStorage,
     getDebugState,
+    recordDebugEvent
+  };
+}
+
+function selectionActivationDependencies() {
+  return {
+    queryTabs: platform.queryTabs,
+    executeScript: platform.executeScript,
     recordDebugEvent
   };
 }
