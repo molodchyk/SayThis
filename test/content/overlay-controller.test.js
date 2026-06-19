@@ -141,6 +141,63 @@ test("alternate playback prefers source-form speech before guide speech", async 
   assert.equal(sentMessages[0].message.result.ttsLang, "pl-PL");
 });
 
+test("alternate playback uses alternate recording before speech", async () => {
+  const sentMessages = [];
+  const playedUrls = [];
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {
+      constructor(url) { this.url = url; }
+      addEventListener() {}
+      pause() {}
+      play() { playedUrls.push(this.url); return Promise.resolve(); }
+    },
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    async sendRuntimeMessage() {
+      sentMessages.push("unexpected");
+      return { ok: true };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Exampletown",
+    alternateResults: [{
+      display: "Exampletown",
+      sourceForm: "Przykladowo",
+      pronunciation: {
+        audio: [{
+          label: "Native recording",
+          url: "https://audio.example/przykladowo-native.ogg",
+          quality: "native-speaker"
+        }]
+      }
+    }]
+  }, { onlineChecked: true });
+
+  fakeDom.root.querySelectorAll('[data-action="alternate"]')[0].click();
+  await flushPromises();
+
+  assert.deepEqual(playedUrls, ["https://audio.example/przykladowo-native.ogg"]);
+  assert.deepEqual(sentMessages, []);
+});
+
 test("alternate shared audio playback keeps the primary result visible", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();

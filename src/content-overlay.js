@@ -183,7 +183,14 @@
     for (const button of root.querySelectorAll('[data-action="alternate"]')) {
       button.addEventListener("click", () => {
         const index = Number(button.dataset.alternateIndex);
-        speakCandidate(preferredSpeechResult(result.alternateResults?.[index]), 0.82, {
+        const alternate = result.alternateResults?.[index];
+        const alternateAudio = typeof getBestAudio === "function" ? getBestAudio(alternate) : null;
+        if (playAudioItem(alternateAudio, alternate, 0.82, { replaceCurrent: false })) {
+          setStatus("Playing alternate.");
+          return;
+        }
+
+        speakCandidate(preferredSpeechResult(alternate), 0.82, {
           replaceCurrent: false
         });
       });

@@ -103,7 +103,10 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(resultView, /playbackItems/);
   assert.match(resultView, /speechResultForPlaybackItem/);
   assert.match(resultView, /normalizeLanguageHints/);
-  assert.match(source, /speakCandidate\(preferredSpeechResult\(result\.alternateResults\?\.\[index\]\), 0\.82, \{\s*replaceCurrent: false\s*\}\)/);
+  assert.match(source, /const alternate = result\.alternateResults\?\.\[index\]/);
+  assert.match(source, /const alternateAudio = typeof getBestAudio === "function" \? getBestAudio\(alternate\) : null/);
+  assert.match(source, /playAudioItem\(alternateAudio, alternate, 0\.82, \{ replaceCurrent: false \}\)/);
+  assert.match(source, /speakCandidate\(preferredSpeechResult\(alternate\), 0\.82, \{\s*replaceCurrent: false\s*\}\)/);
   assert.match(source, /speechResultForPlaybackItem\(result, item\)/);
   assert.match(source, /item\?\.kind !== "audio"/);
   assert.match(source, /playAudioItem\(item, result, 0\.82\)/);
