@@ -59,11 +59,14 @@ test("keeps generated shared audio as generated fallback", () => {
     sourceForm: "Przykladowo",
     language: "pl",
     audioUrl: "https://community.example/audio/generated.ogg",
+    provider: "pl-PL-TestVoice",
     sourceStatus: "generated-audio",
     trustSignals: ["service-generated", "generated-audio", "audio-backed", "source-backed"]
   });
 
   assert.equal(result.sourceStatus, "generated-audio");
+  assert.equal(getBestAudio(result).label, "Generated shared audio (pl-PL-TestVoice)");
+  assert.equal(getBestAudio(result).source, "pl-PL-TestVoice");
   assert.equal(getBestAudio(result).quality, "generated");
   assert.equal(hasTopTierAudio(result), false);
 });

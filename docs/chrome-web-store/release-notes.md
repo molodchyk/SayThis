@@ -24,6 +24,7 @@
 - Rejects generated provider/shared audio when a non-English resolved language would use an English TTS locale.
 - Removes direct client audio URL template generation; generated provider output now belongs on the shared-audio endpoint path.
 - Labels token-gated public generated shared audio as service-generated instead of moderator-reviewed.
+- Preserves provider voice names on generated shared audio entries and playback labels.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Continues custom-source retries after generic audio when a later source-form or alias can provide native/source-backed pack audio.
 - Explicit online refresh retries cached generic verified audio so stronger source-backed or native recordings can replace it.

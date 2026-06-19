@@ -351,6 +351,7 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
+    provider: normalizeSelection(value.provider),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote),
     trustSignals: normalizeTrustSignals(value.trustSignals),
@@ -365,7 +366,7 @@ function hasApprovedEntryContent(value = {}) {
     normalizeSelection(value.lookupKey || value.term || value.display || value.sourceForm) ||
     normalizeAliases(value.aliases).length ||
     normalizeVariants(value.variants).length ||
-    normalizeSelection(value.language || value.ttsLang || value.languageName || value.origin || value.root || value.domainHint || value.ipa || value.simple || value.variantNote || value.sourceStatus) ||
+    normalizeSelection(value.language || value.ttsLang || value.languageName || value.origin || value.root || value.domainHint || value.ipa || value.simple || value.provider || value.variantNote || value.sourceStatus) ||
     normalizeHttpsUrl(value.audioUrl || value.sourceUrl) ||
     normalizeTrustSignals(value.trustSignals).length ||
     clampNumber(value.confirmations, 0, 100000) ||

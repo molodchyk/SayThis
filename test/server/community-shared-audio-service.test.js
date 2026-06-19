@@ -127,6 +127,7 @@ test("labels public generated shared audio without moderator review", async () =
 
   assert.equal(response.status, 200);
   assert.equal(response.body.generated, true);
+  assert.equal(response.body.entry.provider, "pl-PL-TestVoice");
   assert.equal(response.body.entry.sourceStatus, "generated-audio");
   assert.deepEqual(response.body.entry.trustSignals, [
     "service-generated",

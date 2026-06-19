@@ -327,6 +327,7 @@ test("normalizes approved community entries", () => {
       ipa: "kjaroˈskuːro",
       simple: "kee-ah-roh-SKOO-roh",
       audioUrl: "https://example.com/chiaroscuro.ogg",
+      provider: "it-IT-TestVoice",
       sourceUrl: "https://example.com/chiaroscuro",
       sourceStatus: "verified-audio"
     }]
@@ -343,6 +344,7 @@ test("normalizes approved community entries", () => {
   assert.equal(entries.chiaroscuro.domainHint, "art history");
   assert.deepEqual(entries.chiaroscuro.variants, ["studio variant", "regional variant"]);
   assert.equal(entries.chiaroscuro.simple, "kee-ah-roh-SKOO-roh");
+  assert.equal(entries.chiaroscuro.provider, "it-IT-TestVoice");
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");
 });
 

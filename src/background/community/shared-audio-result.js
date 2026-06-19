@@ -16,10 +16,11 @@ export function resultWithSharedAudioEntry(result = {}, entry = {}) {
     normalizeList(normalized.trustSignals).includes("generated-audio");
   const trustSignals = normalizeList(normalized.trustSignals);
   const sourceStatus = generated ? "generated-audio" : "verified-audio";
+  const provider = normalizeSelection(normalized.provider);
   const audioItem = {
     url: normalized.audioUrl,
-    label: generated ? "Generated shared audio" : "Shared pronunciation audio",
-    source: "SayThis shared audio",
+    label: generated ? generatedSharedAudioLabel(provider) : "Shared pronunciation audio",
+    source: generated && provider ? provider : "SayThis shared audio",
     quality: sharedAudioQuality(generated, trustSignals)
   };
   const existingAudio = Array.isArray(result?.pronunciation?.audio)
@@ -70,6 +71,10 @@ function sharedAudioQuality(generated, trustSignals = []) {
   }
 
   return "verified";
+}
+
+function generatedSharedAudioLabel(provider = "") {
+  return provider ? `Generated shared audio (${provider})` : "Generated shared audio";
 }
 
 function prependUniqueAudio(first, rest = []) {

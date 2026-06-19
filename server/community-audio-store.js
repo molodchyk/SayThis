@@ -209,6 +209,7 @@ function approvedEntryFromGeneratedAudio(artifact, now, options = {}) {
     ipa: artifact.ipa,
     simple: artifact.simple,
     audioUrl: artifact.audioUrl,
+    provider: artifact.provider,
     sourceUrl: artifact.sourceUrl,
     variantNote: artifact.variantNote,
     trustSignals: generatedAudioTrustSignals(artifact, options),

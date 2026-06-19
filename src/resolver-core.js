@@ -240,6 +240,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
   const sourceForm = normalizeSelection(entry.sourceForm || entry.term || query);
   const language = normalizeLanguage(entry.language);
   const audioQuality = communityAudioQuality(hasGeneratedAudio, trustSignals, hasReviewedAudio);
+  const provider = normalizeSelection(entry.provider);
 
   return normalizeResult({
     id: `community:${lookupKey}`,
@@ -265,8 +266,8 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
       simple: entry.simple || "",
       audio: entry.audioUrl ? [{
         url: entry.audioUrl,
-        label: hasGeneratedAudio ? "Generated shared audio" : "Community audio source",
-        source: hasGeneratedAudio ? "SayThis shared audio" : "Community audio source",
+        label: hasGeneratedAudio ? generatedSharedAudioLabel(provider) : "Community audio source",
+        source: hasGeneratedAudio && provider ? provider : hasGeneratedAudio ? "SayThis shared audio" : "Community audio source",
         quality: audioQuality
       }] : []
     },
@@ -298,6 +299,10 @@ function communityAudioQuality(hasGeneratedAudio, trustSignals = [], hasReviewed
   }
 
   return hasReviewedAudio ? "verified" : "";
+}
+
+function generatedSharedAudioLabel(provider = "") {
+  return provider ? `Generated shared audio (${provider})` : "Generated shared audio";
 }
 
 function communitySpeakText(entry = {}, sourceForm, query) {
