@@ -57,6 +57,17 @@ test("selection changes prime playback without preparing transient text", async 
   ]);
 });
 
+test("selection start primes playback before selected text exists", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("selectstart");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""]
+  ]);
+});
+
 test("selection changes do not prime playback when select-to-hear is disabled", async () => {
   const harness = await installSelectionListener({
     settings: { selectToHear: false }

@@ -32,6 +32,9 @@
 
   readSettings();
 
+  document.addEventListener("selectstart", () => {
+    primePlaybackSurface();
+  }, true);
   document.addEventListener("selectionchange", () => {
     const selectedText = readSelectedText();
     if (!selectedText) {
