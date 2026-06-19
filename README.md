@@ -22,6 +22,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Background-owned runtime adapters for seed-data loading, active-tab lookup, and tab selection extraction.
 - Background-owned platform adapters for service-worker storage, runtime, tab, scripting, command, menu, TTS, and offscreen APIs.
 - Background-owned selection resolution for local lookup, online lookup, cache use, and storage updates.
+- Abbreviation guides for compact initialisms, symbol connectors, and lowercase-`n` connector forms.
 - Background-owned community feedback and sync flow for local memory, queueing, approved-entry refresh, and result updates.
 - Background-owned online source orchestration outside the service-worker entry point.
 - Shared runtime message builders for popup, options, offscreen-audio, and background commands.

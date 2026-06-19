@@ -131,9 +131,9 @@ test("checks online sources for best-effort initialism guides", async () => {
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].text, "PnL");
-  assert.equal(calls[0].localResult.pronunciation.simple, "P N L");
+  assert.equal(calls[0].localResult.pronunciation.simple, "P and L");
   assert.equal(result.sourceStatus, "best-effort-fallback");
-  assert.equal(result.speakText, "P N L");
+  assert.equal(result.speakText, "P and L");
   assert.ok(cacheEntries(storedUpdates[0].resultCache).length === 0);
 });
 

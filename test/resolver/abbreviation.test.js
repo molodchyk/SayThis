@@ -7,7 +7,6 @@ import {
 } from "../../src/resolver-core.js";
 
 test("builds letter guides for compact initialisms", () => {
-  assert.equal(initialismGuide("PnL"), "P N L");
   assert.equal(initialismGuide("ETF"), "E T F");
   assert.equal(initialismGuide("GPT-5"), "G P T 5");
   assert.equal(initialismGuide("U.S."), "U S");
@@ -32,6 +31,13 @@ test("keeps connector words in common abbreviation guides", () => {
   assert.equal(initialismGuide("A+B"), "A plus B");
 });
 
+test("treats compact lowercase n as an and connector between single-letter chunks", () => {
+  assert.equal(initialismGuide("PnL"), "P and L");
+  assert.equal(initialismGuide("RnD"), "R and D");
+  assert.equal(initialismGuide("FnB"), "F and B");
+  assert.equal(initialismGuide("DnD"), "D and D");
+});
+
 test("avoids spelling likely acronym words", () => {
   assert.equal(initialismGuide("NASA"), "");
   assert.equal(initialismGuide("NASA&ESA"), "");
@@ -40,6 +46,8 @@ test("avoids spelling likely acronym words", () => {
   assert.equal(initialismGuide("iPhone"), "");
   assert.equal(initialismGuide("eBay"), "");
   assert.equal(initialismGuide("Exampleterm"), "");
+  assert.equal(initialismGuide("EnUS"), "");
+  assert.equal(initialismGuide("CanDo"), "");
   assert.equal(initialismGuide("A I"), "");
   assert.equal(initialismGuide("P n L"), "");
 });
@@ -52,10 +60,10 @@ test("uses initialism guides for unresolved local fallback speech", () => {
   assert.equal(result.category, "abbreviation");
   assert.equal(result.language, "en");
   assert.equal(result.ttsLang, "en-US");
-  assert.equal(result.pronunciation.simple, "P N L");
-  assert.equal(result.speakText, "P N L");
+  assert.equal(result.pronunciation.simple, "P and L");
+  assert.equal(result.speakText, "P and L");
   assert.ok(result.evidence.includes("Detected compact initialism"));
-  assert.equal(speech.text, "P N L");
+  assert.equal(speech.text, "P and L");
   assert.equal(speech.options.lang, "en-US");
 });
 

@@ -20,6 +20,7 @@ Chrome Manifest V3 components:
 - `extension-actions.js`: defines context-menu actions and maps them to resolver options.
 - `message-contracts.js`: defines shared popup, options, offscreen-audio, and service-worker message builders, including overlay payloads sent by the background worker.
 - `resolver-core.js`: pure resolver logic for normalization, script detection, local entries, community entries, confidence labels, and speech options.
+- `resolver/abbreviation.js`: pure compact-initialism, symbol-connector, and lowercase-`n` connector rules for abbreviation fallback speech.
 - `resolver/audio.js`: pure pronunciation-audio selection, URL mapping, and pronunciation normalization helpers used by resolver results.
 - `resolver/community.js`: pure local community-memory normalization, lookup, summary, and trust-signal helpers used by resolver results.
 - `resolver/language.js`: pure language display-name, speech-locale, and script-hint helpers used by resolver results.

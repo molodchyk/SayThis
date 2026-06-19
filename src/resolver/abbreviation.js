@@ -11,6 +11,11 @@ export function initialismGuide(value) {
     return "";
   }
 
+  const compactAndGuide = compactAndInitialismGuide(text);
+  if (compactAndGuide) {
+    return compactAndGuide;
+  }
+
   const connectorGuide = connectorInitialismGuide(text);
   if (connectorGuide) {
     return connectorGuide;
@@ -19,6 +24,13 @@ export function initialismGuide(value) {
   const letters = initialismLetters(text);
   return letters.length >= 2
     ? letters.join(" ")
+    : "";
+}
+
+function compactAndInitialismGuide(text) {
+  const match = text.match(/^([A-Za-z0-9])n([A-Za-z0-9])$/);
+  return match
+    ? `${match[1].toUpperCase()} and ${match[2].toUpperCase()}`
     : "";
 }
 

@@ -9,6 +9,7 @@
 - Adds context-menu registration coverage to the opt-in loaded-extension smoke runner.
 - Adds an approved public-domain packaged pronunciation sample to verify curated audio playback and release metadata.
 - Keeps connector words in abbreviation guides for forms like M&A, R&D, and C++.
+- Treats compact lowercase-n connector abbreviations as connector speech.
 - Shows source-form speech rows for abbreviations and other same-language resolved readings.
 - Keeps the primary result visible when playing shared audio for an alternate candidate.
 - Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
