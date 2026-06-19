@@ -45,6 +45,30 @@ test("changing selection waits until the selection is stable", async () => {
   assert.equal(speakMessages[0].text, "Exampletown");
 });
 
+test("selection changes prime playback without preparing transient text", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Exam");
+  harness.dispatch("selectionchange");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""]
+  ]);
+});
+
+test("selection changes do not prime playback when select-to-hear is disabled", async () => {
+  const harness = await installSelectionListener({
+    settings: { selectToHear: false }
+  });
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages, []);
+});
+
 test("changing selection does not prepare transient fragments", async () => {
   const harness = await installSelectionListener();
 
@@ -52,18 +76,22 @@ test("changing selection does not prepare transient fragments", async () => {
   harness.dispatch("selectionchange");
   await delay(70);
 
-  assert.deepEqual(harness.sentMessages, []);
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""]
+  ]);
 
   harness.setSelection("Exampletown");
   harness.dispatch("selectionchange");
   await delay(110);
 
-  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text]), [
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
     ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
   ]);
 
   await delay(70);
-  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text]), [
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
     ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);

@@ -11,6 +11,7 @@
   const SELECTION_PREPARE_DEBOUNCE_MS = 90;
   const COMMITTED_SELECTION_DEBOUNCE_MS = 0;
   const REPEAT_SELECTION_COOLDOWN_MS = 1200;
+  const PLAYBACK_PRIME_COOLDOWN_MS = 3000;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
   const chromeApi = globalThis.chrome;
@@ -24,19 +25,25 @@
   let lastPreparedKey = "";
   let lastPreparedAt = 0;
   let lastPreparedTrace = null;
+  let lastPrimeAt = 0;
+  let primePlaybackPromise = null;
   let lastSettings = null;
   let settingsPromise = null;
 
   readSettings();
 
   document.addEventListener("selectionchange", () => {
-    if (!readSelectedText()) {
+    const selectedText = readSelectedText();
+    if (!selectedText) {
       clearScheduledCheck();
       clearScheduledPrepare();
       resetSelectionTracking();
       return;
     }
 
+    if (!hasCommittedCheckPending()) {
+      primePlaybackSurface();
+    }
     scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true });
   }, true);
   document.addEventListener("pointerup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
@@ -111,12 +118,37 @@
     }
   }
 
+  function hasCommittedCheckPending() {
+    return timerId !== null && scheduledCheckMode === "committed";
+  }
+
   function resetSelectionTracking() {
     lastSentKey = "";
     lastSentAt = 0;
     lastPreparedKey = "";
     lastPreparedAt = 0;
     lastPreparedTrace = null;
+  }
+
+  function primePlaybackSurface() {
+    const now = Date.now();
+    if (primePlaybackPromise || now - lastPrimeAt < PLAYBACK_PRIME_COOLDOWN_MS) {
+      return;
+    }
+
+    primePlaybackPromise = (async () => {
+      if (!selectToHearEnabled(await readSettings())) {
+        return;
+      }
+
+      lastPrimeAt = Date.now();
+      sendRuntimeMessage({
+        type: MESSAGE_TYPE_PREPARE_PLAYBACK,
+        trace: createTrace("select-to-hear-prime")
+      });
+    })().finally(() => {
+      primePlaybackPromise = null;
+    });
   }
 
   async function speakStableSelection() {
