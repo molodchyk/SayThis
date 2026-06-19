@@ -149,6 +149,40 @@
       "confidence": "medium",
       "evidence": ["Bundled sample entry"],
       "notes": "Research and education workflow example."
+    },
+    {
+      "id": "gia-dzhokhtaberidze",
+      "language": "en",
+      "languageName": "English",
+      "display": "Gia Dzhokhtaberidze",
+      "sourceForm": "Gia Dzhokhtaberidze",
+      "native": "Gia Dzhokhtaberidze",
+      "aliases": ["Gia Dzhokhtaberidze"],
+      "category": "personal name",
+      "origin": "Georgian personal name in an English-language pronunciation guide",
+      "pronunciation": {
+        "ipa": "",
+        "simple": "GHEE-ah jawk-tah-BEH-reet-zeh",
+        "audio": [
+          {
+            "url": "assets/audio/public/en-us-gia-dzhokhtaberidze-voa.ogg",
+            "label": "Voice of America pronunciation",
+            "source": "Voice of America pronunciation guide via Wikimedia Commons",
+            "quality": "curated"
+          }
+        ]
+      },
+      "priority": "medium",
+      "sourceStatus": "verified-audio",
+      "confidence": "high",
+      "evidence": ["Voice of America pronunciation guide", "Wikimedia Commons public-domain media"],
+      "sources": [
+        {
+          "label": "Wikimedia Commons file page",
+          "url": "https://commons.wikimedia.org/wiki/File:En-us-Gia_Dzhokhtaberidze_from_Georgia_pronunciation_(Voice_of_America).ogg"
+        }
+      ],
+      "notes": "Packaged public-domain sample that exercises curated audio playback and source attribution."
     }
   ]
 }

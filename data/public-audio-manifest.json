@@ -1,5 +1,14 @@
 {
   "schemaVersion": 1,
   "description": "Redistributable packaged pronunciation audio approved for public release.",
-  "entries": []
+  "entries": [
+    {
+      "path": "assets/audio/public/en-us-gia-dzhokhtaberidze-voa.ogg",
+      "label": "Voice of America pronunciation",
+      "source": "https://commons.wikimedia.org/wiki/File:En-us-Gia_Dzhokhtaberidze_from_Georgia_pronunciation_(Voice_of_America).ogg",
+      "license": "Public Domain Mark 1.0; PD-USGov-VOA",
+      "attribution": "Voice of America pronunciation guide; author Jim Tedder; Wikimedia Commons file page",
+      "reviewStatus": "approved"
+    }
+  ]
 }

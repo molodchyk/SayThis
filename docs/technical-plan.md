@@ -209,6 +209,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Packaged public audio path rewriting for curated entries.
 - Public audio release audit for packaged recording metadata, file presence, and seed-reference coverage.
 - Chrome ZIP packaging from an explicit runtime-file allowlist with private, licensed, and raw data exclusions.
+- Public-audio manifest and audit now cover an approved public-domain pronunciation sample referenced by the seed resolver.
 - Architecture audit for file-size, folder-density, and browser API adapter-boundary budgets, with current broad files tracked as explicit baseline debt.
 
 ## Future Lookup Pipeline
@@ -316,4 +317,3 @@ The MVP should avoid sending every highlighted word to a server by default. A co
 ## Near-Term Tasks
 
 - Keep broadening online entity scoring with more structured-source signals.
-- Add actual curated public audio files after source/license review.

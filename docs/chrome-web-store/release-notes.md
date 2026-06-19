@@ -7,6 +7,7 @@
 - Reuses reviewed shared audio across alternate spellings when the resolved source form and base language match.
 - Preserves returned shared audio on the current result when local refresh does not expose it immediately.
 - Adds context-menu registration coverage to the opt-in loaded-extension smoke runner.
+- Adds an approved public-domain packaged pronunciation sample to verify curated audio playback and release metadata.
 - Keeps connector words in abbreviation guides for forms like M&A, R&D, and C++.
 - Shows source-form speech rows for abbreviations and other same-language resolved readings.
 - Keeps the primary result visible when playing shared audio for an alternate candidate.

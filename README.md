@@ -144,7 +144,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
 - Architecture audit for file-size, folder-density, and browser API adapter-boundary budgets with an explicit current-debt baseline.
 - Chrome packaging excludes private, licensed, and raw data paths even if they exist locally.
-- Packaged public-audio support for curated entries under `assets/audio/public/`.
+- Packaged public-audio support for curated entries under `assets/audio/public/`, including one approved public-domain pronunciation sample.
 - Verified matching browser voice as a temporary local fallback when no recording is available.
 - Product, research, and technical planning docs.
 - A seed resolver dataset for pronunciation entries.
