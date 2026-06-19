@@ -5,6 +5,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 const source = await readFile(join(process.cwd(), "src/content/overlay-result-view.js"), "utf8");
+const languageSource = await readFile(join(process.cwd(), "src/content/overlay-language.js"), "utf8");
 
 test("normalizes overlay result display helpers", () => {
   const view = loadResultView();
@@ -90,6 +91,14 @@ test("normalizes overlay result display helpers", () => {
     ttsLang: "ga-IE",
     sourceStatus: "structured-source"
   }, "Saoirse"), true);
+  assert.equal(view.isSharedAudioCandidate({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "Polish",
+    ttsLang: "Polish",
+    sourceStatus: "structured-source"
+  }, "Exampletown"), true);
   assert.equal(view.isSharedAudioCandidate({
     query: "Saoirse",
     display: "Saoirse",
@@ -298,6 +307,16 @@ test("normalizes overlay result display helpers", () => {
     text: "Przykladowo",
     lang: "pl-PL"
   }).speakText, "Przykladowo");
+  assert.equal(view.speechResultForPlaybackItem({
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "Polish",
+    ttsLang: "Polish"
+  }, {
+    kind: "speech",
+    text: "Przykladowo",
+    lang: "Polish"
+  }).ttsLang, "pl-PL");
   assert.deepEqual(plain(view.sourceItems(result)), [
     { label: "Wiktionary", url: "https://example.test/term" },
     { label: "Curated", url: "https://audio.example/curated.ogg" },
@@ -329,6 +348,7 @@ test("normalizes overlay input helpers and escaping", () => {
 
 function loadResultView() {
   const context = vm.createContext({ URL });
+  vm.runInContext(languageSource, context);
   vm.runInContext(source, context);
   return context.__sayThisOverlayResultView;
 }

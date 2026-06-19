@@ -120,8 +120,8 @@ test("labels public generated shared audio without moderator review", async () =
       term: "Exampletown",
       lookupKey: "exampletown",
       sourceForm: "Przykladowo",
-      language: "pl",
-      ttsLang: "pl-PL"
+      language: "Polish",
+      ttsLang: "Polish"
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
@@ -147,6 +147,8 @@ test("labels public generated shared audio without moderator review", async () =
   assert.equal(response.status, 200);
   assert.equal(response.body.generated, true);
   assert.equal(response.body.entry.provider, "pl-PL-TestVoice");
+  assert.equal(response.body.entry.language, "pl");
+  assert.equal(response.body.entry.ttsLang, "pl-PL");
   assert.equal(response.body.entry.sourceStatus, "generated-audio");
   assert.deepEqual(response.body.entry.trustSignals, [
     "service-generated",

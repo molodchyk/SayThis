@@ -4,6 +4,9 @@
   }
 
   const GUIDE_PROSE_MARKERS = /\b(?:context|contexts|depending|often|pronunciation|pronunciations|pronounced|speaker|speakers|source form|usually|varies|vary|voice)\b/i;
+  const languageHelpers = globalThis.__sayThisOverlayLanguage || {};
+  const normalizeTtsLanguage = languageHelpers.normalizeTtsLanguage ||
+    ((ttsLang, language = "") => normalizeText(ttsLang || language));
 
   function correctionInput(label, field, value, maxLength, className = "", type = "text") {
     return `
@@ -39,7 +42,7 @@
 
   function isSharedAudioCandidate(result = {}, selectedText = "") {
     const sourceForm = normalizeText(result?.sourceForm || result?.display || result?.query);
-    const ttsLang = normalizeText(result?.ttsLang || result?.language);
+    const ttsLang = normalizeTtsLanguage(result?.ttsLang, result?.language);
     const sourceStatus = normalizeText(result?.sourceStatus);
     return Boolean(
       result &&
@@ -148,7 +151,7 @@
         ...result,
         sourceForm: text,
         speakText: text,
-        ttsLang: normalizeText(item.lang || result.ttsLang || result.language)
+        ttsLang: normalizeTtsLanguage(item.lang || result.ttsLang, result.language)
       };
     }
 
@@ -382,7 +385,7 @@
 
   function sourceSpeechItem(result = {}) {
     const sourceForm = normalizeText(result.sourceForm || result.display || result.query);
-    const lang = normalizeText(result.ttsLang || result.language);
+    const lang = normalizeTtsLanguage(result.ttsLang, result.language);
     const selected = normalizeText(result.query || result.display);
     const sourceKey = createLookupKey(sourceForm);
     const selectedKey = createLookupKey(selected);

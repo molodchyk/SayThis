@@ -1,6 +1,6 @@
 import { generatedAudioArtifactFromBody } from "./community-audio-artifacts.js";
 import {
-  ttsLangFromLanguage
+  normalizeTtsLanguage
 } from "../src/resolver/language.js";
 import {
   normalizeVoiceLocale,
@@ -33,7 +33,7 @@ export function createGoogleTtsProvider(options = {}) {
       }
 
       const text = normalizeTtsText(request.text);
-      const languageCode = normalizeLocale(request.ttsLang || ttsLangFromLanguage(request.language) || request.language);
+      const languageCode = normalizeLocale(normalizeTtsLanguage(request.ttsLang, request.language));
       if (!text || !languageCode) {
         return { ok: false, status: 400, error: "invalid-tts-request" };
       }

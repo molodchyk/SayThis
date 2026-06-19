@@ -31,6 +31,7 @@
 - Preserves provider voice names on generated shared audio entries and playback labels.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Normalizes known language names to provider locales before speech generation and shared-audio matching.
+- Applies language-name locale normalization to the on-page card and shared-audio service generation path.
 - Continues custom-source retries after generic audio when a later source-form or alias can provide native/source-backed pack audio.
 - Explicit online refresh retries cached generic verified audio so stronger source-backed or native recordings can replace it.
 - Speak retries online before playing generic verified recordings so native/source-backed audio can replace them when available.

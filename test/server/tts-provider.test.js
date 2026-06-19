@@ -82,7 +82,8 @@ test("maps language names before calling Google-compatible TTS", async () => {
 
   const result = await provider.synthesize({
     text: "Przykladowo",
-    language: "Polish"
+    language: "Polish",
+    ttsLang: "Polish"
   });
 
   assert.equal(result.ok, true);

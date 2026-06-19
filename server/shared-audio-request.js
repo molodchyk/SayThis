@@ -15,6 +15,9 @@ import {
 import {
   normalizeSelection
 } from "../src/resolver-core.js";
+import {
+  normalizeTtsLanguage
+} from "../src/resolver/language.js";
 
 const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
 
@@ -103,7 +106,7 @@ function isUsefulGenerationRequest(body = {}) {
   const selectedText = normalizeSelection(body.term || body.display || body.lookupKey);
   const sourceForm = normalizeSelection(body.sourceForm || body.text);
   const language = normalizeSelection(body.language);
-  const ttsLang = normalizeSelection(body.ttsLang || language);
+  const ttsLang = normalizeTtsLanguage(body.ttsLang, language);
   return Boolean(
     selectedText &&
     sourceForm &&

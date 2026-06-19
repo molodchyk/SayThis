@@ -65,17 +65,21 @@ test("overlay exposes playback and feedback actions", async () => {
   const playbackSurface = await readText("src/background/playback-surface-flow.js");
   const styles = await readText("src/content/overlay-style.js");
   const runtimeAdapters = await readText("src/content/overlay-runtime-adapters.js");
+  const language = await readText("src/content/overlay-language.js");
   const resultView = await readText("src/content/overlay-result-view.js");
   const source = await readText("src/content-overlay.js");
 
   assert.match(background, /createPlaybackSurface/);
   assert.match(playbackSurface, /src\/content\/overlay-style\.js/);
   assert.match(playbackSurface, /src\/content\/overlay-runtime-adapters\.js/);
+  assert.match(playbackSurface, /src\/content\/overlay-language\.js/);
   assert.match(playbackSurface, /src\/content\/overlay-result-view\.js/);
   assert.match(styles, /__sayThisOverlayStyles/);
   assert.match(runtimeAdapters, /__sayThisOverlayRuntimeAdapters/);
   assert.match(runtimeAdapters, /SAYTHIS_SHOW_RESULT/);
+  assert.match(language, /__sayThisOverlayLanguage/);
   assert.match(resultView, /__sayThisOverlayResultView/);
+  assert.match(resultView, /__sayThisOverlayLanguage/);
   assert.match(source, /__sayThisOverlayStyles/);
   assert.match(source, /__sayThisOverlayRuntimeAdapters/);
   assert.match(source, /__sayThisOverlayResultView/);
