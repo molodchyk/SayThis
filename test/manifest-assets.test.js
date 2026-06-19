@@ -34,7 +34,7 @@ test("manifest installs the low-friction selection listener", () => {
   assert.equal(scripts.length, 1);
   assert.deepEqual(scripts[0].matches, ["<all_urls>"]);
   assert.deepEqual(scripts[0].js, ["src/selection-listener.js"]);
-  assert.equal(scripts[0].run_at, "document_idle");
+  assert.equal(scripts[0].run_at, "document_start");
 });
 
 function pngDimensions(buffer) {

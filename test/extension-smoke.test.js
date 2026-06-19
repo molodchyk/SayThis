@@ -415,6 +415,7 @@ test("selection listener speaks bounded selected text directly", async () => {
   const runtimeSource = await readText("src/background/runtime-message-flow.js");
 
   assert.match(manifestSource, /src\/selection-listener\.js/);
+  assert.match(manifestSource, /"run_at": "document_start"/);
   assert.match(source, /selectionchange/);
   assert.match(source, /SELECTION_CHANGE_DEBOUNCE_MS = 160/);
   assert.match(source, /COMMITTED_SELECTION_DEBOUNCE_MS = 0/);
