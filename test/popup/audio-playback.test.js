@@ -50,6 +50,46 @@ test("plays audio URLs and stops the previous player", async () => {
   assert.equal(players[1].currentTime, 0);
 });
 
+test("reports popup audio start timing", async () => {
+  let currentTime = 1000;
+  let startDetails;
+  class AudioStub {
+    constructor(url) {
+      this.url = url;
+      this.events = {};
+    }
+
+    addEventListener(name, callback) {
+      this.events[name] = callback;
+    }
+
+    play() {
+      currentTime = 1125;
+      return Promise.resolve();
+    }
+
+    pause() {}
+  }
+
+  const playback = createPopupAudioPlayback({
+    AudioCtor: AudioStub,
+    now: () => currentTime
+  });
+
+  assert.equal(playback.playUrl("https://audio.example.test/a.ogg", 0.82, () => {}, {
+    onStart: (details) => {
+      startDetails = details;
+    }
+  }), true);
+  await Promise.resolve();
+
+  assert.deepEqual(startDetails, {
+    elapsedMs: 125,
+    playbackRate: 1,
+    urlHost: "audio.example.test"
+  });
+});
+
 test("runs fallback once when browser audio fails", async () => {
   let fallbackCount = 0;
   let player;

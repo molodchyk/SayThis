@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createFeedbackMessage,
+  createDebugEventMessage,
   createFlushSyncMessage,
   createGetDebugStateMessage,
   createOffscreenDebugStateMessage,
@@ -89,6 +90,36 @@ test("builds compact stop and sync messages", () => {
   assert.deepEqual(createGetDebugStateMessage(), { type: MESSAGE_TYPES.getDebugState });
 });
 
+test("builds bounded debug event messages", () => {
+  assert.deepEqual(createDebugEventMessage(" audio popup start ", {
+    elapsedMs: 123.8,
+    trace: {
+      id: "trace-1",
+      source: "popup",
+      action: "speak",
+      startedAt: 1800000000000
+    },
+    nested: {
+      urlHost: "audio.example.test"
+    }
+  }), {
+    type: MESSAGE_TYPES.debugEvent,
+    kind: "audio-popup-start",
+    payload: {
+      elapsedMs: 124,
+      trace: {
+        id: "trace-1",
+        source: "popup",
+        action: "speak",
+        startedAt: 1800000000000
+      },
+      nested: {
+        urlHost: "audio.example.test"
+      }
+    }
+  });
+});
+
 test("builds shared audio request messages", () => {
   const result = {
     query: "Exampletown",
@@ -98,12 +129,24 @@ test("builds shared audio request messages", () => {
 
   assert.deepEqual(createRequestSharedAudioMessage(" Exampletown ", {
     result,
-    rate: 0.2
+    rate: 0.2,
+    trace: {
+      id: "trace-1",
+      source: "popup",
+      action: "speak",
+      startedAt: 1800000000000
+    }
   }), {
     type: MESSAGE_TYPES.requestSharedAudio,
     text: "Exampletown",
     result,
-    rate: 0.45
+    rate: 0.45,
+    trace: {
+      id: "trace-1",
+      source: "popup",
+      action: "speak",
+      startedAt: 1800000000000
+    }
   });
 });
 

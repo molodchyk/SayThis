@@ -20,9 +20,14 @@ export function handleOffscreenAudioMessage(message, sendResponse, playback = {}
   }
 
   if (message?.type === MESSAGE_TYPES.offscreenPlayAudio) {
-    playback.playAudio?.(message.audio, message.playbackRate)
-      .then(() => {
-        sendResponse?.({ ok: true });
+    playback.playAudio?.(message.audio, message.playbackRate, {
+      trace: message.trace
+    })
+      .then((playbackDebug) => {
+        sendResponse?.({
+          ok: true,
+          ...(playbackDebug && typeof playbackDebug === "object" ? { playback: playbackDebug } : {})
+        });
       })
       .catch((error) => {
         sendResponse?.({

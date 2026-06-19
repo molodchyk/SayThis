@@ -39,18 +39,31 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
     };
   }
 
-  async function playAudio(audio, playbackRate = 1) {
+  async function playAudio(audio, playbackRate = 1, options = {}) {
+    const startedAt = nowMs(dependencies);
     const url = String(audio?.url || "");
     if (!url) {
       throw new Error("Missing audio URL.");
     }
 
     stopAudio();
-    const playbackUrl = await audioUrlForPlayback(audio, dependencies);
+    const prepared = await audioUrlForPlayback(audio, dependencies);
+    const playbackUrl = prepared.url;
     audioObjectUrl = playbackUrl !== url ? playbackUrl : "";
     audioPlayer = createAudio(playbackUrl, dependencies);
     audioPlayer.playbackRate = clampPlaybackRate(playbackRate);
+    const playStartedAt = nowMs(dependencies);
     await audioPlayer.play();
+    const completedAt = nowMs(dependencies);
+    return {
+      elapsedMs: Math.max(0, completedAt - startedAt),
+      prepareElapsedMs: prepared.elapsedMs,
+      playElapsedMs: Math.max(0, completedAt - playStartedAt),
+      cacheMode: prepared.mode,
+      usedObjectUrl: Boolean(audioObjectUrl),
+      urlHost: hostLabel(url),
+      trace: options.trace
+    };
   }
 
   async function speakText(text, options = {}) {
@@ -205,23 +218,36 @@ function createAudio(url, dependencies = {}) {
 }
 
 async function audioUrlForPlayback(audio = {}, dependencies = {}) {
+  const startedAt = nowMs(dependencies);
   const url = String(audio.url || "");
   if (!shouldCacheAudio(audio)) {
-    return url;
+    return {
+      url,
+      elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+      mode: "direct"
+    };
   }
 
   try {
     const response = await cachedAudioResponse(url, dependencies);
     const blob = await response?.blob?.();
     const objectUrl = blob ? createObjectUrl(blob, dependencies) : "";
-    return objectUrl || url;
+    return {
+      url: objectUrl || url,
+      elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+      mode: objectUrl ? "cache-api-object-url" : "cache-api-miss"
+    };
   } catch {
-    return url;
+    return {
+      url,
+      elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+      mode: "cache-api-error-direct"
+    };
   }
 }
 
 function shouldCacheAudio(audio = {}) {
-  return String(audio.quality || "").trim().toLowerCase() === "generated";
+  return Boolean(audio.cacheBeforePlayback);
 }
 
 async function cachedAudioResponse(url, dependencies = {}) {
@@ -278,6 +304,18 @@ function revokeObjectUrl(url, dependencies = {}) {
   }
 
   globalThis.URL?.revokeObjectURL?.(url);
+}
+
+function nowMs(dependencies = {}) {
+  return typeof dependencies.now === "function" ? dependencies.now() : Date.now();
+}
+
+function hostLabel(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
 }
 
 function speechSynthesisFor(dependencies = {}) {

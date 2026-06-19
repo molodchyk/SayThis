@@ -78,6 +78,26 @@ test("builds speech and voice diagnostics from stored result", async () => {
       }
     }),
     getDebugEvents: () => [{
+      at: "2026-06-19T00:00:00.000Z",
+      kind: "ui:speak-click",
+      trace: {
+        id: "trace-1",
+        source: "popup",
+        action: "popup-speak",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 0
+    }, {
+      at: "2026-06-19T00:00:00.250Z",
+      kind: "audio:popup-start",
+      trace: {
+        id: "trace-1",
+        source: "popup",
+        action: "popup-speak",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 250
+    }, {
       kind: "speech:result",
       speech: {
         spoken: true
@@ -103,7 +123,9 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.offscreenSpeech.requestedLang, "pl-PL");
   assert.equal(diagnostics.offscreenSpeech.selectedVoice.name, "Polish Web");
   assert.equal(diagnostics.playback.sharedAudioCandidate, true);
-  assert.equal(diagnostics.recentEvents.length, 1);
+  assert.equal(diagnostics.timing.audioStartMs, 250);
+  assert.equal(diagnostics.timing.source, "popup");
+  assert.equal(diagnostics.recentEvents.length, 3);
 });
 
 test("summarizes debug payloads without full objects", () => {

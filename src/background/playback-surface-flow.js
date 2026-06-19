@@ -71,23 +71,29 @@ export function createPlaybackSurface(dependencies = {}) {
     });
   }
 
-  async function playAudioOffscreen(result, rate = 0.82) {
+  async function playAudioOffscreen(result, rate = 0.82, trace) {
     return playAudioOffscreenFlow(result, {
       getBestAudio,
       hasOffscreenAudioSupport: () => Boolean(dependencies.hasOffscreenAudioSupport?.()),
       ensureOffscreenAudioDocument,
-      sendOffscreenPlayAudioMessage: (audio, playbackRate) =>
-        dependencies.sendRuntimeMessage?.(createOffscreenPlayAudioMessage(audio, playbackRate))
-    }, rate);
+      sendOffscreenPlayAudioMessage: (audio, playbackRate, messageTrace) =>
+        dependencies.sendRuntimeMessage?.(createOffscreenPlayAudioMessage(audio, playbackRate, {
+          trace: messageTrace
+        })),
+      onOffscreenAudioDebug: (payload) => recordPlaybackDebug("offscreen-audio:result", payload)
+    }, rate, trace);
   }
 
-  async function playAudioItemOffscreen(audio, rate = 0.82) {
+  async function playAudioItemOffscreen(audio, rate = 0.82, trace) {
     return playAudioItemOffscreenFlow(audio, {
       hasOffscreenAudioSupport: () => Boolean(dependencies.hasOffscreenAudioSupport?.()),
       ensureOffscreenAudioDocument,
-      sendOffscreenPlayAudioMessage: (audioItem, playbackRate) =>
-        dependencies.sendRuntimeMessage?.(createOffscreenPlayAudioMessage(audioItem, playbackRate))
-    }, rate);
+      sendOffscreenPlayAudioMessage: (audioItem, playbackRate, messageTrace) =>
+        dependencies.sendRuntimeMessage?.(createOffscreenPlayAudioMessage(audioItem, playbackRate, {
+          trace: messageTrace
+        })),
+      onOffscreenAudioDebug: (payload) => recordPlaybackDebug("offscreen-audio:result", payload)
+    }, rate, trace);
   }
 
   async function speakResult(result, overrides = {}) {

@@ -47,7 +47,41 @@ test("plays audio through an injected audio factory", async () => {
   ]);
 });
 
-test("caches generated audio before offscreen playback", async () => {
+test("plays generated public audio directly unless cache-before-playback is requested", async () => {
+  const calls = [];
+  const playback = createOffscreenAudioPlayback({
+    fetch: async (request) => {
+      calls.push(["fetch", request]);
+      return responseFromBlob("audio-bytes");
+    },
+    createAudio: (url) => {
+      calls.push(["createAudio", url]);
+      return {
+        currentTime: 5,
+        pause: () => calls.push(["pause", url]),
+        play: async () => calls.push(["play", url]),
+        set playbackRate(value) {
+          calls.push(["playbackRate", value]);
+        }
+      };
+    }
+  });
+
+  const result = await playback.playAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated"
+  }, 1);
+
+  assert.equal(result.cacheMode, "direct");
+  assert.equal(calls.some((call) => call[0] === "fetch"), false);
+  assert.deepEqual(calls, [
+    ["createAudio", "https://voice.example/a.ogg"],
+    ["playbackRate", 1],
+    ["play", "https://voice.example/a.ogg"]
+  ]);
+});
+
+test("caches audio before offscreen playback only when requested", async () => {
   const calls = [];
   const cacheEntries = new Map();
   const playback = createOffscreenAudioPlayback({
@@ -91,11 +125,13 @@ test("caches generated audio before offscreen playback", async () => {
 
   await playback.playAudio({
     url: "https://voice.example/a.ogg",
-    quality: "generated"
+    quality: "generated",
+    cacheBeforePlayback: true
   }, 1);
   await playback.playAudio({
     url: "https://voice.example/a.ogg",
-    quality: "generated"
+    quality: "generated",
+    cacheBeforePlayback: true
   }, 1);
 
   assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);

@@ -39,6 +39,11 @@ export function approvedSummaryText(entries = {}, state = {}, formatDate = defau
 }
 
 export function debugSummaryText(diagnostics = {}) {
+  const timing = diagnostics.timing || {};
+  if (Number.isFinite(Number(timing.audioStartMs))) {
+    return `Last audio started in ${Math.round(Number(timing.audioStartMs))} ms.`;
+  }
+
   if (!diagnostics.lastResult) {
     return "No resolved result has been stored yet.";
   }

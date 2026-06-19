@@ -9,6 +9,7 @@ export const MESSAGE_TYPES = Object.freeze({
   feedback: "SAYTHIS_FEEDBACK",
   flushSync: "SAYTHIS_FLUSH_SYNC",
   getDebugState: "SAYTHIS_GET_DEBUG_STATE",
+  debugEvent: "SAYTHIS_DEBUG_EVENT",
   pullApproved: "SAYTHIS_PULL_APPROVED",
   requestSharedAudio: "SAYTHIS_REQUEST_SHARED_AUDIO",
   showResult: "SAYTHIS_SHOW_RESULT",
@@ -44,7 +45,8 @@ export function createSpeakMessage(text, options = {}) {
     lang: normalizeLanguageOption(options.lang),
     useOnline: normalizeOptionalBoolean(options, "useOnline"),
     languageHints: normalizeLanguageHints(options.languageHints),
-    skipSharedAudio: normalizeOptionalBoolean(options, "skipSharedAudio")
+    skipSharedAudio: normalizeOptionalBoolean(options, "skipSharedAudio"),
+    trace: normalizeTrace(options.trace)
   });
 }
 
@@ -72,12 +74,21 @@ export function createGetDebugStateMessage() {
   return { type: MESSAGE_TYPES.getDebugState };
 }
 
+export function createDebugEventMessage(kind, payload = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.debugEvent,
+    kind: normalizeDebugKind(kind),
+    payload: normalizeDebugPayload(payload)
+  });
+}
+
 export function createRequestSharedAudioMessage(text, options = {}) {
   return compactMessage({
     type: MESSAGE_TYPES.requestSharedAudio,
     text: normalizeSelection(text),
     result: options.result && typeof options.result === "object" ? options.result : undefined,
-    rate: normalizeRate(options.rate)
+    rate: normalizeRate(options.rate),
+    trace: normalizeTrace(options.trace)
   });
 }
 
@@ -93,15 +104,17 @@ export function createPlayAudioMessage(audio, options = {}) {
   return compactMessage({
     type: MESSAGE_TYPES.playAudio,
     audio: audio && typeof audio === "object" ? audio : undefined,
-    rate: normalizeRate(options.rate)
+    rate: normalizeRate(options.rate),
+    trace: normalizeTrace(options.trace)
   });
 }
 
-export function createOffscreenPlayAudioMessage(audio, playbackRate) {
+export function createOffscreenPlayAudioMessage(audio, playbackRate, options = {}) {
   return compactMessage({
     type: MESSAGE_TYPES.offscreenPlayAudio,
     audio: audio && typeof audio === "object" ? audio : undefined,
-    playbackRate: normalizeRate(playbackRate)
+    playbackRate: normalizeRate(playbackRate),
+    trace: normalizeTrace(options.trace)
   });
 }
 
@@ -117,7 +130,8 @@ export function createOffscreenSpeakMessage(text, options = {}) {
     type: MESSAGE_TYPES.offscreenSpeak,
     text: normalizeSelection(text),
     lang: normalizeLanguageOption(options.lang),
-    rate: normalizeRate(options.rate)
+    rate: normalizeRate(options.rate),
+    trace: normalizeTrace(options.trace)
   });
 }
 
@@ -201,6 +215,74 @@ function normalizeOptionalBoolean(options, key) {
   }
 
   return Boolean(options[key]);
+}
+
+function normalizeTrace(value = {}) {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const id = normalizeSelection(value.id).slice(0, 80);
+  const startedAt = Number(value.startedAt);
+  if (!id || !Number.isFinite(startedAt)) {
+    return undefined;
+  }
+
+  return compactMessage({
+    id,
+    source: normalizeSelection(value.source).slice(0, 32),
+    action: normalizeSelection(value.action).slice(0, 48),
+    startedAt
+  });
+}
+
+function normalizeDebugKind(value) {
+  return normalizeSelection(value)
+    .replace(/[^\w:.-]+/g, "-")
+    .slice(0, 80);
+}
+
+function normalizeDebugPayload(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  const entries = Object.entries(value).slice(0, 24);
+  return Object.fromEntries(entries.map(([key, item]) => [
+    normalizeDebugKind(key),
+    normalizeDebugValue(item)
+  ]).filter(([key, item]) => key && item !== undefined));
+}
+
+function normalizeDebugValue(value) {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.round(value) : undefined;
+  }
+
+  if (typeof value === "string") {
+    return normalizeLongText(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.slice(0, 12).map(normalizeDebugValue).filter((item) => item !== undefined);
+  }
+
+  if (typeof value === "object") {
+    if (value.id && value.startedAt) {
+      return normalizeTrace(value);
+    }
+    return normalizeDebugPayload(value);
+  }
+
+  return undefined;
 }
 
 function normalizeLongText(value) {

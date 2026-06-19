@@ -402,6 +402,24 @@ test("routes debug diagnostics messages", async () => {
   assert.deepEqual(responses, [{ ok: true, diagnostics }]);
 });
 
+test("routes debug event messages", () => {
+  const responses = [];
+  const calls = [];
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.debugEvent,
+    kind: "audio:popup-start",
+    payload: {
+      elapsedMs: 120
+    }
+  }, (value) => responses.push(value), {
+    recordDebugEvent: (kind, payload) => calls.push([kind, payload])
+  });
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [["audio:popup-start", { elapsedMs: 120 }]]);
+  assert.deepEqual(responses, [{ ok: true }]);
+});
+
 test("reports missing matching voice from speak messages", async () => {
   const responses = [];
   const handled = handleRuntimeMessage({

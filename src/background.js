@@ -139,7 +139,8 @@ async function requestSharedAudio(text, result, options = {}) {
   recordDebugEvent("shared-audio:start", {
     text: normalizeSelection(text),
     options: debugOptions(options),
-    result: summarizeResultForDebug(result)
+    result: summarizeResultForDebug(result),
+    trace: options.trace
   });
   try {
     const sharedResult = await requestSharedAudioForResultFlow(text, result, options, {
@@ -152,13 +153,15 @@ async function requestSharedAudio(text, result, options = {}) {
     recordDebugEvent("shared-audio:result", {
       elapsedMs: Date.now() - startedAt,
       audio: summarizeAudioForDebug(getBestAudio(sharedResult)),
-      result: summarizeResultForDebug(sharedResult)
+      result: summarizeResultForDebug(sharedResult),
+      trace: options.trace
     });
     return sharedResult;
   } catch (error) {
     recordDebugEvent("shared-audio:error", {
       elapsedMs: Date.now() - startedAt,
-      error: errorMessage(error)
+      error: errorMessage(error),
+      trace: options.trace
     });
     throw error;
   }
@@ -169,7 +172,8 @@ async function speakResult(result, overrides = {}) {
   recordDebugEvent("speech:start", {
     overrides: debugOptions(overrides),
     plan: speechPlanSummary(result, overrides),
-    result: summarizeResultForDebug(result)
+    result: summarizeResultForDebug(result),
+    trace: overrides.trace
   });
   try {
     const speech = await playbackSurface.speakResult(result, overrides);
@@ -187,17 +191,19 @@ async function speakResult(result, overrides = {}) {
   }
 }
 
-async function playAudio(audio, rate) {
+async function playAudio(audio, rate, trace) {
   const startedAt = Date.now();
   recordDebugEvent("audio:start", {
     audio: summarizeAudioForDebug(audio),
-    rate
+    rate,
+    trace
   });
   try {
-    const played = await playbackSurface.playAudioItemOffscreen(audio, rate);
+    const played = await playbackSurface.playAudioItemOffscreen(audio, rate, trace);
     recordDebugEvent("audio:result", {
       elapsedMs: Date.now() - startedAt,
-      played
+      played: Boolean(played),
+      trace
     });
     return played;
   } catch (error) {
@@ -238,17 +244,24 @@ function runtimeMessageDependencies() {
     flushCommunitySync,
     pullApprovedCommunityEntries,
     requestSharedAudio,
-    getDebugState
+    getDebugState,
+    recordDebugEvent
   };
 }
 
 function recordDebugEvent(kind, payload = {}) {
+  const now = Date.now();
+  const trace = normalizeDebugTrace(payload.trace);
   debugEvents.push({
-    at: new Date().toISOString(),
+    at: new Date(now).toISOString(),
     kind,
-    ...payload
+    ...payload,
+    ...(trace ? {
+      trace,
+      sinceTraceStartMs: Math.max(0, now - trace.startedAt)
+    } : {})
   });
-  while (debugEvents.length > 30) {
+  while (debugEvents.length > 60) {
     debugEvents.shift();
   }
 }
@@ -278,10 +291,30 @@ function debugOptions(options = {}) {
     skipSharedAudio: Boolean(options.skipSharedAudio),
     rate: options.rate,
     lang: options.lang,
-    languageHints: Array.isArray(options.languageHints) ? options.languageHints : undefined
+    languageHints: Array.isArray(options.languageHints) ? options.languageHints : undefined,
+    trace: normalizeDebugTrace(options.trace)
   };
 }
 
 function errorMessage(error) {
   return error?.message || String(error || "Unknown error");
+}
+
+function normalizeDebugTrace(value = {}) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const id = normalizeSelection(value.id).slice(0, 80);
+  const startedAt = Number(value.startedAt);
+  if (!id || !Number.isFinite(startedAt)) {
+    return null;
+  }
+
+  return {
+    id,
+    source: normalizeSelection(value.source).slice(0, 32),
+    action: normalizeSelection(value.action).slice(0, 48),
+    startedAt
+  };
 }

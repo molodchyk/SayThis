@@ -61,6 +61,7 @@ export async function buildDebugDiagnostics(dependencies = {}) {
   });
   const queue = normalizeSubmissionQueue(stored[storageKeys.syncQueue]);
   const cache = normalizeResultCache(stored[storageKeys.resultCache]);
+  const events = recentEvents(dependencies);
 
   return {
     generatedAt: nowIso(dependencies),
@@ -82,7 +83,8 @@ export async function buildDebugDiagnostics(dependencies = {}) {
     speechPlan,
     offscreenSpeech,
     playback: playbackSummary(lastResult),
-    recentEvents: recentEvents(dependencies)
+    timing: playbackTimingSummary(events),
+    recentEvents: events
   };
 }
 
@@ -265,7 +267,57 @@ function extensionSummary(dependencies = {}) {
 
 function recentEvents(dependencies = {}) {
   const events = dependencies.getDebugEvents?.();
-  return Array.isArray(events) ? events.slice(-30) : [];
+  return Array.isArray(events) ? events.slice(-60) : [];
+}
+
+function playbackTimingSummary(events = []) {
+  const groups = new Map();
+  for (const event of events) {
+    const id = normalizeSelection(event?.trace?.id);
+    if (!id) {
+      continue;
+    }
+
+    const group = groups.get(id) || [];
+    group.push(event);
+    groups.set(id, group);
+  }
+
+  const latest = [...groups.values()]
+    .sort((left, right) => eventTime(lastEvent(right)?.at) - eventTime(lastEvent(left)?.at))[0];
+  if (!latest?.length) {
+    return null;
+  }
+
+  const trace = latest[0].trace || {};
+  const audioStart = latest.find((event) => [
+    "audio:popup-start",
+    "audio:overlay-start",
+    "audio:offscreen-response",
+    "offscreen-audio:result"
+  ].includes(event.kind));
+  const last = latest[latest.length - 1];
+
+  return {
+    traceId: normalizeSelection(trace.id),
+    source: normalizeSelection(trace.source),
+    action: normalizeSelection(trace.action),
+    audioStartMs: numberOrNull(audioStart?.sinceTraceStartMs),
+    lastEventMs: numberOrNull(last?.sinceTraceStartMs),
+    eventCount: latest.length,
+    events: latest.map((event) => ({
+      kind: normalizeSelection(event.kind),
+      sinceTraceStartMs: numberOrNull(event.sinceTraceStartMs),
+      elapsedMs: numberOrNull(event.elapsedMs),
+      cacheMode: normalizeSelection(event.cacheMode),
+      urlHost: normalizeSelection(event.urlHost),
+      error: normalizeSelection(event.error)
+    }))
+  };
+}
+
+function lastEvent(events = []) {
+  return events[events.length - 1] || null;
 }
 
 function countKeys(value) {
@@ -282,4 +334,14 @@ function nowIso(dependencies = {}) {
 
 function isPlainObject(value) {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function eventTime(value) {
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : 0;
+}
+
+function numberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number) : null;
 }

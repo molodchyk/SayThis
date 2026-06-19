@@ -33,12 +33,12 @@ export async function playResolvedResult(result, tabId, dependencies = {}) {
   return { mode: speech?.fallback === "guide" ? "guide" : "tts" };
 }
 
-export async function playAudioOffscreen(result, dependencies = {}, rate = 0.82) {
+export async function playAudioOffscreen(result, dependencies = {}, rate = 0.82, trace) {
   const audio = dependencies.getBestAudio?.(result);
-  return playAudioItemOffscreen(audio, dependencies, rate);
+  return playAudioItemOffscreen(audio, dependencies, rate, trace);
 }
 
-export async function playAudioItemOffscreen(audio, dependencies = {}, rate = 0.82) {
+export async function playAudioItemOffscreen(audio, dependencies = {}, rate = 0.82, trace) {
   if (!audio?.url || !dependencies.hasOffscreenAudioSupport?.()) {
     return false;
   }
@@ -47,8 +47,15 @@ export async function playAudioItemOffscreen(audio, dependencies = {}, rate = 0.
     await dependencies.ensureOffscreenAudioDocument?.();
     const response = await dependencies.sendOffscreenPlayAudioMessage?.(
       audio,
-      rate < 0.7 ? 0.75 : 1
+      rate < 0.7 ? 0.75 : 1,
+      trace
     );
+    if (response?.playback) {
+      dependencies.onOffscreenAudioDebug?.({
+        ...response.playback,
+        trace
+      });
+    }
     return Boolean(response?.ok);
   } catch {
     return false;

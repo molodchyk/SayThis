@@ -37,12 +37,16 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     respondWithResult(
       resultPromise.then(async (result) => {
         const playableResult = await resolvePlayableResult(selectedText, result, options, dependencies);
-        const playback = await playResolvedAudio(playableResult, message.rate, dependencies);
+        const playback = await playResolvedAudio(playableResult, message.rate, dependencies, message.trace);
         if (playback) {
           return { result: playableResult, speech: playback };
         }
 
-        const speech = await dependencies.speakResult(playableResult, { rate: message.rate, lang: message.lang });
+        const speech = await dependencies.speakResult(playableResult, speechOptions({
+          rate: message.rate,
+          lang: message.lang,
+          trace: message.trace
+        }));
         if (!speech || speech.spoken === false) {
           throw new Error(speech?.error || "Speech unavailable.");
         }
@@ -61,14 +65,17 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
 
   if (message?.type === MESSAGE_TYPES.playAudio) {
     respondWithResult(
-      Promise.resolve(dependencies.playAudio?.(message.audio, message.rate)).then((played) => {
+      Promise.resolve(dependencies.playAudio?.(message.audio, message.rate, message.trace)).then((played) => {
         if (!played) {
           throw new Error("Audio playback failed.");
         }
-        return true;
+        return played;
       }),
       sendResponse,
-      () => ({ ok: true }),
+      (playback) => ({
+        ok: true,
+        ...(typeof playback === "object" ? { playback } : {})
+      }),
       "Audio playback failed."
     );
     return true;
@@ -126,6 +133,12 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     return true;
   }
 
+  if (message?.type === MESSAGE_TYPES.debugEvent) {
+    dependencies.recordDebugEvent?.(message.kind, message.payload || {});
+    sendResponse({ ok: true });
+    return true;
+  }
+
   if (message?.type === MESSAGE_TYPES.requestSharedAudio) {
     const selectedText = normalizeSelection(message.text);
     if (!selectedText) {
@@ -135,7 +148,10 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
 
     respondWithResult(
       typeof dependencies.requestSharedAudio === "function"
-        ? dependencies.requestSharedAudio(selectedText, message.result || null, { rate: message.rate })
+        ? dependencies.requestSharedAudio(selectedText, message.result || null, compactOptions({
+          rate: message.rate,
+          trace: message.trace
+        }))
         : Promise.reject(new Error("Shared audio unavailable.")),
       sendResponse,
       (result) => ({ ok: true, result }),
@@ -147,14 +163,14 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
   return false;
 }
 
-async function playResolvedAudio(result, rate, dependencies = {}) {
+async function playResolvedAudio(result, rate, dependencies = {}, trace) {
   const audio = getBestAudio(result);
   if (!audio?.url || typeof dependencies.playAudio !== "function") {
     return null;
   }
 
   try {
-    const played = await dependencies.playAudio(audio, rate);
+    const played = await dependencies.playAudio(audio, rate, trace);
     return played
       ? {
         fallback: "audio",
@@ -199,5 +215,19 @@ function speechSummary(speech = {}) {
   return {
     ...(fallback ? { fallback } : {}),
     ...(text ? { text } : {})
+  };
+}
+
+function compactOptions(options = {}) {
+  return Object.fromEntries(
+    Object.entries(options).filter(([, value]) => value !== undefined)
+  );
+}
+
+function speechOptions(options = {}) {
+  return {
+    rate: options.rate,
+    lang: options.lang,
+    ...(options.trace ? { trace: options.trace } : {})
   };
 }

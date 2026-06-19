@@ -215,7 +215,8 @@
 
     if (options.autoPlay) {
       speak(result, options.autoPlayRate || 0.82, {
-        onlineChecked: Boolean(options.onlineChecked)
+        onlineChecked: Boolean(options.onlineChecked),
+        trace: options.trace
       });
     }
   }
@@ -232,7 +233,9 @@
       if (!response?.ok) {
         setStatus(response?.error || "Online lookup failed.");
         if (options.autoPlay !== false) {
-          speakCandidate(result, options.rate || 0.82);
+          speakCandidate(result, options.rate || 0.82, {
+            trace: options.trace
+          });
         }
         return;
       }
@@ -241,7 +244,8 @@
         autoPlay: options.autoPlay !== false,
         autoPlayRate: options.rate || 0.82,
         lookupHints: languageHints.join(", "),
-        onlineChecked: true
+        onlineChecked: true,
+        trace: options.trace
       });
       setStatus("Online result ready.");
     });
@@ -347,45 +351,56 @@
   }
 
   function speak(result, rate, options = {}) {
+    const trace = options.trace || createTrace(rate < 0.7 ? "overlay-slow" : "overlay-speak");
+    recordDebugEvent("ui:speak-click", trace, {
+      rate,
+      text: result?.query || result?.display || result?.sourceForm
+    });
+
     if (!options.onlineChecked && !hasTopTierAudio(result)) {
       resolveOnline(result, {
         autoPlay: true,
-        rate
+        rate,
+        trace
       });
       return;
     }
 
     if (isSharedAudioCandidate(result)) {
-      ensureSharedAudio(result, rate, options).then((sharedResult) => {
-        if (playAudio(sharedResult, rate)) {
-          setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+      ensureSharedAudio(result, rate, {
+        ...options,
+        trace
+      }).then((sharedResult) => {
+        if (playAudio(sharedResult, rate, trace)) {
+          setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
           return;
         }
 
-        speakCandidate(sharedResult, rate, { skipSharedAudio: true });
+        speakCandidate(sharedResult, rate, { skipSharedAudio: true, trace });
       });
       return;
     }
 
-    if (playAudio(result, rate)) {
+    if (playAudio(result, rate, trace)) {
       return;
     }
 
     if (!options.onlineChecked) {
       resolveOnline(result, {
         autoPlay: true,
-        rate
+        rate,
+        trace
       });
       return;
     }
 
-    ensureSharedAudio(result, rate).then((sharedResult) => {
-      if (playAudio(sharedResult, rate)) {
-        setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+    ensureSharedAudio(result, rate, { trace }).then((sharedResult) => {
+      if (playAudio(sharedResult, rate, trace)) {
+        setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
         return;
       }
 
-      speakCandidate(sharedResult, rate, { skipSharedAudio: true });
+      speakCandidate(sharedResult, rate, { skipSharedAudio: true, trace });
     });
   }
 
@@ -394,16 +409,26 @@
       return;
     }
 
+    const trace = options.trace || createTrace("overlay-speech-row");
+    recordDebugEvent("ui:result-speak-click", trace, {
+      rate,
+      text: result.query || result.sourceForm || result.display
+    });
+
     if (!options.skipSharedAudio && isSharedAudioCandidate(result)) {
-      ensureSharedAudio(result, rate, options).then((sharedResult) => {
-        if (playAudio(sharedResult, rate)) {
-          setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+      ensureSharedAudio(result, rate, {
+        ...options,
+        trace
+      }).then((sharedResult) => {
+        if (playAudio(sharedResult, rate, trace)) {
+          setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
           return;
         }
 
         speakCandidate(sharedResult, rate, {
           ...options,
-          skipSharedAudio: true
+          skipSharedAudio: true,
+          trace
         });
       });
       return;
@@ -414,6 +439,7 @@
       text: result.query || result.sourceForm || result.display,
       result,
       rate,
+      trace,
       ...(options.skipSharedAudio ? { skipSharedAudio: true } : {})
     }).then((response) => {
       setStatus(response?.ok ? speakingStatus(response, rate) : response?.error || "Speech failed.");
@@ -430,10 +456,12 @@
       type: "SAYTHIS_REQUEST_SHARED_AUDIO",
       text: result.query || result.display || result.sourceForm,
       result,
-      rate
+      rate,
+      trace: options.trace
     })).then((response) => {
       if (!response?.ok || !getBestAudio(response.result)) {
         if (response?.timedOut) {
+          recordDebugEvent("shared-audio:ui-timeout", options.trace, { rate });
           setStatus("Using speech fallback.");
         }
         return result;
@@ -446,15 +474,23 @@
     });
   }
 
-  function playAudio(result, rate) {
+  function playAudio(result, rate, trace) {
     const audio = getBestAudio(result);
-    return playAudioItem(audio, result, rate, { skipSharedAudio: true });
+    return playAudioItem(audio, result, rate, { skipSharedAudio: true, trace });
   }
 
   function playAudioItem(audio, result, rate, options = {}) {
     if (!audio?.url) {
       return false;
     }
+
+    const trace = options.trace || createTrace("overlay-audio-row");
+    recordDebugEvent("ui:audio-request", trace, {
+      rate,
+      quality: audio.quality,
+      source: audio.source,
+      urlHost: hostLabel(audio.url)
+    });
 
     if (!options.skipSharedAudio && isGeneratedAudioItem(audio) && isSharedAudioCandidate(result)) {
       ensureSharedAudio(result, rate, options).then((sharedResult) => {
@@ -480,7 +516,8 @@
         text: result.query || result.display,
         result,
         rate,
-        skipSharedAudio: true
+        skipSharedAudio: true,
+        trace
       }).then((response) => {
         if (response?.ok) {
           setStatus(speakingStatus(response, rate));
@@ -495,11 +532,19 @@
       sendOverlayMessage({
         type: "SAYTHIS_PLAY_AUDIO",
         audio,
-        rate
+        rate,
+        trace
       }).then((response) => {
         if (!response?.ok) {
+          recordDebugEvent("audio:offscreen-error", trace, {
+            error: response?.error || "Audio playback failed."
+          });
           fallbackToSpeech();
+          return;
         }
+
+        recordDebugEvent("audio:offscreen-response", trace, response.playback || {});
+        setStatus(startedStatus(rate, elapsedMs(trace)));
       });
       return true;
     }
@@ -507,9 +552,20 @@
     audioPlayer = new Audio(audio.url);
     audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
     audioPlayer.addEventListener("error", () => {
+      recordDebugEvent("audio:overlay-error", trace, {
+        urlHost: hostLabel(audio.url)
+      });
       fallbackToSpeech();
     });
-    audioPlayer.play().catch(() => {
+    audioPlayer.play().then(() => {
+      recordDebugEvent("audio:overlay-start", trace, {
+        urlHost: hostLabel(audio.url)
+      });
+      setStatus(startedStatus(rate, elapsedMs(trace)));
+    }).catch(() => {
+      recordDebugEvent("audio:overlay-error", trace, {
+        urlHost: hostLabel(audio.url)
+      });
       fallbackToSpeech();
     });
     return true;
@@ -539,6 +595,50 @@
     }
 
     return overlayRuntime.sendRuntimeMessage(message, runtimeAdapters);
+  }
+
+  function recordDebugEvent(kind, trace, payload = {}) {
+    if (!trace?.id || globalThis.__sayThisOverlayDebugEvents !== true) {
+      return;
+    }
+
+    sendOverlayMessage({
+      type: "SAYTHIS_DEBUG_EVENT",
+      kind,
+      payload: {
+        ...payload,
+        trace,
+        elapsedMs: elapsedMs(trace)
+      }
+    }).catch(() => {});
+  }
+
+  function createTrace(action) {
+    const startedAt = Date.now();
+    const random = Math.random().toString(36).slice(2, 8);
+    return {
+      id: `overlay-${startedAt.toString(36)}-${random}`,
+      source: "overlay",
+      action,
+      startedAt
+    };
+  }
+
+  function elapsedMs(trace) {
+    return trace?.startedAt ? Math.max(0, Date.now() - Number(trace.startedAt)) : undefined;
+  }
+
+  function startedStatus(rate, ms) {
+    const value = Number.isFinite(Number(ms)) ? ` in ${Math.round(Number(ms))} ms` : "";
+    return rate < 0.7 ? `Audio started slowly${value}.` : `Audio started${value}.`;
+  }
+
+  function hostLabel(url) {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
   }
 
   function responseWithinSharedAudioWait(promise) {

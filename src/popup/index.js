@@ -13,6 +13,7 @@ import {
 } from "../correction-form.js";
 import {
   createFeedbackMessage,
+  createDebugEventMessage,
   createPlayAudioMessage,
   createResolveMessage,
   createRequestSharedAudioMessage,
@@ -128,12 +129,18 @@ selectionInput.addEventListener("input", () => {
 });
 
 async function speakSelection(rate) {
+  const trace = createPlaybackTrace(rate < 0.7 ? "popup-slow" : "popup-speak");
   const text = normalizeSelection(selectionInput.value);
   if (!text) {
     setStatus("No selected text.");
     updateButtonState();
     return;
   }
+
+  recordTimingEvent("ui:speak-click", trace, {
+    rate,
+    text
+  });
 
   if (!currentResult) {
     await resolveSelection();
@@ -146,17 +153,18 @@ async function speakSelection(rate) {
     }
   }
 
-  currentResult = await ensureSharedAudio(currentResult, rate);
+  currentResult = await ensureSharedAudio(currentResult, rate, { trace });
 
-  if (playAudio(currentResult, rate)) {
-    setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+  if (playAudio(currentResult, rate, trace)) {
+    setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
     return;
   }
 
   const response = await sendMessage(createSpeakMessage(text, {
     result: currentResult,
     rate,
-    skipSharedAudio: true
+    skipSharedAudio: true,
+    trace
   }));
 
   if (response.ok) {
@@ -310,6 +318,7 @@ function feedbackFromCorrectionFields(kind) {
 }
 
 function speakAlternate(index, rate) {
+  const trace = createPlaybackTrace("popup-alternate");
   const alternate = Array.isArray(currentResult?.alternateResults)
     ? currentResult.alternateResults[index]
     : null;
@@ -317,33 +326,46 @@ function speakAlternate(index, rate) {
     return;
   }
 
-  if (playAudioItem(getBestAudio(alternate), alternate, rate, { replaceCurrent: false })) {
-    setStatus("Playing alternate.");
+  recordTimingEvent("ui:alternate-click", trace, { rate });
+
+  if (playAudioItem(getBestAudio(alternate), alternate, rate, {
+    replaceCurrent: false,
+    trace
+  })) {
+    setStatus("Starting alternate.");
     return;
   }
 
   speakResultCandidate(preferredSpeechResultForResult(alternate), rate, "Speaking alternate", {
-    replaceCurrent: false
+    replaceCurrent: false,
+    trace
   });
 }
 
 async function speakResultCandidate(result, rate, statusBase = "Speaking", options = {}) {
+  const trace = options.trace || createPlaybackTrace(statusBase.toLowerCase().replace(/\s+/g, "-") || "popup-row-speak");
   const text = normalizeSelection(selectionInput.value || result?.query || result?.sourceForm || result?.display);
   if (!text) {
     setStatus("No selected text.");
     return;
   }
 
-  const sharedAudioResult = await ensureSharedAudio(result, rate, options);
-  if (playAudio(sharedAudioResult, rate)) {
-    setStatus(rate < 0.7 ? "Playing audio slowly." : "Playing audio.");
+  recordTimingEvent("ui:result-speak-click", trace, { rate, text });
+
+  const sharedAudioResult = await ensureSharedAudio(result, rate, {
+    ...options,
+    trace
+  });
+  if (playAudio(sharedAudioResult, rate, trace)) {
+    setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
     return;
   }
 
   const response = await sendMessage(createSpeakMessage(text, {
     result: sharedAudioResult,
     rate,
-    skipSharedAudio: true
+    skipSharedAudio: true,
+    trace
   }));
 
   setStatus(response.ok
@@ -364,10 +386,12 @@ async function ensureSharedAudio(result, rate, options = {}) {
   setStatus("Requesting shared voice.");
   const response = await responseWithinSharedAudioWait(sendMessage(createRequestSharedAudioMessage(text, {
     result,
-    rate
+    rate,
+    trace: options.trace
   })));
   if (!response.ok || !getBestAudio(response.result)) {
     if (response.timedOut) {
+      recordTimingEvent("shared-audio:ui-timeout", options.trace, { rate });
       setStatus("Using speech fallback.");
     }
     return result;
@@ -380,9 +404,9 @@ async function ensureSharedAudio(result, rate, options = {}) {
   return response.result;
 }
 
-function playAudio(result, rate) {
+function playAudio(result, rate, trace) {
   const audio = getBestAudio(result);
-  return playAudioItem(audio, result, rate, { skipSharedAudio: true });
+  return playAudioItem(audio, result, rate, { skipSharedAudio: true, trace });
 }
 
 function playAudioItem(audio, result, rate, options = {}) {
@@ -390,12 +414,21 @@ function playAudioItem(audio, result, rate, options = {}) {
     return false;
   }
 
+  const trace = options.trace || createPlaybackTrace("popup-audio-row");
+  recordTimingEvent("ui:audio-request", trace, {
+    rate,
+    quality: audio.quality,
+    source: audio.source,
+    urlHost: hostLabel(audio.url)
+  });
+
   if (!options.skipSharedAudio && isGeneratedAudioItem(audio) && isSharedAudioCandidate(result)) {
     ensureSharedAudio(result, rate, options).then((sharedResult) => {
       const sharedAudio = getBestAudio(sharedResult);
       playAudioItem(sharedAudio || audio, sharedResult || result, rate, {
         ...options,
-        skipSharedAudio: true
+        skipSharedAudio: true,
+        trace
       });
     });
     return true;
@@ -407,7 +440,8 @@ function playAudioItem(audio, result, rate, options = {}) {
     const response = await sendMessage(createSpeakMessage(text, {
       result,
       rate,
-      skipSharedAudio: true
+      skipSharedAudio: true,
+      trace
     }));
     if (response.ok) {
       if (options.replaceCurrent !== false) {
@@ -421,15 +455,30 @@ function playAudioItem(audio, result, rate, options = {}) {
   };
 
   if (isGeneratedAudioItem(audio)) {
-    sendMessage(createPlayAudioMessage(audio, { rate })).then((response) => {
+    sendMessage(createPlayAudioMessage(audio, { rate, trace })).then((response) => {
       if (!response?.ok) {
+        recordTimingEvent("audio:offscreen-error", trace, {
+          error: response?.error || "Audio playback failed."
+        });
         fallbackToSpeech();
+        return;
       }
+
+      recordTimingEvent("audio:offscreen-response", trace, response.playback || {});
+      setStatus(startedStatus(rate, elapsedMs(trace)));
     });
     return true;
   }
 
-  return audioPlayback.playUrl(audio.url, rate, fallbackToSpeech);
+  return audioPlayback.playUrl(audio.url, rate, fallbackToSpeech, {
+    onStart: (details) => {
+      recordTimingEvent("audio:popup-start", trace, details);
+      setStatus(startedStatus(rate, elapsedMs(trace)));
+    },
+    onError: (details) => {
+      recordTimingEvent("audio:popup-error", trace, details);
+    }
+  });
 }
 
 function isGeneratedAudioItem(audio = {}) {
@@ -446,6 +495,33 @@ function stopAudio() {
 
 function sendMessage(message) {
   return sendRuntimeMessage(message, runtimeAdapters);
+}
+
+function recordTimingEvent(kind, trace, payload = {}) {
+  if (!trace?.id) {
+    return;
+  }
+
+  sendMessage(createDebugEventMessage(kind, {
+    ...payload,
+    trace,
+    elapsedMs: elapsedMs(trace)
+  })).catch(() => {});
+}
+
+function createPlaybackTrace(action) {
+  const startedAt = Date.now();
+  const random = Math.random().toString(36).slice(2, 8);
+  return {
+    id: `popup-${startedAt.toString(36)}-${random}`,
+    source: "popup",
+    action,
+    startedAt
+  };
+}
+
+function elapsedMs(trace) {
+  return trace?.startedAt ? Math.max(0, Date.now() - Number(trace.startedAt)) : undefined;
 }
 
 function responseWithinSharedAudioWait(promise) {
@@ -471,6 +547,19 @@ function normalizeUiWaitMs(value, fallback) {
 
 function setStatus(value) {
   statusText.textContent = value;
+}
+
+function startedStatus(rate, ms) {
+  const value = Number.isFinite(Number(ms)) ? ` in ${Math.round(Number(ms))} ms` : "";
+  return rate < 0.7 ? `Audio started slowly${value}.` : `Audio started${value}.`;
+}
+
+function hostLabel(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
 }
 
 function lookupHints() {
