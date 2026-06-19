@@ -480,15 +480,15 @@ test("context menu reuses shared audio prepared from selection", async () => {
 test("context menu does not wait on a stuck prepared shared-audio request", async () => {
   clearPreparedSharedAudioForTests();
   const calls = [];
-  const direct = {
+  const localPlayable = {
     display: "Exampletown",
     sourceForm: "Przykladowo",
-    sourceStatus: "generated-audio",
+    sourceStatus: "structured-source",
     pronunciation: {
       audio: [{
-        label: "Fresh shared audio",
-        url: "https://audio.example/fresh.mp3",
-        quality: "generated"
+        label: "Local playable audio",
+        url: "https://audio.example/local.mp3",
+        quality: "source-backed"
       }]
     }
   };
@@ -501,7 +501,7 @@ test("context menu does not wait on a stuck prepared shared-audio request", asyn
   let requestCount = 0;
   let finishResolve;
   const slowResolved = new Promise((resolve) => {
-    finishResolve = () => resolve({ display: "Late result" });
+    finishResolve = () => resolve(localPlayable);
   });
   const dependencies = {
     resolveOptionsForMenuId: () => ({
@@ -518,7 +518,7 @@ test("context menu does not wait on a stuck prepared shared-audio request", asyn
     requestSharedAudio: async (text, value, options) => {
       requestCount += 1;
       calls.push(["requestSharedAudio", text, value, options]);
-      return requestCount === 1 ? new Promise(() => {}) : direct;
+      return new Promise(() => {});
     },
     resolveSelection: async (text, options) => {
       calls.push(["resolveSelection", text, options]);
@@ -534,6 +534,7 @@ test("context menu does not wait on a stuck prepared shared-audio request", asyn
     rate: 0.82,
     trace: selectionTrace
   }, dependencies);
+  setTimeout(finishResolve, 10);
   const result = await handleContextMenuClick(
     { menuItemId: "say", selectionText: " Exampletown " },
     { id: 42 },
@@ -541,11 +542,10 @@ test("context menu does not wait on a stuck prepared shared-audio request", asyn
   );
 
   assert.equal(result.handled, true);
-  assert.equal(result.result, direct);
-  assert.equal(requestCount, 2);
-  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
+  assert.equal(result.result, localPlayable);
+  assert.equal(requestCount, 1);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === localPlayable), true);
 
-  finishResolve();
   await delay(0);
   clearPreparedSharedAudioForTests();
 });

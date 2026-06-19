@@ -75,14 +75,19 @@ export function takePreparedSharedAudio(selectedText, options = {}) {
 }
 
 export async function requestPreparedOrDirectSharedAudio(selectedText, options = {}, dependencies = {}) {
-  const prepared = takePreparedSharedAudio(selectedText, options);
+  const prepared = preparedRecordForKeys(preparedSharedAudioKeys(selectedText, options.trace));
   if (prepared) {
-    const result = await promiseWithinWait(
-      prepared,
+    const preparedResult = await waitForPreparedResult(
+      prepared.promise,
       normalizePreparedWaitMs(dependencies.preparedSharedAudioWaitMs)
     );
-    if (result) {
-      return result;
+    if (preparedResult.status === "timeout") {
+      return null;
+    }
+
+    deletePreparedRecord(prepared);
+    if (preparedResult.result) {
+      return preparedResult.result;
     }
   }
 
@@ -164,13 +169,13 @@ function compactOptions(options = {}) {
   );
 }
 
-async function promiseWithinWait(promise, waitMs) {
+async function waitForPreparedResult(promise, waitMs) {
   const normalizedWaitMs = Math.max(0, Number(waitMs) || 0);
   if (!promise || !normalizedWaitMs || typeof setTimeout !== "function") {
     try {
-      return await promise;
+      return { status: "resolved", result: await promise };
     } catch {
-      return null;
+      return { status: "error", result: null };
     }
   }
 
@@ -178,13 +183,13 @@ async function promiseWithinWait(promise, waitMs) {
   let timeoutId;
   try {
     return await Promise.race([
-      promise,
+      promise
+        .then((result) => ({ status: "resolved", result }))
+        .catch(() => ({ status: "error", result: null })),
       new Promise((resolve) => {
-        timeoutId = setTimeout(() => resolve(null), normalizedWaitMs);
+        timeoutId = setTimeout(() => resolve({ status: "timeout", result: null }), normalizedWaitMs);
       })
     ]);
-  } catch {
-    return null;
   } finally {
     clearTimeout(timeoutId);
   }

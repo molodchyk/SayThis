@@ -47,7 +47,26 @@ test("marks successfully preloaded generated shared audio for cached playback", 
   clearPreparedSharedAudioForTests();
 });
 
-test("falls back to a fresh direct request when prepared shared audio is slow", async () => {
+test("does not duplicate a slow prepared shared-audio request", async () => {
+  clearPreparedSharedAudioForTests();
+  let requestCount = 0;
+  const dependencies = {
+    requestSharedAudio: async () => {
+      requestCount += 1;
+      return new Promise(() => {});
+    },
+    preparedSharedAudioWaitMs: 5
+  };
+
+  prepareSharedAudio("Exampletown", {}, dependencies);
+  const result = await requestPreparedOrDirectSharedAudio("Exampletown", {}, dependencies);
+
+  assert.equal(result, null);
+  assert.equal(requestCount, 1);
+  clearPreparedSharedAudioForTests();
+});
+
+test("falls back to a fresh direct request when prepared shared audio resolves empty", async () => {
   clearPreparedSharedAudioForTests();
   const direct = {
     display: "Exampletown",
@@ -64,9 +83,9 @@ test("falls back to a fresh direct request when prepared shared audio is slow", 
   const dependencies = {
     requestSharedAudio: async () => {
       requestCount += 1;
-      return requestCount === 1 ? new Promise(() => {}) : direct;
+      return requestCount === 1 ? null : direct;
     },
-    preparedSharedAudioWaitMs: 5
+    preparedSharedAudioWaitMs: 20
   };
 
   prepareSharedAudio("Exampletown", {}, dependencies);
@@ -74,5 +93,46 @@ test("falls back to a fresh direct request when prepared shared audio is slow", 
 
   assert.equal(result, direct);
   assert.equal(requestCount, 2);
+  clearPreparedSharedAudioForTests();
+});
+
+test("reuses a late prepared shared-audio result after an earlier wait timed out", async () => {
+  clearPreparedSharedAudioForTests();
+  const direct = {
+    display: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Prepared shared audio",
+        url: "https://audio.example/prepared.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  let requestCount = 0;
+  let finishPrepared;
+  const preparedPromise = new Promise((resolve) => {
+    finishPrepared = () => resolve(direct);
+  });
+  const dependencies = {
+    requestSharedAudio: async () => {
+      requestCount += 1;
+      return preparedPromise;
+    },
+    preparedSharedAudioWaitMs: 5
+  };
+
+  prepareSharedAudio("Exampletown", {}, dependencies);
+  const firstResult = await requestPreparedOrDirectSharedAudio("Exampletown", {}, dependencies);
+
+  assert.equal(firstResult, null);
+  assert.equal(requestCount, 1);
+
+  finishPrepared();
+  await delay(0);
+  const secondResult = await requestPreparedOrDirectSharedAudio("Exampletown", {}, dependencies);
+
+  assert.equal(secondResult, direct);
+  assert.equal(requestCount, 1);
   clearPreparedSharedAudioForTests();
 });
