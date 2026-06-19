@@ -806,6 +806,34 @@ test("routes extension-owned audio playback messages", async () => {
   assert.deepEqual(responses, [{ ok: true }]);
 });
 
+test("routes prepare playback messages without resolving", async () => {
+  const responses = [];
+  const calls = [];
+  const trace = {
+    id: "trace-prepare",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.preparePlayback,
+    trace
+  }, (value) => responses.push(value), {
+    preparePlayback: async (messageTrace) => {
+      calls.push(["preparePlayback", messageTrace]);
+    },
+    resolveSelection: async () => {
+      throw new Error("prepare should not resolve");
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [["preparePlayback", trace]]);
+  assert.deepEqual(responses, [{ ok: true }]);
+});
+
 test("routes shared audio request messages", async () => {
   const responses = [];
   const calls = [];

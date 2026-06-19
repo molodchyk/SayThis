@@ -9,6 +9,7 @@ import {
   createOffscreenSpeakMessage,
   createOffscreenPlayAudioMessage,
   createOffscreenStopAudioMessage,
+  createPreparePlaybackMessage,
   createPlayAudioMessage,
   createPullApprovedMessage,
   createRequestSharedAudioMessage,
@@ -88,6 +89,22 @@ test("builds compact stop and sync messages", () => {
   assert.deepEqual(createFlushSyncMessage(), { type: MESSAGE_TYPES.flushSync });
   assert.deepEqual(createPullApprovedMessage(), { type: MESSAGE_TYPES.pullApproved });
   assert.deepEqual(createGetDebugStateMessage(), { type: MESSAGE_TYPES.getDebugState });
+  assert.deepEqual(createPreparePlaybackMessage({
+    trace: {
+      id: "trace-prepare",
+      source: "content-selection",
+      action: "select-to-hear",
+      startedAt: 1800000000000
+    }
+  }), {
+    type: MESSAGE_TYPES.preparePlayback,
+    trace: {
+      id: "trace-prepare",
+      source: "content-selection",
+      action: "select-to-hear",
+      startedAt: 1800000000000
+    }
+  });
 });
 
 test("builds bounded debug event messages", () => {

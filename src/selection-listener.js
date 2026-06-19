@@ -5,6 +5,7 @@
   window.__sayThisSelectionListenerReady = true;
 
   const MESSAGE_TYPE_SPEAK = "SAYTHIS_SPEAK";
+  const MESSAGE_TYPE_PREPARE_PLAYBACK = "SAYTHIS_PREPARE_PLAYBACK";
   const SETTINGS_KEY = "settings";
   const SELECTION_CHANGE_DEBOUNCE_MS = 160;
   const COMMITTED_SELECTION_DEBOUNCE_MS = 0;
@@ -17,6 +18,9 @@
   let scheduledCheckAt = 0;
   let lastSentKey = "";
   let lastSentAt = 0;
+  let lastPreparedKey = "";
+  let lastPreparedAt = 0;
+  let lastPreparedTrace = null;
   let lastSettings = null;
   let settingsPromise = null;
 
@@ -41,6 +45,7 @@
   });
 
   function scheduleSelectionCheck(delayMs) {
+    preparePotentialSelection();
     const now = Date.now();
     const dueAt = now + Math.max(0, Number(delayMs) || 0);
     if (timerId !== null && scheduledCheckAt && scheduledCheckAt <= dueAt) {
@@ -86,7 +91,7 @@
 
     lastSentKey = key;
     lastSentAt = Date.now();
-    const trace = createTrace("select-to-hear");
+    const trace = preparedTraceForKey(key) || createTrace("select-to-hear");
     sendRuntimeMessage({
       type: MESSAGE_TYPE_SPEAK,
       text: selectedText,
@@ -100,12 +105,63 @@
     });
   }
 
+  async function preparePotentialSelection() {
+    const selectedText = readSelectedText();
+    if (!selectedText || !isAutoPronounceCandidate(selectedText)) {
+      return;
+    }
+
+    const key = lookupKey(selectedText);
+    if (!key || isSuppressedRepeat(key) || isSuppressedPrepare(key)) {
+      return;
+    }
+
+    const trace = createTrace("select-to-hear");
+    lastPreparedKey = key;
+    lastPreparedAt = Date.now();
+    lastPreparedTrace = trace;
+
+    if (!selectToHearEnabled(await readSettings())) {
+      if (lastPreparedTrace === trace) {
+        lastPreparedKey = "";
+        lastPreparedAt = 0;
+        lastPreparedTrace = null;
+      }
+      return;
+    }
+
+    sendRuntimeMessage({
+      type: MESSAGE_TYPE_PREPARE_PLAYBACK,
+      trace
+    });
+  }
+
   function isSuppressedRepeat(key) {
     if (key !== lastSentKey) {
       return false;
     }
 
     return Date.now() - lastSentAt < REPEAT_SELECTION_COOLDOWN_MS;
+  }
+
+  function isSuppressedPrepare(key) {
+    if (key !== lastPreparedKey) {
+      return false;
+    }
+
+    return Date.now() - lastPreparedAt < REPEAT_SELECTION_COOLDOWN_MS;
+  }
+
+  function preparedTraceForKey(key) {
+    if (key !== lastPreparedKey || !lastPreparedTrace) {
+      return null;
+    }
+
+    if (Date.now() - lastPreparedAt > REPEAT_SELECTION_COOLDOWN_MS) {
+      return null;
+    }
+
+    return lastPreparedTrace;
   }
 
   function readSelectedText() {

@@ -12,6 +12,7 @@ export const MESSAGE_TYPES = Object.freeze({
   debugEvent: "SAYTHIS_DEBUG_EVENT",
   pullApproved: "SAYTHIS_PULL_APPROVED",
   requestSharedAudio: "SAYTHIS_REQUEST_SHARED_AUDIO",
+  preparePlayback: "SAYTHIS_PREPARE_PLAYBACK",
   showResult: "SAYTHIS_SHOW_RESULT",
   playAudio: "SAYTHIS_PLAY_AUDIO",
   offscreenDebugState: "SAYTHIS_OFFSCREEN_DEBUG_STATE",
@@ -88,6 +89,13 @@ export function createRequestSharedAudioMessage(text, options = {}) {
     text: normalizeSelection(text),
     result: options.result && typeof options.result === "object" ? options.result : undefined,
     rate: normalizeRate(options.rate),
+    trace: normalizeTrace(options.trace)
+  });
+}
+
+export function createPreparePlaybackMessage(options = {}) {
+  return compactMessage({
+    type: MESSAGE_TYPES.preparePlayback,
     trace: normalizeTrace(options.trace)
   });
 }

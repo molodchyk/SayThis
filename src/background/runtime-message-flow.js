@@ -143,6 +143,12 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     return true;
   }
 
+  if (message?.type === MESSAGE_TYPES.preparePlayback) {
+    startPreparingPlayback(dependencies, message.trace);
+    sendResponse({ ok: true });
+    return true;
+  }
+
   if (message?.type === MESSAGE_TYPES.stop) {
     respondWithResult(
       Promise.resolve(dependencies.stopPlayback()).catch(() => null),
