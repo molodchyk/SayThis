@@ -74,6 +74,94 @@ test("retries generated-audio results before playback", async () => {
   assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: generated }]]);
 });
 
+test("retries generic verified audio before playback to find stronger audio", async () => {
+  const calls = [];
+  const generic = {
+    display: "Exampletown",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://dictionary.example/item.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+  const stronger = {
+    display: "Exampletown",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/native.ogg",
+        quality: "native-speaker"
+      }, {
+        url: "https://dictionary.example/item.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", generic, {}, {
+    resolveSelection: async (text, options) => {
+      calls.push([text, options]);
+      return stronger;
+    }
+  });
+
+  assert.equal(playable, stronger);
+  assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: generic }]]);
+});
+
+test("keeps generic verified audio when refresh finds no stronger playback", async () => {
+  const calls = [];
+  const generic = {
+    display: "Exampletown",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://dictionary.example/item.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", generic, {}, {
+    resolveSelection: async (text, options) => {
+      calls.push([text, options]);
+      return generic;
+    },
+    requestSharedAudio: async () => {
+      throw new Error("should not request shared audio while generic recording exists");
+    }
+  });
+
+  assert.equal(playable, generic);
+  assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: generic }]]);
+});
+
+test("does not retry top-tier audio before playback", async () => {
+  const calls = [];
+  const native = {
+    display: "Exampletown",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/native.ogg",
+        quality: "native-speaker"
+      }]
+    }
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", native, {}, {
+    resolveSelection: async () => {
+      calls.push("unexpected");
+      return null;
+    }
+  });
+
+  assert.equal(playable, native);
+  assert.deepEqual(calls, []);
+});
+
 test("requests shared audio after online retry still has no preferred audio", async () => {
   const calls = [];
   const result = { display: "Exampletown", sourceStatus: "structured-source" };
@@ -146,19 +234,22 @@ test("requests shared audio after generated-audio retry finds no recording", asy
 });
 
 test("keeps current result when audio exists or retry fails", async () => {
+  const calls = [];
   const audioResult = {
     display: "Exampletown",
     pronunciation: {
-      audio: [{ url: "https://audio.example/item.ogg", quality: "verified" }]
+      audio: [{ url: "https://audio.example/item.ogg", quality: "native-speaker" }]
     }
   };
   const noAudioResult = { display: "Exampletown" };
 
   assert.equal(await resolvePlayableResult("Exampletown", audioResult, {}, {
     resolveSelection: async () => {
-      throw new Error("should not retry");
+      calls.push("unexpected");
+      return null;
     }
   }), audioResult);
+  assert.deepEqual(calls, []);
 
   assert.equal(await resolvePlayableResult("Exampletown", noAudioResult, {}, {
     resolveSelection: async () => {

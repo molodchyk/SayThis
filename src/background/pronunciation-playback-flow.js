@@ -1,5 +1,6 @@
 import {
-  hasPreferredAudio
+  hasPreferredAudio,
+  hasTopTierAudio
 } from "../resolver-core.js";
 
 export async function resolvePlayableResult(selectedText, result, options = {}, dependencies = {}) {
@@ -7,7 +8,7 @@ export async function resolvePlayableResult(selectedText, result, options = {}, 
     return result;
   }
 
-  if (hasPlayableAudio(result)) {
+  if (hasTopTierAudio(result)) {
     return result;
   }
 
