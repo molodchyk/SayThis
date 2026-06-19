@@ -16,6 +16,7 @@
 
   let timerId = null;
   let scheduledCheckAt = 0;
+  let scheduledCheckMode = "";
   let lastSentKey = "";
   let lastSentAt = 0;
   let lastPreparedKey = "";
@@ -26,7 +27,7 @@
 
   readSettings();
 
-  document.addEventListener("selectionchange", () => scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS), true);
+  document.addEventListener("selectionchange", () => scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true }), true);
   document.addEventListener("pointerup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("mouseup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("keyup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
@@ -44,19 +45,26 @@
     }
   });
 
-  function scheduleSelectionCheck(delayMs) {
+  function scheduleSelectionCheck(delayMs, options = {}) {
     preparePotentialSelection();
     const now = Date.now();
     const dueAt = now + Math.max(0, Number(delayMs) || 0);
-    if (timerId !== null && scheduledCheckAt && scheduledCheckAt <= dueAt) {
+    const mode = options.stable === true ? "stable" : "committed";
+    if (timerId !== null && scheduledCheckMode === "committed" && mode === "stable") {
+      return;
+    }
+
+    if (timerId !== null && scheduledCheckMode === "committed" && scheduledCheckAt && scheduledCheckAt <= dueAt) {
       return;
     }
 
     clearScheduledCheck();
     scheduledCheckAt = dueAt;
+    scheduledCheckMode = mode;
     timerId = setTimeout(() => {
       timerId = null;
       scheduledCheckAt = 0;
+      scheduledCheckMode = "";
       speakStableSelection();
     }, Math.max(0, dueAt - now));
   }
@@ -66,6 +74,7 @@
       clearTimeout(timerId);
       timerId = null;
       scheduledCheckAt = 0;
+      scheduledCheckMode = "";
     }
   }
 

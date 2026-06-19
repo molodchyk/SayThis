@@ -433,7 +433,8 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /lastPreparedTrace/);
   assert.match(source, /preparePotentialSelection/);
   assert.match(source, /scheduledCheckAt/);
-  assert.match(source, /scheduledCheckAt <= dueAt/);
+  assert.match(source, /scheduledCheckMode/);
+  assert.match(source, /stable: true/);
   assert.match(source, /isSuppressedRepeat/);
   assert.match(source, /isSuppressedPrepare/);
   assert.match(source, /settingsPromise/);
