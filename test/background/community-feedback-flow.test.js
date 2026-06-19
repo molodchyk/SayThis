@@ -164,6 +164,38 @@ test("pulls and merges approved shared entries", async () => {
   assert.deepEqual(storage.state.communityPullState, summary);
 });
 
+test("pulls approved entries when shared audio is enabled", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityAudioEnabled: true,
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+
+  const summary = await pullApprovedCommunityEntries({
+    ...storage.dependencies,
+    fetchApprovedCommunityEntries: async (endpoint) => {
+      assert.equal(endpoint, "https://example.com/community");
+      return {
+        entries: {
+          exampletown: {
+            lookupKey: "exampletown",
+            term: "Exampletown",
+            audioUrl: "https://example.com/audio/exampletown.ogg",
+            sourceStatus: "generated-audio"
+          }
+        }
+      };
+    }
+  });
+
+  assert.equal(summary.received, 1);
+  assert.equal(summary.total, 1);
+  assert.equal(summary.skipped, false);
+  assert.equal(storage.state.approvedCommunityEntries.exampletown.audioUrl, "https://example.com/audio/exampletown.ogg");
+});
+
 test("uses injected fetch for community HTTP helpers", async () => {
   const requests = [];
   await postCommunitySubmission("https://example.com/community", { id: "sub_1" }, {

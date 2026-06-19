@@ -65,11 +65,13 @@ platform.addInstalledListener(() => {
   });
   activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
   primePlaybackSurface("installed");
+  refreshApprovedSharedEntries("installed");
 });
 
 platform.addStartupListener(() => {
   activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
   primePlaybackSurface("startup");
+  refreshApprovedSharedEntries("startup");
 });
 
 platform.addContextMenuClickedListener((info, tab) => {
@@ -337,6 +339,30 @@ function primePlaybackSurface(reason) {
   } catch {
     // First user-triggered playback can still create the offscreen surface.
   }
+}
+
+function refreshApprovedSharedEntries(reason) {
+  const startedAt = Date.now();
+  recordDebugEvent("approved-pull:start", {
+    reason
+  });
+  pullApprovedCommunityEntries()
+    .then((summary) => {
+      recordDebugEvent("approved-pull:result", {
+        reason,
+        elapsedMs: Date.now() - startedAt,
+        received: summary?.received || 0,
+        total: summary?.total || 0,
+        skipped: Boolean(summary?.skipped)
+      });
+    })
+    .catch((error) => {
+      recordDebugEvent("approved-pull:error", {
+        reason,
+        elapsedMs: Date.now() - startedAt,
+        error: errorMessage(error)
+      });
+    });
 }
 
 async function getDebugState() {

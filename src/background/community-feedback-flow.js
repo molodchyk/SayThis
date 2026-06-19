@@ -140,7 +140,7 @@ export async function pullApprovedCommunityEntries(dependencies = {}) {
     storageKeys.settings
   ]);
   const settings = normalizeSettings(stored[storageKeys.settings]);
-  const result = await pullApprovedEntries(settings, approvedEntryFetcher(dependencies));
+  const result = await pullApprovedEntries(approvedPullSettings(settings), approvedEntryFetcher(dependencies));
   const approvedCommunityEntries = mergeApprovedEntries(
     stored[storageKeys.approvedCommunityEntries],
     result.entries
@@ -158,6 +158,13 @@ export async function pullApprovedCommunityEntries(dependencies = {}) {
   });
 
   return summary;
+}
+
+function approvedPullSettings(settings = {}) {
+  return {
+    ...settings,
+    communityPullEnabled: Boolean(settings.communityPullEnabled || settings.communityAudioEnabled)
+  };
 }
 
 export async function requestSharedAudioForResult(text, result = null, options = {}, dependencies = {}) {

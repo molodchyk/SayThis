@@ -145,6 +145,9 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /platform\.addStartupListener/);
   assert.match(source, /primePlaybackSurface\("installed"\)/);
   assert.match(source, /primePlaybackSurface\("startup"\)/);
+  assert.match(source, /refreshApprovedSharedEntries\("installed"\)/);
+  assert.match(source, /refreshApprovedSharedEntries\("startup"\)/);
+  assert.match(source, /approved-pull:result/);
   assert.match(source, /action: `playback-prime-\$\{reason\}`/);
   assert.match(source, /createPlaybackSurface\(\{/);
   assert.match(source, /createPlaybackSurfacePlatformDependencies\(platform, STORAGE_KEYS\)/);
