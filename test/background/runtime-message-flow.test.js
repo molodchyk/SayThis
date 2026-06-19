@@ -349,6 +349,91 @@ test("runtime speak plays direct approved shared audio before slow resolution", 
   finishResolve();
 });
 
+test("runtime speak does not wait for slow stored-result miss before direct shared audio", async () => {
+  const responses = [];
+  const calls = [];
+  const direct = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Direct shared audio",
+        url: "https://community.example/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-slow-storage",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let storageFinished = false;
+  let requestStartedBeforeStorageFinished = false;
+  let playbackStartedBeforeStorageFinished = false;
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      await delay(60);
+      storageFinished = true;
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      requestStartedBeforeStorageFinished = !storageFinished;
+      calls.push(["requestSharedAudio", text, result, options]);
+      return direct;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return new Promise(() => {});
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      playbackStartedBeforeStorageFinished = !storageFinished;
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when direct shared audio plays");
+    },
+    directSharedAudioWaitMs: 100,
+    storedResultGraceMs: 5,
+    lastResultKey: "lastResult"
+  });
+
+  await delay(25);
+
+  assert.equal(handled, true);
+  assert.equal(requestStartedBeforeStorageFinished, true);
+  assert.equal(playbackStartedBeforeStorageFinished, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, direct);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Direct shared audio"
+  });
+  assert.deepEqual(calls.slice(0, 3), [
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+  ]);
+});
+
 test("runtime speak starts playback preparation before resolving", async () => {
   const responses = [];
   const calls = [];

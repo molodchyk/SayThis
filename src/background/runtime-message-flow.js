@@ -14,6 +14,7 @@ import {
 } from "./pronunciation-playback-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
+const DEFAULT_STORED_RESULT_GRACE_MS = 30;
 
 export function handleRuntimeMessage(message = {}, sendResponse = () => {}, dependencies = {}) {
   if (message?.type === MESSAGE_TYPES.resolve) {
@@ -39,35 +40,41 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     };
     startPreparingPlayback(dependencies, message.trace);
     let directSharedAudioResult = null;
+    let storedPlayableResult = null;
     const storedResultPromise = message.result
       ? Promise.resolve(null)
-      : awaitStoredPlayableResult(selectedText, dependencies, message.trace);
+      : awaitStoredPlayableResult(selectedText, dependencies, message.trace).then((result) => {
+        storedPlayableResult = result;
+        return result;
+      });
+    const storedResultGraceMs = dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS;
+    const storedResultWaitMs = dependencies.storedResultWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
-      : storedResultPromise.then((storedResult) => storedResult
+      : waitForStoredResultGrace(storedResultPromise, storedResultGraceMs).then((storedResult) => storedResult
         ? null
-        : requestDirectSharedAudio(selectedText, message, dependencies));
+        : requestDirectSharedAudio(selectedText, message, dependencies)).then((result) => {
+          directSharedAudioResult = result;
+          return result;
+        });
     const resolvedSelectionPromise = message.result
       ? Promise.resolve(message.result)
-      : storedResultPromise.then((result) => result || dependencies.resolveSelection(selectedText, options));
+      : withHandledRejection(waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
+        .then((result) => result || dependencies.resolveSelection(selectedText, options)));
     const resultPromise = message.result
       ? Promise.resolve(message.result)
-      : storedResultPromise.then(async (storedResult) => {
-        if (storedResult) {
-          return storedResult;
-        }
-
-        directSharedAudioResult = await promiseWithinWait(
+      : firstNonNullResult([
+        promiseWithinWait(storedResultPromise, storedResultWaitMs),
+        promiseWithinWait(
           directSharedAudioPromise,
           dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS
-        );
-        return directSharedAudioResult || resolvedSelectionPromise;
-      });
+        )
+      ]).then((fastResult) => fastResult || resolvedSelectionPromise);
     respondWithResult(
       resultPromise.then(async (result) => {
-        const storedResult = await storedResultPromise;
-        const playableResult = (storedResult && storedResult === result) ||
-          (directSharedAudioResult && directSharedAudioResult === result)
+        const isDirectSharedAudio = directSharedAudioResult && directSharedAudioResult === result;
+        const isStoredAudio = storedPlayableResult && storedPlayableResult === result;
+        const playableResult = isStoredAudio || isDirectSharedAudio
           ? result
           : await resolvePlayableResult(selectedText, result, options, dependencies);
         const playback = await playResolvedAudio(playableResult, message.rate, dependencies, message.trace);
@@ -230,6 +237,46 @@ async function promiseWithinWait(promise, waitMs) {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+async function waitForStoredResultGrace(storedResultPromise, waitMs) {
+  return promiseWithinWait(storedResultPromise, waitMs);
+}
+
+function firstNonNullResult(promises = []) {
+  const pending = promises.filter(Boolean);
+  if (!pending.length) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    let remaining = pending.length;
+    pending.forEach((promise) => {
+      Promise.resolve(promise)
+        .then((value) => {
+          if (value) {
+            resolve(value);
+            return;
+          }
+
+          remaining -= 1;
+          if (!remaining) {
+            resolve(null);
+          }
+        })
+        .catch(() => {
+          remaining -= 1;
+          if (!remaining) {
+            resolve(null);
+          }
+        });
+    });
+  });
+}
+
+function withHandledRejection(promise) {
+  promise?.catch?.(() => {});
+  return promise;
 }
 
 async function awaitStoredPlayableResult(selectedText, dependencies = {}, trace = null) {
