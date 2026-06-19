@@ -113,8 +113,8 @@ export async function runLoadedExtensionSmoke(options = {}) {
   }
 }
 
-export function shouldCloseLaunchedBrowser(options = {}) {
-  return options.closeLaunchedBrowser === true;
+export function shouldCloseLaunchedBrowser() {
+  return false;
 }
 
 function chromeArgs(root, profileDir, port, options) {

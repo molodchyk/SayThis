@@ -32,8 +32,8 @@ test("loaded-extension smoke does not close from environment settings", () => {
   }
 });
 
-test("loaded-extension smoke close remains explicit for direct callers", () => {
-  assert.equal(shouldCloseLaunchedBrowser({ closeLaunchedBrowser: true }), true);
+test("loaded-extension smoke never closes launched browser processes", () => {
+  assert.equal(shouldCloseLaunchedBrowser({ closeLaunchedBrowser: true }), false);
   assert.equal(shouldCloseLaunchedBrowser({ closeLaunchedBrowser: false }), false);
 });
 

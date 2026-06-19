@@ -9,6 +9,7 @@
 - Preserves source-backed or curated shared recording quality when approved audio is attached to results.
 - Reuses approved shared artifacts for generic verified recordings from local memory or the configured endpoint without authorizing fresh provider generation.
 - Adds context-menu registration coverage to the opt-in loaded-extension smoke runner.
+- Keeps the opt-in loaded-extension smoke runner from terminating launched browser processes.
 - Adds an approved public-domain packaged pronunciation sample to verify curated audio playback and release metadata.
 - Keeps connector words in abbreviation guides for forms like M&A, R&D, and C++.
 - Treats compact lowercase-n connector abbreviations as connector speech.
