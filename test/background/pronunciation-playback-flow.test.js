@@ -337,7 +337,7 @@ test("uses a short default wait before falling back from shared audio", async ()
     });
 
     assert.equal(playable, enriched);
-    assert.equal(observedWaitMs, 450);
+    assert.equal(observedWaitMs, 120);
   } finally {
     globalThis.setTimeout = originalSetTimeout;
   }

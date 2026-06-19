@@ -3,7 +3,7 @@ import {
   hasTopTierAudio
 } from "../resolver-core.js";
 
-const DEFAULT_SHARED_AUDIO_WAIT_MS = 450;
+const DEFAULT_SHARED_AUDIO_WAIT_MS = 120;
 
 export async function resolvePlayableResult(selectedText, result, options = {}, dependencies = {}) {
   if (!result) {

@@ -17,7 +17,7 @@ import {
   requestPreparedOrDirectSharedAudio
 } from "./prepared-shared-audio-flow.js";
 
-const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
+const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 120;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
 
 export function handleRuntimeMessage(message = {}, sendResponse = () => {}, dependencies = {}) {
