@@ -23,6 +23,7 @@ import {
   readOptionsStorage,
   removeUnusedRemotePermissions,
   requestEndpointPermission,
+  requestEndpointPermissionFromUserGesture,
   sendRuntimeMessage,
   writeOptionsStorage
 } from "./runtime-adapters.js";
@@ -83,6 +84,7 @@ const refreshDebugButton = document.getElementById("refresh-debug");
 const copyDebugButton = document.getElementById("copy-debug");
 const debugSummary = document.getElementById("debug-summary");
 const debugOutput = document.getElementById("debug-output");
+const LOCAL_DEV_COMMUNITY_ENDPOINT = "http://127.0.0.1:8787/community";
 
 init();
 
@@ -158,6 +160,8 @@ async function init() {
 }
 
 async function saveSettings() {
+  const communityEndpointAutofilled = ensureCommunityEndpointForEnabledFeature();
+  const communityPermissionRequest = requestCommunityEndpointPermissionFromGesture();
   const stored = await readOptionsStorage([
     STORAGE_KEYS.settings,
     STORAGE_KEYS.credentials
@@ -165,6 +169,7 @@ async function saveSettings() {
   const previousSettings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const previousCredentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const normalizedCommunityEndpoint = normalizeCommunityEndpoint(syncEndpoint.value);
+  const wantedCommunity = syncEnabled.checked || pullEnabled.checked || sharedAudioEnabled.checked;
   const wantedSync = syncEnabled.checked && Boolean(normalizedCommunityEndpoint);
   const wantedPull = pullEnabled.checked && Boolean(normalizedCommunityEndpoint);
   const wantedSharedAudio = sharedAudioEnabled.checked && Boolean(normalizedCommunityEndpoint);
@@ -173,6 +178,7 @@ async function saveSettings() {
   const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
   const wantedGazetteer = gazetteerEnabled.checked && Boolean(normalizeEndpoint(gazetteerEndpoint.value));
   const credentials = credentialsFromControls();
+  await communityPermissionRequest;
   const settings = await settingsFromControls(credentials);
   await removeUnusedRemotePermissions(previousSettings, settings, previousCredentials, credentials, optionsRuntimeAdapters());
   await writeOptionsStorage({
@@ -195,15 +201,17 @@ async function saveSettings() {
   pullEnabled.checked = settings.communityPullEnabled;
   sharedAudioEnabled.checked = settings.communityAudioEnabled;
   syncEndpoint.value = settings.communityEndpoint;
-  setStatus((settings.communitySyncEnabled || !wantedSync) &&
+  setStatus(settingsStatusMessage({
+    communityEndpointAutofilled,
+    communityEndpointMissing: wantedCommunity && !normalizedCommunityEndpoint,
+    permissionDenied: !((settings.communitySyncEnabled || !wantedSync) &&
       (settings.communityPullEnabled || !wantedPull) &&
       (settings.communityAudioEnabled || !wantedSharedAudio) &&
       (settings.customSourceEnabled || !wantedCustomSource) &&
       (settings.dbpediaEnabled || !wantedDbpedia) &&
       (settings.gazetteerEnabled || !wantedGazetteer) &&
-      (settings.forvoEnabled || !wantedForvo)
-    ? "Settings saved."
-    : "Settings saved. Endpoint permission was not granted.");
+      (settings.forvoEnabled || !wantedForvo))
+  }));
 }
 
 async function exportData() {
@@ -512,4 +520,50 @@ function sendMessage(message) {
 
 function optionsRuntimeAdapters() {
   return createOptionsRuntimeAdapters();
+}
+
+function ensureCommunityEndpointForEnabledFeature() {
+  if (!(syncEnabled.checked || pullEnabled.checked || sharedAudioEnabled.checked)) {
+    return false;
+  }
+
+  if (normalizeCommunityEndpoint(syncEndpoint.value)) {
+    return false;
+  }
+
+  if (String(syncEndpoint.value || "").trim()) {
+    return false;
+  }
+
+  syncEndpoint.value = LOCAL_DEV_COMMUNITY_ENDPOINT;
+  return true;
+}
+
+function requestCommunityEndpointPermissionFromGesture() {
+  if (!(syncEnabled.checked || pullEnabled.checked || sharedAudioEnabled.checked)) {
+    return Promise.resolve(false);
+  }
+
+  const endpoint = normalizeCommunityEndpoint(syncEndpoint.value);
+  if (!endpoint) {
+    return Promise.resolve(false);
+  }
+
+  return requestEndpointPermissionFromUserGesture(endpoint, optionsRuntimeAdapters());
+}
+
+function settingsStatusMessage(state = {}) {
+  if (state.communityEndpointMissing) {
+    return "Settings saved. Enter a valid HTTPS or local community endpoint before enabling community features.";
+  }
+
+  if (state.permissionDenied) {
+    return "Settings saved. Endpoint permission was not granted; check the Chrome permission prompt.";
+  }
+
+  if (state.communityEndpointAutofilled) {
+    return "Settings saved. Local community endpoint filled.";
+  }
+
+  return "Settings saved.";
 }

@@ -6,6 +6,7 @@ import {
   readOptionsStorage,
   removeUnusedRemotePermissions,
   requestEndpointPermission,
+  requestEndpointPermissionFromUserGesture,
   sendRuntimeMessage,
   writeOptionsStorage
 } from "../../src/options/runtime-adapters.js";
@@ -110,6 +111,21 @@ test("requests endpoint permissions conservatively", async () => {
     ["contains", "https://example.com/*"],
     ["request", "https://example.com/*"]
   ]);
+});
+
+test("can request endpoint permission directly from a user gesture", async () => {
+  const calls = [];
+  assert.equal(await requestEndpointPermissionFromUserGesture("http://127.0.0.1:8787/community", {
+    containsPermission: async () => {
+      throw new Error("direct gesture request should not wait on contains");
+    },
+    requestPermission: async (origin) => {
+      calls.push(origin);
+      return true;
+    }
+  }), true);
+
+  assert.deepEqual(calls, ["http://127.0.0.1/*"]);
 });
 
 test("removes stale optional remote permissions best-effort", async () => {

@@ -71,6 +71,23 @@ export async function requestEndpointPermission(endpoint, dependencies = {}) {
   return Boolean(await dependencies.requestPermission(origin));
 }
 
+export async function requestEndpointPermissionFromUserGesture(endpoint, dependencies = {}) {
+  const origin = endpointOriginPattern(endpoint);
+  if (!origin) {
+    return false;
+  }
+
+  if (typeof dependencies.requestPermission === "function") {
+    return Boolean(await dependencies.requestPermission(origin));
+  }
+
+  if (typeof dependencies.containsPermission === "function") {
+    return Boolean(await dependencies.containsPermission(origin));
+  }
+
+  return true;
+}
+
 export async function removeUnusedRemotePermissions(previousSettings, nextSettings, previousCredentials, nextCredentials, dependencies = {}) {
   if (typeof dependencies.removePermission !== "function") {
     return;
