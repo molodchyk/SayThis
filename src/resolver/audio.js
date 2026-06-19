@@ -19,6 +19,11 @@ export function hasPreferredAudio(result) {
   return rankedAudioItems(audio).some((item) => isPreferredAudioItem(item, result?.sourceStatus));
 }
 
+export function hasTopTierAudio(result) {
+  const bestAudio = getBestAudio(result);
+  return Boolean(bestAudio && qualityScore(bestAudio.quality) >= 105);
+}
+
 export function hasGeneratedAudio(result) {
   const audio = result?.pronunciation?.audio;
   if (!Array.isArray(audio) || !audio.length) {

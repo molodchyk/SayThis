@@ -51,7 +51,7 @@ export {
 export { orthographicLanguageHint } from "./resolver/orthography.js";
 export { initialismGuide } from "./resolver/abbreviation.js";
 export { sourceLabelForStatus } from "./resolver/status.js";
-export { getBestAudio, hasGeneratedAudio, hasPreferredAudio, mapResultAudioUrls, rankedAudioItems } from "./resolver/audio.js";
+export { getBestAudio, hasGeneratedAudio, hasPreferredAudio, hasTopTierAudio, mapResultAudioUrls, rankedAudioItems } from "./resolver/audio.js";
 export { mergeRemoteResult } from "./resolver/merge.js";
 export {
   applyCommunitySummary,

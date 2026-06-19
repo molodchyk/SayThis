@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createRemoteStructuredResult,
+  getBestAudio,
   resolveTerm
 } from "../../src/resolver-core.js";
 import {
@@ -494,6 +495,78 @@ test("uses Commons audio before cached generated context audio", async () => {
     assert.equal(result.sourceStatus, "verified-audio");
     assert.equal(result.pronunciation.audio[0].quality, "verified");
     assert.equal(result.pronunciation.audio.some((item) => item.quality === "generated"), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("checks Commons audio when dictionary audio is only generic verified quality", async () => {
+  const originalFetch = globalThis.fetch;
+  const searches = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+
+      if (parsed.host === "www.wikidata.org") {
+        return jsonResponse({ search: [] });
+      }
+
+      if (parsed.host.endsWith(".wiktionary.org")) {
+        return jsonResponse({
+          query: {
+            pages: [{
+              title: "Displaytown",
+              revisions: [{
+                slots: {
+                  main: {
+                    content: `
+==English==
+===Pronunciation===
+* {{IPA|en|/displaytown/}}
+* {{audio|en|En-us-Displaytown.ogg|Audio}}
+`
+                  }
+                }
+              }]
+            }]
+          }
+        });
+      }
+
+      if (parsed.host === "commons.wikimedia.org") {
+        searches.push(parsed.searchParams.get("gsrsearch"));
+        return jsonResponse({
+          query: {
+            pages: {
+              1: {
+                index: 1,
+                title: "File:En-us-Displaytown_pronunciation_(Voice_of_America).ogg",
+                imageinfo: [{
+                  url: "https://upload.wikimedia.org/wikipedia/commons/d/d1/En-us-Displaytown_pronunciation_%28Voice_of_America%29.ogg",
+                  descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Displaytown_pronunciation_(Voice_of_America).ogg",
+                  mime: "audio/ogg",
+                  mediatype: "AUDIO",
+                  extmetadata: {
+                    ObjectName: { value: "En-us-Displaytown pronunciation" },
+                    ImageDescription: { value: "Voice of America pronunciation of Displaytown" }
+                  }
+                }]
+              }
+            }
+          }
+        });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const result = await resolveWithOnlineSources("Displaytown");
+
+    assert.ok(searches.includes("filetype:audio Displaytown"));
+    assert.equal(getBestAudio(result).quality, "source-backed");
+    assert.equal(getBestAudio(result).url, "https://upload.wikimedia.org/wikipedia/commons/d/d1/En-us-Displaytown_pronunciation_%28Voice_of_America%29.ogg");
+    assert.deepEqual(result.pronunciation.audio.map((item) => item.quality), ["source-backed", "verified"]);
   } finally {
     globalThis.fetch = originalFetch;
   }

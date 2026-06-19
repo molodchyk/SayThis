@@ -1,5 +1,5 @@
 import {
-  hasPreferredAudio,
+  hasTopTierAudio,
   mergeRemoteResult,
   normalizeSelection
 } from "../resolver-core.js";
@@ -96,7 +96,7 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
   const preAudioResult = [refinedStructuredResult, forvoResult, context.localResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
-  const commonsAudioResult = !hasPreferredAudio(preAudioResult)
+  const commonsAudioResult = !hasTopTierAudio(preAudioResult)
     ? await resolveWithCommonsAudioCandidates(text, preAudioResult)
     : null;
   return [refinedStructuredResult, forvoResult, commonsAudioResult]

@@ -4,12 +4,14 @@ import {
   getBestAudio,
   hasGeneratedAudio,
   hasPreferredAudio,
+  hasTopTierAudio,
   rankedAudioItems
 } from "../../src/resolver-core.js";
 import {
   getBestAudio as getBestAudioDirect,
   hasGeneratedAudio as hasGeneratedAudioDirect,
   hasPreferredAudio as hasPreferredAudioDirect,
+  hasTopTierAudio as hasTopTierAudioDirect,
   mapResultAudioUrls as mapResultAudioUrlsDirect,
   mergeAudioItems,
   normalizePronunciation,
@@ -36,6 +38,8 @@ test("ranks curated and native audio ahead of generic verified sources", () => {
   assert.equal(getBestAudio({ pronunciation }).url, "assets/audio/public/a-curated.ogg");
   assert.equal(hasPreferredAudioDirect({ pronunciation }), true);
   assert.equal(hasPreferredAudio({ pronunciation }), true);
+  assert.equal(hasTopTierAudioDirect({ pronunciation }), true);
+  assert.equal(hasTopTierAudio({ pronunciation }), true);
   assert.deepEqual(rankedAudioItems(pronunciation.audio).map((item) => item.quality), ["curated", "verified", "verified", "generated"]);
   assert.deepEqual(rankedAudioItemsDirect(pronunciation.audio).map((item) => item.quality), ["curated", "verified", "verified", "generated"]);
 
@@ -68,6 +72,13 @@ test("ranks source-backed audio ahead of generic verified audio", () => {
   assert.deepEqual(pronunciation.audio.map((item) => item.quality), ["source-backed", "recorded", "verified"]);
   assert.equal(getBestAudioDirect({ pronunciation }).url, "https://commons.example/guide.ogg");
   assert.equal(hasPreferredAudioDirect({ pronunciation }), true);
+  assert.equal(hasTopTierAudioDirect({ pronunciation }), true);
+  assert.equal(hasTopTierAudio({ pronunciation }), true);
+  assert.equal(hasTopTierAudioDirect({
+    pronunciation: {
+      audio: [{ url: "https://commons.example/generic.ogg", quality: "verified" }]
+    }
+  }), false);
 });
 
 test("does not treat generated audio as preferred audio", () => {
@@ -84,6 +95,8 @@ test("does not treat generated audio as preferred audio", () => {
 
   assert.equal(hasPreferredAudioDirect(result), false);
   assert.equal(hasPreferredAudio(result), false);
+  assert.equal(hasTopTierAudioDirect(result), false);
+  assert.equal(hasTopTierAudio(result), false);
   assert.equal(hasGeneratedAudioDirect(result), true);
   assert.equal(hasGeneratedAudio(result), true);
 });
