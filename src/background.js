@@ -554,6 +554,7 @@ function debugOptions(options = {}) {
     lang: options.lang,
     languageHints: Array.isArray(options.languageHints) ? options.languageHints : undefined,
     directLookup: Boolean(options.directLookup),
+    sharedAudioLocalOnly: Boolean(options.sharedAudioLocalOnly),
     skipRefresh: Boolean(options.skipRefresh),
     trace: normalizeDebugTrace(options.trace)
   };

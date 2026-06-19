@@ -352,6 +352,98 @@ test("reuses local approved shared audio before requesting the endpoint", async 
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("local-only shared audio returns local approved audio without requesting the endpoint", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+        sourceStatus: "generated-audio",
+        trustSignals: ["moderator-reviewed", "generated-audio", "audio-backed"]
+      }
+    },
+    settings: {
+      communityAudioEnabled: true,
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const calls = [];
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...baseResult,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {
+    sharedAudioLocalOnly: true
+  }, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("local-only shared audio must not fetch");
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    }
+  });
+
+  assert.equal(result, refreshed);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: false, localResult: baseResult }]
+  ]);
+  assert.equal(storage.state.lastResult, refreshed);
+});
+
+test("local-only shared audio returns the base result without endpoint lookup on a miss", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityAudioEnabled: true,
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {
+    sharedAudioLocalOnly: true
+  }, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("local-only shared audio must not fetch on a miss");
+    },
+    resolveSelection: async () => {
+      throw new Error("local-only shared audio must not refresh on a miss");
+    }
+  });
+
+  assert.equal(result, baseResult);
+  assert.equal(storage.updates.length, 0);
+});
+
 test("reuses exact local approved shared audio for direct lookup without refresh", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {

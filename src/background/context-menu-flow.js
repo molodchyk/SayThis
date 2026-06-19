@@ -138,20 +138,22 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
 }
 
 async function firstContextMenuAudioCandidate(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
-  const visibleCandidate = await visibleAudioCandidate(selectedText, tabId, dependencies, trace);
-  if (visibleCandidate) {
-    return visibleCandidate;
-  }
-
+  const visibleCandidatePromise = visibleAudioCandidate(selectedText, tabId, dependencies, trace);
   const storedCandidatePromise = storedAudioCandidate(selectedText, dependencies, trace);
-  const storedGracePromise = waitForStoredResultGrace(
-    storedCandidatePromise,
-    dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS
-  );
-  const directSharedAudioPromise = storedGracePromise.then((candidate) => candidate
+  const quickLocalCandidatePromise = firstNonNullResult([
+    waitForVisibleResultGrace(
+      visibleCandidatePromise,
+      dependencies.visibleResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS
+    ),
+    waitForStoredResultGrace(
+      storedCandidatePromise,
+      dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS
+    )
+  ]);
+  const directSharedAudioPromise = quickLocalCandidatePromise.then((candidate) => candidate
     ? null
     : directSharedAudioCandidate(selectedText, options, dependencies, trace));
-  const localPlayablePromise = storedGracePromise.then((candidate) => candidate
+  const localPlayablePromise = quickLocalCandidatePromise.then((candidate) => candidate
     ? candidate
     : localPlayableCandidate(selectedText, options, dependencies, trace));
   const localAudioPromise = localPlayablePromise.then((candidate) => getBestAudio(candidate?.result)?.url
@@ -160,6 +162,7 @@ async function firstContextMenuAudioCandidate(selectedText, tabId, options = {},
   const waitMs = dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
 
   return await firstNonNullResult([
+    promiseWithinWait(visibleCandidatePromise, waitMs),
     promiseWithinWait(storedCandidatePromise, waitMs),
     promiseWithinWait(directSharedAudioPromise, waitMs),
     promiseWithinWait(localAudioPromise, waitMs)
@@ -288,6 +291,10 @@ async function waitForStoredResultGrace(storedResultPromise, waitMs) {
   return promiseWithinWait(storedResultPromise, waitMs);
 }
 
+async function waitForVisibleResultGrace(visibleResultPromise, waitMs) {
+  return promiseWithinWait(visibleResultPromise, waitMs);
+}
+
 function firstNonNullResult(promises = []) {
   const pending = promises.filter(Boolean);
   if (!pending.length) {
@@ -337,7 +344,8 @@ function immediatePlaybackOptions(options = {}) {
     ? options
     : {
       ...options,
-      skipOnlineRetry: true
+      skipOnlineRetry: true,
+      sharedAudioLocalOnly: true
     };
 }
 

@@ -44,7 +44,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       ...(shouldPreferImmediatePlayback(message) ? {
         useOnline: false,
         skipOnlineRetry: true,
-        skipSharedAudio: true
+        sharedAudioLocalOnly: true
       } : {}),
       ...(message.trace ? { trace: message.trace } : {})
     };
@@ -516,7 +516,7 @@ function compactOptions(options = {}) {
 }
 
 function withoutPlaybackOnlyOptions(options = {}) {
-  const { skipOnlineRetry, skipSharedAudio, ...resolverOptions } = options;
+  const { skipOnlineRetry, skipSharedAudio, sharedAudioLocalOnly, ...resolverOptions } = options;
   return resolverOptions;
 }
 

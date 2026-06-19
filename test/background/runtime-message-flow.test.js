@@ -604,7 +604,7 @@ test("runtime speak plays resolved audio before slow direct shared-audio miss", 
   finishDirect();
 });
 
-test("select-to-hear does not make a second shared-audio request after direct lookup misses", async () => {
+test("select-to-hear only rechecks local shared audio after direct lookup misses", async () => {
   const responses = [];
   const calls = [];
   const resolved = {
@@ -613,12 +613,24 @@ test("select-to-hear does not make a second shared-audio request after direct lo
     ttsLang: "pl-PL",
     sourceStatus: "structured-source"
   };
+  const shared = {
+    ...resolved,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Local shared audio",
+        url: "https://audio.example/shared.mp3",
+        quality: "generated"
+      }]
+    }
+  };
   const trace = {
     id: "trace-direct-miss",
     source: "content-selection",
     action: "select-to-hear",
     startedAt: Date.now()
   };
+  let requestCount = 0;
 
   const handled = handleRuntimeMessage({
     type: MESSAGE_TYPES.speak,
@@ -631,22 +643,20 @@ test("select-to-hear does not make a second shared-audio request after direct lo
       return {};
     },
     requestSharedAudio: async (text, result, options) => {
+      requestCount += 1;
       calls.push(["requestSharedAudio", text, result, options]);
-      return null;
+      return requestCount === 2 ? shared : null;
     },
     resolveSelection: async (text, options) => {
       calls.push(["resolveSelection", text, options]);
       return resolved;
     },
-    playAudio: async () => {
-      throw new Error("no audio should be available");
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
     },
-    speakResult: async (result, options) => {
-      calls.push(["speakResult", result, options]);
-      return {
-        spoken: true,
-        text: result.sourceForm
-      };
+    speakResult: async () => {
+      throw new Error("should not speak when local shared audio is available");
     },
     directSharedAudioWaitMs: 25,
     storedResultGraceMs: 5,
@@ -657,8 +667,11 @@ test("select-to-hear does not make a second shared-audio request after direct lo
 
   assert.equal(handled, true);
   assert.equal(responses[0].ok, true);
-  assert.equal(responses[0].result, resolved);
-  assert.deepEqual(responses[0].speech, { text: "Przykladowo" });
+  assert.equal(responses[0].result, shared);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Local shared audio"
+  });
   assert.deepEqual(calls, [
     ["getStorage", ["lastResult"]],
     ["requestSharedAudio", "Exampletown", null, {
@@ -668,7 +681,12 @@ test("select-to-hear does not make a second shared-audio request after direct lo
       skipRefresh: true
     }],
     ["resolveSelection", "Exampletown", { useOnline: false, trace }],
-    ["speakResult", resolved, { rate: 0.82, lang: undefined, trace }]
+    ["requestSharedAudio", "Exampletown", resolved, {
+      useOnline: false,
+      sharedAudioLocalOnly: true,
+      trace
+    }],
+    ["playAudio", shared.pronunciation.audio[0], 0.82, trace]
   ]);
 });
 

@@ -214,6 +214,10 @@ export async function requestSharedAudioForResult(text, result = null, options =
 
   const settings = normalizeSettings(stored[storageKeys.settings]);
   const hasPreferred = hasPreferredAudio(baseResult);
+  if (options.sharedAudioLocalOnly === true) {
+    return baseResult;
+  }
+
   if (!settings.communityEndpoint || !settings.communityAudioEnabled) {
     if (hasPreferred) {
       return baseResult;

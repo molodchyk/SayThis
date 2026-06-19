@@ -136,7 +136,7 @@ test("online context menu plays shared audio before refreshing the result", asyn
   ]);
 });
 
-test("context menu reuses visible overlay audio before storage or lookup", async () => {
+test("context menu reuses visible overlay audio without lookup", async () => {
   const calls = [];
   const visible = {
     query: "Exampletown",
@@ -163,8 +163,9 @@ test("context menu reuses visible overlay audio before storage or lookup", async
       calls.push(["getVisibleResultOnTab", tabId]);
       return visible;
     },
-    getStorage: async () => {
-      throw new Error("should not read storage when visible audio matches");
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
     },
     requestSharedAudio: async () => {
       throw new Error("should not request shared audio when visible audio matches");
@@ -183,8 +184,75 @@ test("context menu reuses visible overlay audio before storage or lookup", async
   assert.deepEqual(calls, [
     ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu" }],
     ["getVisibleResultOnTab", 42],
+    ["getStorage", ["lastResult"]],
     ["setStorage", { lastResult: visible }],
     ["playResolvedResult", visible, 42]
+  ]);
+});
+
+test("context menu does not wait for a slow visible result before direct shared audio", async () => {
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Direct shared audio",
+        url: "https://audio.example/direct.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: " Exampletown " }, { id: 42 }, {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    getVisibleResultOnTab: async (tabId) => {
+      calls.push(["getVisibleResultOnTab", tabId]);
+      return new Promise(() => {});
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return value ? value : direct;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return new Promise(() => {});
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    visibleResultGraceMs: 5,
+    storedResultGraceMs: 5,
+    directSharedAudioWaitMs: 50,
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.deepEqual(compactTraceCalls(calls), [
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu" }],
+    ["getVisibleResultOnTab", 42],
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      trace: { action: "context-menu" },
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", {
+      useOnline: false,
+      trace: { action: "context-menu" }
+    }],
+    ["setStorage", { lastResult: direct }],
+    ["playResolvedResult", direct, 42]
   ]);
 });
 
@@ -255,6 +323,65 @@ test("context menu plays direct approved shared audio before slow local resoluti
 
   finishResolve();
   await delay(0);
+});
+
+test("plain context menu only checks local shared audio after local resolution", async () => {
+  const calls = [];
+  const resolved = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "structured-source"
+  };
+
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: " Exampletown " }, { id: 42 }, {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return null;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    visibleResultGraceMs: 5,
+    storedResultGraceMs: 5,
+    directSharedAudioWaitMs: 25,
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, resolved);
+  assert.deepEqual(compactTraceCalls(calls), [
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu" }],
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      trace: { action: "context-menu" },
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", {
+      useOnline: false,
+      trace: { action: "context-menu" }
+    }],
+    ["requestSharedAudio", "Exampletown", resolved, {
+      useOnline: false,
+      trace: { action: "context-menu" },
+      sharedAudioLocalOnly: true
+    }],
+    ["setStorage", { lastResult: resolved }],
+    ["playResolvedResult", resolved, 42]
+  ]);
 });
 
 test("context menu reuses shared audio prepared from selection", async () => {
