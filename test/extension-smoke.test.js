@@ -428,7 +428,10 @@ test("popup quick feedback labels match their feedback kinds", async () => {
   const source = await readText("src/popup/index.js");
 
   assert.match(html, /id="lookup-hints"/);
+  assert.match(html, /id="open-options"/);
   assert.match(source, /lookupHintsInput/);
+  assert.match(source, /openOptionsButton/);
+  assert.match(source, /openExtensionOptions\(runtimeAdapters\)/);
   assert.match(source, /languageHints/);
   assert.match(source, /useOnline: useOnline \|\| languageHints\.length \? true : useOnline/);
   assert.match(html, /id="confirm"[^>]*>Confirm<\/button>/);

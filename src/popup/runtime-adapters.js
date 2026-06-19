@@ -21,6 +21,7 @@ export function createPopupRuntimeAdapters(runtime = globalThis.chrome) {
     queryTabs: (query) => runtime?.tabs?.query(query),
     executeScript: (details) => runtime?.scripting?.executeScript(details),
     sendMessage: (message, callback) => runtime?.runtime?.sendMessage(message, callback),
+    openOptionsPage: (callback) => runtime?.runtime?.openOptionsPage(callback),
     lastError: () => runtime?.runtime?.lastError
   };
 }
@@ -97,6 +98,34 @@ export function sendRuntimeMessage(message, dependencies = {}) {
 
       resolve(response || { ok: false, error: "No response." });
     });
+  });
+}
+
+export function openExtensionOptions(dependencies = {}) {
+  return new Promise((resolve) => {
+    if (typeof dependencies.openOptionsPage !== "function") {
+      resolve({ ok: false, error: "Options unavailable." });
+      return;
+    }
+
+    try {
+      const maybePromise = dependencies.openOptionsPage(() => {
+        const lastError = dependencies.lastError?.();
+        if (lastError) {
+          resolve({ ok: false, error: lastError.message || String(lastError) });
+          return;
+        }
+
+        resolve({ ok: true });
+      });
+      if (maybePromise && typeof maybePromise.then === "function") {
+        maybePromise
+          .then(() => resolve({ ok: true }))
+          .catch((error) => resolve({ ok: false, error: error?.message || "Options unavailable." }));
+      }
+    } catch (error) {
+      resolve({ ok: false, error: error?.message || "Options unavailable." });
+    }
   });
 }
 

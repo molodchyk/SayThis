@@ -19,7 +19,15 @@ body {
 }
 
 .header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.header-copy {
   display: grid;
+  min-width: 0;
   gap: 4px;
 }
 
@@ -98,6 +106,17 @@ button:disabled {
 button.secondary {
   color: #0f6b58;
   background: transparent;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .small {

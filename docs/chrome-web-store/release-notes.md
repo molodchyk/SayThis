@@ -15,6 +15,7 @@
 - Keeps connector words in abbreviation guides for forms like M&A, R&D, and C++.
 - Treats compact lowercase-n connector abbreviations as connector speech.
 - Shows source-form speech rows for abbreviations and other same-language resolved readings.
+- Adds an upper-right popup shortcut to open extension options.
 - Keeps the primary result visible when playing shared audio for an alternate candidate.
 - Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
 - Keeps verified recording labels when generated fallback samples are also available.

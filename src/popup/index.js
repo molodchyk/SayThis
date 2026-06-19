@@ -22,6 +22,7 @@ import {
 import {
   createPopupRuntimeAdapters,
   lookupHintsFromValue,
+  openExtensionOptions,
   readActiveTabSelection,
   readPopupSettings,
   readStoredPopupState,
@@ -40,6 +41,7 @@ import {
 
 const selectionInput = document.getElementById("selection");
 const lookupHintsInput = document.getElementById("lookup-hints");
+const openOptionsButton = document.getElementById("open-options");
 const resolveButton = document.getElementById("resolve");
 const onlineButton = document.getElementById("resolve-online");
 const speakButton = document.getElementById("speak");
@@ -91,6 +93,7 @@ init();
 
 resolveButton.addEventListener("click", () => resolveSelection());
 onlineButton.addEventListener("click", () => resolveSelection(true));
+openOptionsButton.addEventListener("click", () => openOptions());
 
 speakButton.addEventListener("click", () => speakSelection(0.82));
 slowButton.addEventListener("click", () => speakSelection(0.62));
@@ -229,6 +232,11 @@ async function saveFeedback(feedback) {
   } else {
     setStatus(response.error || "Could not save.");
   }
+}
+
+async function openOptions() {
+  const response = await openExtensionOptions(runtimeAdapters);
+  setStatus(response.ok ? "Options opened." : response.error || "Options unavailable.");
 }
 
 function renderResult(result) {

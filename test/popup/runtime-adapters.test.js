@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   createPopupRuntimeAdapters,
   lookupHintsFromValue,
+  openExtensionOptions,
   readActiveTabSelection,
   readPopupSettings,
   readStoredPopupState,
@@ -41,6 +42,10 @@ test("creates popup runtime adapters from Chrome APIs", async () => {
       sendMessage: (message, callback) => {
         calls.push(["sendMessage", message]);
         callback({ ok: true });
+      },
+      openOptionsPage: (callback) => {
+        calls.push(["openOptionsPage"]);
+        callback();
       }
     }
   };
@@ -51,13 +56,15 @@ test("creates popup runtime adapters from Chrome APIs", async () => {
   assert.deepEqual(await adapters.queryTabs({ active: true }), [{ id: 7 }]);
   assert.deepEqual(await adapters.executeScript({ target: { tabId: 7 } }), [{ result: "Gnocchi" }]);
   assert.deepEqual(await sendRuntimeMessage({ type: "SAYTHIS_STOP" }, adapters), { ok: true });
+  assert.deepEqual(await openExtensionOptions(adapters), { ok: true });
   assert.equal(adapters.lastError(), null);
   assert.deepEqual(calls, [
     ["getStorage", ["settings"]],
     ["setStorage", { lastSelection: "Gnocchi" }],
     ["queryTabs", { active: true }],
     ["executeScript", { tabId: 7 }],
-    ["sendMessage", { type: "SAYTHIS_STOP" }]
+    ["sendMessage", { type: "SAYTHIS_STOP" }],
+    ["openOptionsPage"]
   ]);
 });
 
@@ -177,6 +184,35 @@ test("sends runtime messages with error normalization", async () => {
   assert.deepEqual(await sendRuntimeMessage({ type: "SAYTHIS_STOP" }), {
     ok: false,
     error: "Runtime messaging unavailable."
+  });
+});
+
+test("opens extension options with error normalization", async () => {
+  assert.deepEqual(await openExtensionOptions({
+    openOptionsPage: (respond) => respond(),
+    lastError: () => null
+  }), { ok: true });
+
+  assert.deepEqual(await openExtensionOptions({
+    openOptionsPage: () => Promise.resolve(),
+    lastError: () => null
+  }), { ok: true });
+
+  assert.deepEqual(await openExtensionOptions({
+    openOptionsPage: (respond) => respond(),
+    lastError: () => ({ message: "Cannot open options" })
+  }), { ok: false, error: "Cannot open options" });
+
+  assert.deepEqual(await openExtensionOptions({
+    openOptionsPage: () => {
+      throw new Error("Popup unavailable");
+    },
+    lastError: () => null
+  }), { ok: false, error: "Popup unavailable" });
+
+  assert.deepEqual(await openExtensionOptions(), {
+    ok: false,
+    error: "Options unavailable."
   });
 });
 
