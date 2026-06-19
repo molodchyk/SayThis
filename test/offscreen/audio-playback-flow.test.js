@@ -189,6 +189,72 @@ test("preloads generated audio into the offscreen cache without playing it", asy
   assert.equal(calls.filter((call) => call[0] === "createAudio").length, 0);
 });
 
+test("plays preloaded generated audio from a prepared object URL", async () => {
+  const calls = [];
+  const cacheEntries = new Map();
+  const playback = createOffscreenAudioPlayback({
+    createRequest: (url) => url,
+    caches: {
+      async open(name) {
+        calls.push(["cache.open", name]);
+        return {
+          async match(request) {
+            calls.push(["cache.match", request]);
+            return cacheEntries.get(request) || null;
+          },
+          async put(request, response) {
+            calls.push(["cache.put", request]);
+            cacheEntries.set(request, response);
+          }
+        };
+      }
+    },
+    fetch: async (request) => {
+      calls.push(["fetch", request]);
+      return responseFromBlob("audio-bytes");
+    },
+    createObjectUrl: (blob) => {
+      calls.push(["createObjectUrl", blob]);
+      return `blob:${blob}`;
+    },
+    revokeObjectUrl: (url) => calls.push(["revokeObjectUrl", url]),
+    createAudio: (url) => {
+      calls.push(["createAudio", url]);
+      return {
+        currentTime: 0,
+        pause: () => calls.push(["pause", url]),
+        play: async () => calls.push(["play", url]),
+        set playbackRate(value) {
+          calls.push(["playbackRate", value]);
+        }
+      };
+    }
+  });
+
+  const prepared = await playback.prepareAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated"
+  });
+  const played = await playback.playAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated",
+    cacheBeforePlayback: true
+  }, 1);
+
+  assert.equal(prepared.prepared, true);
+  assert.equal(prepared.objectUrlReady, true);
+  assert.equal(played.cacheMode, "memory-object-url");
+  assert.equal(played.usedObjectUrl, true);
+  assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "cache.match").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "createObjectUrl").length, 1);
+  assert.deepEqual(calls.slice(-3), [
+    ["createAudio", "blob:audio-bytes"],
+    ["playbackRate", 1],
+    ["play", "blob:audio-bytes"]
+  ]);
+});
+
 test("reuses an in-flight preload when cached playback starts", async () => {
   const calls = [];
   const cacheEntries = new Map();
@@ -251,9 +317,11 @@ test("reuses an in-flight preload when cached playback starts", async () => {
   const [prepared, played] = await Promise.all([preparePromise, playPromise]);
 
   assert.equal(prepared.prepared, true);
-  assert.equal(played.cacheMode, "cache-api-object-url");
+  assert.equal(prepared.objectUrlReady, true);
+  assert.equal(new Set(["cache-api-object-url", "memory-object-url"]).has(played.cacheMode), true);
   assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
   assert.equal(calls.filter((call) => call[0] === "cache.put").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "createObjectUrl").length, 1);
   assert.deepEqual(calls.slice(-3), [
     ["createAudio", "blob:audio-bytes"],
     ["playbackRate", 1],

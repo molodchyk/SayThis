@@ -5,14 +5,20 @@ import {
   voiceLocaleMatchesRequest
 } from "../shared/voice-preferences.js";
 
+const MAX_PREPARED_AUDIO_OBJECT_URLS = 12;
+
 export function createOffscreenAudioPlayback(dependencies = {}) {
   let audioPlayer = null;
   let audioObjectUrl = "";
   let speechUtterance = null;
   const audioCacheRequests = new Map();
+  const audioObjectUrls = new Map();
+  const audioObjectUrlRequests = new Map();
   const cacheDependencies = {
     ...dependencies,
-    audioCacheRequests
+    audioCacheRequests,
+    audioObjectUrlRequests,
+    audioObjectUrls
   };
 
   return {
@@ -36,6 +42,9 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
     return {
       speechSynthesisAvailable: Boolean(synth),
       utteranceAvailable: Boolean(Utterance),
+      preparedAudioObjectUrlCount: audioObjectUrls.size,
+      pendingAudioCacheRequestCount: audioCacheRequests.size,
+      pendingAudioObjectUrlCount: audioObjectUrlRequests.size,
       requestedLang: lang,
       selectedVoice: selectedVoice ? summarizeVoice(selectedVoice) : null,
       matchingVoiceCount: matchingVoices.length,
@@ -54,8 +63,10 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
 
     try {
       const cached = await cachedAudioResponse(url, cacheDependencies);
+      const preparedObjectUrl = await objectUrlForCachedResponse(url, cached.response, cacheDependencies);
       return {
         prepared: Boolean(cached.response),
+        objectUrlReady: Boolean(preparedObjectUrl.url),
         elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
         cacheMode: cached.mode,
         urlHost: hostLabel(url),
@@ -82,7 +93,7 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
     stopAudio();
     const prepared = await audioUrlForPlayback(audio, cacheDependencies);
     const playbackUrl = prepared.url;
-    audioObjectUrl = playbackUrl !== url ? playbackUrl : "";
+    audioObjectUrl = prepared.revokeAfterPlayback ? playbackUrl : "";
     audioPlayer = createAudio(playbackUrl, dependencies);
     audioPlayer.playbackRate = clampPlaybackRate(playbackRate);
     const playStartedAt = nowMs(dependencies);
@@ -93,7 +104,7 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
       prepareElapsedMs: prepared.elapsedMs,
       playElapsedMs: Math.max(0, completedAt - playStartedAt),
       cacheMode: prepared.mode,
-      usedObjectUrl: Boolean(audioObjectUrl),
+      usedObjectUrl: playbackUrl !== url,
       urlHost: hostLabel(url),
       trace: options.trace
     };
@@ -257,24 +268,39 @@ async function audioUrlForPlayback(audio = {}, dependencies = {}) {
     return {
       url,
       elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
-      mode: "direct"
+      mode: "direct",
+      revokeAfterPlayback: false
     };
   }
 
   try {
+    const existingObjectUrl = cachedObjectUrlFor(url, dependencies);
+    if (existingObjectUrl) {
+      return {
+        url: existingObjectUrl,
+        elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+        mode: "memory-object-url",
+        revokeAfterPlayback: false
+      };
+    }
+
     const cached = await cachedAudioResponse(url, dependencies);
-    const blob = await cached.response?.blob?.();
-    const objectUrl = blob ? createObjectUrl(blob, dependencies) : "";
+    const preparedObjectUrl = await objectUrlForCachedResponse(url, cached.response, dependencies);
+    const objectUrl = preparedObjectUrl.url;
     return {
       url: objectUrl || url,
       elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
-      mode: objectUrl ? "cache-api-object-url" : cached.mode || "cache-api-miss"
+      mode: objectUrl
+        ? preparedObjectUrl.fromMemory ? "memory-object-url" : "cache-api-object-url"
+        : cached.mode || "cache-api-miss",
+      revokeAfterPlayback: false
     };
   } catch {
     return {
       url,
       elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
-      mode: "cache-api-error-direct"
+      mode: "cache-api-error-direct",
+      revokeAfterPlayback: false
     };
   }
 }
@@ -343,6 +369,97 @@ function cloneCachedResponse(result = {}, fallbackMode = "") {
       ? fallbackMode
       : result?.mode || fallbackMode
   };
+}
+
+async function objectUrlForCachedResponse(url, response, dependencies = {}) {
+  const existingObjectUrl = cachedObjectUrlFor(url, dependencies);
+  if (existingObjectUrl) {
+    return {
+      url: existingObjectUrl,
+      fromMemory: true
+    };
+  }
+
+  if (!response || typeof response.blob !== "function") {
+    return {
+      url: "",
+      fromMemory: false
+    };
+  }
+
+  const requests = dependencies.audioObjectUrlRequests;
+  if (requests?.has?.(url)) {
+    return {
+      url: await requests.get(url),
+      fromMemory: true
+    };
+  }
+
+  const requestPromise = createAndRememberObjectUrl(url, response, dependencies);
+  requests?.set?.(url, requestPromise);
+  try {
+    return {
+      url: await requestPromise,
+      fromMemory: false
+    };
+  } finally {
+    if (requests?.get?.(url) === requestPromise) {
+      requests.delete(url);
+    }
+  }
+}
+
+async function createAndRememberObjectUrl(url, response, dependencies = {}) {
+  try {
+    const source = response.clone ? response.clone() : response;
+    const blob = await source.blob();
+    const objectUrl = blob ? createObjectUrl(blob, dependencies) : "";
+    return objectUrl ? rememberObjectUrl(url, objectUrl, dependencies) : "";
+  } catch {
+    return "";
+  }
+}
+
+function cachedObjectUrlFor(url, dependencies = {}) {
+  const objectUrls = dependencies.audioObjectUrls;
+  const objectUrl = objectUrls?.get?.(url) || "";
+  if (!objectUrl) {
+    return "";
+  }
+
+  objectUrls.delete(url);
+  objectUrls.set(url, objectUrl);
+  return objectUrl;
+}
+
+function rememberObjectUrl(url, objectUrl, dependencies = {}) {
+  const objectUrls = dependencies.audioObjectUrls;
+  if (!objectUrls || typeof objectUrls.set !== "function") {
+    return objectUrl;
+  }
+
+  const existingObjectUrl = objectUrls.get(url);
+  if (existingObjectUrl) {
+    if (existingObjectUrl !== objectUrl) {
+      revokeObjectUrl(objectUrl, dependencies);
+    }
+    objectUrls.delete(url);
+    objectUrls.set(url, existingObjectUrl);
+    return existingObjectUrl;
+  }
+
+  objectUrls.set(url, objectUrl);
+  while (objectUrls.size > MAX_PREPARED_AUDIO_OBJECT_URLS) {
+    const oldest = objectUrls.entries().next().value;
+    if (!oldest) {
+      break;
+    }
+    const [oldestUrl, oldestObjectUrl] = oldest;
+    objectUrls.delete(oldestUrl);
+    revokeObjectUrl(oldestObjectUrl, dependencies);
+  }
+
+  return objectUrl;
 }
 
 function createRequest(url, dependencies = {}) {
