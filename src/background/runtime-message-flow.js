@@ -37,8 +37,13 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     recordSelectionTrigger(selectedText, message.trace, dependencies);
     const options = {
       ...useOnlineMessageOptions(message),
+      ...(shouldPreferImmediatePlayback(message) ? {
+        useOnline: false,
+        skipOnlineRetry: true
+      } : {}),
       ...(message.trace ? { trace: message.trace } : {})
     };
+    const resolverOptions = withoutPlaybackOnlyOptions(options);
     startPreparingPlayback(dependencies, message.trace);
     let directSharedAudioResult = null;
     let resolvedPlayableResult = null;
@@ -62,7 +67,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     const resolvedSelectionPromise = message.result
       ? Promise.resolve(message.result)
       : withHandledRejection(waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
-        .then((result) => result || dependencies.resolveSelection(selectedText, options)));
+        .then((result) => result || dependencies.resolveSelection(selectedText, resolverOptions)));
     const resolvedPlayablePromise = message.result
       ? Promise.resolve(null)
       : withHandledRejection(resolvedSelectionPromise.then(async (result) => {
@@ -401,6 +406,12 @@ export function useOnlineMessageOptions(message = {}) {
   return message.skipSharedAudio ? { ...options, skipSharedAudio: true } : options;
 }
 
+function shouldPreferImmediatePlayback(message = {}) {
+  return message.useOnline !== true &&
+    message.trace?.source === "content-selection" &&
+    message.trace?.action === "select-to-hear";
+}
+
 function respondWithResult(promise, sendResponse, buildResponse, fallbackError) {
   Promise.resolve(promise)
     .then((value) => {
@@ -451,6 +462,11 @@ function compactOptions(options = {}) {
   return Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   );
+}
+
+function withoutPlaybackOnlyOptions(options = {}) {
+  const { skipOnlineRetry, skipSharedAudio, ...resolverOptions } = options;
+  return resolverOptions;
 }
 
 function speechOptions(options = {}) {

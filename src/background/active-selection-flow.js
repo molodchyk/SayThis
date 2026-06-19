@@ -67,10 +67,10 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
       useOnline: options.useOnline,
       trace
     });
-    const playableResult = await resolvePlayableResult(selectedText, result, {
+    const playableResult = await resolvePlayableResult(selectedText, result, immediatePlaybackOptions({
       useOnline: options.useOnline,
       trace
-    }, dependencies);
+    }), dependencies);
     await dependencies.playResolvedResult?.(playableResult, tab.id, trace);
 
     return { handled: true, result: playableResult };
@@ -233,7 +233,12 @@ async function localPlayableCandidate(selectedText, options = {}, dependencies =
     ...options,
     trace
   };
-  const playableResult = await resolvePlayableResult(selectedText, localResult, playableOptions, dependencies);
+  const playableResult = await resolvePlayableResult(
+    selectedText,
+    localResult,
+    immediatePlaybackOptions(playableOptions),
+    dependencies
+  );
   return playableResult
     ? {
       result: playableResult,
@@ -314,6 +319,15 @@ function compactOptions(options = {}) {
   return Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   );
+}
+
+function immediatePlaybackOptions(options = {}) {
+  return options.useOnline === true
+    ? options
+    : {
+      ...options,
+      skipOnlineRetry: true
+    };
 }
 
 function setStorageBestEffort(dependencies = {}, value = {}) {

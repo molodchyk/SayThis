@@ -3,7 +3,7 @@ import {
   hasTopTierAudio
 } from "../resolver-core.js";
 
-const DEFAULT_SHARED_AUDIO_WAIT_MS = 1200;
+const DEFAULT_SHARED_AUDIO_WAIT_MS = 450;
 
 export async function resolvePlayableResult(selectedText, result, options = {}, dependencies = {}) {
   if (!result) {
@@ -16,7 +16,7 @@ export async function resolvePlayableResult(selectedText, result, options = {}, 
 
   let playableResult = result;
   try {
-    if (options.useOnline !== true) {
+    if (options.useOnline !== true && options.skipOnlineRetry !== true) {
       const retryOptions = withoutPlaybackOnlyOptions(options);
       playableResult = await dependencies.resolveSelection?.(selectedText, {
         ...retryOptions,
@@ -48,7 +48,11 @@ export function hasPlayableAudio(result = {}) {
 }
 
 async function requestSharedAudioWithinWait(selectedText, result, options = {}, dependencies = {}) {
-  const request = Promise.resolve(dependencies.requestSharedAudio(selectedText, result, options));
+  const request = Promise.resolve(dependencies.requestSharedAudio(
+    selectedText,
+    result,
+    withoutPlaybackOnlyOptions(options)
+  ));
   const waitMs = normalizeWaitMs(dependencies.sharedAudioWaitMs, DEFAULT_SHARED_AUDIO_WAIT_MS);
   if (!waitMs || typeof setTimeout !== "function") {
     return request;
@@ -73,6 +77,6 @@ function normalizeWaitMs(value, fallback) {
 }
 
 function withoutPlaybackOnlyOptions(options = {}) {
-  const { skipSharedAudio, ...resolverOptions } = options;
+  const { skipOnlineRetry, skipSharedAudio, ...resolverOptions } = options;
   return resolverOptions;
 }

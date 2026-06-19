@@ -52,7 +52,12 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
     }
 
     const result = await dependencies.resolveSelection(selectedText, options);
-    const playableResult = await resolvePlayableResult(selectedText, result, options, dependencies);
+    const playableResult = await resolvePlayableResult(
+      selectedText,
+      result,
+      immediatePlaybackOptions(options),
+      dependencies
+    );
     setStorageBestEffort(dependencies, {
       [dependencies.lastResultKey || "lastResult"]: playableResult
     });
@@ -210,7 +215,12 @@ async function localPlayableCandidate(selectedText, options = {}, dependencies =
     ...options,
     trace
   };
-  const playableResult = await resolvePlayableResult(selectedText, localResult, playableOptions, dependencies);
+  const playableResult = await resolvePlayableResult(
+    selectedText,
+    localResult,
+    immediatePlaybackOptions(playableOptions),
+    dependencies
+  );
   return playableResult
     ? {
       result: playableResult,
@@ -291,6 +301,15 @@ function compactOptions(options = {}) {
   return Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   );
+}
+
+function immediatePlaybackOptions(options = {}) {
+  return options.useOnline === true
+    ? options
+    : {
+      ...options,
+      skipOnlineRetry: true
+    };
 }
 
 function setStorageBestEffort(dependencies = {}, value = {}) {

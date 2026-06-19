@@ -433,16 +433,9 @@ test("keyboard playback does not wait for selection bookkeeping", async () => {
   ]);
 });
 
-test("enriches no-audio keyboard selections before playback", async () => {
+test("plays immediate keyboard selections without hidden online retry", async () => {
   const calls = [];
   const resolved = { display: "Gnocchi", sourceStatus: "structured-source" };
-  const enriched = {
-    display: "Gnocchi",
-    sourceStatus: "verified-audio",
-    pronunciation: {
-      audio: [{ url: "https://audio.example/gnocchi.ogg" }]
-    }
-  };
   const result = await handleActiveSelectionCommand({
     source: "keyboard"
   }, {
@@ -454,7 +447,7 @@ test("enriches no-audio keyboard selections before playback", async () => {
     setStorage: async (value) => calls.push(["setStorage", value]),
     resolveSelection: async (text, options) => {
       calls.push(["resolveSelection", text, options]);
-      return options.useOnline ? enriched : resolved;
+      return resolved;
     },
     playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
     lastSelectionKey: "lastSelection",
@@ -462,7 +455,7 @@ test("enriches no-audio keyboard selections before playback", async () => {
   });
 
   assert.equal(result.handled, true);
-  assert.equal(result.result, enriched);
+  assert.equal(result.result, resolved);
   assert.deepEqual(compactTraceCalls(calls), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard" }],
@@ -471,13 +464,7 @@ test("enriches no-audio keyboard selections before playback", async () => {
       useOnline: false,
       trace: { action: "keyboard" }
     }],
-    ["resolveSelection", "Gnocchi", {
-      source: "keyboard",
-      useOnline: true,
-      localResult: resolved,
-      trace: { action: "keyboard" }
-    }],
-    ["playResolvedResult", enriched, 7]
+    ["playResolvedResult", resolved, 7]
   ]);
 });
 

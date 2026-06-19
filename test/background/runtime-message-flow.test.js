@@ -346,7 +346,7 @@ test("runtime speak plays direct approved shared audio before slow resolution", 
       directLookup: true,
       skipRefresh: true
     }],
-    ["resolveSelection", "Exampletown", { trace }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
   ]);
 
@@ -516,7 +516,7 @@ test("runtime speak plays resolved audio before slow direct shared-audio miss", 
       directLookup: true,
       skipRefresh: true
     }],
-    ["resolveSelection", "Exampletown", { trace }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
   ]);
 
@@ -570,7 +570,7 @@ test("runtime speak starts playback preparation before resolving", async () => {
   assert.equal(handled, true);
   assert.deepEqual(calls, [
     ["preparePlayback", trace],
-    ["resolveSelection", "Exampletown", { trace }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
   ]);
   assert.equal(responses[0].ok, true);
@@ -637,7 +637,7 @@ test("runtime speak falls back to resolving when stored-result read fails", asyn
       error: "storage temporarily unavailable",
       trace
     }],
-    ["resolveSelection", "Exampletown", { trace }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
   ]);
   assert.deepEqual(responses, [{

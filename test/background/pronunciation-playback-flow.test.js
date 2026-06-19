@@ -262,6 +262,31 @@ test("skips shared audio when caller already tried it", async () => {
   ]);
 });
 
+test("skips online retry for immediate playback callers", async () => {
+  const calls = [];
+  const enriched = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", enriched, { skipOnlineRetry: true }, {
+    resolveSelection: async () => {
+      throw new Error("should not retry online");
+    },
+    requestSharedAudio: async (text, item, options) => {
+      calls.push(["requestSharedAudio", text, item, options]);
+      return null;
+    }
+  });
+
+  assert.equal(playable, enriched);
+  assert.deepEqual(calls, [
+    ["requestSharedAudio", "Exampletown", enriched, {}]
+  ]);
+});
+
 test("keeps source-form result when shared audio wait expires", async () => {
   const calls = [];
   const enriched = {
@@ -288,6 +313,34 @@ test("keeps source-form result when shared audio wait expires", async () => {
     ["resolveSelection", "Exampletown", { useOnline: true, localResult: enriched }],
     ["requestSharedAudio", "Exampletown", enriched, {}]
   ]);
+});
+
+test("uses a short default wait before falling back from shared audio", async () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  const enriched = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  let observedWaitMs = null;
+
+  globalThis.setTimeout = (callback, waitMs, ...args) => {
+    observedWaitMs = waitMs;
+    return originalSetTimeout(callback, 0, ...args);
+  };
+
+  try {
+    const playable = await resolvePlayableResult("Exampletown", enriched, {}, {
+      resolveSelection: async () => enriched,
+      requestSharedAudio: async () => new Promise(() => {})
+    });
+
+    assert.equal(playable, enriched);
+    assert.equal(observedWaitMs, 450);
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+  }
 });
 
 test("keeps current result when audio exists or retry fails", async () => {
