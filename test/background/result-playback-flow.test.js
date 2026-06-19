@@ -15,7 +15,7 @@ const AUDIO_RESULT = {
   }
 };
 
-test("plays verified audio through the overlay when injection succeeds", async () => {
+test("plays verified audio offscreen before showing the overlay", async () => {
   const calls = [];
   const result = await playResolvedResult(AUDIO_RESULT, 7, {
     getBestAudio: (value) => value.pronunciation.audio[0],
@@ -31,33 +31,33 @@ test("plays verified audio through the overlay when injection succeeds", async (
     speakResult: () => calls.push(["speakResult"])
   });
 
-  assert.deepEqual(result, { mode: "overlay-audio" });
+  assert.deepEqual(result, { mode: "offscreen-audio" });
   assert.deepEqual(calls, [
-    ["showResultOnTab", 7, "Gnocchi", { autoPlay: true }]
+    ["playAudioOffscreen"],
+    ["showResultOnTab", 7, "Gnocchi", undefined]
   ]);
 });
 
-test("uses offscreen audio when overlay autoplay cannot be injected", async () => {
+test("uses overlay autoplay when offscreen cannot play verified audio", async () => {
   const calls = [];
   const result = await playResolvedResult(AUDIO_RESULT, 7, {
     getBestAudio: (value) => value.pronunciation.audio[0],
     hasPreferredAudio: () => true,
     showResultOnTab: async (tabId, value, options) => {
       calls.push(["showResultOnTab", tabId, value.display, options || {}]);
-      return calls.length === 1 ? false : true;
+      return true;
     },
     playAudioOffscreen: async (value) => {
       calls.push(["playAudioOffscreen", value.display]);
-      return true;
+      return false;
     },
     speakResult: () => calls.push(["speakResult"])
   });
 
-  assert.deepEqual(result, { mode: "offscreen-audio" });
+  assert.deepEqual(result, { mode: "overlay-audio" });
   assert.deepEqual(calls, [
-    ["showResultOnTab", 7, "Gnocchi", { autoPlay: true }],
     ["playAudioOffscreen", "Gnocchi"],
-    ["showResultOnTab", 7, "Gnocchi", {}]
+    ["showResultOnTab", 7, "Gnocchi", { autoPlay: true }]
   ]);
 });
 
@@ -102,12 +102,16 @@ test("falls back to TTS when no verified audio can play", async () => {
       calls.push(["showResultOnTab", tabId, value.display, options || {}]);
       return false;
     },
-    playAudioOffscreen: async () => false,
+    playAudioOffscreen: async () => {
+      calls.push(["playAudioOffscreen"]);
+      return false;
+    },
     speakResult: (value) => calls.push(["speakResult", value.display])
   });
 
   assert.deepEqual(result, { mode: "tts" });
   assert.deepEqual(calls, [
+    ["playAudioOffscreen"],
     ["showResultOnTab", 7, "Gnocchi", { autoPlay: true }],
     ["speakResult", "Gnocchi"],
     ["showResultOnTab", 7, "Gnocchi", {}]
