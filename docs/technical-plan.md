@@ -146,7 +146,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Wikidata pronunciation-audio extraction preserves multiple Commons recordings from one entity and prefers recordings with matching language qualifiers.
 - Wiktionary lookup for dictionary-like terms with IPA, pronunciation-audio, and short origin extraction.
 - Wiktionary section selection can use resolved source languages and one-off lookup hints from the user.
-- Hinted Wiktionary edition retries after English Wiktionary for dictionary entries missing from English Wiktionary.
+- Hinted Wiktionary edition retries prefer resolved or hinted target-language editions before English fallback.
 - Wiktionary etymology lines can populate pronunciation-relevant root fields.
 - Wiktionary enPR and respelling templates parsed into simple pronunciation guides.
 - Wiktionary alternative-form sections can populate variant spellings for later pronunciation-audio lookup.

@@ -39,6 +39,7 @@ test("uses lookup language hints for Wiktionary section selection", async () => 
     };
 
     const result = await resolveWithWiktionary("Exampleterm", {
+      sourceLanguage: "en",
       languageHints: ["pl"]
     });
 
@@ -91,11 +92,53 @@ test("passes lookup language hints to Wiktionary source-form retries", async () 
       languageHints: ["pl"]
     });
 
-    assert.deepEqual(requestedEditions, ["en", "pl"]);
+    assert.deepEqual(requestedEditions, ["pl"]);
     assert.equal(result.sourceForm, "Exampleform");
     assert.equal(result.language, "pl");
     assert.equal(result.sourceStatus, "verified-audio");
     assert.equal(result.pronunciation.audio[0].url.includes("Pl-exampleform.ogg"), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("keeps target-language Wiktionary result ahead of later mismatched audio", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedEditions = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      const sourceLanguage = parsed.host.split(".")[0];
+      requestedEditions.push(sourceLanguage);
+
+      return jsonResponse({
+        query: {
+          pages: [{
+            title: "Exampleterm",
+            revisions: [{
+              slots: {
+                main: {
+                  content: sourceLanguage === "pl"
+                    ? `==Wymowa==\n* {{IPA|pl|/ɛkˈzam.plɛ/}}`
+                    : `==English==\n===Pronunciation===\n* {{IPA|en|/example/}}\n* {{audio|en|En-exampleterm.ogg|Audio}}`
+                }
+              }
+            }]
+          }]
+        }
+      });
+    };
+
+    const result = await resolveWithWiktionary("Exampleterm", {
+      languageHints: ["pl"]
+    });
+
+    assert.deepEqual(requestedEditions, ["pl", "en"]);
+    assert.equal(result.language, "pl");
+    assert.equal(result.sourceStatus, "structured-source");
+    assert.equal(result.pronunciation.ipa, "/ɛkˈzam.plɛ/");
+    assert.deepEqual(result.pronunciation.audio, []);
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -135,12 +135,14 @@ function createWiktionaryRemoteResult(query, pageTitle, parsed, options = {}) {
 }
 
 export function wiktionarySourceLanguages(options = {}) {
+  const hintValues = Array.isArray(options.languageHints)
+    ? options.languageHints
+    : String(options.languageHints || "").split(/[\s,;]+/);
   const values = [
-    "en",
     options.sourceLanguage,
     options.language,
     options.preferredLanguage,
-    ...(Array.isArray(options.languageHints) ? options.languageHints : String(options.languageHints || "").split(/[\s,;]+/))
+    ...hintValues
   ];
   const seen = new Set();
   const languages = [];
@@ -151,14 +153,19 @@ export function wiktionarySourceLanguages(options = {}) {
       continue;
     }
 
+    if (language !== "en" && !seen.has("en") && languages.length >= 3) {
+      continue;
+    }
+
     seen.add(language);
     languages.push(language);
-    if (languages.length >= 4) {
-      break;
-    }
   }
 
-  return languages;
+  if (!seen.has("en")) {
+    languages.push("en");
+  }
+
+  return languages.slice(0, 4);
 }
 
 export function buildWiktionaryApiUrl(query, sourceLanguage = "en") {

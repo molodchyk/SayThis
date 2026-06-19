@@ -246,7 +246,9 @@ export async function resolveWithWiktionaryLookup(selectedText, lookupWord, opti
 }
 
 export async function resolveWithWiktionarySources(selectedText, lookupWord, options = {}) {
+  const preferredLanguage = preferredWiktionaryTargetLanguage(options);
   let result = null;
+  let preferredResult = null;
   for (const sourceLanguage of wiktionarySourceLanguages(options)) {
     const wiktionaryResult = await resolveSafely(resolveWithWiktionaryLookup, selectedText, lookupWord, {
       ...options,
@@ -256,13 +258,21 @@ export async function resolveWithWiktionarySources(selectedText, lookupWord, opt
       continue;
     }
 
+    if (matchesPreferredWiktionaryLanguage(wiktionaryResult, preferredLanguage)) {
+      preferredResult = mergeRemoteResult(preferredResult, wiktionaryResult);
+      if (preferredResult?.sourceStatus === "verified-audio") {
+        return preferredResult;
+      }
+      continue;
+    }
+
     result = mergeRemoteResult(result, wiktionaryResult);
-    if (result?.sourceStatus === "verified-audio") {
+    if (!preferredLanguage && result?.sourceStatus === "verified-audio") {
       return result;
     }
   }
 
-  return result;
+  return preferredResult || result;
 }
 
 export async function resolveWithWiktionaryCandidates(text, structuredResult, options = {}) {
@@ -550,6 +560,18 @@ function preferredWiktionaryLanguage(options = {}, sourceLanguage = "en") {
   return normalizeLanguageHint(options.language || options.preferredLanguage) ||
     normalizedLanguageHints(options.languageHints)[0] ||
     normalizeLanguageHint(sourceLanguage);
+}
+
+function preferredWiktionaryTargetLanguage(options = {}) {
+  return normalizeLanguageHint(options.language || options.preferredLanguage || options.sourceLanguage) ||
+    normalizedLanguageHints(options.languageHints)[0] ||
+    "";
+}
+
+function matchesPreferredWiktionaryLanguage(result = {}, preferredLanguage = "") {
+  const preferred = normalizeLanguageHint(preferredLanguage);
+  const language = normalizeLanguageHint(result.language);
+  return Boolean(preferred && language && language === preferred);
 }
 
 function normalizeLanguageHint(value) {

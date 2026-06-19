@@ -207,7 +207,7 @@ test("builds bounded Wiktionary edition URLs from language hints", () => {
   assert.equal(url.searchParams.get("titles"), "kalem");
   assert.deepEqual(wiktionarySourceLanguages({
     languageHints: "pl, tr, pt-BR, invalid!, ru"
-  }), ["en", "pl", "tr", "pt"]);
+  }), ["pl", "tr", "pt", "en"]);
   assert.equal(wiktionaryPageUrl("przyklad", "pl"), "https://pl.wiktionary.org/wiki/przyklad");
   assert.equal(buildWiktionaryApiUrl("", "pl"), "");
 });

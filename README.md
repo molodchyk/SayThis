@@ -91,7 +91,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - DBpedia-compatible lookup preserves redirect labels as variants for later audio lookup and review.
 - Source-form and alias-guided Wiktionary lookup after structured resolution.
 - Wiktionary language-section selection can use resolved source languages and one-off lookup hints from the user.
-- Wiktionary lookup can try hinted Wiktionary editions after English Wiktionary.
+- Wiktionary lookup tries resolved or hinted target-language editions before English fallback.
 - Wiktionary etymology lines can populate pronunciation-relevant root fields.
 - Wiktionary enPR and respelling guides are surfaced as simple pronunciation guides.
 - Wiktionary alternative-form sections can populate variant spellings for later audio lookup and review.
