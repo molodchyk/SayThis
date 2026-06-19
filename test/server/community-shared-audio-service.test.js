@@ -153,6 +153,36 @@ test("rejects public audio generation before budget when provider is unavailable
   assert.deepEqual(response.store.generationUsage, {});
 });
 
+test("rejects local generation with direct public audio URLs but no object store", async () => {
+  const response = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: {},
+    remoteAddress: "127.0.0.1",
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "Polish",
+      ttsLang: "Polish"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicBaseUrl: "http://127.0.0.1:8787",
+    audioPublicBaseUrl: "https://cdn.example/saythis-audio",
+    ttsProvider: {
+      async synthesize() {
+        throw new Error("should not synthesize without object storage");
+      }
+    }
+  });
+
+  assert.equal(response.status, 503);
+  assert.equal(response.body.error, "audio-object-store-not-configured");
+  assert.equal(Object.keys(response.store.approved).length, 0);
+  assert.deepEqual(response.store.generationUsage, {});
+});
+
 test("does not allow hosted public audio generation even when enabled", async () => {
   const response = await handleCommunityRequest(sharedGenerationRequest({
     term: "Exampletown",

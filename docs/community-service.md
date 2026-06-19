@@ -12,6 +12,13 @@ $env:SAYTHIS_STORE = "data/community-store.json"
 $env:SAYTHIS_MAX_BODY_BYTES = "16384"
 $env:SAYTHIS_MAX_AUDIO_BYTES = "524288"
 $env:SAYTHIS_PUBLIC_BASE_URL = "http://127.0.0.1:8787"
+$env:SAYTHIS_AUDIO_OBJECT_DIR = "private/audio-objects"
+$env:SAYTHIS_AUDIO_PUBLIC_BASE_URL = ""
+$env:SAYTHIS_AUDIO_S3_ENDPOINT = ""
+$env:SAYTHIS_AUDIO_S3_BUCKET = ""
+$env:SAYTHIS_AUDIO_S3_REGION = ""
+$env:SAYTHIS_AUDIO_S3_ACCESS_KEY_ID = ""
+$env:SAYTHIS_AUDIO_S3_SECRET_ACCESS_KEY = ""
 $env:SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN = ""
 $env:SAYTHIS_GOOGLE_APPLICATION_CREDENTIALS = ""
 $env:SAYTHIS_GOOGLE_TTS_VOICE = ""
@@ -61,6 +68,8 @@ Fetch a reviewed shared audio artifact:
 GET /audio/<artifact-id>
 ```
 
+This endpoint remains available for loopback local development and legacy inline artifacts. Hosted deployments should prefer direct approved `audioUrl` playback from the configured public audio origin so normal playback does not stream bytes through the community API.
+
 Request shared audio for a resolved pronunciation entry:
 
 ```http
@@ -87,6 +96,13 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_MAX_BODY_BYTES`: `16384`
 - `SAYTHIS_MAX_AUDIO_BYTES`: `524288`
 - `SAYTHIS_PUBLIC_BASE_URL`: required before storing shared generated-audio artifacts
+- `SAYTHIS_AUDIO_OBJECT_DIR`: optional local file-backed object storage root for generated audio bytes
+- `SAYTHIS_AUDIO_PUBLIC_BASE_URL`: optional public origin for direct approved audio playback
+- `SAYTHIS_AUDIO_S3_ENDPOINT`: optional S3-compatible object storage endpoint
+- `SAYTHIS_AUDIO_S3_BUCKET`: optional object storage bucket name
+- `SAYTHIS_AUDIO_S3_REGION`: optional object storage signing region; use `auto` for Cloudflare R2
+- `SAYTHIS_AUDIO_S3_ACCESS_KEY_ID`: server-only object storage access key
+- `SAYTHIS_AUDIO_S3_SECRET_ACCESS_KEY`: server-only object storage secret
 - `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional short-lived bearer token for Google-compatible speech generation
 - `SAYTHIS_GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_APPLICATION_CREDENTIALS`: optional service-account JSON path for server-owned Google authentication
 - `SAYTHIS_GOOGLE_SERVICE_ACCOUNT_JSON`: optional inline service-account JSON for environments that cannot mount a file
@@ -206,7 +222,7 @@ Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
 }
 ```
 
-The service stores the bytes under `/audio/<artifact-id>`, adds an approved shared entry with that audio URL, preserves bounded pronunciation metadata, and serves the artifact with immutable public cache headers. This path is moderator-only so generated samples can be checked, cost-controlled, and reused by every client through approved-entry refresh or same-source-form shared-audio requests.
+The service stores the bytes as a generated audio artifact, adds an approved shared entry with that audio URL, and preserves bounded pronunciation metadata. When object storage is configured, bytes are written outside the metadata store under `audio/sha256/<hash>.<ext>`. When `SAYTHIS_AUDIO_PUBLIC_BASE_URL` is configured, the approved entry points directly at that public audio origin. This path is moderator-only so generated samples can be checked, cost-controlled, and reused by every client through approved-entry refresh or same-source-form shared-audio requests.
 
 Generate provider audio and store it as a reviewed artifact:
 
@@ -228,7 +244,7 @@ Authorization: Bearer <SAYTHIS_ADMIN_TOKEN>
 }
 ```
 
-This endpoint is admin-only and requires `SAYTHIS_PUBLIC_BASE_URL` plus a configured provider token. It sends only the source form or term text, locale, optional voice name, and speaking rate to the provider. Pronunciation metadata remains in the service artifact and approved shared entry. The returned audio is stored once as `/audio/<artifact-id>` and published through an approved shared entry, so clients reuse the shared sample instead of regenerating it.
+This endpoint is admin-only and requires a configured provider token plus either `SAYTHIS_PUBLIC_BASE_URL` or `SAYTHIS_AUDIO_PUBLIC_BASE_URL`. It sends only the source form or term text, locale, optional voice name, and speaking rate to the provider. Pronunciation metadata remains in the service artifact and approved shared entry. The returned audio is stored once and published through an approved shared entry, so clients reuse the shared sample instead of regenerating it.
 
 The `/admin` page supports pending submission review. It can approve submissions with edited source form, aliases, language, origin, root, domain hint, variants, IPA, simple guide, audio URL, source URL, trust signals, and variant note fields. It can also generate provider audio from a pending submission, publish the returned shared audio artifact, and clear the pending item in one moderator action.
 
@@ -238,10 +254,10 @@ The service writes a JSON store containing:
 
 - `pending`: unreviewed submissions
 - `approved`: approved shared entries keyed by lookup key
-- `audioArtifacts`: shared generated-audio artifacts keyed by artifact id
+- `audioArtifacts`: shared generated-audio metadata keyed by artifact id
 - `generationUsage`: persisted provider-generation budget buckets
 - `rejected`: rejected submission summaries
 
 The built-in Node service serializes store writes in process so overlapping requests do not overwrite pending entries.
 
-The store intentionally excludes request headers, IP addresses, and page URLs.
+The store intentionally excludes request headers, IP addresses, and page URLs. New object-backed audio artifacts keep `storageKey` instead of inline audio bytes; legacy inline artifacts remain readable.

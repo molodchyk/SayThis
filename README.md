@@ -145,6 +145,8 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
 - Community service enforces a persisted public provider-generation budget before paid shared-audio synthesis.
 - Community service can store reviewed or service-generated audio artifacts and publish shared audio URLs through approved entries.
+- Community service can store generated audio bytes outside the metadata store through local file-backed or S3-compatible object storage.
+- Approved shared-audio URLs can point directly at a public audio origin for fast immutable playback instead of streaming through the community API.
 - Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
 - Shared audio checks are timeout-bounded and non-gating, so verified matching browser speech can start when the endpoint is slow or unavailable.
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
@@ -191,6 +193,7 @@ MVP quality bar: SayThis should prefer verified recordings from source-backed se
 - Research notes: `docs/product/research-notes.md`
 - Technical plan: `docs/technical-plan.md`
 - Storage ownership: `docs/architecture/storage-ownership.md`
+- Shared audio storage: `docs/architecture/shared-audio-storage.md`
 - Browser extension playbook: `C:\Users\molod\Documents\Personal\settings\browser-extension-playbook.md`
 - Community service: `docs/community-service.md`
 - Deployment: `docs/deployment.md`

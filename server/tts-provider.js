@@ -136,7 +136,8 @@ export async function generatedAudioArtifactFromTts(body = {}, options = {}) {
     trustSignals: body.trustSignals
   }, {
     maxAudioBytes: options.maxAudioBytes,
-    publicBaseUrl: options.publicBaseUrl
+    publicBaseUrl: options.publicBaseUrl,
+    audioPublicBaseUrl: options.audioPublicBaseUrl
   });
 
   return artifact.ok ? {

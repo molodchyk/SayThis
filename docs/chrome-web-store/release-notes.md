@@ -5,6 +5,8 @@
 - Adds shared generated audio requests through the configured community endpoint.
 - Reuses approved shared audio artifacts before any provider generation.
 - Reuses reviewed shared audio across alternate spellings when the resolved source form and base language match.
+- Stores generated shared-audio bytes outside the metadata store through local file-backed or S3-compatible object storage.
+- Supports direct public audio origins for immutable approved shared-audio playback.
 - Keeps shared-audio lookup timeout-bounded so matching browser speech can start when the endpoint is slow or unavailable.
 - Preserves returned shared audio on the current result when local refresh does not expose it immediately.
 - Preserves source-backed or curated shared recording quality when approved audio is attached to results.

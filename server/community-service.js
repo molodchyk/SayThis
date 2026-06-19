@@ -27,6 +27,12 @@ import {
   upsertGeneratedAudioArtifact
 } from "./community-audio-store.js";
 import {
+  checkPublicAudioStorage,
+  createConfiguredAudioObjectStoreFromEnvironment,
+  persistAudioArtifactBytes,
+  readAudioArtifactBytes
+} from "./audio-object-store.js";
+import {
   createConfiguredTtsProvider,
   generatedAudioArtifactFromTts
 } from "./tts-provider.js";
@@ -83,7 +89,12 @@ export async function handleCommunityRequest(request, store, options = {}) {
       return jsonResponse(404, state, { error: "audio-not-found" });
     }
 
-    return binaryResponse(200, state, Buffer.from(artifact.dataBase64, "base64"), artifact.mimeType, {
+    const audioBytes = await readAudioArtifactBytes(artifact, options.audioObjectStore);
+    if (!audioBytes?.length) {
+      return jsonResponse(404, state, { error: "audio-not-found" });
+    }
+
+    return binaryResponse(200, state, audioBytes, artifact.mimeType, {
       cacheControl: "public, max-age=31536000, immutable"
     });
   }
@@ -159,17 +170,28 @@ export async function handleCommunityRequest(request, store, options = {}) {
       return jsonResponse(auth.status, state, { error: auth.error });
     }
 
+    const storage = checkPublicAudioStorage(options);
+    if (!storage.ok) {
+      return jsonResponse(storage.status, state, { error: storage.error });
+    }
+
     const maxAudioBytes = normalizePositiveInteger(options.maxAudioBytes, DEFAULT_MAX_AUDIO_BYTES);
     const body = parseJsonBody(request.body);
     const artifact = generatedAudioArtifactFromBody(body, {
       maxAudioBytes,
-      publicBaseUrl: options.publicBaseUrl
+      publicBaseUrl: options.publicBaseUrl,
+      audioPublicBaseUrl: storage.audioPublicBaseUrl
     });
     if (!artifact.ok) {
       return jsonResponse(artifact.status, state, { error: artifact.error });
     }
 
-    const result = upsertGeneratedAudioArtifact(state, artifact.value, new Date().toISOString(), {
+    const persistedArtifact = await persistAudioArtifactBytes(artifact.value, options.audioObjectStore);
+    if (!persistedArtifact.ok) {
+      return jsonResponse(persistedArtifact.status, state, { error: persistedArtifact.error });
+    }
+
+    const result = upsertGeneratedAudioArtifact(state, persistedArtifact.artifact, new Date().toISOString(), {
       reviewed: true
     });
     return jsonResponse(result.accepted ? 200 : 400, result.store, {
@@ -186,11 +208,17 @@ export async function handleCommunityRequest(request, store, options = {}) {
       return jsonResponse(auth.status, state, { error: auth.error });
     }
 
+    const storage = checkPublicAudioStorage(options);
+    if (!storage.ok) {
+      return jsonResponse(storage.status, state, { error: storage.error });
+    }
+
     const maxAudioBytes = normalizePositiveInteger(options.maxAudioBytes, DEFAULT_MAX_AUDIO_BYTES);
     const body = parseJsonBody(request.body);
     const artifact = await generatedAudioArtifactFromTts(body, {
       maxAudioBytes,
       publicBaseUrl: options.publicBaseUrl,
+      audioPublicBaseUrl: storage.audioPublicBaseUrl,
       ttsProvider: options.ttsProvider
     });
     if (!artifact.ok) {
@@ -198,7 +226,12 @@ export async function handleCommunityRequest(request, store, options = {}) {
     }
 
     const now = new Date().toISOString();
-    const result = upsertGeneratedAudioArtifact(state, artifact.value, now, {
+    const persistedArtifact = await persistAudioArtifactBytes(artifact.value, options.audioObjectStore);
+    if (!persistedArtifact.ok) {
+      return jsonResponse(persistedArtifact.status, state, { error: persistedArtifact.error });
+    }
+
+    const result = upsertGeneratedAudioArtifact(state, persistedArtifact.artifact, now, {
       reviewed: true
     });
     const pending = result.accepted && body.id
@@ -257,6 +290,12 @@ export async function createCommunityServer(options = {}) {
     DEFAULT_MAX_AUDIO_BYTES
   );
   const publicBaseUrl = normalizePublicBaseEndpoint(options.publicBaseUrl ?? process.env.SAYTHIS_PUBLIC_BASE_URL);
+  const audioPublicBaseUrl = normalizePublicBaseEndpoint(
+    options.audioPublicBaseUrl ?? process.env.SAYTHIS_AUDIO_PUBLIC_BASE_URL
+  );
+  const audioObjectStore = options.audioObjectStore === undefined
+    ? createConfiguredAudioObjectStoreFromEnvironment({ fetch: options.fetch })
+    : options.audioObjectStore;
   const ttsProvider = options.ttsProvider || createConfiguredTtsProvider({
     accessToken: options.googleTtsAccessToken ?? process.env.SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN,
     serviceAccountJson: options.googleServiceAccountJson ?? process.env.SAYTHIS_GOOGLE_SERVICE_ACCOUNT_JSON,
@@ -329,6 +368,8 @@ export async function createCommunityServer(options = {}) {
           maxRejectedSubmissions,
           maxAudioBytes,
           publicBaseUrl,
+          audioPublicBaseUrl,
+          audioObjectStore,
           ttsProvider,
           publicAudioGenerationEnabled,
           publicAudioGenerationLimit,

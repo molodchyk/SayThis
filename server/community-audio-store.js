@@ -6,6 +6,9 @@ import {
   languageCodeFromLanguage,
   normalizeTtsLanguage
 } from "../src/resolver/language.js";
+import {
+  normalizeAudioStorageKey
+} from "./audio-object-store.js";
 import { normalizeAudioMimeType } from "./community-audio-artifacts.js";
 
 export function upsertGeneratedAudioArtifact(store, artifact, now = new Date().toISOString(), options = {}) {
@@ -156,11 +159,12 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
   const term = normalizeSelection(value.term || value.sourceForm);
   const lookupKey = createLookupKey(value.lookupKey || term);
   const dataBase64 = normalizeBase64(value.dataBase64);
+  const storageKey = normalizeAudioStorageKey(value.storageKey);
   const mimeType = normalizeAudioMimeType(value.mimeType);
   const byteLength = clampNumber(value.byteLength, 1, 2_000_000);
   const audioUrl = normalizePublicAudioUrl(value.audioUrl);
 
-  if (!id || !term || !lookupKey || !dataBase64 || !mimeType || !byteLength || !audioUrl) {
+  if (!id || !term || !lookupKey || (!dataBase64 && !storageKey) || !mimeType || !byteLength || !audioUrl) {
     return {};
   }
 
@@ -183,7 +187,8 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
     mimeType,
     byteLength,
     sha256: normalizeHash(value.sha256),
-    dataBase64,
+    ...(storageKey ? { storageKey } : {}),
+    ...(dataBase64 ? { dataBase64 } : {}),
     audioUrl,
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote),

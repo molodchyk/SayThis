@@ -7,6 +7,10 @@ import {
   upsertGeneratedAudioArtifact
 } from "./community-audio-store.js";
 import {
+  checkPublicAudioStorage,
+  persistAudioArtifactBytes
+} from "./audio-object-store.js";
+import {
   generatedAudioArtifactFromTts
 } from "./tts-provider.js";
 import {
@@ -74,6 +78,11 @@ export async function handleSharedAudioRequest(request, store, options = {}) {
     });
   }
 
+  const storage = checkPublicAudioStorage(options);
+  if (!storage.ok) {
+    return response(storage.status, store, { error: storage.error });
+  }
+
   const budget = consumePublicAudioGenerationBudget(store, {
     limit: options.publicAudioGenerationLimit,
     windowMs: options.publicAudioGenerationWindowMs,
@@ -90,13 +99,19 @@ export async function handleSharedAudioRequest(request, store, options = {}) {
   const artifact = await generatedAudioArtifactFromTts(body, {
     maxAudioBytes: normalizePositiveInteger(options.maxAudioBytes, DEFAULT_MAX_AUDIO_BYTES),
     publicBaseUrl: options.publicBaseUrl,
+    audioPublicBaseUrl: storage.audioPublicBaseUrl,
     ttsProvider: options.ttsProvider
   });
   if (!artifact.ok) {
     return response(artifact.status, budget.store, { error: artifact.error });
   }
 
-  const result = upsertGeneratedAudioArtifact(budget.store, artifact.value, new Date().toISOString(), {
+  const persistedArtifact = await persistAudioArtifactBytes(artifact.value, options.audioObjectStore);
+  if (!persistedArtifact.ok) {
+    return response(persistedArtifact.status, budget.store, { error: persistedArtifact.error });
+  }
+
+  const result = upsertGeneratedAudioArtifact(budget.store, persistedArtifact.artifact, new Date().toISOString(), {
     reviewed: false
   });
   return response(result.accepted ? 200 : 400, result.store, {

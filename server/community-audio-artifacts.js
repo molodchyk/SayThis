@@ -28,7 +28,13 @@ export function generatedAudioArtifactFromBody(body = {}, options = {}) {
 
   const hash = sha256Hex(buffer);
   const id = `aud_${hash.slice(0, 32)}`;
-  const audioUrl = publicAudioUrl(options.publicBaseUrl, id);
+  const storageKey = audioStorageKey(hash, mimeType);
+  const audioUrl = publicAudioUrl({
+    publicBaseUrl: options.publicBaseUrl,
+    audioPublicBaseUrl: options.audioPublicBaseUrl,
+    id,
+    storageKey
+  });
   if (!audioUrl) {
     return {
       ok: false,
@@ -58,6 +64,7 @@ export function generatedAudioArtifactFromBody(body = {}, options = {}) {
       mimeType,
       byteLength: buffer.length,
       sha256: hash,
+      storageKey,
       dataBase64: buffer.toString("base64"),
       audioUrl,
       sourceUrl: body.sourceUrl,
@@ -155,13 +162,46 @@ function decodeBase64Audio(value) {
   return Buffer.from(raw, "base64");
 }
 
-function publicAudioUrl(publicBaseUrl, id) {
-  const base = normalizePublicBaseEndpoint(publicBaseUrl);
-  if (!base) {
-    return "";
+function publicAudioUrl(options = {}) {
+  if (options.audioPublicBaseUrl && options.storageKey) {
+    const base = normalizePublicBaseEndpoint(options.audioPublicBaseUrl);
+    if (base) {
+      return new URL(options.storageKey, ensureTrailingSlash(base)).toString();
+    }
   }
 
-  return new URL(`/audio/${encodeURIComponent(id)}`, base).toString();
+  const base = normalizePublicBaseEndpoint(options.publicBaseUrl);
+  return base && options.id
+    ? new URL(`/audio/${encodeURIComponent(options.id)}`, base).toString()
+    : "";
+}
+
+function audioStorageKey(hash, mimeType) {
+  return `audio/sha256/${hash}.${audioExtension(mimeType)}`;
+}
+
+function audioExtension(mimeType) {
+  if (mimeType === "audio/mpeg" || mimeType === "audio/mp3") {
+    return "mp3";
+  }
+  if (mimeType === "audio/ogg") {
+    return "ogg";
+  }
+  if (mimeType === "audio/wav") {
+    return "wav";
+  }
+  if (mimeType === "audio/webm") {
+    return "webm";
+  }
+  if (mimeType === "audio/mp4") {
+    return "m4a";
+  }
+
+  return "bin";
+}
+
+function ensureTrailingSlash(value) {
+  return value.endsWith("/") ? value : `${value}/`;
 }
 
 function isLocalHttpEndpoint(url) {
