@@ -255,6 +255,69 @@ test("plays preloaded generated audio from a prepared object URL", async () => {
   ]);
 });
 
+test("uses a prepared object URL even when the playback item is not cache flagged", async () => {
+  const calls = [];
+  const cacheEntries = new Map();
+  const playback = createOffscreenAudioPlayback({
+    createRequest: (url) => url,
+    caches: {
+      async open(name) {
+        calls.push(["cache.open", name]);
+        return {
+          async match(request) {
+            calls.push(["cache.match", request]);
+            return cacheEntries.get(request) || null;
+          },
+          async put(request, response) {
+            calls.push(["cache.put", request]);
+            cacheEntries.set(request, response);
+          }
+        };
+      }
+    },
+    fetch: async (request) => {
+      calls.push(["fetch", request]);
+      return responseFromBlob("audio-bytes");
+    },
+    createObjectUrl: (blob) => {
+      calls.push(["createObjectUrl", blob]);
+      return `blob:${blob}`;
+    },
+    createAudio: (url) => {
+      calls.push(["createAudio", url]);
+      return {
+        currentTime: 0,
+        pause: () => calls.push(["pause", url]),
+        play: async () => calls.push(["play", url]),
+        set playbackRate(value) {
+          calls.push(["playbackRate", value]);
+        }
+      };
+    }
+  });
+
+  const prepared = await playback.prepareAudio({
+    url: "https://voice.example/unflagged.ogg",
+    quality: "generated"
+  });
+  const played = await playback.playAudio({
+    url: "https://voice.example/unflagged.ogg",
+    quality: "generated"
+  }, 1);
+
+  assert.equal(prepared.objectUrlReady, true);
+  assert.equal(played.cacheMode, "memory-object-url");
+  assert.equal(played.usedObjectUrl, true);
+  assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "cache.match").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "createObjectUrl").length, 1);
+  assert.deepEqual(calls.slice(-3), [
+    ["createAudio", "blob:audio-bytes"],
+    ["playbackRate", 1],
+    ["play", "blob:audio-bytes"]
+  ]);
+});
+
 test("reuses an in-flight preload when cached playback starts", async () => {
   const calls = [];
   const cacheEntries = new Map();

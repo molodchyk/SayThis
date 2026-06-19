@@ -264,6 +264,16 @@ function createAudio(url, dependencies = {}) {
 async function audioUrlForPlayback(audio = {}, dependencies = {}) {
   const startedAt = nowMs(dependencies);
   const url = String(audio.url || "");
+  const existingObjectUrl = cachedObjectUrlFor(url, dependencies);
+  if (existingObjectUrl) {
+    return {
+      url: existingObjectUrl,
+      elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+      mode: "memory-object-url",
+      revokeAfterPlayback: false
+    };
+  }
+
   if (!shouldCacheAudio(audio)) {
     return {
       url,
@@ -274,16 +284,6 @@ async function audioUrlForPlayback(audio = {}, dependencies = {}) {
   }
 
   try {
-    const existingObjectUrl = cachedObjectUrlFor(url, dependencies);
-    if (existingObjectUrl) {
-      return {
-        url: existingObjectUrl,
-        elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
-        mode: "memory-object-url",
-        revokeAfterPlayback: false
-      };
-    }
-
     const cached = await cachedAudioResponse(url, dependencies);
     const preparedObjectUrl = await objectUrlForCachedResponse(url, cached.response, dependencies);
     const objectUrl = preparedObjectUrl.url;
