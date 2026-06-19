@@ -66,10 +66,10 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
       return { handled: true, result: storedResult, reusedStored: true };
     }
 
-    const result = await dependencies.resolveSelection?.(selectedText, {
-      useOnline: options.useOnline,
+    const result = await dependencies.resolveSelection?.(selectedText, immediateResolveOptions({
+      ...options,
       trace
-    });
+    }));
     const playableResult = await resolvePlayableResult(selectedText, result, immediatePlaybackOptions({
       useOnline: options.useOnline,
       trace
@@ -317,6 +317,15 @@ function immediatePlaybackOptions(options = {}) {
     : {
       ...options,
       skipOnlineRetry: true
+    };
+}
+
+function immediateResolveOptions(options = {}) {
+  return options.useOnline === true
+    ? options
+    : {
+      ...options,
+      useOnline: false
     };
 }
 

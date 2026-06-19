@@ -54,7 +54,7 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
       return { handled: true, result: storedResult, reusedStored: true };
     }
 
-    const result = await dependencies.resolveSelection(selectedText, options);
+    const result = await dependencies.resolveSelection(selectedText, immediateResolveOptions(options));
     const playableResult = await resolvePlayableResult(
       selectedText,
       result,
@@ -338,6 +338,15 @@ function immediatePlaybackOptions(options = {}) {
     : {
       ...options,
       skipOnlineRetry: true
+    };
+}
+
+function immediateResolveOptions(options = {}) {
+  return options.useOnline === true
+    ? options
+    : {
+      ...options,
+      useOnline: false
     };
 }
 

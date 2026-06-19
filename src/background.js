@@ -66,12 +66,14 @@ platform.addInstalledListener(() => {
   activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
   primePlaybackSurface("installed");
   refreshApprovedSharedEntries("installed");
+  preloadLastResultAudio("installed");
 });
 
 platform.addStartupListener(() => {
   activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
   primePlaybackSurface("startup");
   refreshApprovedSharedEntries("startup");
+  preloadLastResultAudio("startup");
 });
 
 platform.addContextMenuClickedListener((info, tab) => {
@@ -365,6 +367,86 @@ function refreshApprovedSharedEntries(reason) {
     });
 }
 
+function preloadLastResultAudio(reason) {
+  const trace = {
+    id: `background-audio-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    source: "background",
+    action: `last-audio-preload-${reason}`,
+    startedAt: Date.now()
+  };
+  const startedAt = Date.now();
+  platform.getStorage([STORAGE_KEYS.lastResult])
+    .then(async (stored) => {
+      const result = stored?.[STORAGE_KEYS.lastResult];
+      const audio = preloadableSharedAudio(result);
+      if (!audio) {
+        return;
+      }
+
+      recordDebugEvent("last-audio-preload:start", {
+        reason,
+        audio: summarizeAudioForDebug(audio),
+        trace
+      });
+      const prepared = await prepareAudio({ ...audio, cacheBeforePlayback: true }, trace);
+      if (prepared) {
+        await platform.setStorage({
+          [STORAGE_KEYS.lastResult]: resultWithCachedAudioFlag(result, audio)
+        });
+      }
+      recordDebugEvent("last-audio-preload:result", {
+        reason,
+        elapsedMs: Date.now() - startedAt,
+        prepared: Boolean(prepared),
+        trace
+      });
+    })
+    .catch((error) => {
+      recordDebugEvent("last-audio-preload:error", {
+        reason,
+        elapsedMs: Date.now() - startedAt,
+        error: errorMessage(error),
+        trace
+      });
+    });
+}
+
+function preloadableSharedAudio(result = {}) {
+  const audio = getBestAudio(result);
+  if (!audio?.url) {
+    return null;
+  }
+
+  const sourceStatus = normalizeSelection(result.sourceStatus).toLowerCase();
+  const audioQuality = normalizeSelection(audio.quality).toLowerCase();
+  const trustSignals = normalizeList(result.trustSignals);
+  return sourceStatus === "generated-audio" ||
+    audioQuality === "generated" ||
+    trustSignals.includes("generated-audio")
+    ? audio
+    : null;
+}
+
+function resultWithCachedAudioFlag(result = {}, audio = {}) {
+  const audioUrl = normalizeSelection(audio.url);
+  const audioItems = Array.isArray(result.pronunciation?.audio)
+    ? result.pronunciation.audio
+    : [];
+  if (!audioUrl || !audioItems.length) {
+    return result;
+  }
+
+  return {
+    ...result,
+    pronunciation: {
+      ...(result.pronunciation || {}),
+      audio: audioItems.map((item) => normalizeSelection(item?.url) === audioUrl
+        ? { ...item, cacheBeforePlayback: true }
+        : item)
+    }
+  };
+}
+
 async function getDebugState() {
   return buildDebugDiagnostics({
     getStorage: platform.getStorage,
@@ -454,6 +536,17 @@ function debugOptions(options = {}) {
 
 function errorMessage(error) {
   return error?.message || String(error || "Unknown error");
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeSelection(item).toLowerCase()).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(/[;,\n]/)
+    .map((item) => normalizeSelection(item).toLowerCase())
+    .filter(Boolean);
 }
 
 function normalizeDebugTrace(value = {}) {
