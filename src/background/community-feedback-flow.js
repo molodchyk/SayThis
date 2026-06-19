@@ -203,11 +203,11 @@ export async function requestSharedAudioForResult(text, result = null, options =
   const settings = normalizeSettings(stored[storageKeys.settings]);
   const credentials = normalizeCredentials(stored[storageKeys.credentials]);
   const hasPreferred = hasPreferredAudio(baseResult);
-  if (!settings.communityEndpoint) {
+  if (!settings.communityEndpoint || !settings.communityAudioEnabled) {
     if (hasPreferred) {
       return baseResult;
     }
-    throw new Error("Shared audio endpoint is not configured.");
+    throw new Error("Shared audio endpoint is not enabled.");
   }
 
   let payload;

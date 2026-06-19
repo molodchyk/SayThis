@@ -20,6 +20,7 @@ test("normalizes sync settings conservatively", () => {
     communityPullEnabled: true,
     communityEndpoint: "http://example.com/submit"
   }), {
+    communityAudioEnabled: false,
     communitySyncEnabled: false,
     communityPullEnabled: false,
     communityEndpoint: ""
@@ -30,8 +31,19 @@ test("normalizes sync settings conservatively", () => {
     communityPullEnabled: true,
     communityEndpoint: "https://example.com/submit"
   }), {
+    communityAudioEnabled: true,
     communitySyncEnabled: true,
     communityPullEnabled: true,
+    communityEndpoint: "https://example.com/submit"
+  });
+
+  assert.deepEqual(normalizeSyncSettings({
+    communityAudioEnabled: false,
+    communityEndpoint: "https://example.com/submit"
+  }), {
+    communityAudioEnabled: false,
+    communitySyncEnabled: false,
+    communityPullEnabled: false,
     communityEndpoint: "https://example.com/submit"
   });
 });

@@ -66,6 +66,7 @@ const clearButton = document.getElementById("clear-memory");
 const dataBox = document.getElementById("data-box");
 const syncEnabled = document.getElementById("sync-enabled");
 const pullEnabled = document.getElementById("pull-enabled");
+const sharedAudioEnabled = document.getElementById("shared-audio-enabled");
 const syncEndpoint = document.getElementById("sync-endpoint");
 const sharedAudioGenerationToken = document.getElementById("shared-audio-generation-token");
 const syncSummaryText = document.getElementById("sync-summary");
@@ -94,6 +95,7 @@ gazetteerEndpoint.addEventListener("change", saveSettings);
 clearCacheButton.addEventListener("click", clearLookupCache);
 syncEnabled.addEventListener("change", saveSettings);
 pullEnabled.addEventListener("change", saveSettings);
+sharedAudioEnabled.addEventListener("change", saveSettings);
 syncEndpoint.addEventListener("change", saveSettings);
 sharedAudioGenerationToken.addEventListener("change", saveSettings);
 exportButton.addEventListener("click", exportData);
@@ -133,6 +135,7 @@ async function init() {
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
+  sharedAudioEnabled.checked = settings.communityAudioEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   sharedAudioGenerationToken.value = credentials.sharedAudioGenerationToken;
   renderCacheSummary(stored[STORAGE_KEYS.resultCache]);
@@ -151,6 +154,7 @@ async function saveSettings() {
   const previousCredentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
   const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
   const wantedPull = pullEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
+  const wantedSharedAudio = sharedAudioEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
   const wantedCustomSource = customSourceEnabled.checked && Boolean(normalizeEndpoint(customSourceEndpoint.value));
   const wantedDbpedia = dbpediaEnabled.checked && Boolean(normalizeEndpoint(dbpediaEndpoint.value));
   const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
@@ -176,10 +180,12 @@ async function saveSettings() {
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
+  sharedAudioEnabled.checked = settings.communityAudioEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   sharedAudioGenerationToken.value = credentials.sharedAudioGenerationToken;
   setStatus((settings.communitySyncEnabled || !wantedSync) &&
       (settings.communityPullEnabled || !wantedPull) &&
+      (settings.communityAudioEnabled || !wantedSharedAudio) &&
       (settings.customSourceEnabled || !wantedCustomSource) &&
       (settings.dbpediaEnabled || !wantedDbpedia) &&
       (settings.gazetteerEnabled || !wantedGazetteer) &&
@@ -268,6 +274,7 @@ async function importData() {
   gazetteerEndpoint.value = settings.gazetteerEndpoint;
   syncEnabled.checked = settings.communitySyncEnabled;
   pullEnabled.checked = settings.communityPullEnabled;
+  sharedAudioEnabled.checked = settings.communityAudioEnabled;
   syncEndpoint.value = settings.communityEndpoint;
   sharedAudioGenerationToken.value = credentials.sharedAudioGenerationToken;
   renderCacheSummary(resultCache);
@@ -376,6 +383,7 @@ async function settingsFromControls(credentials) {
     forvoLanguage: normalizeLanguageCode(forvoLanguage.value),
     gazetteerEnabled: gazetteerEnabled.checked,
     gazetteerEndpoint: normalizeEndpoint(gazetteerEndpoint.value),
+    communityAudioEnabled: sharedAudioEnabled.checked,
     communitySyncEnabled: syncEnabled.checked,
     communityPullEnabled: pullEnabled.checked,
     communityEndpoint: normalizeEndpoint(syncEndpoint.value)
@@ -420,10 +428,11 @@ async function settingsWithEndpointPermission(value = {}, credentials = {}) {
     };
   }
 
-  if (settings.communitySyncEnabled || settings.communityPullEnabled) {
+  if (settings.communityAudioEnabled || settings.communitySyncEnabled || settings.communityPullEnabled) {
     const granted = await requestEndpointPermission(settings.communityEndpoint, optionsRuntimeAdapters());
     settings = {
       ...settings,
+      communityAudioEnabled: Boolean(settings.communityAudioEnabled && granted),
       communitySyncEnabled: Boolean(settings.communitySyncEnabled && granted),
       communityPullEnabled: Boolean(settings.communityPullEnabled && granted)
     };

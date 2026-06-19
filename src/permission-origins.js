@@ -11,7 +11,11 @@ export function remotePermissionOrigins(settings = {}, credentials = {}) {
   addOrigin(origins, settings.dbpediaEnabled, settings.dbpediaEndpoint);
   addOrigin(origins, settings.forvoEnabled && credentials.forvoApiKey, FORVO_API_ORIGIN);
   addOrigin(origins, settings.gazetteerEnabled, settings.gazetteerEndpoint);
-  addOrigin(origins, settings.communitySyncEnabled || settings.communityPullEnabled, settings.communityEndpoint);
+  addOrigin(
+    origins,
+    settings.communityAudioEnabled || settings.communitySyncEnabled || settings.communityPullEnabled,
+    settings.communityEndpoint
+  );
 
   return [...new Set(origins)];
 }

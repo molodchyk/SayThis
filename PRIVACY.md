@@ -9,6 +9,7 @@ SayThis uses Chrome extension local storage for:
 - last selected text and last resolver result
 - extension settings and endpoint settings
 - lookup language hints
+- shared-audio endpoint setting
 - local pronunciation feedback and corrections
 - approved shared pronunciation entries from a configured community endpoint
 - bounded online lookup cache
@@ -54,4 +55,4 @@ SayThis does not sell user data, use ads, or include analytics. It does not shar
 
 ## User Controls
 
-Users can disable online lookup by default, disable the on-page result card, clear local memory, clear cache data, clear sync queue data, clear approved shared entries, and disable optional remote services.
+Users can disable online lookup by default, disable the shared-audio endpoint for Speak actions, disable the on-page result card, clear local memory, clear cache data, clear sync queue data, clear approved shared entries, and disable optional remote services.

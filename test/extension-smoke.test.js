@@ -375,10 +375,13 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(source, /dbpediaEnabled/);
   assert.match(source, /dbpediaEndpoint/);
   assert.match(html, /id="pull-enabled"/);
+  assert.match(html, /id="shared-audio-enabled"/);
   assert.match(html, /id="pull-approved"/);
   assert.match(html, /id="clear-approved"/);
   assert.match(source, /communityPullEnabled/);
+  assert.match(source, /communityAudioEnabled/);
   assert.match(source, /pullEnabled/);
+  assert.match(source, /sharedAudioEnabled/);
   assert.match(source, /normalizeApprovedEntries/);
   assert.match(source, /approvedCommunityEntries:\s*normalizeApprovedEntries/);
   assert.match(source, /normalizeCommunityEntries/);

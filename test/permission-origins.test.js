@@ -34,6 +34,13 @@ test("collects optional remote permission origins", () => {
     "https://apifree.forvo.com/*",
     "https://community.example/*"
   ]);
+
+  assert.deepEqual(remotePermissionOrigins({
+    communityAudioEnabled: true,
+    communityEndpoint: "https://community.example/saythis"
+  }), [
+    "https://community.example/*"
+  ]);
 });
 
 test("finds stale optional remote permission origins", () => {
@@ -67,6 +74,16 @@ test("finds stale optional remote permission origins", () => {
     "https://apifree.forvo.com/*",
     "https://maps.example/*"
   ]);
+
+  assert.deepEqual(staleRemotePermissionOrigins({
+    communityAudioEnabled: true,
+    communityEndpoint: "https://community.example/audio"
+  }, {
+    communityAudioEnabled: false,
+    communityEndpoint: "https://community.example/audio"
+  }), [
+    "https://community.example/*"
+  ]);
 });
 
 test("normalizes extension settings and credentials from one module", () => {
@@ -87,6 +104,7 @@ test("normalizes extension settings and credentials from one module", () => {
     voiceServiceEnabled: true,
     voiceServiceUrlTemplate: " https://voice.example/speak?text={text}&lang={lang} ",
     voiceServiceLabel: " Example   voice ",
+    communityAudioEnabled: true,
     communitySyncEnabled: true,
     communityPullEnabled: true,
     communityEndpoint: "https://community.example/saythis"
@@ -113,6 +131,7 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal("voiceServiceLabel" in settings, false);
   assert.equal(settings.communitySyncEnabled, true);
   assert.equal(settings.communityPullEnabled, true);
+  assert.equal(settings.communityAudioEnabled, true);
   assert.equal(credentials.forvoApiKey, "keywithspaces");
   assert.equal(credentials.sharedAudioGenerationToken, "sharedtoken");
   assert.equal(normalizeHttpsEndpoint("http://example.com"), "");

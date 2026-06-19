@@ -367,6 +367,34 @@ test("reuses local approved shared audio when endpoint is not configured", async
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("does not request endpoint shared audio when shared audio is explicitly disabled", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityAudioEnabled: false,
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+
+  await assert.rejects(
+    requestSharedAudioForResult("Exampletown", baseResult, {}, {
+      ...storage.dependencies,
+      fetch: async () => {
+        throw new Error("should not fetch when shared audio is disabled");
+      }
+    }),
+    /Shared audio endpoint is not enabled/
+  );
+});
+
 test("does not reuse local approved shared audio with a mismatched language", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {

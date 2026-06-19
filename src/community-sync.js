@@ -5,6 +5,7 @@ import {
 } from "./resolver-core.js";
 
 export const DEFAULT_SYNC_SETTINGS = {
+  communityAudioEnabled: false,
   communitySyncEnabled: false,
   communityPullEnabled: false,
   communityEndpoint: ""
@@ -17,7 +18,9 @@ const STRUCTURED_FEEDBACK_KINDS = new Set(["missing", "correction"]);
 
 export function normalizeSyncSettings(settings = {}) {
   const endpoint = normalizeEndpoint(settings.communityEndpoint);
+  const hasExplicitAudioSetting = Object.prototype.hasOwnProperty.call(settings, "communityAudioEnabled");
   return {
+    communityAudioEnabled: Boolean((hasExplicitAudioSetting ? settings.communityAudioEnabled : endpoint) && endpoint),
     communitySyncEnabled: Boolean(settings.communitySyncEnabled && endpoint),
     communityPullEnabled: Boolean(settings.communityPullEnabled && endpoint),
     communityEndpoint: endpoint
