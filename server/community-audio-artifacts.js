@@ -3,8 +3,20 @@ import {
   languageCodeFromLanguage,
   normalizeTtsLanguage
 } from "../src/resolver/language.js";
+import {
+  audioStorageKey,
+  DEFAULT_MAX_AUDIO_BYTES,
+  normalizeAudioMimeType,
+  publicAudioUrl
+} from "./audio-artifact-core.js";
 
-export const DEFAULT_MAX_AUDIO_BYTES = 512 * 1024;
+export {
+  DEFAULT_MAX_AUDIO_BYTES,
+  normalizeAudioMimeType,
+  normalizeHttpsEndpoint,
+  normalizePublicBaseEndpoint,
+  publicAudioArtifact
+} from "./audio-artifact-core.js";
 
 export function generatedAudioArtifactFromBody(body = {}, options = {}) {
   const maxAudioBytes = normalizePositiveInteger(options.maxAudioBytes, DEFAULT_MAX_AUDIO_BYTES);
@@ -74,83 +86,8 @@ export function generatedAudioArtifactFromBody(body = {}, options = {}) {
   };
 }
 
-export function publicAudioArtifact(artifact = {}) {
-  if (!artifact?.id) {
-    return null;
-  }
-
-  return {
-    id: artifact.id,
-    term: artifact.term,
-    lookupKey: artifact.lookupKey,
-    sourceForm: artifact.sourceForm,
-    aliases: artifact.aliases,
-    language: artifact.language,
-    ttsLang: artifact.ttsLang,
-    languageName: artifact.languageName,
-    origin: artifact.origin,
-    root: artifact.root,
-    domainHint: artifact.domainHint,
-    variants: artifact.variants,
-    ipa: artifact.ipa,
-    simple: artifact.simple,
-    provider: artifact.provider,
-    mimeType: artifact.mimeType,
-    byteLength: artifact.byteLength,
-    sha256: artifact.sha256,
-    audioUrl: artifact.audioUrl,
-    sourceUrl: artifact.sourceUrl,
-    variantNote: artifact.variantNote,
-    trustSignals: artifact.trustSignals
-  };
-}
-
 function normalizeLanguage(language) {
   return languageCodeFromLanguage(language) || String(language || "").trim();
-}
-
-export function normalizeHttpsEndpoint(value) {
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const url = new URL(raw);
-    return url.protocol === "https:" ? url.toString() : "";
-  } catch {
-    return "";
-  }
-}
-
-export function normalizePublicBaseEndpoint(value) {
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const url = new URL(raw);
-    if (url.protocol === "https:" || isLocalHttpEndpoint(url)) {
-      return url.toString();
-    }
-  } catch {
-    return "";
-  }
-
-  return "";
-}
-
-export function normalizeAudioMimeType(value) {
-  const mime = String(value || "").trim().toLowerCase();
-  return [
-    "audio/mpeg",
-    "audio/mp3",
-    "audio/ogg",
-    "audio/wav",
-    "audio/webm",
-    "audio/mp4"
-  ].includes(mime) ? mime : "";
 }
 
 function decodeBase64Audio(value) {
@@ -160,52 +97,6 @@ function decodeBase64Audio(value) {
   }
 
   return Buffer.from(raw, "base64");
-}
-
-function publicAudioUrl(options = {}) {
-  if (options.audioPublicBaseUrl && options.storageKey) {
-    const base = normalizePublicBaseEndpoint(options.audioPublicBaseUrl);
-    if (base) {
-      return new URL(options.storageKey, ensureTrailingSlash(base)).toString();
-    }
-  }
-
-  const base = normalizePublicBaseEndpoint(options.publicBaseUrl);
-  return base && options.id
-    ? new URL(`/audio/${encodeURIComponent(options.id)}`, base).toString()
-    : "";
-}
-
-function audioStorageKey(hash, mimeType) {
-  return `audio/sha256/${hash}.${audioExtension(mimeType)}`;
-}
-
-function audioExtension(mimeType) {
-  if (mimeType === "audio/mpeg" || mimeType === "audio/mp3") {
-    return "mp3";
-  }
-  if (mimeType === "audio/ogg") {
-    return "ogg";
-  }
-  if (mimeType === "audio/wav") {
-    return "wav";
-  }
-  if (mimeType === "audio/webm") {
-    return "webm";
-  }
-  if (mimeType === "audio/mp4") {
-    return "m4a";
-  }
-
-  return "bin";
-}
-
-function ensureTrailingSlash(value) {
-  return value.endsWith("/") ? value : `${value}/`;
-}
-
-function isLocalHttpEndpoint(url) {
-  return url?.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
 }
 
 function normalizePositiveInteger(value, fallback) {

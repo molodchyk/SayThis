@@ -7,9 +7,9 @@ import {
   normalizeTtsLanguage
 } from "../src/resolver/language.js";
 import {
+  normalizeAudioMimeType,
   normalizeAudioStorageKey
-} from "./audio-object-store.js";
-import { normalizeAudioMimeType } from "./community-audio-artifacts.js";
+} from "./audio-artifact-core.js";
 
 export function upsertGeneratedAudioArtifact(store, artifact, now = new Date().toISOString(), options = {}) {
   const normalizedStore = normalizeAudioStore(store);

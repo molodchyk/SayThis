@@ -2,7 +2,21 @@
 
 SayThis includes a small self-hostable moderation service for community pronunciation memory.
 
-The service is dependency-free Node.js. It receives privacy-scoped correction submissions, keeps them pending for moderator review, publishes approved entries, and exposes the approved-entry shape that the extension already knows how to pull.
+The local service is dependency-free Node.js. The preferred hosted service is a Cloudflare Worker backed by D1 metadata and R2 audio storage. Both receive privacy-scoped correction submissions, keep them pending for moderator review, publish approved entries, and expose the approved-entry shape that the extension already knows how to pull.
+
+## Cloudflare Hosted Path
+
+Use `worker/community-worker.js` for the hosted community endpoint. It keeps metadata in D1 tables, writes approved audio bytes to the bound `saythis-audio` R2 bucket, and returns direct `audioUrl` values under `https://audio.molodchyk.com/`.
+
+Important deployment properties:
+
+- The Worker does not need R2 S3 access keys. It uses the `SAYTHIS_AUDIO_BUCKET` R2 binding in `wrangler.jsonc`.
+- The D1 binding is `SAYTHIS_DB`; run the migration in `worker/migrations/0001_initial.sql` before public use.
+- `SAYTHIS_ADMIN_TOKEN` must be a Wrangler secret, not a checked-in variable.
+- Public `/community?action=audio` requests only reuse approved audio. They do not trigger paid provider generation.
+- Moderator-created `/admin/audio-artifacts` uploads store bytes in R2 and publish reusable metadata in D1.
+
+Deployment steps are in `docs/deployment.md`.
 
 ## Run Locally
 
@@ -37,7 +51,7 @@ npm run community:serve
 
 The service listens on `http://127.0.0.1:8787` by default. The extension accepts `http://127.0.0.1` and `http://localhost` community endpoints for local development only, and the service can publish loopback audio artifact URLs in that mode. For real extension sync, deploy it behind HTTPS and configure the extension endpoint to the public `/community` URL.
 
-Container deployment notes are in `docs/deployment.md`.
+Container and Cloudflare Worker deployment notes are in `docs/deployment.md`.
 
 Open the moderator page locally at:
 

@@ -1,5 +1,57 @@
 # Deployment
 
+## Cloudflare Worker Community Service
+
+Preferred hosted path:
+
+1. Cloudflare Worker runs the community API.
+2. D1 stores pending submissions, approved pronunciation metadata, audio artifact metadata, and reusable lookup keys.
+3. R2 stores approved audio bytes through a Worker bucket binding.
+4. `https://audio.molodchyk.com/` serves approved audio objects directly from the R2 bucket.
+
+This path does not use R2 S3 access keys inside the Worker. R2 is configured as a Wrangler bucket binding, so the Worker can write approved audio objects without publishing storage credentials or running a separate Node host.
+
+Local setup:
+
+```powershell
+npx wrangler login
+npx wrangler d1 create saythis-community
+```
+
+Copy the returned `database_id` into `wrangler.jsonc`, replacing `00000000-0000-0000-0000-000000000000`.
+
+Apply the D1 schema:
+
+```powershell
+npm run community:worker:migrate:remote
+```
+
+Set the moderator secret. Do not put this value in `wrangler.jsonc`.
+
+```powershell
+npx wrangler secret put SAYTHIS_ADMIN_TOKEN
+```
+
+Deploy:
+
+```powershell
+npm run community:worker:deploy
+```
+
+Use the deployed Worker `/community` URL as the extension community endpoint, for example:
+
+```text
+https://saythis-community.<your-worker-subdomain>.workers.dev/community
+```
+
+Keep `SAYTHIS_AUDIO_PUBLIC_BASE_URL` pointed at the R2 custom domain:
+
+```text
+https://audio.molodchyk.com/
+```
+
+The Worker public shared-audio route only returns already approved audio. It does not call paid provider generation for anonymous clients. Moderator-approved uploads go through `/admin/audio-artifacts`, write bytes to R2, and publish metadata to D1 for reuse.
+
 ## Community Service Image
 
 Build the community moderation service image:

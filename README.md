@@ -146,6 +146,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service enforces a persisted public provider-generation budget before paid shared-audio synthesis.
 - Community service can store reviewed or service-generated audio artifacts and publish shared audio URLs through approved entries.
 - Community service can store generated audio bytes outside the metadata store through local file-backed or S3-compatible object storage.
+- Cloudflare Worker community service can store moderation metadata in D1 and approved audio bytes in the bound R2 bucket without Worker-side R2 S3 keys.
 - Approved shared-audio URLs can point directly at a public audio origin for fast immutable playback instead of streaming through the community API.
 - Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
 - Shared audio checks are timeout-bounded and non-gating, so verified matching browser speech can start when the endpoint is slow or unavailable.

@@ -39,6 +39,8 @@ Use an object storage bucket with a public audio base URL. Cloudflare R2 is a go
 
 Cloudflare's `r2.dev` public development URL is acceptable only for proving the upload and playback pipeline. It is rate-limited and does not support production Cloudflare features such as normal caching controls, Access, or WAF rules. Before any public launch, connect a custom domain to the R2 bucket and change only `SAYTHIS_AUDIO_PUBLIC_BASE_URL` to that custom-domain origin.
 
+For the Cloudflare Worker deployment, prefer a native R2 bucket binding over S3-compatible R2 credentials. The Worker can write reviewed audio bytes directly to the `saythis-audio` bucket, D1 stores the metadata and reusable lookup keys, and the extension receives an immutable direct audio URL from the custom R2 domain. R2 S3 access keys remain useful only for the local Node service or external admin tooling.
+
 ```powershell
 $env:SAYTHIS_AUDIO_PUBLIC_BASE_URL="https://audio.example.com/"
 $env:SAYTHIS_AUDIO_S3_ENDPOINT="https://<account>.r2.cloudflarestorage.com"

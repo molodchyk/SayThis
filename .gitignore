@@ -45,6 +45,7 @@ scratch/
 *.log
 *.local
 *.debug.json
+.wrangler/
 
 # OS/editor noise
 .DS_Store

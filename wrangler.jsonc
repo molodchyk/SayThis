@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "saythis-community",
+  "main": "worker/community-worker.js",
+  "compatibility_date": "2026-06-19",
+  "workers_dev": true,
+  "placement": {
+    "mode": "smart"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "SAYTHIS_ALLOWED_ORIGINS": "*",
+    "SAYTHIS_AUDIO_PUBLIC_BASE_URL": "https://audio.molodchyk.com/",
+    "SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED": "0",
+    "SAYTHIS_MAX_BODY_BYTES": "16384",
+    "SAYTHIS_MAX_AUDIO_BYTES": "524288",
+    "SAYTHIS_MAX_PENDING_SUBMISSIONS": "1000",
+    "SAYTHIS_MAX_REJECTED_SUBMISSIONS": "1000",
+    "SAYTHIS_APPROVED_EXPORT_LIMIT": "5000"
+  },
+  "r2_buckets": [
+    {
+      "binding": "SAYTHIS_AUDIO_BUCKET",
+      "bucket_name": "saythis-audio"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "SAYTHIS_DB",
+      "database_name": "saythis-community",
+      // Replace after `npx wrangler d1 create saythis-community`.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "worker/migrations"
+    }
+  ]
+}

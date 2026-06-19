@@ -1,11 +1,16 @@
 import { createHash, createHmac } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
+import {
+  AUDIO_CACHE_CONTROL,
+  normalizeAudioStorageKey
+} from "./audio-artifact-core.js";
 
-const AUDIO_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const AWS_SIGNING_ALGORITHM = "AWS4-HMAC-SHA256";
 const AWS_SERVICE = "s3";
 const EMPTY_SHA256 = sha256Hex(Buffer.alloc(0));
+
+export { normalizeAudioStorageKey } from "./audio-artifact-core.js";
 
 export function createConfiguredAudioObjectStore(options = {}) {
   const objectStore = createS3CompatibleAudioObjectStore({
@@ -221,13 +226,6 @@ export function checkPublicAudioStorage(options = {}) {
     ok: true,
     audioPublicBaseUrl: options.audioPublicBaseUrl || ""
   };
-}
-
-export function normalizeAudioStorageKey(value) {
-  return String(value || "")
-    .trim()
-    .replace(/\\/g, "/")
-    .match(/^audio\/sha256\/[a-f0-9]{64}\.(?:mp3|ogg|wav|webm|m4a)$/)?.[0] || "";
 }
 
 function audioBytesFromArtifact(artifact = {}) {
