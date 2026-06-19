@@ -102,12 +102,12 @@ function qualityScore(value) {
     return 115;
   }
 
-  if (quality === "verified") {
-    return 100;
+  if (["source-backed", "recorded"].includes(quality)) {
+    return 105;
   }
 
-  if (["source-backed", "recorded"].includes(quality)) {
-    return 85;
+  if (quality === "verified") {
+    return 100;
   }
 
   if (quality === "generated") {

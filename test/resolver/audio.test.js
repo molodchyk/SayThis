@@ -56,6 +56,20 @@ test("treats native-speaker quality labels as stronger than generic verified aud
   assert.equal(getBestAudioDirect({ pronunciation }).url, "https://forvo.example/a.ogg");
 });
 
+test("ranks source-backed audio ahead of generic verified audio", () => {
+  const pronunciation = normalizePronunciation({
+    audio: [
+      { url: "https://commons.example/generic.ogg", source: "Wikimedia Commons", quality: "verified" },
+      { url: "https://commons.example/guide.ogg", source: "Wikimedia Commons pronunciation guide", quality: "source-backed" },
+      { url: "https://archive.example/recorded.ogg", source: "Archive recording", quality: "recorded" }
+    ]
+  });
+
+  assert.deepEqual(pronunciation.audio.map((item) => item.quality), ["source-backed", "recorded", "verified"]);
+  assert.equal(getBestAudioDirect({ pronunciation }).url, "https://commons.example/guide.ogg");
+  assert.equal(hasPreferredAudioDirect({ pronunciation }), true);
+});
+
 test("does not treat generated audio as preferred audio", () => {
   const result = {
     sourceStatus: "generated-audio",
