@@ -45,6 +45,10 @@ export async function handleSharedAudioRequest(request, store, options = {}) {
     return response(404, store, { error: "shared-audio-not-found" });
   }
 
+  if (!isLocalDevelopmentGenerationRequest(request, options)) {
+    return response(404, store, { error: "shared-audio-not-found" });
+  }
+
   if (!isUsefulGenerationRequest(body)) {
     return response(400, store, { error: "invalid-shared-audio-target" });
   }
@@ -133,6 +137,37 @@ function isUsefulGenerationRequest(body = {}) {
     ttsLang &&
     hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang)
   );
+}
+
+function isLocalDevelopmentGenerationRequest(request = {}, options = {}) {
+  return isLoopbackHttpUrl(options.publicBaseUrl) &&
+    isLoopbackHost(request.remoteAddress);
+}
+
+function isLoopbackHttpUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    return url.protocol === "http:" && isLoopbackHost(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLoopbackHost(value) {
+  const host = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "");
+  if (!host) {
+    return false;
+  }
+
+  if (host === "localhost" || host === "::1" || host === "0:0:0:0:0:0:0:1") {
+    return true;
+  }
+
+  const ipv4 = host.match(/^(?:::ffff:)?(127(?:\.\d{1,3}){3})$/)?.[1] || "";
+  return Boolean(ipv4);
 }
 
 function ttsProviderReady(provider) {

@@ -249,7 +249,7 @@ test("reuses approved audio through the public shared audio action", async () =>
   assert.equal(response.body.entry.audioUrl, response.store.approved.exampletown.audioUrl);
 });
 
-test("public shared audio action generates only when enabled", async () => {
+test("public shared audio action generates only for local development", async () => {
   const disabled = await handleCommunityRequest({
     method: "POST",
     url: "/community?action=audio",
@@ -287,6 +287,7 @@ test("public shared audio action generates only when enabled", async () => {
     method: "POST",
     url: "/audio/generate",
     headers: {},
+    remoteAddress: "127.0.0.1",
     body: JSON.stringify({
       term: "Exampletown",
       lookupKey: "exampletown",
@@ -296,7 +297,7 @@ test("public shared audio action generates only when enabled", async () => {
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
-    publicBaseUrl: "https://community.example",
+    publicBaseUrl: "http://127.0.0.1:8787",
     ttsProvider
   });
 

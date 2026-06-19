@@ -31,12 +31,12 @@ Use the public HTTPS `/community` URL as the extension community endpoint.
 - `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional short-lived bearer token for provider generation.
 - `SAYTHIS_GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_APPLICATION_CREDENTIALS`: optional service-account JSON path for server-owned Google authentication.
 - `SAYTHIS_GOOGLE_SERVICE_ACCOUNT_JSON`: optional inline service-account JSON for environments that cannot mount a file.
-- `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: set to `1` only when shared provider generation should be available beyond already approved artifacts.
+- `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: leave unset or `0` in hosted deployments. `1` is only a loopback local-development escape hatch and is ignored for hosted HTTPS public shared-audio generation.
 - `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional Google-compatible speech endpoint override.
 - `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice override. Locale-prefixed voice names are used only when compatible with the requested TTS locale.
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`; defaults to `MP3`.
 
-Provider generation is exposed through token-protected moderator endpoints and the explicitly enabled shared-audio route. Public clients can consume approved audio URLs after review. Direct public provider generation requires `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1`, a configured provider credential, useful-target validation, rate limiting, and the persisted generation budget. Hosted deployments that need payment or account gating should enforce that inside the community service, not through extension-side tokens. Public generation also rejects non-English resolved languages when the request would use an English TTS locale.
+Provider generation is exposed through token-protected moderator endpoints. Public clients can consume approved audio URLs after review, but hosted public shared-audio requests cannot trigger paid provider synthesis. The `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` path is limited to loopback local development: it requires a loopback HTTP public base URL, a loopback client address, useful-target validation, rate limiting, and a persisted local generation budget. Hosted deployments that need payment or account gating should add that inside the community service, not through extension-side tokens.
 
 ## Abuse Controls
 

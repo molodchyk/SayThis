@@ -29,7 +29,7 @@
 - Avoids browser TTS fallback for plain English same-text structured results without a guide.
 - Avoids browser TTS fallback when a non-English resolved language would use an English voice.
 - Avoids guessed browser speech for unresolved scripts shared by multiple languages.
-- Rejects public shared-audio generation for plain English same-text requests at the service boundary.
+- Rejects hosted public shared-audio generation at the service boundary; public clients can reuse approved audio but cannot trigger paid provider synthesis.
 - Rejects generated provider/shared audio when a non-English resolved language would use an English TTS locale.
 - Removes direct client audio URL template generation; generated provider output now belongs on the shared-audio endpoint path.
 - Labels public generated shared audio as service-generated instead of moderator-reviewed.
@@ -54,8 +54,8 @@
 - Filters on-page guide speech so explanatory guide notes are not offered as spoken fallback.
 - Makes generated Cyrillic source-form guides language-sensitive.
 - Ignores incompatible provider voice overrides so generated fallback audio follows the resolved TTS locale.
-- Keeps provider generation behind service-side opt-in, hosted entitlement or paywall controls, rate limits, and persisted budgets.
-- Adds a persisted public provider-generation budget before paid shared-audio synthesis.
+- Keeps provider generation behind moderator/admin or authenticated service-side controls, rate limits, and persisted budgets.
+- Keeps the public shared-audio generation escape hatch loopback-only for local development.
 - Updates the Chrome extension and package version to 1.0.0.
 
 ## 0.1.0

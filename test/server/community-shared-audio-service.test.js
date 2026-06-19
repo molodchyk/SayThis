@@ -72,6 +72,7 @@ test("rejects plain same-text English public audio generation", async () => {
     method: "POST",
     url: "/audio/generate",
     headers: {},
+    remoteAddress: "127.0.0.1",
     body: JSON.stringify({
       term: "Exampleterm",
       lookupKey: "exampleterm",
@@ -81,7 +82,7 @@ test("rejects plain same-text English public audio generation", async () => {
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
-    publicBaseUrl: "https://community.example",
+    publicBaseUrl: "http://127.0.0.1:8787",
     ttsProvider: {
       async synthesize() {
         throw new Error("should not synthesize low-value shared audio target");
@@ -99,6 +100,7 @@ test("rejects non-English public audio generation routed to an English provider 
     method: "POST",
     url: "/audio/generate",
     headers: {},
+    remoteAddress: "127.0.0.1",
     body: JSON.stringify({
       term: "Saoirse",
       lookupKey: "saoirse",
@@ -108,7 +110,7 @@ test("rejects non-English public audio generation routed to an English provider 
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
-    publicBaseUrl: "https://community.example",
+    publicBaseUrl: "http://127.0.0.1:8787",
     ttsProvider: {
       async synthesize() {
         throw new Error("should not synthesize non-English text with an English provider voice");
@@ -126,6 +128,7 @@ test("rejects public audio generation before budget when provider is unavailable
     method: "POST",
     url: "/audio/generate",
     headers: {},
+    remoteAddress: "127.0.0.1",
     body: JSON.stringify({
       term: "Exampletown",
       lookupKey: "exampletown",
@@ -136,7 +139,7 @@ test("rejects public audio generation before budget when provider is unavailable
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
     publicAudioGenerationLimit: 1,
-    publicBaseUrl: "https://community.example",
+    publicBaseUrl: "http://127.0.0.1:8787",
     ttsProvider: {
       configured: false,
       async synthesize() {
@@ -150,11 +153,33 @@ test("rejects public audio generation before budget when provider is unavailable
   assert.deepEqual(response.store.generationUsage, {});
 });
 
-test("labels public generated shared audio without moderator review", async () => {
+test("does not allow hosted public audio generation even when enabled", async () => {
+  const response = await handleCommunityRequest(sharedGenerationRequest({
+    term: "Exampletown",
+    lookupKey: "exampletown",
+    sourceForm: "Przykladowo"
+  }), createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
+    publicBaseUrl: "https://community.example",
+    ttsProvider: {
+      async synthesize() {
+        throw new Error("hosted public requests must not synthesize provider audio");
+      }
+    }
+  });
+
+  assert.equal(response.status, 404);
+  assert.equal(response.body.error, "shared-audio-not-found");
+  assert.equal(Object.keys(response.store.approved).length, 0);
+  assert.deepEqual(response.store.generationUsage, {});
+});
+
+test("labels local development generated shared audio without moderator review", async () => {
   const response = await handleCommunityRequest({
     method: "POST",
     url: "/audio/generate",
     headers: {},
+    remoteAddress: "::ffff:127.0.0.1",
     body: JSON.stringify({
       term: "Exampletown",
       lookupKey: "exampletown",
@@ -164,7 +189,7 @@ test("labels public generated shared audio without moderator review", async () =
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
-    publicBaseUrl: "https://community.example",
+    publicBaseUrl: "http://127.0.0.1:8787",
     ttsProvider: {
       async synthesize() {
         return {
@@ -195,7 +220,7 @@ test("labels public generated shared audio without moderator review", async () =
   ]);
 });
 
-test("limits public provider generation before synthesis", async () => {
+test("limits loopback provider generation before synthesis", async () => {
   let calls = 0;
   const ttsProvider = {
     async synthesize(request) {
@@ -215,7 +240,7 @@ test("limits public provider generation before synthesis", async () => {
   };
   const options = {
     publicAudioGenerationEnabled: true,
-    publicBaseUrl: "https://community.example",
+    publicBaseUrl: "http://127.0.0.1:8787",
     publicAudioGenerationLimit: 1,
     publicAudioGenerationWindowMs: 60_000,
     now: () => Date.parse("2026-01-01T00:00:00.000Z"),
@@ -284,6 +309,7 @@ function sharedGenerationRequest(overrides = {}) {
     method: "POST",
     url: "/audio/generate",
     headers: {},
+    remoteAddress: "127.0.0.1",
     body: JSON.stringify({
       term: "Exampletown",
       lookupKey: "exampletown",

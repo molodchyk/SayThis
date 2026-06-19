@@ -106,7 +106,8 @@ test("documents community service deployment artifacts", async () => {
   assert.match(deployment, /SAYTHIS_ADMIN_TOKEN/);
   assert.match(deployment, /GOOGLE_APPLICATION_CREDENTIALS/);
   assert.match(communityService, /extension never stores provider credentials or generation tokens/);
-  assert.match(releaseNotes, /hosted entitlement or paywall controls/);
+  assert.match(releaseNotes, /cannot trigger paid provider synthesis/);
+  assert.match(deployment, /hosted public shared-audio requests cannot trigger paid provider synthesis/);
   assert.match(releaseNotes, /Preserves returned shared audio/);
   assert.match(dockerfile, /SAYTHIS_STORE=\/data\/community-store\.json/);
   assert.match(dockerfile, /server\/community-service\.js/);
