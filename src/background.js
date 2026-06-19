@@ -98,7 +98,8 @@ platform.addCommandListener((command) => {
   }));
 });
 
-platform.addMessageListener((message, _sender, sendResponse) => handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies()));
+platform.addMessageListener((message, sender, sendResponse) =>
+  handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies(sender)));
 
 async function resolveSelection(text, options = {}) {
   const startedAt = Date.now();
@@ -330,7 +331,7 @@ async function getDebugState() {
   });
 }
 
-function runtimeMessageDependencies() {
+function runtimeMessageDependencies(sender = {}) {
   return {
     resolveSelection,
     speakResult,
@@ -342,6 +343,7 @@ function runtimeMessageDependencies() {
     requestSharedAudio,
     preparePlayback,
     prepareAudio,
+    getVisibleResult: () => getVisibleResultOnTab(sender?.tab?.id),
     getStorage: platform.getStorage,
     getDebugState,
     recordDebugEvent

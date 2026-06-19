@@ -268,6 +268,82 @@ test("runtime speak reuses matching stored audio without resolving", async () =>
   ]);
 });
 
+test("runtime speak reuses visible overlay audio before storage or lookup", async () => {
+  const responses = [];
+  const calls = [];
+  const visible = {
+    query: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Visible shared audio",
+        url: "https://community.example/audio/aud_visible",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-visible",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getVisibleResult: async () => {
+      calls.push(["getVisibleResult"]);
+      return visible;
+    },
+    getStorage: async () => {
+      throw new Error("should not read storage when visible audio matches");
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve when visible audio matches");
+    },
+    requestSharedAudio: async () => {
+      throw new Error("should not request shared audio when visible audio matches");
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when visible audio plays");
+    },
+    recordDebugEvent: (kind, payload) => calls.push(["recordDebugEvent", kind, payload]),
+    lastResultKey: "lastResult"
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, visible);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Visible shared audio"
+  });
+  assert.deepEqual(calls, [
+    ["recordDebugEvent", "ui:selection-auto-speak", {
+      text: "Exampletown",
+      trace
+    }],
+    ["getVisibleResult"],
+    ["recordDebugEvent", "visible-result:hit", {
+      text: "Exampletown",
+      sourceStatus: "generated-audio",
+      audioQuality: "generated",
+      trace
+    }],
+    ["playAudio", visible.pronunciation.audio[0], 0.82, trace]
+  ]);
+});
+
 test("runtime speak plays direct approved shared audio before slow resolution", async () => {
   const responses = [];
   const calls = [];
@@ -426,16 +502,21 @@ test("runtime speak does not wait for slow stored-result miss before direct shar
     fallback: "audio",
     text: "Direct shared audio"
   });
-  assert.deepEqual(calls.slice(0, 3), [
+  assert.deepEqual(calls.slice(0, 2), [
     ["getStorage", ["lastResult"]],
     ["requestSharedAudio", "Exampletown", null, {
       rate: 0.82,
       trace,
       directLookup: true,
       skipRefresh: true
-    }],
-    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+    }]
   ]);
+  assert.equal(calls.some((call) =>
+    call[0] === "playAudio" &&
+    call[1] === direct.pronunciation.audio[0] &&
+    call[2] === 0.82 &&
+    call[3] === trace
+  ), true);
 });
 
 test("runtime speak plays resolved audio before slow direct shared-audio miss", async () => {

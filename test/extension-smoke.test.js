@@ -139,7 +139,8 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /handleActiveSelectionCommandName\(command, runtimeAdapters\.activeSelectionDependencies\(\{/);
   assert.match(source, /createRuntimeAdapters\(createRuntimeAdapterPlatformDependencies\(platform, STORAGE_KEYS\)\)/);
   assert.match(source, /runtimeAdapters\.activeSelectionDependencies\(\{/);
-  assert.match(source, /handleRuntimeMessage\(message, sendResponse, runtimeMessageDependencies\(\)\)/);
+  assert.match(source, /handleRuntimeMessage\(message, sendResponse, runtimeMessageDependencies\(sender\)\)/);
+  assert.match(source, /getVisibleResult: \(\) => getVisibleResultOnTab\(sender\?\.tab\?\.id\)/);
   assert.match(source, /activateSelectionListenerOnOpenTabs\(selectionActivationDependencies\(\)\)/);
   assert.match(source, /platform\.addStartupListener/);
   assert.match(source, /createPlaybackSurface\(\{/);

@@ -52,17 +52,32 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     let directSharedAudioResult = null;
     let resolvedPlayableResult = null;
     let storedPlayableResult = null;
-    const storedResultPromise = message.result
+    let visiblePlayableResult = null;
+    const visibleResultPromise = message.result
       ? Promise.resolve(null)
-      : awaitStoredPlayableResult(selectedText, dependencies, message.trace).then((result) => {
-        storedPlayableResult = result;
+      : awaitVisiblePlayableResult(selectedText, dependencies, message.trace).then((result) => {
+        visiblePlayableResult = result;
         return result;
       });
+    const visibleResultGraceMs = dependencies.visibleResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS;
+    const visibleResultGracePromise = waitForVisibleResultGrace(visibleResultPromise, visibleResultGraceMs);
+    const storedResultPromise = message.result
+      ? Promise.resolve(null)
+      : visibleResultGracePromise.then((visibleResult) => visibleResult
+        ? null
+        : awaitStoredPlayableResult(selectedText, dependencies, message.trace).then((result) => {
+          storedPlayableResult = result;
+          return result;
+        }));
     const storedResultGraceMs = dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS;
     const storedResultWaitMs = dependencies.storedResultWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
+    const visibleOrStoredGracePromise = firstNonNullResult([
+      visibleResultGracePromise,
+      waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
+    ]);
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
-      : waitForStoredResultGrace(storedResultPromise, storedResultGraceMs).then((storedResult) => storedResult
+      : visibleOrStoredGracePromise.then((fastResult) => fastResult
         ? null
         : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies)).then((result) => {
           directSharedAudioResult = result;
@@ -70,7 +85,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         });
     const resolvedSelectionPromise = message.result
       ? Promise.resolve(message.result)
-      : withHandledRejection(waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
+      : withHandledRejection(visibleOrStoredGracePromise
         .then((result) => result || dependencies.resolveSelection(selectedText, resolverOptions)));
     const resolvedPlayablePromise = message.result
       ? Promise.resolve(null)
@@ -85,6 +100,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     const resultPromise = message.result
       ? Promise.resolve(message.result)
       : firstNonNullResult([
+        promiseWithinWait(visibleResultPromise, storedResultWaitMs),
         promiseWithinWait(storedResultPromise, storedResultWaitMs),
         promiseWithinWait(
           directSharedAudioPromise,
@@ -97,10 +113,11 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       ]).then((fastResult) => fastResult || resolvedSelectionPromise);
     respondWithResult(
       resultPromise.then(async (result) => {
+        const isVisibleAudio = visiblePlayableResult && visiblePlayableResult === result;
         const isDirectSharedAudio = directSharedAudioResult && directSharedAudioResult === result;
         const isResolvedPlayable = resolvedPlayableResult && resolvedPlayableResult === result;
         const isStoredAudio = storedPlayableResult && storedPlayableResult === result;
-        const playableResult = isStoredAudio || isDirectSharedAudio || isResolvedPlayable
+        const playableResult = isVisibleAudio || isStoredAudio || isDirectSharedAudio || isResolvedPlayable
           ? result
           : await resolvePlayableResult(selectedText, result, options, dependencies);
         const playback = await playResolvedAudio(playableResult, message.rate, dependencies, message.trace);
@@ -262,6 +279,10 @@ async function waitForStoredResultGrace(storedResultPromise, waitMs) {
   return promiseWithinWait(storedResultPromise, waitMs);
 }
 
+async function waitForVisibleResultGrace(visibleResultPromise, waitMs) {
+  return promiseWithinWait(visibleResultPromise, waitMs);
+}
+
 function firstNonNullResult(promises = []) {
   const pending = promises.filter(Boolean);
   if (!pending.length) {
@@ -296,6 +317,38 @@ function firstNonNullResult(promises = []) {
 function withHandledRejection(promise) {
   promise?.catch?.(() => {});
   return promise;
+}
+
+async function awaitVisiblePlayableResult(selectedText, dependencies = {}, trace = null) {
+  if (typeof dependencies.getVisibleResult !== "function") {
+    return null;
+  }
+
+  let result = null;
+  try {
+    result = await dependencies.getVisibleResult();
+  } catch (error) {
+    dependencies.recordDebugEvent?.("visible-result:error", {
+      text: selectedText,
+      error: error?.message || String(error || "Unknown visible result error"),
+      trace
+    });
+    return null;
+  }
+
+  const missReason = storedResultMissReason(result, selectedText);
+  if (missReason) {
+    recordStoredResultMiss(selectedText, result, `visible-${missReason}`, dependencies, trace);
+    return null;
+  }
+
+  dependencies.recordDebugEvent?.("visible-result:hit", {
+    text: selectedText,
+    sourceStatus: result.sourceStatus || "",
+    audioQuality: getBestAudio(result)?.quality || "",
+    trace
+  });
+  return result;
 }
 
 async function awaitStoredPlayableResult(selectedText, dependencies = {}, trace = null) {
