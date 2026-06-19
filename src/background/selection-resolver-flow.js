@@ -1,6 +1,7 @@
 import {
   hasGeneratedAudio,
   hasPreferredAudio,
+  hasTopTierAudio,
   mapResultAudioUrls,
   mergeRemoteResult,
   normalizeSelection,
@@ -110,7 +111,7 @@ export async function resolveSelection(text, options = {}, dependencies = {}) {
 
 function shouldRefreshCachedResult(result, options = {}, localResult = {}) {
   if (options.useOnline === true) {
-    return !hasPreferredAudio(result);
+    return !hasTopTierAudio(result);
   }
 
   return !hasPreferredAudio(result) && (

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  getBestAudio,
   createRemoteStructuredResult
 } from "../../../src/resolver-core.js";
 import {
@@ -120,6 +121,107 @@ test("refreshes cached generated audio for explicit online lookup", async () => 
   assert.equal(result.pronunciation.audio[0].quality, "verified");
   assert.equal(result.pronunciation.audio.at(-1).quality, "generated");
   assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) => entry.result.sourceStatus === "verified-audio"));
+});
+
+test("refreshes cached generic verified audio for explicit online lookup", async () => {
+  const cachedVerified = {
+    id: "dictionary:exampletown",
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    sourceStatus: "verified-audio",
+    confidence: "medium",
+    pronunciation: {
+      audio: [{
+        url: "https://dictionary.example/przykladowo.ogg",
+        label: "Dictionary recording",
+        source: "Dictionary",
+        quality: "verified"
+      }]
+    },
+    evidence: ["Dictionary audio"]
+  };
+  const nativeRemote = createRemoteStructuredResult("Exampletown", {
+    id: "native:exampletown",
+    display: "Przykladowo",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/przykladowo-native.ogg",
+        label: "Native speaker recording",
+        source: "Community pack",
+        quality: "native-speaker"
+      }]
+    },
+    sourceStatus: "verified-audio",
+    evidence: ["Native speaker audio"]
+  });
+  const resultCache = upsertCachedResult({}, "Exampletown", cachedVerified);
+  const calls = [];
+  const storedUpdates = [];
+
+  const result = await resolveSelection("Exampletown", { useOnline: true }, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false },
+      resultCache
+    }),
+    setStorage: async (value) => storedUpdates.push(value),
+    resolveWithOnlineSources: async (text, settings, credentials, context) => {
+      calls.push({ text, contextResult: context.localResult });
+      return nativeRemote;
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].contextResult.sourceForm, "Przykladowo");
+  assert.equal(getBestAudio(result).quality, "native-speaker");
+  assert.equal(getBestAudio(result).url, "https://audio.example/przykladowo-native.ogg");
+  assert.equal(result.pronunciation.audio.at(-1).quality, "verified");
+  assert.ok(cacheEntries(storedUpdates[0].resultCache).some((entry) =>
+    getBestAudio(entry.result)?.quality === "native-speaker"));
+});
+
+test("keeps cached top-tier audio for explicit online lookup", async () => {
+  const cachedNative = {
+    id: "native:exampletown",
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    sourceStatus: "verified-audio",
+    confidence: "medium",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/przykladowo-native.ogg",
+        label: "Native speaker recording",
+        source: "Community pack",
+        quality: "native-speaker"
+      }]
+    },
+    evidence: ["Native speaker audio"]
+  };
+  const resultCache = upsertCachedResult({}, "Exampletown", cachedNative);
+  const calls = [];
+
+  const result = await resolveSelection("Exampletown", { useOnline: true }, {
+    loadSeedData: async () => ({ entries: [] }),
+    getStorage: async () => ({
+      settings: { onlineByDefault: false },
+      resultCache
+    }),
+    setStorage: async () => {},
+    resolveWithOnlineSources: async () => {
+      calls.push("unexpected");
+      return null;
+    }
+  });
+
+  assert.equal(calls.length, 0);
+  assert.equal(getBestAudio(result).quality, "native-speaker");
+  assert.equal(getBestAudio(result).url, "https://audio.example/przykladowo-native.ogg");
 });
 
 test("refreshes cached generated audio during automatic online lookup", async () => {
