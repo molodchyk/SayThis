@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  setTimeout as delay
+} from "node:timers/promises";
+import {
   activeSelectionOptionsForCommand,
   handleActiveSelectionCommandName,
   handleActiveSelectionCommand
@@ -187,6 +190,7 @@ test("online keyboard command plays shared audio before refreshing the result", 
   assert.deepEqual(compactTraceCalls(calls), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard-online" }],
+    ["requestSharedAudio", "Exampletown", null],
     ["resolveSelection", "Exampletown", {
       source: "keyboard-online",
       useOnline: false,
@@ -203,6 +207,79 @@ test("online keyboard command plays shared audio before refreshing the result", 
     ["requestSharedAudio", "Exampletown", refreshed],
     ["showResultOnTab", 7, refreshed]
   ]);
+});
+
+test("keyboard command plays direct approved shared audio before slow local resolution", async () => {
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Direct shared audio",
+        url: "https://audio.example/direct.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  let resolveStarted = false;
+  let finishResolve;
+  const slowResolved = new Promise((resolve) => {
+    finishResolve = () => resolve({ display: "Late result" });
+  });
+
+  const result = await handleActiveSelectionCommand({
+    source: "keyboard"
+  }, {
+    getActiveTab: async () => ({ id: 7 }),
+    readSelectionFromTab: async (tabId) => {
+      calls.push(["readSelectionFromTab", tabId]);
+      return "Exampletown";
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return value ? value : direct;
+    },
+    resolveSelection: async (text, options) => {
+      resolveStarted = true;
+      calls.push(["resolveSelection", text, options]);
+      return slowResolved;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    directSharedAudioWaitMs: 25,
+    lastSelectionKey: "lastSelection",
+    lastSourceKey: "lastSource",
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(resolveStarted, true);
+  assert.deepEqual(compactTraceCalls(calls.slice(0, 6)), [
+    ["readSelectionFromTab", 7],
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard" }],
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      trace: { action: "keyboard" },
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", {
+      source: "keyboard",
+      useOnline: false,
+      trace: { action: "keyboard" }
+    }],
+    ["playResolvedResult", direct, 7]
+  ]);
+
+  finishResolve();
+  await delay(0);
 });
 
 test("online keyboard command reuses matching stored audio before local fallback can resolve it", async () => {
@@ -342,10 +419,12 @@ test("enriches no-audio keyboard selections before playback", async () => {
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard" }],
     ["resolveSelection", "Gnocchi", {
-      useOnline: undefined,
+      source: "keyboard",
+      useOnline: false,
       trace: { action: "keyboard" }
     }],
     ["resolveSelection", "Gnocchi", {
+      source: "keyboard",
       useOnline: true,
       localResult: resolved,
       trace: { action: "keyboard" }

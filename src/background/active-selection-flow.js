@@ -6,6 +6,9 @@ import {
   resolvePlayableResult
 } from "./pronunciation-playback-flow.js";
 
+const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
+const DEFAULT_STORED_RESULT_GRACE_MS = 10;
+
 const KEYBOARD_COMMANDS = {
   local: "pronounce-selection",
   online: "pronounce-selection-online"
@@ -53,9 +56,9 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
       return await handleOnlineLookupAndPronounce(selectedText, tab.id, tracedOptions, dependencies, trace);
     }
 
-    const storedResult = await readStoredPlayableResult(selectedText, dependencies, trace);
-    if (storedResult) {
-      recordStoredResultHit(selectedText, storedResult, dependencies, trace);
+    const candidate = await firstActiveSelectionAudioCandidate(selectedText, tracedOptions, dependencies, trace);
+    if (candidate?.result) {
+      const storedResult = candidate.result;
       await dependencies.playResolvedResult?.(storedResult, tab.id, trace);
       return { handled: true, result: storedResult, reusedStored: true };
     }
@@ -96,24 +99,9 @@ export function activeSelectionOptionsForCommand(command) {
 }
 
 async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
-  const storedResult = await readStoredPlayableResult(selectedText, dependencies, trace);
-  if (storedResult) {
-    recordStoredResultHit(selectedText, storedResult, dependencies, trace);
-  }
-
-  let localResult = storedResult;
-  let immediateResult = storedResult;
-
-  if (!immediateResult) {
-    localResult = await dependencies.resolveSelection?.(selectedText, {
-      ...options,
-      useOnline: false
-    });
-    immediateResult = await resolvePlayableResult(selectedText, localResult, {
-      ...options,
-      useOnline: true
-    }, dependencies);
-  }
+  const immediateCandidate = await firstActiveSelectionAudioCandidate(selectedText, options, dependencies, trace);
+  const localResult = immediateCandidate?.localResult || immediateCandidate?.result || null;
+  const immediateResult = immediateCandidate?.result || null;
 
   const playedImmediate = Boolean(getBestAudio(immediateResult)?.url);
 
@@ -164,6 +152,151 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
   }
 }
 
+async function firstActiveSelectionAudioCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
+  const storedCandidatePromise = storedAudioCandidate(selectedText, dependencies, trace);
+  const storedGracePromise = waitForStoredResultGrace(
+    storedCandidatePromise,
+    dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS
+  );
+  const directSharedAudioPromise = storedGracePromise.then((candidate) => candidate
+    ? null
+    : directSharedAudioCandidate(selectedText, options, dependencies, trace));
+  const localPlayablePromise = storedGracePromise.then((candidate) => candidate
+    ? candidate
+    : localPlayableCandidate(selectedText, options, dependencies, trace));
+  const waitMs = dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
+
+  return await firstNonNullResult([
+    promiseWithinWait(storedCandidatePromise, waitMs),
+    promiseWithinWait(directSharedAudioPromise, waitMs),
+    promiseWithinWait(localPlayablePromise, waitMs)
+  ]) || await localPlayablePromise;
+}
+
+async function storedAudioCandidate(selectedText, dependencies = {}, trace = null) {
+  try {
+    const result = await readStoredPlayableResult(selectedText, dependencies, trace);
+    if (!result) {
+      return null;
+    }
+
+    recordStoredResultHit(selectedText, result, dependencies, trace);
+    return {
+      result,
+      localResult: result,
+      source: "stored"
+    };
+  } catch (error) {
+    dependencies.recordDebugEvent?.("stored-result:error", {
+      text: selectedText,
+      error: error?.message || String(error || "Unknown storage error"),
+      trace
+    });
+    return null;
+  }
+}
+
+async function directSharedAudioCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
+  if (typeof dependencies.requestSharedAudio !== "function") {
+    return null;
+  }
+
+  try {
+    const result = await dependencies.requestSharedAudio(selectedText, null, compactOptions({
+      rate: options.rate,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }));
+    return result
+      ? {
+        result,
+        localResult: result,
+        source: "direct-shared-audio"
+      }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function localPlayableCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
+  const localResult = await dependencies.resolveSelection?.(selectedText, {
+    ...options,
+    useOnline: false
+  });
+  const playableOptions = options.useOnline === true ? {
+    ...options,
+    useOnline: true,
+    trace
+  } : {
+    ...options,
+    trace
+  };
+  const playableResult = await resolvePlayableResult(selectedText, localResult, playableOptions, dependencies);
+  return playableResult
+    ? {
+      result: playableResult,
+      localResult,
+      source: "local"
+    }
+    : null;
+}
+
+async function promiseWithinWait(promise, waitMs) {
+  const normalizedWaitMs = Math.max(0, Number(waitMs) || 0);
+  if (!normalizedWaitMs || typeof setTimeout !== "function") {
+    return promise;
+  }
+
+  let timeoutId;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((resolve) => {
+        timeoutId = setTimeout(() => resolve(null), normalizedWaitMs);
+      })
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function waitForStoredResultGrace(storedResultPromise, waitMs) {
+  return promiseWithinWait(storedResultPromise, waitMs);
+}
+
+function firstNonNullResult(promises = []) {
+  const pending = promises.filter(Boolean);
+  if (!pending.length) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    let remaining = pending.length;
+    pending.forEach((promise) => {
+      Promise.resolve(promise)
+        .then((value) => {
+          if (value) {
+            resolve(value);
+            return;
+          }
+
+          remaining -= 1;
+          if (!remaining) {
+            resolve(null);
+          }
+        })
+        .catch(() => {
+          remaining -= 1;
+          if (!remaining) {
+            resolve(null);
+          }
+        });
+    });
+  });
+}
+
 async function readStoredPlayableResult(selectedText, dependencies = {}, trace = null) {
   const key = dependencies.lastResultKey || "lastResult";
   const stored = await dependencies.getStorage?.([key]) || {};
@@ -175,6 +308,12 @@ async function readStoredPlayableResult(selectedText, dependencies = {}, trace =
   }
 
   return result;
+}
+
+function compactOptions(options = {}) {
+  return Object.fromEntries(
+    Object.entries(options).filter(([, value]) => value !== undefined)
+  );
 }
 
 function recordStoredResultHit(selectedText, result = {}, dependencies = {}, trace = null) {
