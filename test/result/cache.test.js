@@ -191,3 +191,43 @@ test("sanitizes imported cached result payloads", () => {
   assert.equal(Object.hasOwn(result.pronunciation.audio[0], "extra"), false);
   assert.equal(Object.hasOwn(result.alternateResults[0], "pageUrl"), false);
 });
+
+test("keeps the strongest imported cached audio before truncating", () => {
+  const weakAudio = Array.from({ length: 9 }, (_, index) => ({
+    label: `Generated ${index}`,
+    url: `https://audio.example/generated-${index}.ogg`,
+    source: "Voice service",
+    quality: "generated"
+  }));
+  const cache = normalizeResultCache({
+    entries: {
+      noisy: {
+        lookupKey: "noisy",
+        term: "Noisy",
+        updatedAt: 1000,
+        result: {
+          id: "remote:noisy",
+          display: "Noisy",
+          sourceForm: "Noisy",
+          sourceStatus: "verified-audio",
+          pronunciation: {
+            audio: [
+              ...weakAudio,
+              {
+                label: "Native recording",
+                url: "https://audio.example/native.ogg",
+                source: "Native speaker collection",
+                quality: "native-speaker"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }, { now: 2000 });
+  const audio = cache.entries.noisy.result.pronunciation.audio;
+
+  assert.equal(audio.length, 8);
+  assert.equal(audio[0].url, "https://audio.example/native.ogg");
+  assert.equal(audio[0].quality, "native-speaker");
+});

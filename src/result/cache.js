@@ -1,6 +1,7 @@
 import {
   createLookupKey,
-  normalizeSelection
+  normalizeSelection,
+  rankedAudioItems
 } from "../resolver-core.js";
 
 export const RESULT_CACHE_SCHEMA_VERSION = 1;
@@ -195,14 +196,16 @@ function normalizePronunciation(pronunciation = {}) {
 }
 
 function normalizeAudioItems(audio = []) {
-  return Array.isArray(audio)
-    ? audio.map((item) => ({
+  if (!Array.isArray(audio)) {
+    return [];
+  }
+
+  return rankedAudioItems(audio.map((item) => ({
       url: normalizeSafeUrl(item?.url),
       label: normalizeSelection(item?.label),
       source: normalizeSelection(item?.source),
       quality: normalizeSelection(item?.quality)
-    })).filter((item) => item.url).slice(0, 8)
-    : [];
+    })).filter((item) => item.url)).slice(0, 8);
 }
 
 function normalizeSourceItems(sources = []) {
