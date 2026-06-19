@@ -92,18 +92,29 @@
     const audio = audioItems(result).map((item) => ({ ...item, kind: "audio" }));
     const speech = sourceSpeechItem(result);
     const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
+    const fallback = speechFallbackItems(speech, guide);
 
-    if (audio.length) {
+    if (!audio.length) {
+      return fallback;
+    }
+
+    if (audio.some((item) => normalizeText(item.quality).toLowerCase() !== "generated")) {
       return audio;
     }
 
+    return fallback.length ? [...audio, ...fallback] : audio;
+  }
+
+  function speechFallbackItems(speech, guide) {
     return [
       speech,
-      guide ? {
-      kind: "guide",
-      label: "Guide speech",
-      text: guide
-      } : null
+      guide
+        ? {
+          kind: "guide",
+          label: "Guide speech",
+          text: guide
+        }
+        : null
     ].filter(Boolean);
   }
 

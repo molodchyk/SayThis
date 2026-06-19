@@ -61,19 +61,38 @@ export function playbackItemsForResult(result, limit = 4) {
     .map((item) => ({ ...item, kind: "audio" }));
   const speech = sourceSpeechItemForResult(result);
   const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
+  const fallback = speechFallbackItems(speech, guide);
 
-  if (audio.length) {
+  if (!audio.length) {
+    return fallback.slice(0, limit);
+  }
+
+  if (audio.some((item) => !isGeneratedAudioItem(item))) {
     return audio;
   }
 
+  if (!fallback.length) {
+    return audio;
+  }
+
+  const generatedLimit = Math.max(1, limit - fallback.length);
+  return [
+    ...audio.slice(0, generatedLimit),
+    ...fallback
+  ].slice(0, limit);
+}
+
+function speechFallbackItems(speech, guide) {
   return [
     speech,
-    guide ? {
-    kind: "guide",
-    label: "Guide speech",
-    text: guide
-    } : null
-  ].filter(Boolean).slice(0, limit);
+    guide
+      ? {
+        kind: "guide",
+        label: "Guide speech",
+        text: guide
+      }
+      : null
+  ].filter(Boolean);
 }
 
 export function playbackStatusForItem(item = {}, rate = 0.82) {

@@ -129,6 +129,37 @@ test("normalizes overlay result display helpers", () => {
     { kind: "audio", label: "Generated voice", source: "Voice service", url: "https://audio.example/generated.ogg", quality: "generated" },
     { kind: "audio", label: "Generated fallback: Voice service audio", source: "Voice service", url: "https://audio.example/generic-generated.ogg", quality: "generated" }
   ]);
+  assert.deepEqual(plain(view.playbackItems({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term",
+      audio: [{
+        label: "Voice service audio",
+        source: "Voice service",
+        quality: "generated",
+        url: "https://audio.example/generated.ogg"
+      }]
+    }
+  })), [{
+    kind: "audio",
+    label: "Generated fallback: Voice service audio",
+    source: "Voice service",
+    quality: "generated",
+    url: "https://audio.example/generated.ogg"
+  }, {
+    kind: "speech",
+    label: "Source-form speech",
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }, {
+    kind: "guide",
+    label: "Guide speech",
+    text: "eg-ZAM-pluh-term"
+  }]);
   assert.equal(view.playbackStatus({
     kind: "audio",
     quality: "generated"

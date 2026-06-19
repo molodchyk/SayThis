@@ -139,10 +139,16 @@ test("renders generated fallback audio without recording status", () => {
   const elements = createElements();
   const statuses = [];
   const playedAudio = [];
+  const spoken = [];
 
   renderPopupResult({
-    display: "Exampleterm",
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
     pronunciation: {
+      simple: "p-shih-kla-doh-voh",
       audio: [{
         label: "Voice service audio",
         source: "Voice service",
@@ -156,14 +162,20 @@ test("renders generated fallback audio without recording status", () => {
       playedAudio.push({ item, result, rate });
       return true;
     },
+    speakResult: (result, rate) => spoken.push({ result, rate }),
     setStatus: (value) => statuses.push(value)
   });
 
   assert.equal(elements.audioList.children[0].children[1].textContent, "Generated fallback: Voice service audio");
+  assert.equal(elements.audioList.children[1].children[1].textContent, "Source-form speech");
+  assert.equal(elements.audioList.children[2].children[1].textContent, "Guide speech");
   elements.audioList.children[0].children[0].events.click();
+  elements.audioList.children[1].children[0].events.click();
 
   assert.equal(playedAudio[0].item.quality, "generated");
   assert.deepEqual(statuses, ["Playing generated audio."]);
+  assert.equal(spoken[0].result.speakText, "Przykladowo");
+  assert.equal(spoken[0].result.ttsLang, "pl-PL");
 });
 
 function sampleResult() {
