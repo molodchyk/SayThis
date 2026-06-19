@@ -62,6 +62,7 @@ platform.addContextMenuClickedListener((info, tab) => {
   handleContextMenuClick(info, tab, {
     resolveOptionsForMenuId,
     normalizeSelection,
+    getStorage: platform.getStorage,
     setStorage: platform.setStorage,
     resolveSelection,
     requestSharedAudio,

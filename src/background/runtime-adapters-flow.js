@@ -27,6 +27,7 @@ export function createRuntimeAdapters(dependencies = {}) {
     return {
       getActiveTab,
       readSelectionFromTab,
+      getStorage: dependencies.getStorage,
       setStorage: dependencies.setStorage,
       resolveSelection: workflows.resolveSelection,
       requestSharedAudio: workflows.requestSharedAudio,

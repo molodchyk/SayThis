@@ -1,4 +1,5 @@
 import {
+  createLookupKey,
   getBestAudio
 } from "../resolver-core.js";
 import {
@@ -80,13 +81,20 @@ export function activeSelectionOptionsForCommand(command) {
 }
 
 async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
-  const localResult = await dependencies.resolveSelection?.(selectedText, {
-    useOnline: false
-  });
-  const immediateResult = await resolvePlayableResult(selectedText, localResult, {
-    useOnline: true,
-    trace
-  }, dependencies);
+  const storedResult = await readStoredPlayableResult(selectedText, dependencies);
+  let localResult = storedResult;
+  let immediateResult = storedResult;
+
+  if (!immediateResult) {
+    localResult = await dependencies.resolveSelection?.(selectedText, {
+      useOnline: false
+    });
+    immediateResult = await resolvePlayableResult(selectedText, localResult, {
+      useOnline: true,
+      trace
+    }, dependencies);
+  }
+
   const playedImmediate = Boolean(getBestAudio(immediateResult)?.url);
 
   if (playedImmediate) {
@@ -117,6 +125,33 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
 
     throw error;
   }
+}
+
+async function readStoredPlayableResult(selectedText, dependencies = {}) {
+  const key = dependencies.lastResultKey || "lastResult";
+  const stored = await dependencies.getStorage?.([key]) || {};
+  const result = stored[key];
+  if (!getBestAudio(result)?.url || !matchesSelection(result, selectedText)) {
+    return null;
+  }
+
+  return result;
+}
+
+function matchesSelection(result = {}, selectedText = "") {
+  const selectedKey = createLookupKey(selectedText);
+  if (!selectedKey) {
+    return false;
+  }
+
+  return [
+    result.query,
+    result.display,
+    result.sourceForm,
+    result.speakText,
+    ...(Array.isArray(result.aliases) ? result.aliases : []),
+    ...(Array.isArray(result.variants) ? result.variants : [])
+  ].some((value) => createLookupKey(value) === selectedKey);
 }
 
 function createTrace(action) {

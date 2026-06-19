@@ -116,6 +116,7 @@ export function createRuntimeAdapterPlatformDependencies(platform = {}, storageK
     fetch: platform.fetch,
     queryTabs: platform.queryTabs,
     executeScript: platform.executeScript,
+    getStorage: platform.getStorage,
     setStorage: platform.setStorage,
     storageKeys
   };

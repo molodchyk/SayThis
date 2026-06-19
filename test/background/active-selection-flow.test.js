@@ -156,6 +156,61 @@ test("online keyboard command plays shared audio before refreshing the result", 
   ]);
 });
 
+test("online keyboard command reuses matching stored audio before local fallback can resolve it", async () => {
+  const calls = [];
+  const stored = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/stored.mp3", quality: "generated" }]
+    }
+  };
+  const refreshed = { display: "Exampletown", sourceStatus: "structured-source" };
+
+  const result = await handleActiveSelectionCommand({
+    source: "keyboard-online",
+    useOnline: true
+  }, {
+    getActiveTab: async () => ({ id: 7 }),
+    readSelectionFromTab: async (tabId) => {
+      calls.push(["readSelectionFromTab", tabId]);
+      return "Exampletown";
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return { lastResult: stored };
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    },
+    requestSharedAudio: async (text, value) => {
+      calls.push(["requestSharedAudio", text, value]);
+      return value;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    showResultOnTab: async (tabId, value) => calls.push(["showResultOnTab", tabId, value]),
+    lastSelectionKey: "lastSelection",
+    lastSourceKey: "lastSource",
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, refreshed);
+  assert.deepEqual(calls, [
+    ["readSelectionFromTab", 7],
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard-online" }],
+    ["getStorage", ["lastResult"]],
+    ["playResolvedResult", stored, 7],
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: stored }],
+    ["requestSharedAudio", "Exampletown", refreshed],
+    ["showResultOnTab", 7, refreshed]
+  ]);
+});
+
 test("enriches no-audio keyboard selections before playback", async () => {
   const calls = [];
   const resolved = { display: "Gnocchi", sourceStatus: "structured-source" };
