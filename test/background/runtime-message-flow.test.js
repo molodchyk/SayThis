@@ -604,6 +604,101 @@ test("runtime speak plays resolved audio before slow direct shared-audio miss", 
   finishDirect();
 });
 
+test("select-to-hear speaks resolved source form before slow direct shared-audio miss", async () => {
+  const responses = [];
+  const calls = [];
+  const resolved = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const trace = {
+    id: "trace-source-form-before-direct",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let directFinished = false;
+  let speechStartedBeforeDirectFinished = false;
+  let finishDirect;
+  const directMiss = new Promise((resolve) => {
+    finishDirect = () => {
+      directFinished = true;
+      resolve(null);
+    };
+  });
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return result ? result : directMiss;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playAudio: async () => {
+      throw new Error("should not play audio when direct shared audio has not resolved");
+    },
+    speakResult: async (result, options) => {
+      speechStartedBeforeDirectFinished = !directFinished;
+      calls.push(["speakResult", result, options]);
+      return {
+        spoken: true,
+        text: result.sourceForm,
+        options: {
+          lang: result.ttsLang
+        }
+      };
+    },
+    directSharedAudioWaitMs: 100,
+    storedResultGraceMs: 5,
+    lastResultKey: "lastResult"
+  });
+
+  await delay(25);
+
+  assert.equal(handled, true);
+  assert.equal(speechStartedBeforeDirectFinished, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, resolved);
+  assert.deepEqual(responses[0].speech, {
+    text: "Przykladowo"
+  });
+  assert.deepEqual(calls, [
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
+    ["requestSharedAudio", "Exampletown", resolved, {
+      useOnline: false,
+      sharedAudioLocalOnly: true,
+      trace
+    }],
+    ["speakResult", resolved, {
+      rate: 0.82,
+      lang: undefined,
+      trace
+    }]
+  ]);
+
+  finishDirect();
+});
+
 test("select-to-hear only rechecks local shared audio after direct lookup misses", async () => {
   const responses = [];
   const calls = [];

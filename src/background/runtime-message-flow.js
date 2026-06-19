@@ -38,10 +38,11 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       return true;
     }
 
+    const preferImmediatePlayback = shouldPreferImmediatePlayback(message);
     recordSelectionTrigger(selectedText, message.trace, dependencies);
     const options = {
       ...useOnlineMessageOptions(message),
-      ...(shouldPreferImmediatePlayback(message) ? {
+      ...(preferImmediatePlayback ? {
         useOnline: false,
         skipOnlineRetry: true,
         sharedAudioLocalOnly: true
@@ -110,7 +111,8 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         promiseWithinWait(
           resolvedPlayablePromise,
           dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS
-        )
+        ),
+        preferImmediatePlayback ? resolvedSelectionPromise : null
       ]).then((fastResult) => fastResult || resolvedSelectionPromise);
     respondWithResult(
       resultPromise.then(async (result) => {
