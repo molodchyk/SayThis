@@ -48,7 +48,10 @@ export function debugSummaryText(diagnostics = {}) {
       : "";
     const sourceText = timing.storedResultHit ? " from stored audio" : "";
     const detailText = timingDetailText(timing);
-    return `Last audio started${sourceText} in ${audioMs} ms${detailText}${refreshText}.`;
+    const missText = timing.storedResultMissReason
+      ? `; stored audio miss: ${timing.storedResultMissReason}`
+      : "";
+    return `Last audio started${sourceText} in ${audioMs} ms${detailText}${missText}${refreshText}.`;
   }
 
   if (!diagnostics.lastResult) {

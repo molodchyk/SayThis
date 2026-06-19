@@ -109,6 +109,18 @@ test("builds speech and voice diagnostics from stored result", async () => {
       sinceTraceStartMs: 40,
       elapsedMs: 35
     }, {
+      at: "2026-06-19T00:00:00.041Z",
+      kind: "stored-result:miss",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 41,
+      reason: "selection-mismatch",
+      storedDisplay: "Different term"
+    }, {
       at: "2026-06-19T00:00:00.042Z",
       kind: "resolve:start",
       trace: {
@@ -221,8 +233,12 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.timing.audioElapsedMs, 3);
   assert.equal(diagnostics.timing.onlineRefreshMs, 5000);
   assert.equal(diagnostics.timing.onlineRefreshElapsedMs, 4750);
+  assert.equal(diagnostics.timing.storedResultMiss, true);
+  assert.equal(diagnostics.timing.storedResultMissReason, "selection-mismatch");
   assert.equal(diagnostics.timing.source, "content-selection");
-  assert.equal(diagnostics.recentEvents.length, 11);
+  assert.equal(diagnostics.timing.events[3].reason, "selection-mismatch");
+  assert.equal(diagnostics.timing.events[3].storedDisplay, "Different term");
+  assert.equal(diagnostics.recentEvents.length, 12);
 });
 
 test("summarizes debug payloads without full objects", () => {

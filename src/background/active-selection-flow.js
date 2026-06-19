@@ -53,7 +53,7 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
       return await handleOnlineLookupAndPronounce(selectedText, tab.id, tracedOptions, dependencies, trace);
     }
 
-    const storedResult = await readStoredPlayableResult(selectedText, dependencies);
+    const storedResult = await readStoredPlayableResult(selectedText, dependencies, trace);
     if (storedResult) {
       recordStoredResultHit(selectedText, storedResult, dependencies, trace);
       await dependencies.playResolvedResult?.(storedResult, tab.id, trace);
@@ -96,7 +96,7 @@ export function activeSelectionOptionsForCommand(command) {
 }
 
 async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
-  const storedResult = await readStoredPlayableResult(selectedText, dependencies);
+  const storedResult = await readStoredPlayableResult(selectedText, dependencies, trace);
   if (storedResult) {
     recordStoredResultHit(selectedText, storedResult, dependencies, trace);
   }
@@ -164,11 +164,13 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
   }
 }
 
-async function readStoredPlayableResult(selectedText, dependencies = {}) {
+async function readStoredPlayableResult(selectedText, dependencies = {}, trace = null) {
   const key = dependencies.lastResultKey || "lastResult";
   const stored = await dependencies.getStorage?.([key]) || {};
   const result = stored[key];
-  if (!getBestAudio(result)?.url || !matchesSelection(result, selectedText)) {
+  const missReason = storedResultMissReason(result, selectedText);
+  if (missReason) {
+    recordStoredResultMiss(selectedText, result, missReason, dependencies, trace);
     return null;
   }
 
@@ -184,6 +186,34 @@ function recordStoredResultHit(selectedText, result = {}, dependencies = {}, tra
     urlHost: hostForUrl(audio?.url),
     trace
   });
+}
+
+function recordStoredResultMiss(selectedText, result = {}, reason = "", dependencies = {}, trace = null) {
+  const audio = getBestAudio(result);
+  dependencies.recordDebugEvent?.("stored-result:miss", {
+    text: selectedText,
+    reason,
+    sourceStatus: result?.sourceStatus || "",
+    storedDisplay: result?.display || result?.query || "",
+    audioQuality: audio?.quality || "",
+    trace
+  });
+}
+
+function storedResultMissReason(result = {}, selectedText = "") {
+  if (!result) {
+    return "missing";
+  }
+
+  if (!getBestAudio(result)?.url) {
+    return "no-audio";
+  }
+
+  if (!matchesSelection(result, selectedText)) {
+    return "selection-mismatch";
+  }
+
+  return "";
 }
 
 function hostForUrl(value = "") {

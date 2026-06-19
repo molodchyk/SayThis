@@ -189,7 +189,9 @@ async function awaitStoredPlayableResult(selectedText, dependencies = {}, trace 
   }
 
   const result = stored[key];
-  if (!getBestAudio(result)?.url || !matchesSelection(result, selectedText)) {
+  const missReason = storedResultMissReason(result, selectedText);
+  if (missReason) {
+    recordStoredResultMiss(selectedText, result, missReason, dependencies, trace);
     return null;
   }
 
@@ -200,6 +202,34 @@ async function awaitStoredPlayableResult(selectedText, dependencies = {}, trace 
     trace
   });
   return result;
+}
+
+function recordStoredResultMiss(selectedText, result = {}, reason = "", dependencies = {}, trace = null) {
+  const audio = getBestAudio(result);
+  dependencies.recordDebugEvent?.("stored-result:miss", {
+    text: selectedText,
+    reason,
+    sourceStatus: result?.sourceStatus || "",
+    storedDisplay: result?.display || result?.query || "",
+    audioQuality: audio?.quality || "",
+    trace
+  });
+}
+
+function storedResultMissReason(result = {}, selectedText = "") {
+  if (!result) {
+    return "missing";
+  }
+
+  if (!getBestAudio(result)?.url) {
+    return "no-audio";
+  }
+
+  if (!matchesSelection(result, selectedText)) {
+    return "selection-mismatch";
+  }
+
+  return "";
 }
 
 function matchesSelection(result = {}, selectedText = "") {

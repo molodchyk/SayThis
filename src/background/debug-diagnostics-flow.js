@@ -326,6 +326,7 @@ function playbackTimingSummary(events = []) {
   ].includes(event.kind));
   const last = latest[latest.length - 1];
   const storedHit = latest.find((event) => event.kind === "stored-result:hit");
+  const storedMiss = latestEvent(latest, ["stored-result:miss"]);
   const onlineRefresh = latestEvent(latest, [
     "online-refresh:result",
     "online-refresh:error"
@@ -356,6 +357,8 @@ function playbackTimingSummary(events = []) {
     onlineRefreshMs: numberOrNull(onlineRefresh?.sinceTraceStartMs),
     onlineRefreshElapsedMs: numberOrNull(onlineRefresh?.elapsedMs),
     storedResultHit: Boolean(storedHit),
+    storedResultMiss: Boolean(storedMiss),
+    storedResultMissReason: normalizeSelection(storedMiss?.reason),
     lastEventMs: numberOrNull(last?.sinceTraceStartMs),
     eventCount: latest.length,
     events: latest.map((event) => ({
@@ -366,6 +369,8 @@ function playbackTimingSummary(events = []) {
       urlHost: normalizeSelection(event.urlHost),
       sourceStatus: normalizeSelection(event.sourceStatus),
       audioQuality: normalizeSelection(event.audioQuality),
+      reason: normalizeSelection(event.reason),
+      storedDisplay: normalizeSelection(event.storedDisplay),
       error: normalizeSelection(event.error)
     }))
   };
