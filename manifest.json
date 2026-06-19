@@ -56,10 +56,12 @@
     "https://upload.wikimedia.org/*"
   ],
   "optional_host_permissions": [
-    "https://*/*"
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https:; media-src 'self' https:"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; media-src 'self' https: http://localhost:* http://127.0.0.1:*"
   },
   "web_accessible_resources": [
     {

@@ -434,7 +434,7 @@
     })).then((response) => {
       if (!response?.ok || !getBestAudio(response.result)) {
         if (response?.timedOut) {
-          setStatus("Using matching voice.");
+          setStatus("Using speech fallback.");
         }
         return result;
       }

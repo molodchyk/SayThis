@@ -22,7 +22,25 @@ const UK_UA_CHIRP3_HD_VOICES = [
   "uk-UA-Chirp3-HD-Pulcherrima",
   "uk-UA-Chirp3-HD-Sulafat",
   "uk-UA-Chirp3-HD-Vindemiatrix",
-  "uk-UA-Chirp3-HD-Zephyr"
+  "uk-UA-Chirp3-HD-Zephyr",
+  "uk-UA-Chirp3-HD-Achird",
+  "uk-UA-Chirp3-HD-Algenib",
+  "uk-UA-Chirp3-HD-Algieba",
+  "uk-UA-Chirp3-HD-Alnilam",
+  "uk-UA-Chirp3-HD-Charon",
+  "uk-UA-Chirp3-HD-Enceladus",
+  "uk-UA-Chirp3-HD-Fenrir",
+  "uk-UA-Chirp3-HD-Iapetus",
+  "uk-UA-Chirp3-HD-Orus",
+  "uk-UA-Chirp3-HD-Puck",
+  "uk-UA-Chirp3-HD-Rasalgethi",
+  "uk-UA-Chirp3-HD-Sadachbia",
+  "uk-UA-Chirp3-HD-Sadaltager",
+  "uk-UA-Chirp3-HD-Schedar",
+  "uk-UA-Chirp3-HD-Umbriel",
+  "uk-UA-Chirp3-HD-Zubenelgenubi",
+  "uk-UA-Standard-B",
+  "uk-UA-Wavenet-B"
 ];
 
 test("preserves preferred HD voice inventory by locale", () => {
@@ -49,7 +67,7 @@ test("matches voice locales without crossing regional variants", () => {
 test("scores preferred voice labels by configured order", () => {
   assert.ok(
     preferredVoiceScoreForLabel("Service uk-UA-Chirp3-HD-Gacrux (Google)", "uk-UA") >
-      preferredVoiceScoreForLabel("Service uk-UA-Chirp3-HD-Zephyr (Google)", "uk-UA")
+      preferredVoiceScoreForLabel("Service uk-UA-Chirp3-HD-Zubenelgenubi (Google)", "uk-UA")
   );
   assert.equal(preferredVoiceScoreForLabel("Generic exact", "uk-UA"), 0);
 });

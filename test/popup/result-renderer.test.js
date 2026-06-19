@@ -126,7 +126,7 @@ test("renders source-form speech before guide speech", () => {
 
   assert.equal(elements.audioList.children[0].children[0].textContent, "Speak");
   assert.equal(elements.audioList.children[0].children[1].textContent, "Source-form speech");
-  assert.equal(elements.audioList.children[0].children[2].textContent, "pl-PL / matching voice");
+  assert.equal(elements.audioList.children[0].children[2].textContent, "pl-PL / voice required");
   assert.equal(elements.audioList.children[1].children[0].textContent, "Speak");
   assert.equal(elements.audioList.children[1].children[1].textContent, "Guide speech");
   assert.equal(elements.audioList.children[1].children[2].textContent, "en-US / guide speech");
@@ -174,7 +174,7 @@ test("renders generated fallback audio without recording status", () => {
   assert.equal(elements.audioList.children[0].children[1].textContent, "Generated fallback: Voice service audio");
   assert.equal(elements.audioList.children[0].children[2].textContent, "Voice service / generated fallback");
   assert.equal(elements.audioList.children[1].children[1].textContent, "Source-form speech");
-  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / matching voice");
+  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / voice required");
   assert.equal(elements.audioList.children[2].children[1].textContent, "Guide speech");
   assert.equal(elements.audioList.children[2].children[2].textContent, "en-US / guide speech");
   elements.audioList.children[0].children[0].events.click();
@@ -210,7 +210,7 @@ test("renders practice alternatives for unknown-quality audio", () => {
   assert.equal(elements.audioList.children[0].children[1].textContent, "Unreviewed audio");
   assert.equal(elements.audioList.children[0].children[2].textContent, "Archive");
   assert.equal(elements.audioList.children[1].children[1].textContent, "Source-form speech");
-  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / matching voice");
+  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / voice required");
   assert.equal(elements.audioList.children[2].children[1].textContent, "Guide speech");
   assert.equal(elements.audioList.children[2].children[2].textContent, "en-US / guide speech");
 });

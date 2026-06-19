@@ -6,6 +6,7 @@ import {
 } from "../result/cache.js";
 import {
   normalizeApprovedEntries,
+  normalizeCommunityEndpoint,
   normalizeSubmissionQueue
 } from "../community-sync.js";
 import {
@@ -28,6 +29,7 @@ import {
 import {
   approvedSummaryText as approvedSummaryLabel,
   cacheSummaryText as cacheSummaryLabel,
+  debugSummaryText as debugSummaryLabel,
   isPlainObject,
   memorySummaryText,
   summarizeQueue,
@@ -165,9 +167,10 @@ async function saveSettings() {
   ], optionsRuntimeAdapters());
   const previousSettings = normalizeSettings(stored[STORAGE_KEYS.settings]);
   const previousCredentials = normalizeCredentials(stored[STORAGE_KEYS.credentials]);
-  const wantedSync = syncEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
-  const wantedPull = pullEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
-  const wantedSharedAudio = sharedAudioEnabled.checked && Boolean(normalizeEndpoint(syncEndpoint.value));
+  const normalizedCommunityEndpoint = normalizeCommunityEndpoint(syncEndpoint.value);
+  const wantedSync = syncEnabled.checked && Boolean(normalizedCommunityEndpoint);
+  const wantedPull = pullEnabled.checked && Boolean(normalizedCommunityEndpoint);
+  const wantedSharedAudio = sharedAudioEnabled.checked && Boolean(normalizedCommunityEndpoint);
   const wantedCustomSource = customSourceEnabled.checked && Boolean(normalizeEndpoint(customSourceEndpoint.value));
   const wantedDbpedia = dbpediaEnabled.checked && Boolean(normalizeEndpoint(dbpediaEndpoint.value));
   const wantedForvo = forvoEnabled.checked && Boolean(normalizeApiKey(forvoApiKey.value));
@@ -386,7 +389,7 @@ async function refreshDebugDiagnostics() {
   }
 
   debugOutput.value = JSON.stringify(response.diagnostics, null, 2);
-  debugSummary.textContent = debugSummaryText(response.diagnostics);
+  debugSummary.textContent = debugSummaryLabel(response.diagnostics);
   setStatus("Diagnostics refreshed.");
 }
 
@@ -450,7 +453,7 @@ async function settingsFromControls(credentials) {
     communityAudioEnabled: sharedAudioEnabled.checked,
     communitySyncEnabled: syncEnabled.checked,
     communityPullEnabled: pullEnabled.checked,
-    communityEndpoint: normalizeEndpoint(syncEndpoint.value)
+    communityEndpoint: normalizeCommunityEndpoint(syncEndpoint.value)
   }, credentials);
 }
 
@@ -515,25 +518,4 @@ function sendMessage(message) {
 
 function optionsRuntimeAdapters() {
   return createOptionsRuntimeAdapters();
-}
-
-function debugSummaryText(diagnostics = {}) {
-  if (!diagnostics.lastResult) {
-    return "No resolved result has been stored yet.";
-  }
-
-  const speech = diagnostics.speechPlan || {};
-  if (!speech.lang) {
-    return "Last result has no resolved speech locale.";
-  }
-
-  if (!speech.totalVoiceCount) {
-    return "No browser voices were reported.";
-  }
-
-  if (!speech.hasSelectedVoice) {
-    return `No matching browser voice for ${speech.lang}.`;
-  }
-
-  return `Voice ready: ${speech.selectedVoice}.`;
 }

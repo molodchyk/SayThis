@@ -1,0 +1,25 @@
+# Voice Provider Requirements
+
+SayThis cannot depend on built-in browser speech as the primary pronunciation path. Browser voices are inconsistent across machines and may be absent for the exact resolved locale even when the resolver finds the right source form.
+
+## Non-Negotiable Requirements
+
+- Resolve the selected term into the best pronounceable source form before speech.
+- Prefer native or curated recordings when available.
+- Use high-quality provider voices for generated fallback audio when recordings are missing.
+- Store useful generated audio as shared reviewed artifacts so the next user reuses the same sample instead of regenerating it.
+- Keep provider generation behind server-side controls: opt-in, bearer token, rate limit, and persisted generation budget.
+- Report missing local voices as a configuration/readiness problem, not as a silent fallback to an unrelated voice.
+
+## Product Boundaries
+
+SayThis should not become a general chatbot, and it should not be only a static hand-curated list. The durable asset is a pronunciation memory graph: selected form, source form, language or locale, guide, audio, aliases, variants, roots, trust signals, and approved shared artifacts.
+
+Provider TTS is a bridge, not the final knowledge layer. The important product move is turning a successful generated sample into reusable shared audio once it is approved.
+
+## Implementation Implications
+
+- Local browser speech can be used only when the voice locale matches the resolved speech locale.
+- If no matching local voice exists, the UI should point to shared audio/provider configuration instead of claiming a matching voice exists.
+- Generated audio must be attached to approved shared entries with source form and locale metadata.
+- Provider voice preferences should rank known high-quality voices for each locale, but exact provider names and sensitive test cases belong in private docs.

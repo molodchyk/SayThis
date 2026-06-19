@@ -27,6 +27,16 @@ test("normalizes sync settings conservatively", () => {
   });
 
   assert.deepEqual(normalizeSyncSettings({
+    communityAudioEnabled: true,
+    communityEndpoint: "http://127.0.0.1:8787/community"
+  }), {
+    communityAudioEnabled: true,
+    communitySyncEnabled: false,
+    communityPullEnabled: false,
+    communityEndpoint: "http://127.0.0.1:8787/community"
+  });
+
+  assert.deepEqual(normalizeSyncSettings({
     communitySyncEnabled: true,
     communityPullEnabled: true,
     communityEndpoint: "https://example.com/submit"
@@ -52,6 +62,14 @@ test("creates optional permission pattern for sync endpoint origin", () => {
   assert.equal(
     endpointOriginPattern("https://example.com/saythis/submit?token=abc"),
     "https://example.com/*"
+  );
+  assert.equal(
+    endpointOriginPattern("http://127.0.0.1:8787/community"),
+    "http://127.0.0.1/*"
+  );
+  assert.equal(
+    endpointOriginPattern("http://localhost:8787/community"),
+    "http://localhost/*"
   );
   assert.equal(endpointOriginPattern("http://example.com/submit"), "");
   assert.equal(endpointOriginPattern("not a url"), "");
@@ -245,6 +263,11 @@ test("does not queue submissions until sync is enabled", () => {
     communitySyncEnabled: true,
     communityEndpoint: "http://example.com/submit"
   }), []);
+
+  assert.equal(enqueueSubmissionWhenEnabled([], submission, {
+    communitySyncEnabled: true,
+    communityEndpoint: "http://127.0.0.1:8787/community"
+  }).length, 1);
 
   const queue = enqueueSubmissionWhenEnabled([], submission, {
     communitySyncEnabled: true,

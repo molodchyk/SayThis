@@ -126,7 +126,7 @@ function playbackMetaForItem(item = {}) {
   }
 
   if (item.kind === "speech") {
-    return compactMeta([item.lang, "matching voice"]);
+    return compactMeta([item.lang, "voice required"]);
   }
 
   if (item.kind === "guide") {

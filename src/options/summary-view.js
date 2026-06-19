@@ -38,6 +38,27 @@ export function approvedSummaryText(entries = {}, state = {}, formatDate = defau
     : "No approved shared entries.";
 }
 
+export function debugSummaryText(diagnostics = {}) {
+  if (!diagnostics.lastResult) {
+    return "No resolved result has been stored yet.";
+  }
+
+  const speech = diagnostics.speechPlan || {};
+  if (!speech.lang) {
+    return "Last result has no resolved speech locale.";
+  }
+
+  if (!speech.totalVoiceCount) {
+    return "No browser voices were reported.";
+  }
+
+  if (!speech.hasSelectedVoice) {
+    return missingVoiceSummary(diagnostics, speech.lang);
+  }
+
+  return `Voice ready: ${speech.selectedVoice}.`;
+}
+
 export function summarizeQueue(queue) {
   return {
     queued: Array.isArray(queue) ? queue.length : 0,
@@ -52,4 +73,33 @@ export function isPlainObject(value) {
 
 function defaultFormatDate(value) {
   return new Date(value).toLocaleString();
+}
+
+function missingVoiceSummary(diagnostics = {}, lang = "") {
+  const offscreen = diagnostics.offscreenSpeech || {};
+  const settings = diagnostics.settings || {};
+  const storage = diagnostics.storage || {};
+  const playback = diagnostics.playback || {};
+  const noOffscreenVoice = offscreen && offscreen.matchingVoiceCount === 0;
+  const prefix = noOffscreenVoice
+    ? "No matching browser or Web Speech voice"
+    : "No matching browser voice";
+
+  if (!playback.sharedAudioCandidate) {
+    return `${prefix} for ${lang}.`;
+  }
+
+  if (!settings.communityAudioEnabled) {
+    return `${prefix} for ${lang}; shared audio is disabled.`;
+  }
+
+  if (!settings.communityEndpoint) {
+    return `${prefix} for ${lang}; shared audio endpoint is missing.`;
+  }
+
+  if (!storage.credentials?.sharedAudioGenerationTokenPresent) {
+    return `${prefix} for ${lang}; shared audio can only reuse approved entries until a generation token is set.`;
+  }
+
+  return `${prefix} for ${lang}; shared audio generation is configured.`;
 }

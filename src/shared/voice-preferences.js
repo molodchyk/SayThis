@@ -13,7 +13,25 @@ const PREFERRED_VOICE_NAMES_BY_LOCALE = {
     "uk-UA-Chirp3-HD-Pulcherrima",
     "uk-UA-Chirp3-HD-Sulafat",
     "uk-UA-Chirp3-HD-Vindemiatrix",
-    "uk-UA-Chirp3-HD-Zephyr"
+    "uk-UA-Chirp3-HD-Zephyr",
+    "uk-UA-Chirp3-HD-Achird",
+    "uk-UA-Chirp3-HD-Algenib",
+    "uk-UA-Chirp3-HD-Algieba",
+    "uk-UA-Chirp3-HD-Alnilam",
+    "uk-UA-Chirp3-HD-Charon",
+    "uk-UA-Chirp3-HD-Enceladus",
+    "uk-UA-Chirp3-HD-Fenrir",
+    "uk-UA-Chirp3-HD-Iapetus",
+    "uk-UA-Chirp3-HD-Orus",
+    "uk-UA-Chirp3-HD-Puck",
+    "uk-UA-Chirp3-HD-Rasalgethi",
+    "uk-UA-Chirp3-HD-Sadachbia",
+    "uk-UA-Chirp3-HD-Sadaltager",
+    "uk-UA-Chirp3-HD-Schedar",
+    "uk-UA-Chirp3-HD-Umbriel",
+    "uk-UA-Chirp3-HD-Zubenelgenubi",
+    "uk-UA-Standard-B",
+    "uk-UA-Wavenet-B"
   ]
 };
 

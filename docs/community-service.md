@@ -28,7 +28,7 @@ $env:SAYTHIS_TRUST_PROXY_HEADERS = "0"
 npm run community:serve
 ```
 
-The service listens on `http://127.0.0.1:8787` by default. For real extension sync, deploy it behind HTTPS and configure the extension endpoint to the public `/community` URL.
+The service listens on `http://127.0.0.1:8787` by default. The extension accepts `http://127.0.0.1` and `http://localhost` community endpoints for local development only. For real extension sync, deploy it behind HTTPS and configure the extension endpoint to the public `/community` URL.
 
 Container deployment notes are in `docs/deployment.md`.
 

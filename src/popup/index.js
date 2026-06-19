@@ -368,7 +368,7 @@ async function ensureSharedAudio(result, rate, options = {}) {
   })));
   if (!response.ok || !getBestAudio(response.result)) {
     if (response.timedOut) {
-      setStatus("Using matching voice.");
+      setStatus("Using speech fallback.");
     }
     return result;
   }

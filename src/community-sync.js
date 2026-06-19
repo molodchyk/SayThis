@@ -17,7 +17,7 @@ const FEEDBACK_KINDS = new Set(["confirm", "wrong", "missing", "correction"]);
 const STRUCTURED_FEEDBACK_KINDS = new Set(["missing", "correction"]);
 
 export function normalizeSyncSettings(settings = {}) {
-  const endpoint = normalizeEndpoint(settings.communityEndpoint);
+  const endpoint = normalizeCommunityEndpoint(settings.communityEndpoint);
   const hasExplicitAudioSetting = Object.prototype.hasOwnProperty.call(settings, "communityAudioEnabled");
   return {
     communityAudioEnabled: Boolean((hasExplicitAudioSetting ? settings.communityAudioEnabled : endpoint) && endpoint),
@@ -28,13 +28,35 @@ export function normalizeSyncSettings(settings = {}) {
 }
 
 export function endpointOriginPattern(value) {
-  const endpoint = normalizeEndpoint(value);
+  const endpoint = normalizeCommunityEndpoint(value);
   if (!endpoint) {
     return "";
   }
 
   const url = new URL(endpoint);
+  if (isLocalHttpEndpoint(url)) {
+    return `${url.protocol}//${url.hostname}/*`;
+  }
+
   return `${url.origin}/*`;
+}
+
+export function normalizeCommunityEndpoint(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    if (url.protocol === "https:" || isLocalHttpEndpoint(url)) {
+      return url.toString();
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
 }
 
 export function createCommunitySubmission(selection, feedback = {}, result = null) {
@@ -401,18 +423,8 @@ function normalizeTrustSignals(value) {
   return [...new Set(raw.map(normalizeSelection).filter(Boolean))].slice(0, 12);
 }
 
-function normalizeEndpoint(value) {
-  const raw = normalizeLongValue(value);
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const url = new URL(raw);
-    return url.protocol === "https:" ? url.toString() : "";
-  } catch {
-    return "";
-  }
+function isLocalHttpEndpoint(url) {
+  return url?.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
 }
 
 function normalizeHttpsUrl(value) {

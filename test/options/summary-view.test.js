@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   approvedSummaryText,
   cacheSummaryText,
+  debugSummaryText,
   isPlainObject,
   memorySummaryText,
   summarizeQueue,
@@ -85,4 +86,27 @@ test("detects plain objects for imports", () => {
   assert.equal(isPlainObject([]), false);
   assert.equal(isPlainObject(null), false);
   assert.equal(isPlainObject("value"), false);
+});
+
+test("summarizes missing locale voice with shared-audio readiness", () => {
+  assert.equal(debugSummaryText({}), "No resolved result has been stored yet.");
+  assert.equal(debugSummaryText({
+    lastResult: { display: "Exampletown" },
+    speechPlan: { lang: "pl-PL", totalVoiceCount: 4, hasSelectedVoice: false },
+    offscreenSpeech: { matchingVoiceCount: 0 },
+    playback: { sharedAudioCandidate: true },
+    settings: { communityAudioEnabled: false },
+    storage: { credentials: {} }
+  }), "No matching browser or Web Speech voice for pl-PL; shared audio is disabled.");
+  assert.equal(debugSummaryText({
+    lastResult: { display: "Exampletown" },
+    speechPlan: { lang: "pl-PL", totalVoiceCount: 4, hasSelectedVoice: false },
+    offscreenSpeech: { matchingVoiceCount: 0 },
+    playback: { sharedAudioCandidate: true },
+    settings: {
+      communityAudioEnabled: true,
+      communityEndpoint: "https://community.example"
+    },
+    storage: { credentials: { sharedAudioGenerationTokenPresent: false } }
+  }), "No matching browser or Web Speech voice for pl-PL; shared audio can only reuse approved entries until a generation token is set.");
 });

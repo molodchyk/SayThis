@@ -41,6 +41,13 @@ test("collects optional remote permission origins", () => {
   }), [
     "https://community.example/*"
   ]);
+
+  assert.deepEqual(remotePermissionOrigins({
+    communityAudioEnabled: true,
+    communityEndpoint: "http://127.0.0.1:8787/community"
+  }), [
+    "http://127.0.0.1/*"
+  ]);
 });
 
 test("finds stale optional remote permission origins", () => {
@@ -107,7 +114,7 @@ test("normalizes extension settings and credentials from one module", () => {
     communityAudioEnabled: true,
     communitySyncEnabled: true,
     communityPullEnabled: true,
-    communityEndpoint: "https://community.example/saythis"
+    communityEndpoint: "http://127.0.0.1:8787/community"
   });
   const credentials = normalizeCredentials({
     forvoApiKey: " key  with spaces ",
@@ -132,6 +139,7 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(settings.communitySyncEnabled, true);
   assert.equal(settings.communityPullEnabled, true);
   assert.equal(settings.communityAudioEnabled, true);
+  assert.equal(settings.communityEndpoint, "http://127.0.0.1:8787/community");
   assert.equal(credentials.forvoApiKey, "keywithspaces");
   assert.equal(credentials.sharedAudioGenerationToken, "sharedtoken");
   assert.equal(normalizeHttpsEndpoint("http://example.com"), "");
