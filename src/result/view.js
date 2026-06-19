@@ -6,6 +6,9 @@ import {
 import {
   normalizeSpeakableGuide
 } from "../resolver/pronunciation-guide.js";
+import {
+  normalizeTtsLanguage
+} from "../resolver/language.js";
 
 export function evidenceItemsForResult(result, limit = 6) {
   const community = result?.community || {};
@@ -141,7 +144,7 @@ export function speechResultForPlaybackItem(result, item = {}) {
       ...result,
       sourceForm: text,
       speakText: text,
-      ttsLang: normalizeSelection(item.lang || result.ttsLang || result.language)
+      ttsLang: normalizeTtsLanguage(item.lang || result.ttsLang, result.language)
     };
   }
 
@@ -263,7 +266,7 @@ function isGeneratedAudioQuality(value) {
 
 function sourceSpeechItemForResult(result = {}) {
   const sourceForm = normalizeSelection(result.sourceForm || result.display || result.query);
-  const lang = normalizeSelection(result.ttsLang || result.language);
+  const lang = normalizeTtsLanguage(result.ttsLang, result.language);
   const selected = normalizeSelection(result.query || result.display);
   const sourceKey = createLookupKey(sourceForm);
   const selectedKey = createLookupKey(selected);

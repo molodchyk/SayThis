@@ -3,7 +3,8 @@ import {
   normalizeSelection
 } from "../src/resolver-core.js";
 import {
-  languageCodeFromLanguage
+  languageCodeFromLanguage,
+  normalizeTtsLanguage
 } from "../src/resolver/language.js";
 import { normalizeAudioMimeType } from "./community-audio-artifacts.js";
 
@@ -169,8 +170,8 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
     lookupKey,
     sourceForm: normalizeSelection(value.sourceForm || term),
     aliases: normalizeList(value.aliases),
-    language: normalizeSelection(value.language),
-    ttsLang: normalizeSelection(value.ttsLang),
+    language: normalizeLanguage(value.language),
+    ttsLang: normalizeTtsLanguage(value.ttsLang, value.language),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -298,6 +299,10 @@ function normalizeHttpsUrl(value) {
 
 function baseLanguage(value) {
   return (languageCodeFromLanguage(value) || normalizeSelection(value)).toLowerCase().split(/[-_]/)[0];
+}
+
+function normalizeLanguage(language) {
+  return languageCodeFromLanguage(language) || normalizeSelection(language);
 }
 
 function clampNumber(value, min, max) {

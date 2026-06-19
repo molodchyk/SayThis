@@ -1,4 +1,8 @@
 import { createHash } from "node:crypto";
+import {
+  languageCodeFromLanguage,
+  normalizeTtsLanguage
+} from "../src/resolver/language.js";
 
 export const DEFAULT_MAX_AUDIO_BYTES = 512 * 1024;
 
@@ -41,8 +45,8 @@ export function generatedAudioArtifactFromBody(body = {}, options = {}) {
       lookupKey: body.lookupKey,
       sourceForm: body.sourceForm,
       aliases: body.aliases,
-      language: body.language,
-      ttsLang: body.ttsLang,
+      language: normalizeLanguage(body.language),
+      ttsLang: normalizeTtsLanguage(body.ttsLang, body.language),
       languageName: body.languageName,
       origin: body.origin,
       root: body.root,
@@ -92,6 +96,10 @@ export function publicAudioArtifact(artifact = {}) {
     variantNote: artifact.variantNote,
     trustSignals: artifact.trustSignals
   };
+}
+
+function normalizeLanguage(language) {
+  return languageCodeFromLanguage(language) || String(language || "").trim();
 }
 
 export function normalizeHttpsEndpoint(value) {

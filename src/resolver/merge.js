@@ -1,7 +1,7 @@
 import {
   languageCodeFromLanguage,
   languageNameFromCode,
-  ttsLangFromLanguage
+  normalizeTtsLanguage
 } from "./language.js";
 import {
   confidenceRank,
@@ -247,7 +247,7 @@ function alternateResultSummary(result = {}) {
     sourceForm: normalizeSelection(result.sourceForm || result.display || result.query),
     language,
     languageName: normalizeSelection(result.languageName || languageNameFromCode(language)),
-    ttsLang: normalizeSelection(result.ttsLang || ttsLangFromLanguage(language)),
+    ttsLang: normalizeTtsLanguage(result.ttsLang, language),
     category: normalizeSelection(result.category),
     root: normalizeSelection(result.root),
     domainHint: normalizeSelection(result.domainHint),

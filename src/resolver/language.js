@@ -112,6 +112,10 @@ export function ttsLangFromLanguage(language) {
   return LANGUAGE_TO_TTS[normalized] || normalized;
 }
 
+export function normalizeTtsLanguage(ttsLang, language = "") {
+  return ttsLangFromLanguage(ttsLang) || ttsLangFromLanguage(language);
+}
+
 export function languageCodeFromLanguage(language) {
   const raw = String(language || "").trim();
   if (!raw) {

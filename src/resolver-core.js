@@ -6,8 +6,8 @@ import {
 import {
   languageCodeFromLanguage,
   languageNameFromCode,
-  scriptHintForScript,
-  ttsLangFromLanguage
+  normalizeTtsLanguage,
+  scriptHintForScript
 } from "./resolver/language.js";
 import {
   orthographicLanguageHint
@@ -111,7 +111,7 @@ export function createRemoteStructuredResult(selection, source) {
     queryScript: scriptInfo.script,
     language,
     languageName: source.languageName || languageNameFromCode(language) || "Unknown",
-    ttsLang: source.ttsLang || ttsLangFromLanguage(language),
+    ttsLang: normalizeTtsLanguage(source.ttsLang, language),
     category: source.category || "term",
     origin: source.origin || "",
     root: normalizeSelection(source.root),
@@ -129,7 +129,9 @@ export function createRemoteStructuredResult(selection, source) {
 
 export function resultToSpeechOptions(result, overrides = {}) {
   const text = normalizeSelection(overrides.text || result?.speakText || result?.sourceForm || result?.display || result?.query);
-  const lang = overrides.lang && overrides.lang !== "auto" ? overrides.lang : result?.ttsLang;
+  const lang = overrides.lang && overrides.lang !== "auto"
+    ? normalizeTtsLanguage(overrides.lang, result?.language)
+    : normalizeTtsLanguage(result?.ttsLang, result?.language);
   const rate = Number(overrides.rate || 0.82);
   const options = {
     enqueue: false,
@@ -201,7 +203,7 @@ function createEntryResult(query, lookupKey, scriptInfo, entry) {
     queryScript: scriptInfo.script,
     language,
     languageName: entry.languageName || languageNameFromCode(language),
-    ttsLang: entry.ttsLang || ttsLangFromLanguage(language),
+    ttsLang: normalizeTtsLanguage(entry.ttsLang, language),
     category: entry.category || "term",
     origin: normalizeOrigin(entry.origin),
     root: normalizeSelection(entry.root),
@@ -256,7 +258,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     queryScript: scriptInfo.script,
     language,
     languageName: entry.languageName || languageNameFromCode(language),
-    ttsLang: entry.ttsLang || ttsLangFromLanguage(language),
+    ttsLang: normalizeTtsLanguage(entry.ttsLang, language),
     category: "community-entry",
     origin: entry.origin || "",
     root: normalizeSelection(entry.root),
@@ -332,7 +334,7 @@ function createFallbackResult(query, lookupKey, scriptInfo) {
     queryScript: scriptInfo.script,
     language,
     languageName,
-    ttsLang: hint.ttsLang || ttsLangFromLanguage(language),
+    ttsLang: normalizeTtsLanguage(hint.ttsLang, language),
     category: initialism ? "abbreviation" : "unresolved",
     origin: "",
     domainHint: "",

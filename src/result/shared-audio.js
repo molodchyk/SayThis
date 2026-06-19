@@ -3,10 +3,13 @@ import {
   hasTopTierAudio,
   normalizeSelection
 } from "../resolver-core.js";
+import {
+  normalizeTtsLanguage
+} from "../resolver/language.js";
 
 export function isSharedAudioCandidate(result = {}, selectedText = "") {
   const sourceForm = normalizeSelection(result?.sourceForm || result?.display || result?.query);
-  const ttsLang = normalizeSelection(result?.ttsLang || result?.language);
+  const ttsLang = normalizeTtsLanguage(result?.ttsLang, result?.language);
   const sourceStatus = normalizeSelection(result?.sourceStatus);
   return Boolean(
     result &&

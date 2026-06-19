@@ -375,6 +375,28 @@ test("builds speech-specific result copies for playback rows", () => {
   });
 });
 
+test("normalizes playback row language names to speech locales", () => {
+  const result = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "Polish",
+    ttsLang: "Polish"
+  };
+
+  assert.deepEqual(playbackItemsForResult(result), [{
+    kind: "speech",
+    label: "Source-form speech",
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }]);
+
+  assert.equal(speechResultForPlaybackItem(result, {
+    kind: "speech",
+    text: "Przykladowo",
+    lang: "Polish"
+  }).ttsLang, "pl-PL");
+});
+
 test("prefers source-form speech before guide speech", () => {
   const result = {
     display: "Exampletown",

@@ -21,6 +21,25 @@ test("reuses approved audio through source form and language match", async () =>
   assert.equal(response.body.entry.audioUrl, response.store.approved.existingspelling.audioUrl);
 });
 
+test("normalizes stored audio artifact language names for reuse", async () => {
+  let response = await storeAudioArtifact({
+    language: "Polish",
+    ttsLang: "Polish"
+  });
+
+  assert.equal(response.body.entry.language, "pl");
+  assert.equal(response.body.entry.ttsLang, "pl-PL");
+
+  response = await requestSharedAudio(response.store, {
+    language: "pl",
+    ttsLang: "pl-PL"
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.reused, true);
+  assert.equal(response.body.entry.ttsLang, "pl-PL");
+});
+
 test("does not reuse approved source-form audio across languages", async () => {
   let response = await storeAudioArtifact({
     language: "it",

@@ -25,7 +25,8 @@ import {
   hasUsefulSharedAudioTarget
 } from "../result/shared-audio.js";
 import {
-  languageCodeFromLanguage
+  languageCodeFromLanguage,
+  normalizeTtsLanguage
 } from "../resolver/language.js";
 import {
   resultWithSharedAudioEntry
@@ -328,7 +329,7 @@ function approvedEntryFetcher(dependencies = {}) {
 function sharedAudioRequestBody(selectedText, result = {}, options = {}) {
   const sourceForm = normalizeSelection(result?.sourceForm || result?.display || selectedText);
   const language = normalizeSelection(result?.language);
-  const ttsLang = normalizeSelection(result?.ttsLang || language);
+  const ttsLang = normalizeTtsLanguage(result?.ttsLang, language);
   const sourceStatus = normalizeSelection(result?.sourceStatus);
   if (
     !sourceForm ||
@@ -431,7 +432,7 @@ function approvedAudioAliasForRequest(entry = {}, request = {}) {
     lookupKey: requestLookupKey,
     sourceForm: normalizeSelection(entry.sourceForm || request.sourceForm),
     language: normalizeSelection(entry.language || request.language),
-    ttsLang: normalizeSelection(entry.ttsLang || request.ttsLang)
+    ttsLang: normalizeTtsLanguage(entry.ttsLang, request.ttsLang || request.language)
   };
 }
 

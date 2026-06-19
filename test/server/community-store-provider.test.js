@@ -30,3 +30,25 @@ test("approves generated result provider voice from submissions", () => {
   assert.equal(result.entry.provider, "pl-PL-TestVoice");
   assert.equal(result.entry.sourceStatus, "generated-audio");
 });
+
+test("normalizes approved submission language names to locale fields", () => {
+  let result = acceptSubmission(createEmptyStore("2026-01-01T00:00:00.000Z"), {
+    id: "sub_language_name",
+    term: "Exampletown",
+    lookupKey: "exampletown",
+    kind: "confirm",
+    result: {
+      display: "Exampletown",
+      sourceForm: "Przykladowo",
+      language: "Polish",
+      ttsLang: "Polish",
+      simple: "pshih-KWAH-doh-vo"
+    }
+  }, "2026-01-01T00:00:00.000Z");
+
+  result = approveSubmission(result.store, "sub_language_name", {}, "2026-01-02T00:00:00.000Z");
+
+  assert.equal(result.approved, true);
+  assert.equal(result.entry.language, "pl");
+  assert.equal(result.entry.ttsLang, "pl-PL");
+});

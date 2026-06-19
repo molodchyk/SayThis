@@ -126,7 +126,7 @@ test("includes aliases and variants in shared audio requests", async () => {
     origin: "sample source",
     root: "przyklad",
     domainHint: "field term",
-    ttsLang: "pl-PL",
+    ttsLang: "Polish",
     pronunciation: {
       ipa: "pʂɨkˈwadɔvɔ",
       simple: "pshih-KWAH-doh-vo"
@@ -172,6 +172,7 @@ test("includes aliases and variants in shared audio requests", async () => {
   assert.equal(calls[0][2].sourceUrl, "https://source.example/przykladowo");
   assert.equal(calls[0][2].variantNote, "regional reading note");
   assert.deepEqual(calls[0][2].trustSignals, ["source-backed", "root-noted"]);
+  assert.equal(calls[0][2].ttsLang, "pl-PL");
 });
 
 test("reuses local approved shared audio by source form and stores the selected alias", async () => {

@@ -4,7 +4,7 @@ import {
 } from "./text.js";
 import {
   languageCodeFromLanguage,
-  ttsLangFromLanguage
+  normalizeTtsLanguage
 } from "./language.js";
 import {
   normalizeAliases,
@@ -307,8 +307,4 @@ function communityEntryKeys(entry = {}) {
 
 function normalizeLanguage(language) {
   return languageCodeFromLanguage(language) || String(language || "").trim();
-}
-
-function normalizeTtsLanguage(language) {
-  return ttsLangFromLanguage(language) || String(language || "").trim();
 }

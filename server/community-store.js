@@ -2,6 +2,10 @@ import {
   createLookupKey,
   normalizeSelection
 } from "../src/resolver-core.js";
+import {
+  languageCodeFromLanguage,
+  normalizeTtsLanguage
+} from "../src/resolver/language.js";
 import { normalizeAudioArtifactMap } from "./community-audio-store.js";
 
 export const STORE_SCHEMA_VERSION = 1;
@@ -269,8 +273,8 @@ function normalizeCorrection(value = {}) {
   return {
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
-    language: normalizeSelection(value.language),
-    ttsLang: normalizeSelection(value.ttsLang),
+    language: normalizeLanguage(value.language),
+    ttsLang: normalizeTtsLanguage(value.ttsLang, value.language),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -295,8 +299,8 @@ function normalizeResultMetadata(value = {}) {
     display: normalizeSelection(value.display),
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
-    language: normalizeSelection(value.language),
-    ttsLang: normalizeSelection(value.ttsLang),
+    language: normalizeLanguage(value.language),
+    ttsLang: normalizeTtsLanguage(value.ttsLang, value.language),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -344,8 +348,8 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     requests: clampNumber(value.requests, 0, 100000),
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
-    language: normalizeSelection(value.language),
-    ttsLang: normalizeSelection(value.ttsLang),
+    language: normalizeLanguage(value.language),
+    ttsLang: normalizeTtsLanguage(value.ttsLang, value.language),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -427,6 +431,10 @@ function normalizeAliases(value) {
 
 function normalizeVariants(value) {
   return normalizeAliases(value);
+}
+
+function normalizeLanguage(language) {
+  return languageCodeFromLanguage(language) || normalizeSelection(language);
 }
 
 function defaultTrustSignals(submission = {}, correction = {}, result = {}, override = {}) {
