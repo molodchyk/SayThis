@@ -98,6 +98,17 @@ test("builds speech and voice diagnostics from stored result", async () => {
       },
       sinceTraceStartMs: 250
     }, {
+      at: "2026-06-19T00:00:05.000Z",
+      kind: "online-refresh:result",
+      trace: {
+        id: "trace-1",
+        source: "popup",
+        action: "popup-speak",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 5000,
+      elapsedMs: 4750
+    }, {
       kind: "speech:result",
       speech: {
         spoken: true
@@ -124,8 +135,9 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.offscreenSpeech.selectedVoice.name, "Polish Web");
   assert.equal(diagnostics.playback.sharedAudioCandidate, true);
   assert.equal(diagnostics.timing.audioStartMs, 250);
+  assert.equal(diagnostics.timing.onlineRefreshMs, 5000);
   assert.equal(diagnostics.timing.source, "popup");
-  assert.equal(diagnostics.recentEvents.length, 3);
+  assert.equal(diagnostics.recentEvents.length, 4);
 });
 
 test("summarizes debug payloads without full objects", () => {

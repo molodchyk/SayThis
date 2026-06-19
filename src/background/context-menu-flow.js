@@ -34,6 +34,16 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
       return await handleOnlineLookupAndPronounce(selectedText, tab?.id, options, dependencies, trace);
     }
 
+    const storedResult = await readStoredPlayableResult(selectedText, dependencies);
+    if (storedResult) {
+      recordStoredResultHit(selectedText, storedResult, dependencies, trace);
+      await dependencies.setStorage?.({
+        [dependencies.lastResultKey || "lastResult"]: storedResult
+      });
+      await dependencies.playResolvedResult?.(storedResult, tab?.id, trace);
+      return { handled: true, result: storedResult, reusedStored: true };
+    }
+
     const result = await dependencies.resolveSelection(selectedText, options);
     const playableResult = await resolvePlayableResult(selectedText, result, action.options || {}, dependencies);
     await dependencies.setStorage?.({
@@ -53,6 +63,10 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
 
 async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
   const storedResult = await readStoredPlayableResult(selectedText, dependencies);
+  if (storedResult) {
+    recordStoredResultHit(selectedText, storedResult, dependencies, trace);
+  }
+
   let localResult = storedResult;
   let immediateResult = storedResult;
 
@@ -78,6 +92,12 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
   }
 
   try {
+    const refreshStartedAt = Date.now();
+    dependencies.recordDebugEvent?.("online-refresh:start", {
+      text: selectedText,
+      immediateAudio: playedImmediate,
+      trace
+    });
     const onlineResult = await dependencies.resolveSelection(selectedText, {
       ...options,
       useOnline: true,
@@ -91,6 +111,11 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
     await dependencies.setStorage?.({
       [dependencies.lastResultKey || "lastResult"]: playableResult
     });
+    dependencies.recordDebugEvent?.("online-refresh:result", {
+      elapsedMs: Date.now() - refreshStartedAt,
+      immediateAudio: playedImmediate,
+      trace
+    });
 
     if (playedImmediate) {
       await dependencies.showResultOnTab?.(tabId, playableResult);
@@ -100,6 +125,11 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
 
     return { handled: true, result: playableResult };
   } catch (error) {
+    dependencies.recordDebugEvent?.("online-refresh:error", {
+      immediateAudio: playedImmediate,
+      error: error?.message || String(error || "Unknown error"),
+      trace
+    });
     if (playedImmediate) {
       return { handled: true, result: immediateResult, onlineError: error };
     }
@@ -117,6 +147,25 @@ async function readStoredPlayableResult(selectedText, dependencies = {}) {
   }
 
   return result;
+}
+
+function recordStoredResultHit(selectedText, result = {}, dependencies = {}, trace = null) {
+  const audio = getBestAudio(result);
+  dependencies.recordDebugEvent?.("stored-result:hit", {
+    text: selectedText,
+    sourceStatus: result.sourceStatus || "",
+    audioQuality: audio?.quality || "",
+    urlHost: hostForUrl(audio?.url),
+    trace
+  });
+}
+
+function hostForUrl(value = "") {
+  try {
+    return new URL(value).host;
+  } catch {
+    return "";
+  }
 }
 
 function matchesSelection(result = {}, selectedText = "") {

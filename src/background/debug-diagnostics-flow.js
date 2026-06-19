@@ -297,12 +297,22 @@ function playbackTimingSummary(events = []) {
     "offscreen-audio:result"
   ].includes(event.kind));
   const last = latest[latest.length - 1];
+  const storedHit = latest.find((event) => event.kind === "stored-result:hit");
+  const onlineRefresh = latest.findLast?.((event) => [
+    "online-refresh:result",
+    "online-refresh:error"
+  ].includes(event.kind)) || [...latest].reverse().find((event) => [
+    "online-refresh:result",
+    "online-refresh:error"
+  ].includes(event.kind));
 
   return {
     traceId: normalizeSelection(trace.id),
     source: normalizeSelection(trace.source),
     action: normalizeSelection(trace.action),
     audioStartMs: numberOrNull(audioStart?.sinceTraceStartMs),
+    onlineRefreshMs: numberOrNull(onlineRefresh?.sinceTraceStartMs),
+    storedResultHit: Boolean(storedHit),
     lastEventMs: numberOrNull(last?.sinceTraceStartMs),
     eventCount: latest.length,
     events: latest.map((event) => ({
@@ -311,6 +321,8 @@ function playbackTimingSummary(events = []) {
       elapsedMs: numberOrNull(event.elapsedMs),
       cacheMode: normalizeSelection(event.cacheMode),
       urlHost: normalizeSelection(event.urlHost),
+      sourceStatus: normalizeSelection(event.sourceStatus),
+      audioQuality: normalizeSelection(event.audioQuality),
       error: normalizeSelection(event.error)
     }))
   };

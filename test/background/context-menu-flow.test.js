@@ -159,6 +159,46 @@ test("online context menu reuses matching stored audio before local fallback can
   ]);
 });
 
+test("plain context menu reuses matching stored audio without online enrichment", async () => {
+  const calls = [];
+  const stored = {
+    query: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{ url: "https://audio.example/stored.mp3", quality: "generated" }]
+    }
+  };
+
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: "Exampletown" }, { id: 42 }, {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return { lastResult: stored };
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    resolveSelection: async () => {
+      throw new Error("should not resolve when stored audio matches");
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, stored);
+  assert.equal(result.reusedStored, true);
+  assert.deepEqual(calls, [
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu" }],
+    ["getStorage", ["lastResult"]],
+    ["setStorage", { lastResult: stored }],
+    ["playResolvedResult", stored, 42]
+  ]);
+});
+
 test("does not guess with raw speech when context menu resolution fails", async () => {
   const calls = [];
   const result = await handleContextMenuClick({ menuItemId: "say", selectionText: "Gnocchi" }, {}, {

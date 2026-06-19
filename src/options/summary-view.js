@@ -41,7 +41,13 @@ export function approvedSummaryText(entries = {}, state = {}, formatDate = defau
 export function debugSummaryText(diagnostics = {}) {
   const timing = diagnostics.timing || {};
   if (Number.isFinite(Number(timing.audioStartMs))) {
-    return `Last audio started in ${Math.round(Number(timing.audioStartMs))} ms.`;
+    const audioMs = Math.round(Number(timing.audioStartMs));
+    const refreshMs = Math.round(Number(timing.onlineRefreshMs));
+    const refreshText = Number.isFinite(refreshMs) && refreshMs > audioMs + 250
+      ? `; online refresh finished in ${refreshMs} ms`
+      : "";
+    const sourceText = timing.storedResultHit ? " from stored audio" : "";
+    return `Last audio started${sourceText} in ${audioMs} ms${refreshText}.`;
   }
 
   if (!diagnostics.lastResult) {

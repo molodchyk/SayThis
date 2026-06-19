@@ -89,6 +89,13 @@ test("detects plain objects for imports", () => {
 });
 
 test("summarizes missing locale voice with shared-audio readiness", () => {
+  assert.equal(debugSummaryText({
+    timing: {
+      audioStartMs: 157,
+      onlineRefreshMs: 5835,
+      storedResultHit: true
+    }
+  }), "Last audio started from stored audio in 157 ms; online refresh finished in 5835 ms.");
   assert.equal(debugSummaryText({}), "No resolved result has been stored yet.");
   assert.equal(debugSummaryText({
     lastResult: { display: "Exampletown" },
