@@ -23,6 +23,7 @@
 - Removes direct client audio URL template generation; generated provider output now belongs on the shared-audio endpoint path.
 - Labels token-gated public generated shared audio as service-generated instead of moderator-reviewed.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
+- Continues custom-source retries after generic audio when a later source-form or alias can provide native/source-backed pack audio.
 - Uses one-off lookup hints to prefer matching Wiktionary language sections, continue target-language edition retries after generic audio, and avoid later mismatched dictionary audio.
 - Prefers Wikidata pronunciation audio with matching language qualifiers before unqualified recordings.
 - Ranks Forvo recordings as native-speaker audio ahead of generic verified recordings.

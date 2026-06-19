@@ -162,6 +162,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Optional structured custom source lookup for domain-specific pronunciation entries.
 - Custom source matching uses term, source form, aliases, and variants from returned entries.
 - Source-form and alias-guided custom source retries after other structured sources resolve a better lookup form.
+- Generic custom-source audio does not stop source-form or alias retries for native/source-backed pack audio.
 - Optional DBpedia-compatible knowledge graph lookup for entity context and source-form candidates.
 - Source-form and alias-guided DBpedia-compatible retries after other structured sources resolve a better lookup form.
 - DBpedia-compatible lookup preserves redirect labels as variants for later pronunciation-audio lookup.

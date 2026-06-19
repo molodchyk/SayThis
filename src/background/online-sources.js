@@ -402,7 +402,7 @@ export async function resolveWithCustomSourceCandidates(text, structuredResult, 
     }
 
     result = mergeRemoteResult(result, customResult);
-    if (result?.sourceStatus === "verified-audio") {
+    if (hasTopTierAudio(result)) {
       return result;
     }
   }
@@ -499,7 +499,7 @@ export async function resolveWithForvoCandidates(text, structuredResult, apiKey,
     }
 
     result = mergeRemoteResult(result, forvoResult);
-    if (result?.sourceStatus === "verified-audio") {
+    if (hasTopTierAudio(result)) {
       return result;
     }
   }

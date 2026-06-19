@@ -87,6 +87,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Custom sources can provide array or text aliases and keyed entry maps.
 - Custom sources can match selected text by variant spellings as well as aliases and source forms.
 - Custom sources preserve matching alternate entries for variants or language-specific pronunciations.
+- Generic custom-source audio does not stop source-form or alias retries for native/source-backed pack audio.
 - DBpedia-compatible lookup can retry resolved source forms and aliases from other structured results.
 - DBpedia-compatible lookup preserves redirect labels as variants for later audio lookup and review.
 - Source-form and alias-guided Wiktionary lookup after structured resolution.
