@@ -52,7 +52,7 @@ test("blocks non-English targets routed to an English provider locale", () => {
   assert.equal(hasUsefulSharedAudioTarget("Selected", "Resolved", "ga", "en-IE"), false);
 });
 
-test("blocks results that already have preferred audio", () => {
+test("allows generic verified audio to check for shared audio", () => {
   assert.equal(isSharedAudioCandidate({
     query: "Exampleterm",
     display: "Exampleterm",
@@ -65,6 +65,24 @@ test("blocks results that already have preferred audio", () => {
         label: "Verified recording",
         url: "https://audio.example/verified.ogg",
         quality: "verified"
+      }]
+    }
+  }, "Exampleterm"), true);
+});
+
+test("blocks results that already have top-tier audio", () => {
+  assert.equal(isSharedAudioCandidate({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Exampleterm",
+    language: "ga",
+    ttsLang: "ga-IE",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        label: "Native speaker recording",
+        url: "https://audio.example/native.ogg",
+        quality: "native-speaker"
       }]
     }
   }, "Exampleterm"), false);

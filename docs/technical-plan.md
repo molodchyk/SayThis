@@ -211,6 +211,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Shared-audio requests check locally approved shared artifacts before requiring or contacting the configured endpoint again.
 - Shared-audio requests attach the returned approved audio to the active result if the follow-up local resolver refresh is stale or unavailable, so playback does not fall through to weaker speech after a successful shared-audio response.
 - Source-backed or curated shared recordings keep top-tier audio quality when attached to results.
+- Generic verified recordings can reuse local approved shared artifacts without contacting the endpoint for provider generation.
 - Community service container image and deployment notes.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with verified matching browser voice or guide speech fallback.

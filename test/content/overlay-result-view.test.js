@@ -98,6 +98,21 @@ test("normalizes overlay result display helpers", () => {
     ttsLang: "en-IE",
     sourceStatus: "structured-source"
   }, "Saoirse"), false);
+  assert.equal(view.isSharedAudioCandidate({
+    query: "Saoirse",
+    display: "Saoirse",
+    sourceForm: "Saoirse",
+    language: "ga",
+    ttsLang: "ga-IE",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        label: "Dictionary recording",
+        url: "https://audio.example/verified.ogg",
+        quality: "verified"
+      }]
+    }
+  }, "Saoirse"), true);
   assert.deepEqual(plain(view.audioItems(result)), [
     { label: "Curated", source: "SayThis", url: "https://audio.example/curated.ogg", quality: "curated" },
     { label: "Source backed", source: "Community pack", url: "https://audio.example/source-backed.ogg", quality: "source-backed" },

@@ -224,7 +224,12 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
   const trustSignals = normalizeTrustSignals(entry.trustSignals);
   const hasGeneratedAudio = entryStatus === "generated-audio" || trustSignals.includes("generated-audio");
   const hasReviewedAudio = Boolean(entry.audioUrl && trustSignals.includes("audio-backed") && (
-    trustSignals.includes("moderator-reviewed") || trustSignals.includes("source-backed")
+    trustSignals.includes("moderator-reviewed") ||
+    trustSignals.includes("source-backed") ||
+    trustSignals.includes("curator-reviewed") ||
+    trustSignals.includes("curated") ||
+    trustSignals.includes("native-speaker") ||
+    trustSignals.includes("native speaker")
   ));
   const sourceStatus = hasGeneratedAudio
     ? "generated-audio"
@@ -234,7 +239,7 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
   const confidence = confirmations >= 2 ? "medium" : "low";
   const sourceForm = normalizeSelection(entry.sourceForm || entry.term || query);
   const language = normalizeLanguage(entry.language);
-  const audioQuality = hasGeneratedAudio ? "generated" : hasReviewedAudio ? "verified" : "";
+  const audioQuality = communityAudioQuality(hasGeneratedAudio, trustSignals, hasReviewedAudio);
 
   return normalizeResult({
     id: `community:${lookupKey}`,
@@ -273,6 +278,26 @@ function createCommunityResult(query, lookupKey, scriptInfo, entry) {
     notes: entry.variantNote || "",
     community: communitySummary(entry)
   });
+}
+
+function communityAudioQuality(hasGeneratedAudio, trustSignals = [], hasReviewedAudio = false) {
+  if (hasGeneratedAudio) {
+    return "generated";
+  }
+
+  if (trustSignals.includes("native") || trustSignals.includes("native-speaker") || trustSignals.includes("native speaker")) {
+    return "native-speaker";
+  }
+
+  if (trustSignals.includes("curated") || trustSignals.includes("curator-reviewed")) {
+    return "curated";
+  }
+
+  if (trustSignals.includes("source-backed") || trustSignals.includes("moderator-reviewed")) {
+    return "source-backed";
+  }
+
+  return hasReviewedAudio ? "verified" : "";
 }
 
 function communitySpeakText(entry = {}, sourceForm, query) {

@@ -503,41 +503,6 @@ test("requests shared audio for generated-only results", async () => {
   assert.equal(storage.state.approvedCommunityEntries.exampletown.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
 });
 
-test("does not request shared audio when a preferred recording exists", async () => {
-  const storage = storageHarness({
-    approvedCommunityEntries: {},
-    settings: {
-      communityEndpoint: "https://example.com/community"
-    }
-  });
-  const baseResult = {
-    query: "Exampletown",
-    display: "Exampletown",
-    sourceForm: "Przykladowo",
-    language: "pl",
-    ttsLang: "pl-PL",
-    sourceStatus: "verified-audio",
-    pronunciation: {
-      audio: [{
-        url: "https://audio.example/recording.ogg",
-        quality: "verified"
-      }]
-    }
-  };
-
-  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
-    ...storage.dependencies,
-    fetch: async () => {
-      throw new Error("should not fetch");
-    },
-    resolveSelection: async () => {
-      throw new Error("should not resolve");
-    }
-  });
-
-  assert.equal(result, baseResult);
-});
-
 function storageHarness(initial = {}) {
   const updates = [];
   const harness = {

@@ -398,8 +398,27 @@ test("treats reviewed non-generated community audio as verified audio", () => {
   });
 
   assert.equal(result.sourceStatus, "verified-audio");
-  assert.equal(result.pronunciation.audio[0].quality, "verified");
-  assert.equal(getBestAudio(result).quality, "verified");
+  assert.equal(result.pronunciation.audio[0].quality, "source-backed");
+  assert.equal(getBestAudio(result).quality, "source-backed");
+});
+
+test("treats curated approved community audio as curated audio", () => {
+  const result = resolveTerm("Exampletown", {
+    entries: [],
+    communityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        sourceForm: "Exampletown",
+        language: "it",
+        audioUrl: "https://community.example/audio/exampletown.ogg",
+        trustSignals: ["curator-reviewed", "audio-backed"]
+      }
+    }
+  });
+
+  assert.equal(result.sourceStatus, "verified-audio");
+  assert.equal(result.pronunciation.audio[0].quality, "curated");
+  assert.equal(getBestAudio(result).quality, "curated");
 });
 
 test("creates speech options from resolved source form", () => {

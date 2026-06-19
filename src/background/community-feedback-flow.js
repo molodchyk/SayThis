@@ -4,6 +4,7 @@ import {
   getBestAudio,
   hasCommunityPronunciationData,
   hasPreferredAudio,
+  hasTopTierAudio,
   normalizeSelection,
   updateCommunityEntries
 } from "../resolver-core.js";
@@ -163,7 +164,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
     throw new Error("No text selected.");
   }
 
-  if (hasPreferredAudio(baseResult)) {
+  if (hasTopTierAudio(baseResult)) {
     return baseResult;
   }
 
@@ -197,6 +198,10 @@ export async function requestSharedAudioForResult(text, result = null, options =
       dependencies,
       storageKeys
     );
+  }
+
+  if (hasPreferredAudio(baseResult)) {
+    return baseResult;
   }
 
   const settings = normalizeSettings(stored[storageKeys.settings]);
@@ -498,7 +503,7 @@ async function refreshSharedAudioResultWithEntry(
     refreshed = baseResult;
   }
 
-  if (getBestAudio(refreshed)) {
+  if (hasTopTierAudio(refreshed) || (getBestAudio(refreshed) && isGeneratedSharedAudioEntry(entry))) {
     return refreshed;
   }
 
@@ -511,6 +516,11 @@ async function refreshSharedAudioResultWithEntry(
   }
 
   return attached || refreshed || baseResult;
+}
+
+function isGeneratedSharedAudioEntry(entry = {}) {
+  return normalizeSelection(entry.sourceStatus) === "generated-audio" ||
+    normalizeList(entry.trustSignals).includes("generated-audio");
 }
 
 function firstSourceUrl(result = {}) {

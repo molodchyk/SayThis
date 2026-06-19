@@ -111,7 +111,7 @@ test("retries generic verified audio before playback to find stronger audio", as
   assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: generic }]]);
 });
 
-test("keeps generic verified audio when refresh finds no stronger playback", async () => {
+test("checks shared audio when refresh leaves generic verified audio", async () => {
   const calls = [];
   const generic = {
     display: "Exampletown",
@@ -130,12 +130,16 @@ test("keeps generic verified audio when refresh finds no stronger playback", asy
       return generic;
     },
     requestSharedAudio: async () => {
-      throw new Error("should not request shared audio while generic recording exists");
+      calls.push(["requestSharedAudio", "Exampletown", generic, {}]);
+      return generic;
     }
   });
 
   assert.equal(playable, generic);
-  assert.deepEqual(calls, [["Exampletown", { useOnline: true, localResult: generic }]]);
+  assert.deepEqual(calls, [
+    ["Exampletown", { useOnline: true, localResult: generic }],
+    ["requestSharedAudio", "Exampletown", generic, {}]
+  ]);
 });
 
 test("does not retry top-tier audio before playback", async () => {

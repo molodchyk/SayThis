@@ -1,6 +1,6 @@
 import {
   createLookupKey,
-  hasPreferredAudio,
+  hasTopTierAudio,
   normalizeSelection
 } from "../resolver-core.js";
 
@@ -10,7 +10,7 @@ export function isSharedAudioCandidate(result = {}, selectedText = "") {
   const sourceStatus = normalizeSelection(result?.sourceStatus);
   return Boolean(
     result &&
-    !hasPreferredAudio(result) &&
+    !hasTopTierAudio(result) &&
     sourceForm &&
     ttsLang &&
     !["", "unknown", "best-effort-fallback"].includes(sourceStatus) &&

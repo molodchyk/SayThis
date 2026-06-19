@@ -43,7 +43,7 @@
     const sourceStatus = normalizeText(result?.sourceStatus);
     return Boolean(
       result &&
-      !hasPreferredAudio(result) &&
+      !hasTopTierAudio(result) &&
       sourceForm &&
       ttsLang &&
       !["", "unknown", "best-effort-fallback"].includes(sourceStatus) &&

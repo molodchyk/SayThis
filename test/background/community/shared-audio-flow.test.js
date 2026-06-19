@@ -309,6 +309,133 @@ test("stores a selected alias when shared audio endpoint reuses a different appr
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("reuses local approved shared audio when a generic recording exists", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://example.com/audio/source-backed.ogg",
+        sourceStatus: "verified-audio",
+        trustSignals: ["source-backed", "audio-backed"]
+      }
+    },
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://dictionary.example/recording.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch when approved shared audio is local");
+    },
+    resolveSelection: async () => baseResult
+  });
+
+  assert.equal(result.pronunciation.audio[0].quality, "source-backed");
+  assert.equal(result.pronunciation.audio[0].url, "https://example.com/audio/source-backed.ogg");
+  assert.equal(result.pronunciation.audio[1].quality, "verified");
+});
+
+test("does not call shared audio endpoint when only generic recording exists", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/recording.ogg",
+        quality: "verified"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch");
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve when no local approved entry exists");
+    }
+  });
+
+  assert.equal(result, baseResult);
+});
+
+test("does not request shared audio when a top-tier recording exists", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://example.com/audio/source-backed.ogg",
+        sourceStatus: "verified-audio",
+        trustSignals: ["source-backed", "audio-backed"]
+      }
+    },
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/native.ogg",
+        quality: "native-speaker"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch");
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve");
+    }
+  });
+
+  assert.equal(result, baseResult);
+});
+
 function resolvedStructuredResult() {
   return {
     query: "Exampletown",

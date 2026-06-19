@@ -25,7 +25,7 @@ export async function resolvePlayableResult(selectedText, result, options = {}, 
     playableResult = result;
   }
 
-  if (hasPlayableAudio(playableResult) || typeof dependencies.requestSharedAudio !== "function") {
+  if (hasTopTierAudio(playableResult) || typeof dependencies.requestSharedAudio !== "function") {
     return playableResult;
   }
 
