@@ -1,6 +1,7 @@
 import {
   createLookupKey,
   applyCommunitySummary,
+  getBestAudio,
   hasCommunityPronunciationData,
   hasPreferredAudio,
   normalizeSelection,
@@ -22,6 +23,9 @@ import {
 import {
   hasUsefulSharedAudioTarget
 } from "../result/shared-audio.js";
+import {
+  resultWithSharedAudioEntry
+} from "./community/shared-audio-result.js";
 
 const DEFAULT_STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",
@@ -186,7 +190,13 @@ export async function requestSharedAudioForResult(text, result = null, options =
       });
     }
 
-    return refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
+    return refreshSharedAudioResultWithEntry(
+      selectedText,
+      baseResult,
+      aliasEntry || localEntry,
+      dependencies,
+      storageKeys
+    );
   }
 
   const settings = normalizeSettings(stored[storageKeys.settings]);
@@ -209,7 +219,14 @@ export async function requestSharedAudioForResult(text, result = null, options =
     [storageKeys.approvedCommunityEntries]: approvedCommunityEntries
   });
 
-  return refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
+  const attachedEntry = approvedAudioEntryForRequest(incoming, body) || payload.entry;
+  return refreshSharedAudioResultWithEntry(
+    selectedText,
+    baseResult,
+    attachedEntry,
+    dependencies,
+    storageKeys
+  );
 }
 
 export async function postCommunitySubmission(endpoint, submission, dependencies = {}) {
@@ -465,6 +482,35 @@ async function refreshSharedAudioResult(selectedText, baseResult, dependencies =
   }
 
   return resolved || baseResult;
+}
+
+async function refreshSharedAudioResultWithEntry(
+  selectedText,
+  baseResult,
+  entry,
+  dependencies = {},
+  storageKeys = DEFAULT_STORAGE_KEYS
+) {
+  let refreshed = baseResult;
+  try {
+    refreshed = await refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
+  } catch {
+    refreshed = baseResult;
+  }
+
+  if (getBestAudio(refreshed)) {
+    return refreshed;
+  }
+
+  const attached = resultWithSharedAudioEntry(refreshed || baseResult, entry);
+  if (attached && attached !== refreshed) {
+    await dependencies.setStorage?.({
+      [storageKeys.lastSelection]: selectedText,
+      [storageKeys.lastResult]: attached
+    });
+  }
+
+  return attached || refreshed || baseResult;
 }
 
 function firstSourceUrl(result = {}) {
