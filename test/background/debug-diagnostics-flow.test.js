@@ -35,7 +35,7 @@ test("builds speech and voice diagnostics from stored result", async () => {
       },
       credentials: {
         forvoApiKey: "forvo-token",
-        sharedAudioGenerationToken: "shared-token"
+        sharedAudioGenerationToken: "ignored-legacy-token"
       },
       approvedCommunityEntries: {
         exampletown: {
@@ -89,7 +89,7 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.extension.version, "1.0.0");
   assert.equal(diagnostics.storage.lastSelection, "Exampletown");
   assert.equal(diagnostics.storage.credentials.forvoApiKeyPresent, true);
-  assert.equal(diagnostics.storage.credentials.sharedAudioGenerationTokenPresent, true);
+  assert.equal("sharedAudioGenerationTokenPresent" in diagnostics.storage.credentials, false);
   assert.equal(diagnostics.storage.approvedEntryCount, 1);
   assert.equal(diagnostics.storage.resultCacheEntryCount, 1);
   assert.equal(diagnostics.storage.syncQueueCount, 1);

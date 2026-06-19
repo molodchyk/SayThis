@@ -74,8 +74,7 @@ export async function buildDebugDiagnostics(dependencies = {}) {
       resultCacheEntryCount: countKeys(cache.entries),
       syncQueueCount: queue.length,
       credentials: {
-        forvoApiKeyPresent: Boolean(credentials.forvoApiKey),
-        sharedAudioGenerationTokenPresent: Boolean(credentials.sharedAudioGenerationToken)
+        forvoApiKeyPresent: Boolean(credentials.forvoApiKey)
       }
     },
     settings: settingsSummary(settings),

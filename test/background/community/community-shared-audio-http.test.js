@@ -26,12 +26,12 @@ test("builds shared audio HTTP requests", async () => {
   assert.equal(payload.entry.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
 });
 
-test("adds shared audio generation bearer token when configured", async () => {
+test("does not send client generation tokens to shared audio endpoints", async () => {
   const payload = await requestSharedAudioEntry("https://example.com/community", REQUEST_BODY, {
     sharedAudioGenerationToken: " client-token ",
     fetch: async (url, options) => {
       assert.equal(url, "https://example.com/community?action=audio");
-      assert.equal(options.headers.Authorization, "Bearer client-token");
+      assert.equal(options.headers.Authorization, undefined);
       return sharedAudioResponse();
     }
   });

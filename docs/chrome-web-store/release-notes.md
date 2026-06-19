@@ -32,7 +32,7 @@
 - Rejects public shared-audio generation for plain English same-text requests at the service boundary.
 - Rejects generated provider/shared audio when a non-English resolved language would use an English TTS locale.
 - Removes direct client audio URL template generation; generated provider output now belongs on the shared-audio endpoint path.
-- Labels token-gated public generated shared audio as service-generated instead of moderator-reviewed.
+- Labels public generated shared audio as service-generated instead of moderator-reviewed.
 - Preserves provider voice names on generated shared audio entries and playback labels.
 - Sends aliases and variants with shared-audio requests so reviewed samples can be reused across known written forms.
 - Normalizes known language names to provider locales before speech generation and shared-audio matching.
@@ -54,7 +54,7 @@
 - Filters on-page guide speech so explanatory guide notes are not offered as spoken fallback.
 - Makes generated Cyrillic source-form guides language-sensitive.
 - Ignores incompatible provider voice overrides so generated fallback audio follows the resolved TTS locale.
-- Keeps provider generation behind service-side opt-in, rate limits, and required bearer-token controls.
+- Keeps provider generation behind service-side opt-in, hosted entitlement or paywall controls, rate limits, and persisted budgets.
 - Adds a persisted public provider-generation budget before paid shared-audio synthesis.
 - Updates the Chrome extension and package version to 1.0.0.
 

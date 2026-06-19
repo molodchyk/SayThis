@@ -21,8 +21,7 @@ export const DEFAULT_SETTINGS = {
 };
 
 export const DEFAULT_CREDENTIALS = {
-  forvoApiKey: "",
-  sharedAudioGenerationToken: ""
+  forvoApiKey: ""
 };
 
 export function normalizeSettings(settings = {}) {
@@ -55,8 +54,7 @@ export function normalizeSettings(settings = {}) {
 export function normalizeCredentials(credentials = {}) {
   return {
     ...DEFAULT_CREDENTIALS,
-    forvoApiKey: normalizeApiKey(credentials.forvoApiKey),
-    sharedAudioGenerationToken: normalizeApiKey(credentials.sharedAudioGenerationToken)
+    forvoApiKey: normalizeApiKey(credentials.forvoApiKey)
   };
 }
 

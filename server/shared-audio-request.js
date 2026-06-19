@@ -56,6 +56,10 @@ export async function handleSharedAudioRequest(request, store, options = {}) {
     return response(auth.status || 401, store, { error: auth.error || "unauthorized" });
   }
 
+  if (!ttsProviderReady(options.ttsProvider)) {
+    return response(503, store, { error: "tts-provider-not-configured" });
+  }
+
   const rate = typeof options.checkRateLimit === "function"
     ? options.checkRateLimit(request)
     : { ok: true };
@@ -129,6 +133,14 @@ function isUsefulGenerationRequest(body = {}) {
     ttsLang &&
     hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang)
   );
+}
+
+function ttsProviderReady(provider) {
+  if (!provider || typeof provider.synthesize !== "function") {
+    return false;
+  }
+
+  return provider.configured !== false;
 }
 
 function bodyByteLength(body) {

@@ -28,14 +28,15 @@ Use the public HTTPS `/community` URL as the extension community endpoint.
 - `SAYTHIS_ALLOWED_ORIGINS`: set to the extension origin and any trusted admin origins.
 - `SAYTHIS_STORE`: defaults to `/data/community-store.json` in the image.
 - `SAYTHIS_PUBLIC_BASE_URL`: required before shared generated-audio artifacts can be stored and served.
-- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional bearer token for provider generation.
+- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional short-lived bearer token for provider generation.
+- `SAYTHIS_GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_APPLICATION_CREDENTIALS`: optional service-account JSON path for server-owned Google authentication.
+- `SAYTHIS_GOOGLE_SERVICE_ACCOUNT_JSON`: optional inline service-account JSON for environments that cannot mount a file.
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: set to `1` only when shared provider generation should be available beyond already approved artifacts.
-- `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token for shared provider generation when public generation is enabled.
 - `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional Google-compatible speech endpoint override.
 - `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice override. Locale-prefixed voice names are used only when compatible with the requested TTS locale.
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`; defaults to `MP3`.
 
-Provider generation is exposed through token-protected moderator endpoints. Public clients can consume approved audio URLs after review. Direct public provider generation requires both `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` and `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`. Public generation also rejects non-English resolved languages when the request would use an English TTS locale.
+Provider generation is exposed through token-protected moderator endpoints and the explicitly enabled shared-audio route. Public clients can consume approved audio URLs after review. Direct public provider generation requires `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1`, a configured provider credential, useful-target validation, rate limiting, and the persisted generation budget. Hosted deployments that need payment or account gating should enforce that inside the community service, not through extension-side tokens. Public generation also rejects non-English resolved languages when the request would use an English TTS locale.
 
 ## Abuse Controls
 

@@ -15,9 +15,8 @@ SayThis may store this data in Chrome extension local storage:
 - a bounded cache of successful online lookup results
 - a retry queue for community sync submissions
 - a user-provided Forvo API key
-- a user-provided shared-audio generation token
 
-Forvo API keys and shared-audio generation tokens stay in local extension storage and are not included in data exports.
+Forvo API keys stay in local extension storage and are not included in data exports. Shared generated-audio provider credentials are service-side configuration, not Chrome extension data.
 
 The detailed local storage key map is documented in `docs/architecture/storage-ownership.md`.
 
@@ -37,7 +36,7 @@ Community sync submits only the selected term, feedback type, correction or miss
 
 Custom source and DBpedia-compatible lookup send only the selected term or a resolved pronunciation candidate to the configured endpoint.
 
-A configured community service may host reviewed or token-gated service-generated audio artifacts for shared reuse. These artifacts are tied to term-level pronunciation metadata and do not include page URLs, browsing history, full-page text, or user recordings.
+A configured community service may host reviewed or service-generated audio artifacts for shared reuse. These artifacts are tied to term-level pronunciation metadata and do not include page URLs, browsing history, full-page text, or user recordings.
 
 If a community service operator uses moderator or explicitly enabled shared provider generation, the service sends only the source form or term text, locale, optional voice name, and speaking rate to the configured speech provider.
 

@@ -106,7 +106,6 @@ test("summarizes missing locale voice with shared-audio readiness", () => {
     settings: {
       communityAudioEnabled: true,
       communityEndpoint: "https://community.example"
-    },
-    storage: { credentials: { sharedAudioGenerationTokenPresent: false } }
-  }), "No matching browser or Web Speech voice for pl-PL; shared audio can only reuse approved entries until a generation token is set.");
+    }
+  }), "No matching browser or Web Speech voice for pl-PL; shared audio endpoint has no reusable audio yet.");
 });

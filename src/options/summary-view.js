@@ -78,7 +78,6 @@ function defaultFormatDate(value) {
 function missingVoiceSummary(diagnostics = {}, lang = "") {
   const offscreen = diagnostics.offscreenSpeech || {};
   const settings = diagnostics.settings || {};
-  const storage = diagnostics.storage || {};
   const playback = diagnostics.playback || {};
   const noOffscreenVoice = offscreen && offscreen.matchingVoiceCount === 0;
   const prefix = noOffscreenVoice
@@ -97,9 +96,5 @@ function missingVoiceSummary(diagnostics = {}, lang = "") {
     return `${prefix} for ${lang}; shared audio endpoint is missing.`;
   }
 
-  if (!storage.credentials?.sharedAudioGenerationTokenPresent) {
-    return `${prefix} for ${lang}; shared audio can only reuse approved entries until a generation token is set.`;
-  }
-
-  return `${prefix} for ${lang}; shared audio generation is configured.`;
+  return `${prefix} for ${lang}; shared audio endpoint has no reusable audio yet.`;
 }

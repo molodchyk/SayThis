@@ -25,7 +25,7 @@ test("README links the public privacy policy", async () => {
   assert.match(rootPolicy, /## Permissions/);
   assert.match(rootPolicy, /No Sale Or Sharing/);
   assert.match(policy, /## Data Sent To Remote Services/);
-  assert.match(policy, /Forvo API keys and shared-audio generation tokens stay in local extension storage/);
+  assert.match(policy, /Shared generated-audio provider credentials are service-side configuration/);
   assert.match(policy, /does not submit page URLs or browsing history/);
 });
 
@@ -104,9 +104,9 @@ test("documents community service deployment artifacts", async () => {
   assert.match(readme, /docs\/deployment\.md/);
   assert.match(deployment, /docker build -f Dockerfile\.community/);
   assert.match(deployment, /SAYTHIS_ADMIN_TOKEN/);
-  assert.match(deployment, /SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token/);
-  assert.match(communityService, /Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>/);
-  assert.match(releaseNotes, /required bearer-token controls/);
+  assert.match(deployment, /GOOGLE_APPLICATION_CREDENTIALS/);
+  assert.match(communityService, /extension never stores provider credentials or generation tokens/);
+  assert.match(releaseNotes, /hosted entitlement or paywall controls/);
   assert.match(releaseNotes, /Preserves returned shared audio/);
   assert.match(dockerfile, /SAYTHIS_STORE=\/data\/community-store\.json/);
   assert.match(dockerfile, /server\/community-service\.js/);
@@ -140,7 +140,7 @@ test("runs release audits in non-browser CI", async () => {
 test("release audit detects retired direct generated-audio controls", () => {
   assert.equal(hasRetiredDirectGeneratedAudioControl("voiceServiceEnabled"), true);
   assert.equal(hasRetiredDirectGeneratedAudioControl("voice-service URL template"), true);
-  assert.equal(hasRetiredDirectGeneratedAudioControl("shared audio generation token"), false);
+  assert.equal(hasRetiredDirectGeneratedAudioControl("shared audio generation token"), true);
 });
 
 function pngDimensions(buffer) {

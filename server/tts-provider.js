@@ -1,4 +1,5 @@
 import { generatedAudioArtifactFromBody } from "./community-audio-artifacts.js";
+import { createGoogleAccessTokenProvider } from "./google-auth.js";
 import {
   normalizeTtsLanguage
 } from "../src/resolver/language.js";
@@ -18,7 +19,9 @@ export function createConfiguredTtsProvider(options = {}) {
 }
 
 export function createGoogleTtsProvider(options = {}) {
-  const accessToken = normalizeToken(options.accessToken);
+  const accessTokenProvider = typeof options.accessTokenProvider === "function"
+    ? Object.assign(options.accessTokenProvider, { configured: true })
+    : createGoogleAccessTokenProvider(options);
   const endpoint = normalizeEndpoint(options.endpoint) || DEFAULT_GOOGLE_TTS_ENDPOINT;
   const defaultVoiceName = normalizeVoiceName(options.defaultVoiceName);
   const audioEncoding = normalizeAudioEncoding(options.audioEncoding) || DEFAULT_AUDIO_ENCODING;
@@ -26,8 +29,9 @@ export function createGoogleTtsProvider(options = {}) {
 
   return {
     name: "google-cloud-tts",
-    configured: Boolean(accessToken && typeof fetchImpl === "function"),
+    configured: Boolean(accessTokenProvider.configured && typeof fetchImpl === "function"),
     async synthesize(request = {}) {
+      const accessToken = normalizeToken(await accessTokenProvider());
       if (!accessToken || typeof fetchImpl !== "function") {
         return { ok: false, status: 503, error: "tts-provider-not-configured" };
       }

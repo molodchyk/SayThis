@@ -18,7 +18,6 @@ import {
   syncSummary
 } from "../community-sync.js";
 import {
-  normalizeCredentials,
   normalizeSettings
 } from "../shared/settings.js";
 import {
@@ -175,7 +174,6 @@ export async function requestSharedAudioForResult(text, result = null, options =
 
   const stored = await dependencies.getStorage([
     storageKeys.approvedCommunityEntries,
-    storageKeys.credentials,
     storageKeys.settings
   ]);
 
@@ -206,7 +204,6 @@ export async function requestSharedAudioForResult(text, result = null, options =
   }
 
   const settings = normalizeSettings(stored[storageKeys.settings]);
-  const credentials = normalizeCredentials(stored[storageKeys.credentials]);
   const hasPreferred = hasPreferredAudio(baseResult);
   if (!settings.communityEndpoint || !settings.communityAudioEnabled) {
     if (hasPreferred) {
@@ -217,10 +214,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
 
   let payload;
   try {
-    payload = await requestSharedAudioEntry(settings.communityEndpoint, body, {
-      ...dependencies,
-      sharedAudioGenerationToken: hasPreferred ? "" : credentials.sharedAudioGenerationToken
-    });
+    payload = await requestSharedAudioEntry(settings.communityEndpoint, body, dependencies);
   } catch (error) {
     if (hasPreferred) {
       return baseResult;
@@ -264,9 +258,6 @@ export async function postCommunitySubmission(endpoint, submission, dependencies
 export async function requestSharedAudioEntry(endpoint, body, dependencies = {}) {
   const url = new URL(endpoint);
   url.searchParams.set("action", "audio");
-  const token = normalizeCredentials({
-    sharedAudioGenerationToken: dependencies.sharedAudioGenerationToken
-  }).sharedAudioGenerationToken;
   const abortController = createAbortController(dependencies);
   const timeoutMs = normalizeTimeoutMs(
     dependencies.sharedAudioHttpTimeoutMs ?? dependencies.sharedAudioTimeoutMs,
@@ -283,8 +274,7 @@ export async function requestSharedAudioEntry(endpoint, body, dependencies = {})
       method: "POST",
       headers: {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(body),
       ...(abortController ? { signal: abortController.signal } : {})

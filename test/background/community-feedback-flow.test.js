@@ -199,7 +199,7 @@ test("requests shared audio, stores approved entry, and refreshes the result", a
   const storage = storageHarness({
     approvedCommunityEntries: {},
     credentials: {
-      sharedAudioGenerationToken: " client-token "
+      sharedAudioGenerationToken: " ignored legacy token "
     },
     settings: {
       communityEndpoint: "https://example.com/community"
@@ -258,7 +258,7 @@ test("requests shared audio, stores approved entry, and refreshes the result", a
   assert.equal(calls[0][1], "https://example.com/community?action=audio");
   assert.equal(calls[0][2].sourceForm, "Przykladowo");
   assert.equal(calls[0][2].ttsLang, "pl-PL");
-  assert.equal(calls[0][3].Authorization, "Bearer client-token");
+  assert.equal(calls[0][3].Authorization, undefined);
   assert.equal(storage.state.approvedCommunityEntries.exampletown.sourceStatus, "generated-audio");
   assert.equal(storage.state.lastResult, refreshed);
 });

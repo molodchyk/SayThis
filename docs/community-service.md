@@ -13,10 +13,10 @@ $env:SAYTHIS_MAX_BODY_BYTES = "16384"
 $env:SAYTHIS_MAX_AUDIO_BYTES = "524288"
 $env:SAYTHIS_PUBLIC_BASE_URL = "http://127.0.0.1:8787"
 $env:SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN = ""
+$env:SAYTHIS_GOOGLE_APPLICATION_CREDENTIALS = ""
 $env:SAYTHIS_GOOGLE_TTS_VOICE = ""
 $env:SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING = "MP3"
 $env:SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED = "0"
-$env:SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN = "change-me-before-enabling-generation"
 $env:SAYTHIS_PUBLIC_AUDIO_GENERATION_LIMIT = "50"
 $env:SAYTHIS_PUBLIC_AUDIO_GENERATION_WINDOW_MS = "86400000"
 $env:SAYTHIS_RATE_LIMIT = "20"
@@ -78,7 +78,7 @@ Content-Type: application/json
 }
 ```
 
-The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. It can also reuse an approved entry with the same term, source form, alias, or variant when both the request and the entry have the same base language. The extension sends bounded aliases and variants from the resolved result so approved shared audio can be reused across known written forms. The client-side shared-audio setting is separate from correction sync and approved-entry refresh, so Speak can reuse or request endpoint audio without submitting corrections. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set and generation requests include `Authorization: Bearer <SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN>`. Public provider generation also requires a useful target: a resolved source-form difference or a non-English provider locale. Plain same-text English requests and non-English resolved languages routed to English TTS locales are rejected by the service before provider synthesis. A persisted public generation budget is consumed before provider synthesis; set `SAYTHIS_PUBLIC_AUDIO_GENERATION_LIMIT` and `SAYTHIS_PUBLIC_AUDIO_GENERATION_WINDOW_MS` to cap paid provider calls per budget period. Token-gated public provider output is published as generated shared audio with a `service-generated` trust signal; moderator-created artifacts use `moderator-reviewed`. The extension can store that shared-audio generation token as a local-only credential and sends it only when it has no preferred recording and is allowed to request protected provider generation. When a generic verified recording already exists, the extension may still check this endpoint for approved reuse, but it omits the generation token. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
+The shared-audio action first returns an already approved audio entry for the same lookup key and compatible language. It can also reuse an approved entry with the same term, source form, alias, or variant when both the request and the entry have the same base language. The extension sends bounded aliases and variants from the resolved result so approved shared audio can be reused across known written forms. The client-side shared-audio setting is separate from correction sync and approved-entry refresh, so Speak can reuse or request endpoint audio without submitting corrections. If no approved audio exists, provider generation is rejected unless `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED=1` is set. Public provider generation also requires a useful target: a resolved source-form difference or a non-English provider locale. Plain same-text English requests and non-English resolved languages routed to English TTS locales are rejected by the service before provider synthesis. A persisted public generation budget is consumed before provider synthesis; set `SAYTHIS_PUBLIC_AUDIO_GENERATION_LIMIT` and `SAYTHIS_PUBLIC_AUDIO_GENERATION_WINDOW_MS` to cap paid provider calls per budget period. Service-generated provider output is published as generated shared audio with a `service-generated` trust signal; moderator-created artifacts use `moderator-reviewed`. The extension never stores provider credentials or generation tokens; provider auth, billing protection, and any hosted entitlement or paywall stay inside the community service. Reused approved audio remains public through approved-entry refresh and `/audio/<artifact-id>`.
 
 The extension submits only term-level pronunciation metadata. It does not submit page URLs or browsing history.
 
@@ -87,12 +87,13 @@ The public submission endpoint rejects oversized bodies and limits repeated subm
 - `SAYTHIS_MAX_BODY_BYTES`: `16384`
 - `SAYTHIS_MAX_AUDIO_BYTES`: `524288`
 - `SAYTHIS_PUBLIC_BASE_URL`: required before storing shared generated-audio artifacts
-- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: bearer token for Google-compatible speech generation
+- `SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN`: optional short-lived bearer token for Google-compatible speech generation
+- `SAYTHIS_GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_APPLICATION_CREDENTIALS`: optional service-account JSON path for server-owned Google authentication
+- `SAYTHIS_GOOGLE_SERVICE_ACCOUNT_JSON`: optional inline service-account JSON for environments that cannot mount a file
 - `SAYTHIS_GOOGLE_TTS_ENDPOINT`: optional override for the Google-compatible speech endpoint
 - `SAYTHIS_GOOGLE_TTS_VOICE`: optional exact provider voice name override. Locale-prefixed voice names are used only when compatible with the requested TTS locale.
 - `SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING`: `MP3`, `OGG_OPUS`, or `LINEAR16`
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED`: `0` by default; set to `1` only when shared provider generation should be available
-- `SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN`: required bearer token for shared provider generation when public generation is enabled
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_LIMIT`: `50`; set to `0` to exhaust public provider generation while keeping approved audio reuse available
 - `SAYTHIS_PUBLIC_AUDIO_GENERATION_WINDOW_MS`: `86400000`
 - `SAYTHIS_RATE_LIMIT`: `20`

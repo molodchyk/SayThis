@@ -8,7 +8,7 @@ Browser voice availability varies by operating system and installed voices. SayT
 
 ## Network Behavior
 
-Default online sources are Wikidata, Wiktionary, Wikimedia Commons, and Wikimedia upload URLs. Optional endpoints for Forvo, shared audio, community sync, custom sources, DBpedia-compatible lookup, and Nominatim-compatible lookup require user configuration. A configured community endpoint may host reviewed or token-gated service-generated audio artifacts for shared reuse.
+Default online sources are Wikidata, Wiktionary, Wikimedia Commons, and Wikimedia upload URLs. Optional endpoints for Forvo, shared audio, community sync, custom sources, DBpedia-compatible lookup, and Nominatim-compatible lookup require user configuration. A configured community endpoint may host reviewed or service-generated audio artifacts for shared reuse.
 
 ## Page Limitations
 

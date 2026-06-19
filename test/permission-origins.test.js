@@ -118,7 +118,7 @@ test("normalizes extension settings and credentials from one module", () => {
   });
   const credentials = normalizeCredentials({
     forvoApiKey: " key  with spaces ",
-    sharedAudioGenerationToken: " shared token "
+    sharedAudioGenerationToken: " ignored legacy token "
   });
 
   assert.equal(settings.onlineByDefault, true);
@@ -141,7 +141,7 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(settings.communityAudioEnabled, true);
   assert.equal(settings.communityEndpoint, "http://127.0.0.1:8787/community");
   assert.equal(credentials.forvoApiKey, "keywithspaces");
-  assert.equal(credentials.sharedAudioGenerationToken, "sharedtoken");
+  assert.equal("sharedAudioGenerationToken" in credentials, false);
   assert.equal(normalizeHttpsEndpoint("http://example.com"), "");
   assert.equal(normalizeApiKey(" a b "), "ab");
   assert.equal(normalizeShortText(` ${"a".repeat(90)} `).length, 80);

@@ -391,7 +391,7 @@ test("checks endpoint for approved shared audio when only generic recording exis
   const storage = storageHarness({
     approvedCommunityEntries: {},
     credentials: {
-      sharedAudioGenerationToken: "client-token"
+      sharedAudioGenerationToken: "ignored-legacy-token"
     },
     settings: {
       communityEndpoint: "https://example.com/community"
@@ -449,7 +449,7 @@ test("keeps generic recording when endpoint has no approved shared audio", async
   const storage = storageHarness({
     approvedCommunityEntries: {},
     credentials: {
-      sharedAudioGenerationToken: "client-token"
+      sharedAudioGenerationToken: "ignored-legacy-token"
     },
     settings: {
       communityEndpoint: "https://example.com/community"

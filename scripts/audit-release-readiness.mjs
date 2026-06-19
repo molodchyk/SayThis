@@ -162,7 +162,7 @@ export async function auditReleaseReadiness(root = ROOT) {
 }
 
 export function hasRetiredDirectGeneratedAudioControl(value) {
-  return /voiceService|voice-service|voice service|voice service URL template|voice-service URL template/i.test(String(value || ""));
+  return /voiceService|voice-service|voice service|voice service URL template|voice-service URL template|sharedAudioGenerationToken|shared[- ]audio generation token/i.test(String(value || ""));
 }
 
 async function readText(root, path) {

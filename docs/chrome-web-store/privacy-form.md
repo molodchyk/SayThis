@@ -24,7 +24,7 @@ host_permission:
 Default host access is limited to Wikidata, Wiktionary, Wikimedia Commons, and Wikimedia upload URLs. Optional HTTPS host access is requested only for user-configured endpoints.
 
 community_audio:
-Reviewed or token-gated service-generated audio artifacts may be hosted by a configured community service for shared reuse. They are term-level pronunciation artifacts and do not include page URLs, browsing history, full page text, or user recordings.
+Reviewed or service-generated audio artifacts may be hosted by a configured community service for shared reuse. They are term-level pronunciation artifacts and do not include page URLs, browsing history, full page text, or user recordings.
 
 community_provider_generation:
 If a community service operator uses moderator or explicitly enabled shared provider generation, only pronunciation text, locale, optional voice name, and speaking rate are sent to the configured speech provider.

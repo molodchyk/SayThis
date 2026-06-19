@@ -71,7 +71,7 @@ test("rejects plain same-text English public audio generation", async () => {
   const response = await handleCommunityRequest({
     method: "POST",
     url: "/audio/generate",
-    headers: { authorization: "Bearer client-token" },
+    headers: {},
     body: JSON.stringify({
       term: "Exampleterm",
       lookupKey: "exampleterm",
@@ -81,7 +81,6 @@ test("rejects plain same-text English public audio generation", async () => {
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
-    publicAudioGenerationToken: "client-token",
     publicBaseUrl: "https://community.example",
     ttsProvider: {
       async synthesize() {
@@ -99,7 +98,7 @@ test("rejects non-English public audio generation routed to an English provider 
   const response = await handleCommunityRequest({
     method: "POST",
     url: "/audio/generate",
-    headers: { authorization: "Bearer client-token" },
+    headers: {},
     body: JSON.stringify({
       term: "Saoirse",
       lookupKey: "saoirse",
@@ -109,7 +108,6 @@ test("rejects non-English public audio generation routed to an English provider 
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
-    publicAudioGenerationToken: "client-token",
     publicBaseUrl: "https://community.example",
     ttsProvider: {
       async synthesize() {
@@ -123,11 +121,11 @@ test("rejects non-English public audio generation routed to an English provider 
   assert.equal(Object.keys(response.store.approved).length, 0);
 });
 
-test("labels public generated shared audio without moderator review", async () => {
+test("rejects public audio generation before budget when provider is unavailable", async () => {
   const response = await handleCommunityRequest({
     method: "POST",
     url: "/audio/generate",
-    headers: { authorization: "Bearer client-token" },
+    headers: {},
     body: JSON.stringify({
       term: "Exampletown",
       lookupKey: "exampletown",
@@ -137,7 +135,35 @@ test("labels public generated shared audio without moderator review", async () =
     })
   }, createEmptyStore(), {
     publicAudioGenerationEnabled: true,
-    publicAudioGenerationToken: "client-token",
+    publicAudioGenerationLimit: 1,
+    publicBaseUrl: "https://community.example",
+    ttsProvider: {
+      configured: false,
+      async synthesize() {
+        throw new Error("should not synthesize without provider credentials");
+      }
+    }
+  });
+
+  assert.equal(response.status, 503);
+  assert.equal(response.body.error, "tts-provider-not-configured");
+  assert.deepEqual(response.store.generationUsage, {});
+});
+
+test("labels public generated shared audio without moderator review", async () => {
+  const response = await handleCommunityRequest({
+    method: "POST",
+    url: "/audio/generate",
+    headers: {},
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "Polish",
+      ttsLang: "Polish"
+    })
+  }, createEmptyStore(), {
+    publicAudioGenerationEnabled: true,
     publicBaseUrl: "https://community.example",
     ttsProvider: {
       async synthesize() {
@@ -189,7 +215,6 @@ test("limits public provider generation before synthesis", async () => {
   };
   const options = {
     publicAudioGenerationEnabled: true,
-    publicAudioGenerationToken: "client-token",
     publicBaseUrl: "https://community.example",
     publicAudioGenerationLimit: 1,
     publicAudioGenerationWindowMs: 60_000,
@@ -258,7 +283,7 @@ function sharedGenerationRequest(overrides = {}) {
   return {
     method: "POST",
     url: "/audio/generate",
-    headers: { authorization: "Bearer client-token" },
+    headers: {},
     body: JSON.stringify({
       term: "Exampletown",
       lookupKey: "exampletown",

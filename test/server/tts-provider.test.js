@@ -69,6 +69,34 @@ test("calls Google-compatible TTS endpoint with selected voice", async () => {
   });
 });
 
+test("calls Google-compatible TTS endpoint with server-owned token provider", async () => {
+  const calls = [];
+  const provider = createGoogleTtsProvider({
+    accessTokenProvider: async () => "dynamic-token",
+    fetch: async (url, init) => {
+      calls.push({ url, init });
+      return {
+        ok: true,
+        async json() {
+          return { audioContent: Buffer.from("audio").toString("base64") };
+        }
+      };
+    }
+  });
+
+  const result = await provider.synthesize({
+    text: "Sample",
+    ttsLang: "pl-PL"
+  });
+
+  assert.equal(provider.configured, true);
+  assert.equal(result.ok, true);
+  assert.equal(calls[0].init.headers.authorization, "Bearer dynamic-token");
+  assert.deepEqual(JSON.parse(calls[0].init.body).voice, {
+    languageCode: "pl-PL"
+  });
+});
+
 test("maps language names before calling Google-compatible TTS", async () => {
   const calls = [];
   const provider = createGoogleTtsProvider({

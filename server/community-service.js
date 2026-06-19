@@ -123,7 +123,7 @@ export async function handleCommunityRequest(request, store, options = {}) {
   if (method === "POST" && isSharedAudioRequestPath(url)) {
     const result = await handleSharedAudioRequest(request, state, {
       ...options,
-      authorizeGeneration: (value) => authorizeSharedAudioGeneration(value, options),
+      authorizeGeneration: options.authorizeSharedAudioGeneration,
       checkRateLimit: (value) => checkSubmissionRate(value, options)
     });
     return jsonResponse(result.status, result.store, result.body);
@@ -259,6 +259,10 @@ export async function createCommunityServer(options = {}) {
   const publicBaseUrl = normalizePublicBaseEndpoint(options.publicBaseUrl ?? process.env.SAYTHIS_PUBLIC_BASE_URL);
   const ttsProvider = options.ttsProvider || createConfiguredTtsProvider({
     accessToken: options.googleTtsAccessToken ?? process.env.SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN,
+    serviceAccountJson: options.googleServiceAccountJson ?? process.env.SAYTHIS_GOOGLE_SERVICE_ACCOUNT_JSON,
+    applicationCredentialsPath: options.googleApplicationCredentials ??
+      process.env.SAYTHIS_GOOGLE_APPLICATION_CREDENTIALS ??
+      process.env.GOOGLE_APPLICATION_CREDENTIALS,
     endpoint: options.googleTtsEndpoint ?? process.env.SAYTHIS_GOOGLE_TTS_ENDPOINT,
     defaultVoiceName: options.googleTtsVoice ?? process.env.SAYTHIS_GOOGLE_TTS_VOICE,
     audioEncoding: options.googleTtsAudioEncoding ?? process.env.SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING,
@@ -288,9 +292,6 @@ export async function createCommunityServer(options = {}) {
     options.publicAudioGenerationWindowMs ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_WINDOW_MS,
     DEFAULT_PUBLIC_AUDIO_GENERATION_WINDOW_MS
   );
-  const publicAudioGenerationToken = String(
-    options.publicAudioGenerationToken ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN ?? ""
-  ).trim();
   const trustProxyHeaders = options.trustProxyHeaders ?? process.env.SAYTHIS_TRUST_PROXY_HEADERS === "1";
   let store = await readStore(storePath);
   const runStoreOperation = createStoreOperationQueue();
@@ -332,7 +333,6 @@ export async function createCommunityServer(options = {}) {
           publicAudioGenerationEnabled,
           publicAudioGenerationLimit,
           publicAudioGenerationWindowMs,
-          publicAudioGenerationToken,
           allowedOrigins,
           rateLimiter,
           trustProxyHeaders
@@ -404,17 +404,6 @@ function authorize(request, options) {
   }
 
   return { ok: true };
-}
-
-function authorizeSharedAudioGeneration(request, options = {}) {
-  const token = String(options.publicAudioGenerationToken || "").trim();
-  if (!token) {
-    return { ok: false, status: 503, error: "generation-token-not-configured" };
-  }
-
-  return adminTokenMatches(request.headers?.authorization || request.headers?.Authorization || "", token)
-    ? { ok: true }
-    : { ok: false, status: 401, error: "unauthorized" };
 }
 
 function checkRequestOrigin(request, allowedOrigins) {
