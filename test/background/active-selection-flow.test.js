@@ -8,6 +8,10 @@ import {
   handleActiveSelectionCommandName,
   handleActiveSelectionCommand
 } from "../../src/background/active-selection-flow.js";
+import {
+  clearPreparedSharedAudioForTests,
+  prepareSharedAudio
+} from "../../src/background/prepared-shared-audio-flow.js";
 
 function compactTraceCalls(calls) {
   return calls.map((call) => call.map(compactTraceValue));
@@ -280,6 +284,97 @@ test("keyboard command plays direct approved shared audio before slow local reso
 
   finishResolve();
   await delay(0);
+});
+
+test("keyboard command reuses shared audio prepared from selection", async () => {
+  clearPreparedSharedAudioForTests();
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Prepared shared audio",
+        url: "https://audio.example/prepared.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  const selectionTrace = {
+    id: "selection-preload-keyboard",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let finishDirect;
+  let finishResolve;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+  const slowResolved = new Promise((resolve) => {
+    finishResolve = () => resolve({ display: "Late result" });
+  });
+  const dependencies = {
+    getActiveTab: async () => ({ id: 7 }),
+    readSelectionFromTab: async (tabId) => {
+      calls.push(["readSelectionFromTab", tabId]);
+      return "Exampletown";
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return directPromise;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return slowResolved;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    directSharedAudioWaitMs: 200,
+    preparedSharedAudioTtlMs: 1000,
+    lastSelectionKey: "lastSelection",
+    lastSourceKey: "lastSource",
+    lastResultKey: "lastResult"
+  };
+
+  prepareSharedAudio("Exampletown", {
+    rate: 0.82,
+    trace: selectionTrace
+  }, dependencies);
+  const resultPromise = handleActiveSelectionCommand({ source: "keyboard" }, dependencies);
+
+  finishDirect();
+  const result = await resultPromise;
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(calls.filter((call) => call[0] === "requestSharedAudio").length, 1);
+  assert.deepEqual(compactTraceCalls(calls.slice(0, 6)), [
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace: selectionTrace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["readSelectionFromTab", 7],
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard" }],
+    ["getStorage", ["lastResult"]],
+    ["resolveSelection", "Exampletown", {
+      source: "keyboard",
+      useOnline: false,
+      trace: { action: "keyboard" }
+    }],
+    ["playResolvedResult", direct, 7]
+  ]);
+
+  finishResolve();
+  await delay(0);
+  clearPreparedSharedAudioForTests();
 });
 
 test("online keyboard command reuses matching stored audio before local fallback can resolve it", async () => {

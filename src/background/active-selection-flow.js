@@ -5,6 +5,10 @@ import {
 import {
   resolvePlayableResult
 } from "./pronunciation-playback-flow.js";
+import {
+  requestDirectSharedAudio,
+  takePreparedSharedAudio
+} from "./prepared-shared-audio-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
@@ -197,27 +201,20 @@ async function storedAudioCandidate(selectedText, dependencies = {}, trace = nul
 }
 
 async function directSharedAudioCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
-  if (typeof dependencies.requestSharedAudio !== "function") {
-    return null;
-  }
-
-  try {
-    const result = await dependencies.requestSharedAudio(selectedText, null, compactOptions({
+  const prepared = takePreparedSharedAudio(selectedText, { trace });
+  const result = prepared
+    ? await prepared
+    : await requestDirectSharedAudio(selectedText, {
       rate: options.rate,
-      trace,
-      directLookup: true,
-      skipRefresh: true
-    }));
-    return result
-      ? {
-        result,
-        localResult: result,
-        source: "direct-shared-audio"
-      }
-      : null;
-  } catch {
-    return null;
-  }
+      trace
+    }, dependencies);
+  return result
+    ? {
+      result,
+      localResult: result,
+      source: "direct-shared-audio"
+    }
+    : null;
 }
 
 async function localPlayableCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
@@ -313,12 +310,6 @@ async function readStoredPlayableResult(selectedText, dependencies = {}, trace =
   }
 
   return result;
-}
-
-function compactOptions(options = {}) {
-  return Object.fromEntries(
-    Object.entries(options).filter(([, value]) => value !== undefined)
-  );
 }
 
 function immediatePlaybackOptions(options = {}) {
