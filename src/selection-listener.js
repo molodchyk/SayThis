@@ -10,7 +10,8 @@
   const SELECTION_CHANGE_DEBOUNCE_MS = 80;
   const SELECTION_PREPARE_DEBOUNCE_MS = 60;
   const COMMITTED_SELECTION_DEBOUNCE_MS = 0;
-  const REPEAT_SELECTION_COOLDOWN_MS = 1200;
+  const REPEAT_SELECTION_COOLDOWN_MS = 350;
+  const PREPARED_SELECTION_TTL_MS = 1200;
   const PLAYBACK_PRIME_COOLDOWN_MS = 3000;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
@@ -252,7 +253,7 @@
       return null;
     }
 
-    if (Date.now() - lastPreparedAt > REPEAT_SELECTION_COOLDOWN_MS) {
+    if (Date.now() - lastPreparedAt > PREPARED_SELECTION_TTL_MS) {
       return null;
     }
 
