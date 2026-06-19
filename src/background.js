@@ -66,6 +66,7 @@ platform.addContextMenuClickedListener((info, tab) => {
     setStorage: platform.setStorage,
     resolveSelection,
     requestSharedAudio,
+    preparePlayback,
     playResolvedResult,
     showResultOnTab,
     recordDebugEvent,
@@ -77,6 +78,7 @@ platform.addCommandListener((command) => {
   handleActiveSelectionCommandName(command, runtimeAdapters.activeSelectionDependencies({
     resolveSelection,
     requestSharedAudio,
+    preparePlayback,
     playResolvedResult,
     showResultOnTab,
     recordDebugEvent
@@ -232,6 +234,32 @@ async function stopPlayback() {
   return playbackSurface.stopPlayback();
 }
 
+async function preparePlayback(trace) {
+  if (!platform.hasOffscreenAudioSupport?.()) {
+    return false;
+  }
+
+  const startedAt = Date.now();
+  recordDebugEvent("audio-prepare:start", {
+    trace
+  });
+  try {
+    await playbackSurface.ensureOffscreenAudioDocument();
+    recordDebugEvent("audio-prepare:result", {
+      elapsedMs: Date.now() - startedAt,
+      trace
+    });
+    return true;
+  } catch (error) {
+    recordDebugEvent("audio-prepare:error", {
+      elapsedMs: Date.now() - startedAt,
+      error: errorMessage(error),
+      trace
+    });
+    return false;
+  }
+}
+
 async function getDebugState() {
   return buildDebugDiagnostics({
     getStorage: platform.getStorage,
@@ -253,6 +281,7 @@ function runtimeMessageDependencies() {
     flushCommunitySync,
     pullApprovedCommunityEntries,
     requestSharedAudio,
+    preparePlayback,
     getStorage: platform.getStorage,
     getDebugState,
     recordDebugEvent

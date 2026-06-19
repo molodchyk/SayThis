@@ -413,6 +413,8 @@ test("selection listener speaks bounded selected text directly", async () => {
 
   assert.match(manifestSource, /src\/selection-listener\.js/);
   assert.match(source, /selectionchange/);
+  assert.match(source, /SELECTION_CHANGE_DEBOUNCE_MS = 240/);
+  assert.match(source, /COMMITTED_SELECTION_DEBOUNCE_MS = 80/);
   assert.match(source, /MAX_AUTO_TEXT_LENGTH = 80/);
   assert.match(source, /MAX_AUTO_WORDS = 5/);
   assert.match(source, /selectToHear !== false/);

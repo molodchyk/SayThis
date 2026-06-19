@@ -264,6 +264,59 @@ test("runtime speak reuses matching stored audio without resolving", async () =>
   ]);
 });
 
+test("runtime speak starts playback preparation before resolving", async () => {
+  const responses = [];
+  const calls = [];
+  const trace = {
+    id: "trace-prepare",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  const resolved = {
+    query: "Exampletown",
+    pronunciation: {
+      audio: [{
+        label: "Prepared recording",
+        url: "https://example.com/prepared.ogg",
+        quality: "source-backed"
+      }]
+    }
+  };
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    preparePlayback: async (messageTrace) => {
+      calls.push(["preparePlayback", messageTrace]);
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when resolved audio plays");
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [
+    ["preparePlayback", trace],
+    ["resolveSelection", "Exampletown", {}],
+    ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
+  ]);
+  assert.equal(responses[0].ok, true);
+});
+
 test("runtime speak falls back to resolving when stored-result read fails", async () => {
   const responses = [];
   const calls = [];

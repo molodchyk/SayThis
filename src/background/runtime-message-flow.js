@@ -32,6 +32,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     }
 
     const options = useOnlineMessageOptions(message);
+    startPreparingPlayback(dependencies, message.trace);
     const storedResultPromise = message.result
       ? Promise.resolve(null)
       : awaitStoredPlayableResult(selectedText, dependencies, message.trace);
@@ -253,6 +254,17 @@ function respondWithResult(promise, sendResponse, buildResponse, fallbackError) 
     .catch((error) => {
       sendResponse({ ok: false, error: error?.message || fallbackError });
     });
+}
+
+function startPreparingPlayback(dependencies = {}, trace = null) {
+  try {
+    const prepared = dependencies.preparePlayback?.(trace);
+    if (prepared && typeof prepared.catch === "function") {
+      prepared.catch(() => {});
+    }
+  } catch {
+    // Playback can still try to prepare its surface at the point of use.
+  }
 }
 
 function speechSummary(speech = {}) {

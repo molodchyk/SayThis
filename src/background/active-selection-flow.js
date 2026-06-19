@@ -37,6 +37,7 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
       text: selectedText,
       trace
     });
+    startPreparingPlayback(dependencies, trace);
 
     await dependencies.setStorage?.({
       [dependencies.lastSelectionKey || "lastSelection"]: selectedText,
@@ -209,4 +210,15 @@ function createTrace(action) {
     action,
     startedAt
   };
+}
+
+function startPreparingPlayback(dependencies = {}, trace = null) {
+  try {
+    const prepared = dependencies.preparePlayback?.(trace);
+    if (prepared && typeof prepared.catch === "function") {
+      prepared.catch(() => {});
+    }
+  } catch {
+    // Playback can still prepare lazily if early setup fails.
+  }
 }

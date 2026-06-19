@@ -7,7 +7,8 @@
   const MESSAGE_TYPE_SPEAK = "SAYTHIS_SPEAK";
   const MESSAGE_TYPE_DEBUG = "SAYTHIS_DEBUG_EVENT";
   const SETTINGS_KEY = "settings";
-  const DEBOUNCE_MS = 320;
+  const SELECTION_CHANGE_DEBOUNCE_MS = 240;
+  const COMMITTED_SELECTION_DEBOUNCE_MS = 80;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
   const chromeApi = globalThis.chrome;
@@ -16,10 +17,12 @@
   let lastSentKey = "";
   let lastSettings = null;
 
-  document.addEventListener("selectionchange", scheduleSelectionCheck, true);
-  document.addEventListener("mouseup", scheduleSelectionCheck, true);
-  document.addEventListener("keyup", scheduleSelectionCheck, true);
-  document.addEventListener("touchend", scheduleSelectionCheck, true);
+  readSettings();
+
+  document.addEventListener("selectionchange", () => scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS), true);
+  document.addEventListener("mouseup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
+  document.addEventListener("keyup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
+  document.addEventListener("touchend", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       clearScheduledCheck();
@@ -32,12 +35,12 @@
     }
   });
 
-  function scheduleSelectionCheck() {
+  function scheduleSelectionCheck(delayMs) {
     clearScheduledCheck();
     timerId = setTimeout(() => {
       timerId = null;
       speakStableSelection();
-    }, DEBOUNCE_MS);
+    }, delayMs);
   }
 
   function clearScheduledCheck() {
