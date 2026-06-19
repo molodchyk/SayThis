@@ -253,6 +253,7 @@ function runtimeMessageDependencies() {
     flushCommunitySync,
     pullApprovedCommunityEntries,
     requestSharedAudio,
+    getStorage: platform.getStorage,
     getDebugState,
     recordDebugEvent
   };

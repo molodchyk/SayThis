@@ -29,6 +29,14 @@ test("manifest allows hinted Wiktionary editions", () => {
   assert.ok(manifest.host_permissions.includes("https://*.wiktionary.org/*"));
 });
 
+test("manifest installs the low-friction selection listener", () => {
+  const scripts = manifest.content_scripts || [];
+  assert.equal(scripts.length, 1);
+  assert.deepEqual(scripts[0].matches, ["<all_urls>"]);
+  assert.deepEqual(scripts[0].js, ["src/selection-listener.js"]);
+  assert.equal(scripts[0].run_at, "document_idle");
+});
+
 function pngDimensions(buffer) {
   return {
     width: buffer.readUInt32BE(16),

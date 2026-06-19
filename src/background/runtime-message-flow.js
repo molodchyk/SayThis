@@ -2,6 +2,7 @@ import {
   MESSAGE_TYPES
 } from "../message-contracts.js";
 import {
+  createLookupKey,
   getBestAudio,
   normalizeSelection
 } from "../resolver-core.js";
@@ -31,12 +32,18 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     }
 
     const options = useOnlineMessageOptions(message);
+    const storedResultPromise = message.result
+      ? Promise.resolve(null)
+      : awaitStoredPlayableResult(selectedText, dependencies, message.trace);
     const resultPromise = message.result
       ? Promise.resolve(message.result)
-      : dependencies.resolveSelection(selectedText, options);
+      : storedResultPromise.then((result) => result || dependencies.resolveSelection(selectedText, options));
     respondWithResult(
       resultPromise.then(async (result) => {
-        const playableResult = await resolvePlayableResult(selectedText, result, options, dependencies);
+        const storedResult = await storedResultPromise;
+        const playableResult = storedResult && storedResult === result
+          ? result
+          : await resolvePlayableResult(selectedText, result, options, dependencies);
         const playback = await playResolvedAudio(playableResult, message.rate, dependencies, message.trace);
         if (playback) {
           return { result: playableResult, speech: playback };
@@ -161,6 +168,50 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
   }
 
   return false;
+}
+
+async function awaitStoredPlayableResult(selectedText, dependencies = {}, trace = null) {
+  const key = dependencies.lastResultKey || "lastResult";
+  let stored = {};
+  try {
+    stored = await dependencies.getStorage?.([key]) || {};
+  } catch (error) {
+    dependencies.recordDebugEvent?.("stored-result:error", {
+      text: selectedText,
+      error: error?.message || String(error || "Unknown storage error"),
+      trace
+    });
+    return null;
+  }
+
+  const result = stored[key];
+  if (!getBestAudio(result)?.url || !matchesSelection(result, selectedText)) {
+    return null;
+  }
+
+  dependencies.recordDebugEvent?.("stored-result:hit", {
+    text: selectedText,
+    sourceStatus: result.sourceStatus || "",
+    audioQuality: getBestAudio(result)?.quality || "",
+    trace
+  });
+  return result;
+}
+
+function matchesSelection(result = {}, selectedText = "") {
+  const selectedKey = createLookupKey(selectedText);
+  if (!selectedKey) {
+    return false;
+  }
+
+  return [
+    result.query,
+    result.display,
+    result.sourceForm,
+    result.speakText,
+    ...(Array.isArray(result.aliases) ? result.aliases : []),
+    ...(Array.isArray(result.variants) ? result.variants : [])
+  ].some((value) => createLookupKey(value) === selectedKey);
 }
 
 async function playResolvedAudio(result, rate, dependencies = {}, trace) {

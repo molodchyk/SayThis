@@ -98,6 +98,7 @@ test("normalizes extension settings and credentials from one module", () => {
     onlineByDefault: "yes",
     showOverlay: false,
     autoSpeakPopup: false,
+    selectToHear: false,
     lookupLanguageHints: " pl, PT_BR; invalid!, ja, pl ",
     customSourceEnabled: true,
     customSourceEndpoint: " https://packs.example/search?set=terms ",
@@ -124,6 +125,7 @@ test("normalizes extension settings and credentials from one module", () => {
   assert.equal(settings.onlineByDefault, true);
   assert.equal(settings.showOverlay, false);
   assert.equal(settings.autoSpeakPopup, false);
+  assert.equal(settings.selectToHear, false);
   assert.deepEqual(settings.lookupLanguageHints, ["pl", "pt", "ja"]);
   assert.equal(settings.customSourceEnabled, true);
   assert.equal(settings.customSourceEndpoint, "https://packs.example/search?set=terms");

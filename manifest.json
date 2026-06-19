@@ -27,6 +27,17 @@
     "service_worker": "src/background.js",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/selection-listener.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
   "commands": {
     "pronounce-selection": {
       "suggested_key": {

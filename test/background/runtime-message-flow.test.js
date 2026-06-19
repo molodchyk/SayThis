@@ -195,6 +195,145 @@ test("plays shared audio for runtime speak results before speech fallback", asyn
   }]);
 });
 
+test("runtime speak reuses matching stored audio without resolving", async () => {
+  const responses = [];
+  const calls = [];
+  const stored = {
+    query: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Stored shared audio",
+        url: "https://community.example/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-stored",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return { lastResult: stored };
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve when stored audio matches");
+    },
+    requestSharedAudio: async () => {
+      throw new Error("should not request shared audio when stored audio matches");
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when stored audio plays");
+    },
+    recordDebugEvent: (kind, payload) => calls.push(["recordDebugEvent", kind, payload]),
+    lastResultKey: "lastResult"
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, stored);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Stored shared audio"
+  });
+  assert.deepEqual(calls, [
+    ["getStorage", ["lastResult"]],
+    ["recordDebugEvent", "stored-result:hit", {
+      text: "Exampletown",
+      sourceStatus: "generated-audio",
+      audioQuality: "generated",
+      trace
+    }],
+    ["playAudio", stored.pronunciation.audio[0], 0.82, trace]
+  ]);
+});
+
+test("runtime speak falls back to resolving when stored-result read fails", async () => {
+  const responses = [];
+  const calls = [];
+  const resolved = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      audio: [{
+        label: "Resolved recording",
+        url: "https://example.com/przykladowo.ogg",
+        quality: "source-backed"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-storage-error",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async () => {
+      calls.push(["getStorage"]);
+      throw new Error("storage temporarily unavailable");
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when resolved audio plays");
+    },
+    recordDebugEvent: (kind, payload) => calls.push(["recordDebugEvent", kind, payload]),
+    lastResultKey: "lastResult"
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [
+    ["getStorage"],
+    ["recordDebugEvent", "stored-result:error", {
+      text: "Exampletown",
+      error: "storage temporarily unavailable",
+      trace
+    }],
+    ["resolveSelection", "Exampletown", {}],
+    ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
+  ]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    result: resolved,
+    speech: {
+      fallback: "audio",
+      text: "Resolved recording"
+    }
+  }]);
+});
+
 test("falls back to speech when refreshed runtime audio cannot play", async () => {
   const responses = [];
   const calls = [];

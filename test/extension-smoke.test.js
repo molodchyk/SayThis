@@ -29,6 +29,7 @@ test("manifest and extension pages reference packaged runtime files", async () =
     manifest.action?.default_popup,
     manifest.options_ui?.page,
     manifest.background?.service_worker,
+    ...manifestContentScripts(manifest),
     ...manifestIcons(manifest),
     ...manifestWebResources(manifest),
     ...await extensionPageScripts(manifest.action?.default_popup),
@@ -46,6 +47,7 @@ test("manifest and extension pages reference packaged runtime files", async () =
 test("static extension module imports resolve inside the runtime package", async () => {
   const entryPoints = [
     manifest.background.service_worker,
+    ...manifestContentScripts(manifest),
     ...await extensionPageScripts(manifest.action.default_popup),
     ...await extensionPageScripts(manifest.options_ui.page),
     ...await extensionPageScripts("src/offscreen-audio.html")
@@ -373,6 +375,8 @@ test("options page exposes shared-entry data controls", async () => {
 
   assert.match(html, /id="auto-speak-popup"/);
   assert.match(source, /autoSpeakPopup/);
+  assert.match(html, /id="select-to-hear"/);
+  assert.match(source, /selectToHear/);
   assert.match(html, /id="lookup-language-hints"/);
   assert.match(source, /lookupLanguageHints/);
   assert.match(source, /normalizeLanguageHints/);
@@ -401,6 +405,20 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(source, /Approved shared entries cleared/);
   assert.match(source, /summary-view/);
   assert.match(summarySource, /wrong-result flags/);
+});
+
+test("selection listener speaks bounded selected text directly", async () => {
+  const manifestSource = await readText("manifest.json");
+  const source = await readText("src/selection-listener.js");
+
+  assert.match(manifestSource, /src\/selection-listener\.js/);
+  assert.match(source, /selectionchange/);
+  assert.match(source, /MAX_AUTO_TEXT_LENGTH = 80/);
+  assert.match(source, /MAX_AUTO_WORDS = 5/);
+  assert.match(source, /selectToHear !== false/);
+  assert.match(source, /SAYTHIS_SPEAK/);
+  assert.match(source, /ui:selection-auto-speak/);
+  assert.match(source, /lastSentKey/);
 });
 
 test("options page does not expose retired direct generated-audio controls", async () => {
@@ -562,6 +580,11 @@ function manifestIcons(value) {
 function manifestWebResources(value) {
   return (value.web_accessible_resources || [])
     .flatMap((group) => group.resources || []);
+}
+
+function manifestContentScripts(value) {
+  return (value.content_scripts || [])
+    .flatMap((group) => group.js || []);
 }
 
 function matches(value, pattern, group = 1) {

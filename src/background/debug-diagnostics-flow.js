@@ -240,6 +240,7 @@ function settingsSummary(settings = {}) {
     onlineByDefault: settings.onlineByDefault,
     showOverlay: settings.showOverlay,
     autoSpeakPopup: settings.autoSpeakPopup,
+    selectToHear: settings.selectToHear,
     lookupLanguageHints: settings.lookupLanguageHints,
     customSourceEnabled: settings.customSourceEnabled,
     customSourceEndpoint: settings.customSourceEndpoint,
