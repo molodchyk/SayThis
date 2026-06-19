@@ -351,6 +351,8 @@ function debugOptions(options = {}) {
     rate: options.rate,
     lang: options.lang,
     languageHints: Array.isArray(options.languageHints) ? options.languageHints : undefined,
+    directLookup: Boolean(options.directLookup),
+    skipRefresh: Boolean(options.skipRefresh),
     trace: normalizeDebugTrace(options.trace)
   };
 }

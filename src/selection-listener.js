@@ -7,8 +7,8 @@
   const MESSAGE_TYPE_SPEAK = "SAYTHIS_SPEAK";
   const MESSAGE_TYPE_DEBUG = "SAYTHIS_DEBUG_EVENT";
   const SETTINGS_KEY = "settings";
-  const SELECTION_CHANGE_DEBOUNCE_MS = 240;
-  const COMMITTED_SELECTION_DEBOUNCE_MS = 80;
+  const SELECTION_CHANGE_DEBOUNCE_MS = 160;
+  const COMMITTED_SELECTION_DEBOUNCE_MS = 25;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
   const chromeApi = globalThis.chrome;
@@ -20,6 +20,7 @@
   readSettings();
 
   document.addEventListener("selectionchange", () => scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS), true);
+  document.addEventListener("pointerup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("mouseup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("keyup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("touchend", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);

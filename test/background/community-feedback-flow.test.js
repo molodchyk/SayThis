@@ -320,6 +320,100 @@ test("reuses local approved shared audio before requesting the endpoint", async 
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("reuses exact local approved shared audio for direct lookup without refresh", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+        sourceStatus: "generated-audio",
+        trustSignals: ["generated-audio", "audio-backed"]
+      }
+    },
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+
+  const result = await requestSharedAudioForResult("Exampletown", null, {
+    directLookup: true,
+    skipRefresh: true
+  }, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch local direct shared audio");
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve direct shared audio");
+    }
+  });
+
+  assert.equal(result.display, "Exampletown");
+  assert.equal(result.sourceForm, "Przykladowo");
+  assert.equal(result.ttsLang, "pl-PL");
+  assert.equal(result.sourceStatus, "generated-audio");
+  assert.equal(result.pronunciation.audio[0].url, "https://example.com/audio/aud_1234567890abcdef");
+  assert.equal(storage.state.lastResult, result);
+});
+
+test("requests exact endpoint approved shared audio for direct lookup without refresh", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {},
+    settings: {
+      communityAudioEnabled: true,
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const calls = [];
+
+  const result = await requestSharedAudioForResult("Exampletown", null, {
+    directLookup: true,
+    skipRefresh: true,
+    rate: 0.82
+  }, {
+    ...storage.dependencies,
+    fetch: async (url, options) => {
+      calls.push(["fetch", url, JSON.parse(options.body)]);
+      return {
+        ok: true,
+        async json() {
+          return {
+            entry: {
+              term: "Exampletown",
+              lookupKey: "exampletown",
+              sourceForm: "Przykladowo",
+              language: "pl",
+              ttsLang: "pl-PL",
+              audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+              sourceStatus: "generated-audio",
+              trustSignals: ["generated-audio", "audio-backed"]
+            }
+          };
+        }
+      };
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve direct endpoint shared audio");
+    }
+  });
+
+  assert.equal(calls[0][1], "https://example.com/community?action=audio");
+  assert.deepEqual(calls[0][2], {
+    term: "Exampletown",
+    lookupKey: "exampletown",
+    directLookup: true,
+    rate: 0.82
+  });
+  assert.equal(result.sourceForm, "Przykladowo");
+  assert.equal(result.pronunciation.audio[0].url, "https://example.com/audio/aud_1234567890abcdef");
+  assert.equal(storage.state.approvedCommunityEntries.exampletown.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
+  assert.equal(storage.state.lastResult, result);
+});
+
 test("reuses local approved shared audio when endpoint is not configured", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {

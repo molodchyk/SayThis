@@ -264,6 +264,91 @@ test("runtime speak reuses matching stored audio without resolving", async () =>
   ]);
 });
 
+test("runtime speak plays direct approved shared audio before slow resolution", async () => {
+  const responses = [];
+  const calls = [];
+  const direct = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Direct shared audio",
+        url: "https://community.example/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-direct",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let resolveStarted = false;
+  let finishResolve;
+  const slowResolved = new Promise((resolve) => {
+    finishResolve = () => resolve({ display: "Late result" });
+  });
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return direct;
+    },
+    resolveSelection: async (text, options) => {
+      resolveStarted = true;
+      calls.push(["resolveSelection", text, options]);
+      return slowResolved;
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when direct shared audio plays");
+    },
+    directSharedAudioWaitMs: 25,
+    lastResultKey: "lastResult"
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.equal(resolveStarted, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, direct);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Direct shared audio"
+  });
+  assert.deepEqual(calls, [
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", { trace }],
+    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+  ]);
+
+  finishResolve();
+});
+
 test("runtime speak starts playback preparation before resolving", async () => {
   const responses = [];
   const calls = [];

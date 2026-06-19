@@ -181,6 +181,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
   if (!body) {
     throw new Error("Shared audio needs a useful resolved source form and language.");
   }
+  const skipRefresh = options.skipRefresh === true || (options.directLookup === true && !baseResult);
 
   const localEntry = approvedAudioEntryForRequest(stored[storageKeys.approvedCommunityEntries], body);
   if (localEntry) {
@@ -199,7 +200,8 @@ export async function requestSharedAudioForResult(text, result = null, options =
       baseResult,
       aliasEntry || localEntry,
       dependencies,
-      storageKeys
+      storageKeys,
+      { skipRefresh }
     );
   }
 
@@ -237,7 +239,8 @@ export async function requestSharedAudioForResult(text, result = null, options =
     baseResult,
     attachedEntry,
     dependencies,
-    storageKeys
+    storageKeys,
+    { skipRefresh }
   );
 }
 
@@ -339,6 +342,18 @@ function approvedEntryFetcher(dependencies = {}) {
 }
 
 function sharedAudioRequestBody(selectedText, result = {}, options = {}) {
+  if (options.directLookup === true && !result) {
+    const lookupKey = createLookupKey(selectedText);
+    return lookupKey
+      ? {
+        term: selectedText,
+        lookupKey,
+        directLookup: true,
+        rate: Number.isFinite(Number(options.rate)) ? Number(options.rate) : undefined
+      }
+      : null;
+  }
+
   const sourceForm = normalizeSelection(result?.sourceForm || result?.display || selectedText);
   const language = normalizeSelection(result?.language);
   const ttsLang = normalizeTtsLanguage(result?.ttsLang, language);
@@ -518,20 +533,26 @@ async function refreshSharedAudioResultWithEntry(
   baseResult,
   entry,
   dependencies = {},
-  storageKeys = DEFAULT_STORAGE_KEYS
+  storageKeys = DEFAULT_STORAGE_KEYS,
+  options = {}
 ) {
   let refreshed = baseResult;
-  try {
-    refreshed = await refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
-  } catch {
-    refreshed = baseResult;
+  if (!options.skipRefresh) {
+    try {
+      refreshed = await refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
+    } catch {
+      refreshed = baseResult;
+    }
   }
 
   if (hasTopTierAudio(refreshed) || (getBestAudio(refreshed) && isGeneratedSharedAudioEntry(entry))) {
     return refreshed;
   }
 
-  const attached = resultWithSharedAudioEntry(refreshed || baseResult, entry);
+  const attached = resultWithSharedAudioEntry(
+    refreshed || baseResult || sharedAudioShellResult(selectedText, entry),
+    entry
+  );
   if (attached && attached !== refreshed) {
     await dependencies.setStorage?.({
       [storageKeys.lastSelection]: selectedText,
@@ -540,6 +561,21 @@ async function refreshSharedAudioResultWithEntry(
   }
 
   return attached || refreshed || baseResult;
+}
+
+function sharedAudioShellResult(selectedText, entry = {}) {
+  const language = normalizeSelection(entry.language);
+  return {
+    query: selectedText,
+    lookupKey: createLookupKey(selectedText),
+    display: normalizeSelection(entry.term || selectedText),
+    sourceForm: normalizeSelection(entry.sourceForm || entry.term || selectedText),
+    language,
+    languageName: normalizeSelection(entry.languageName),
+    ttsLang: normalizeTtsLanguage(entry.ttsLang, language),
+    sourceStatus: normalizeSelection(entry.sourceStatus) || "generated-audio",
+    pronunciation: {}
+  };
 }
 
 function isGeneratedSharedAudioEntry(entry = {}) {
