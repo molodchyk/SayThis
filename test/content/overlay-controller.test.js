@@ -574,7 +574,7 @@ test("generated audio does not prefill correction audio source", () => {
   assert.doesNotMatch(fakeDom.root.innerHTML, /value="https:\/\/voice\.example\/generated\.ogg"/);
 });
 
-test("speak action refreshes generated audio before shared playback", async () => {
+test("speak action plays shared audio before refreshing generated audio", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();
   let showResultListener;
@@ -636,7 +636,6 @@ test("speak action refreshes generated audio before shared playback", async () =
   await flushPromises();
 
   assert.deepEqual(sentMessages.map((item) => item.message.type), [
-    "SAYTHIS_RESOLVE",
     "SAYTHIS_REQUEST_SHARED_AUDIO",
     "SAYTHIS_PLAY_AUDIO"
   ]);

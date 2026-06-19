@@ -358,10 +358,20 @@
     });
 
     if (!options.onlineChecked && !hasTopTierAudio(result)) {
-      resolveOnline(result, {
-        autoPlay: true,
-        rate,
+      ensureSharedAudio(result, rate, {
+        ...options,
         trace
+      }).then((sharedResult) => {
+        if (shouldPlayBeforeOnlineRefresh(result, sharedResult) && playAudio(sharedResult, rate, trace)) {
+          setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
+          return;
+        }
+
+        resolveOnline(sharedResult || result, {
+          autoPlay: true,
+          rate,
+          trace
+        });
       });
       return;
     }
@@ -477,6 +487,15 @@
   function playAudio(result, rate, trace) {
     const audio = getBestAudio(result);
     return playAudioItem(audio, result, rate, { skipSharedAudio: true, trace });
+  }
+
+  function shouldPlayBeforeOnlineRefresh(originalResult, candidateResult) {
+    const audio = getBestAudio(candidateResult);
+    if (!audio?.url) {
+      return false;
+    }
+
+    return candidateResult !== originalResult || isGeneratedAudioItem(audio);
   }
 
   function playAudioItem(audio, result, rate, options = {}) {

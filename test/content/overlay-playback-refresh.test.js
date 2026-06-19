@@ -8,7 +8,7 @@ import {
   resultViewSource
 } from "../../test-support/content/overlay-test-harness.js";
 
-test("speak action refreshes generic verified audio before playback", async () => {
+test("speak action checks shared audio before refreshing generic verified audio", async () => {
   const sentMessages = [];
   const playedUrls = [];
   const fakeDom = createFakeDom();
@@ -79,7 +79,10 @@ test("speak action refreshes generic verified audio before playback", async () =
   fakeDom.root.querySelector('[data-action="speak"]').click();
   await flushPromises();
 
-  assert.deepEqual(sentMessages.map((item) => item.message.type), ["SAYTHIS_RESOLVE"]);
+  assert.deepEqual(sentMessages.map((item) => item.message.type), [
+    "SAYTHIS_REQUEST_SHARED_AUDIO",
+    "SAYTHIS_RESOLVE"
+  ]);
   assert.deepEqual(playedUrls, ["https://audio.example/native.ogg"]);
 });
 

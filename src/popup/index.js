@@ -146,6 +146,14 @@ async function speakSelection(rate) {
     await resolveSelection();
   }
 
+  const sharedAudioResult = await ensureSharedAudio(currentResult, rate, { trace });
+  if (shouldPlayBeforeOnlineRefresh(currentResult, sharedAudioResult) && playAudio(sharedAudioResult, rate, trace)) {
+    currentResult = sharedAudioResult;
+    setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
+    return;
+  }
+  currentResult = sharedAudioResult;
+
   if (shouldRefreshBeforeSpeech(currentResult)) {
     const refreshed = await resolveSelection(true);
     if (refreshed) {
@@ -407,6 +415,15 @@ async function ensureSharedAudio(result, rate, options = {}) {
 function playAudio(result, rate, trace) {
   const audio = getBestAudio(result);
   return playAudioItem(audio, result, rate, { skipSharedAudio: true, trace });
+}
+
+function shouldPlayBeforeOnlineRefresh(originalResult, candidateResult) {
+  const audio = getBestAudio(candidateResult);
+  if (!audio?.url) {
+    return false;
+  }
+
+  return candidateResult !== originalResult || isGeneratedAudioItem(audio);
 }
 
 function playAudioItem(audio, result, rate, options = {}) {
