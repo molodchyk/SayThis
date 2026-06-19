@@ -156,6 +156,43 @@ test("rejects Commons audio with a conflicting language prefix", async () => {
   }
 });
 
+test("accepts source-backed pronunciation guide audio with a different file prefix", async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = async () => jsonResponse({
+      query: {
+        pages: {
+          1: {
+            index: 1,
+            title: "File:En-us-Gia_Dzhokhtaberidze_from_Georgia_pronunciation_(Voice_of_America).ogg",
+            imageinfo: [{
+              url: "https://upload.wikimedia.org/wikipedia/commons/6/67/En-us-Gia_Dzhokhtaberidze_from_Georgia_pronunciation_%28Voice_of_America%29.ogg",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:En-us-Gia_Dzhokhtaberidze_from_Georgia_pronunciation_(Voice_of_America).ogg",
+              mime: "audio/ogg",
+              mediatype: "AUDIO",
+              extmetadata: {
+                ObjectName: { value: "En-us-Gia Dzhokhtaberidze pronunciation" },
+                ImageDescription: { value: "Voice of America pronunciation of Gia Dzhokhtaberidze" },
+                Credit: { value: "VOA pronunciation guide: Gia Dzhokhtaberidze" }
+              }
+            }]
+          }
+        }
+      }
+    });
+
+    const result = await resolveWithCommonsAudioLookup("Gia Dzhokhtaberidze", "Gia Dzhokhtaberidze", "ka");
+
+    assert.equal(result.sourceStatus, "verified-audio");
+    assert.equal(result.pronunciation.audio[0].label, "Voice of America pronunciation");
+    assert.equal(result.pronunciation.audio[0].source, "Wikimedia Commons (Voice of America pronunciation guide)");
+    assert.equal(result.pronunciation.audio[0].quality, "source-backed");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("prefers Commons recordings that match the resolved language", async () => {
   const originalFetch = globalThis.fetch;
 

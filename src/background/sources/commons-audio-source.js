@@ -149,18 +149,15 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
   const mediaType = String(info.mediatype || "").toLowerCase();
   const fileName = stripMarkup(page.title).replace(/^File:/i, "");
   const lookupKey = createLookupKey(lookupWord);
+  const metadataText = commonsPageText(page, info);
+  const pronunciationGuide = sourceBackedPronunciationGuide(metadataText);
   const pronunciationScore = scorePronunciationSignal(page, lookupWord, language);
-  const matchText = createLookupKey([
-    page.title,
-    page.snippet,
-    page.titlesnippet,
-    commonsExtText(info.extmetadata)
-  ].map(stripMarkup).join(" "));
+  const matchText = createLookupKey(metadataText);
 
   if (
     !url ||
     !lookupKey ||
-    hasConflictingLanguagePrefix(fileName, language) ||
+    (hasConflictingLanguagePrefix(fileName, language) && !pronunciationGuide) ||
     !pronunciationScore ||
     !keyContainsLookup(matchText, lookupKey) ||
     (!mime.startsWith("audio/") && mediaType !== "audio")
@@ -171,8 +168,9 @@ function commonsAudioMatch(page = {}, lookupWord, language = "") {
   return {
     audio: commonsPronunciationAudioItem(fileName, {
       url,
-      label: "Wikimedia Commons audio",
-      source: "Wikimedia Commons"
+      label: pronunciationGuide?.label || "Wikimedia Commons audio",
+      source: pronunciationGuide?.source || "Wikimedia Commons",
+      quality: pronunciationGuide?.quality || "verified"
     }),
     sourceUrl
   };
@@ -184,12 +182,8 @@ function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
   const title = stripMarkup(page.title);
   const fileName = title.replace(/^File:/i, "");
   const filePrefix = fileLanguagePrefix(fileName);
-  const matchText = createLookupKey([
-    title,
-    page.snippet,
-    page.titlesnippet,
-    commonsExtText(page.imageinfo?.[0]?.extmetadata)
-  ].map(stripMarkup).join(" "));
+  const matchText = createLookupKey(commonsPageText(page, page.imageinfo?.[0] || {}));
+  const pronunciationGuide = sourceBackedPronunciationGuide(matchText);
   let score = 0;
 
   score += scorePronunciationSignal(page, lookupWord, language);
@@ -204,7 +198,7 @@ function scoreCommonsAudioMatch(page = {}, lookupWord, language = "") {
 
   if (filePrefix === languageCode) {
     score += 50;
-  } else if (filePrefix && filePrefix !== "ll") {
+  } else if (filePrefix && filePrefix !== "ll" && !pronunciationGuide) {
     score -= 8;
   }
 
@@ -223,12 +217,7 @@ function scorePronunciationSignal(page = {}, lookupWord, language = "") {
   const fileName = title.replace(/^File:/i, "");
   const fileKey = createLookupKey(fileName);
   const filePrefix = fileLanguagePrefix(fileName);
-  const text = createLookupKey([
-    title,
-    page.snippet,
-    page.titlesnippet,
-    commonsExtText(page.imageinfo?.[0]?.extmetadata)
-  ].map(stripMarkup).join(" "));
+  const text = createLookupKey(commonsPageText(page, page.imageinfo?.[0] || {}));
 
   if (!lookupKey || !keyContainsLookup(text, lookupKey)) {
     return 0;
@@ -236,6 +225,11 @@ function scorePronunciationSignal(page = {}, lookupWord, language = "") {
 
   if (isLinguaLibreAudioFile(fileName)) {
     return 40;
+  }
+
+  const pronunciationGuide = sourceBackedPronunciationGuide(text);
+  if (pronunciationGuide) {
+    return 36;
   }
 
   if (filePrefix && keyContainsLookup(fileKey, lookupKey)) {
@@ -251,6 +245,29 @@ function scorePronunciationSignal(page = {}, lookupWord, language = "") {
   }
 
   return 0;
+}
+
+function sourceBackedPronunciationGuide(text) {
+  const key = createLookupKey(text);
+  const hasPronunciation = keyContainsLookup(key, createLookupKey("pronunciation")) ||
+    keyContainsLookup(key, createLookupKey("pronunciation guide"));
+
+  if (!hasPronunciation) {
+    return null;
+  }
+
+  if (
+    keyContainsLookup(key, createLookupKey("voice of america")) ||
+    keyContainsLookup(key, createLookupKey("voa pronunciation guide"))
+  ) {
+    return {
+      label: "Voice of America pronunciation",
+      source: "Wikimedia Commons (Voice of America pronunciation guide)",
+      quality: "source-backed"
+    };
+  }
+
+  return null;
 }
 
 function hasPronunciationText(text) {
@@ -317,6 +334,15 @@ function commonsExtText(ext = {}) {
     .map((item) => item?.value)
     .filter(Boolean)
     .join(" ");
+}
+
+function commonsPageText(page = {}, info = {}) {
+  return [
+    page.title,
+    page.snippet,
+    page.titlesnippet,
+    commonsExtText(info.extmetadata)
+  ].map(stripMarkup).join(" ");
 }
 
 function stripMarkup(value) {

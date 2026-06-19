@@ -99,6 +99,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Generated Cyrillic source-form guides account for resolved language differences.
 - Wiktionary pronunciation-audio lookup preserves multiple Commons recordings from one language section.
 - Lingua Libre recordings found through Commons-backed sources are ranked as native-speaker audio ahead of generic verified recordings.
+- Source-backed pronunciation-guide recordings found through Commons-backed sources are ranked ahead of generic verified recordings.
 - Optional Forvo pronunciation-audio lookup with a local user-provided API key.
 - Forvo audio paths are preserved as long source URLs for playback.
 - Forvo results preserve additional same-word, same-language recordings for source-backed practice options.

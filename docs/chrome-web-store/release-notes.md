@@ -26,6 +26,7 @@
 - Prefers Wikidata pronunciation audio with matching language qualifiers before unqualified recordings.
 - Ranks Forvo recordings as native-speaker audio ahead of generic verified recordings.
 - Ranks Lingua Libre recordings found through Commons-backed sources as native-speaker audio ahead of generic verified recordings.
+- Ranks source-backed pronunciation-guide recordings found through Commons-backed sources ahead of generic verified recordings.
 - Requires word-boundary matches before treating Wikimedia Commons audio as verified pronunciation audio.
 - Rejects region-specific browser voices from the wrong locale variant when using verified speech fallback.
 - Reports unresolved raw text as unavailable instead of speaking it through generic browser TTS.
