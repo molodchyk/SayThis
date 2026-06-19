@@ -26,6 +26,25 @@ test("committed selection sends prepare and speak with one trace", async () => {
   assert.equal(harness.sentMessages[0].trace.id, harness.sentMessages[1].trace.id);
 });
 
+test("committed selection does not wait for an unresolved settings read by default", async () => {
+  let resolveSettings;
+  const settingsPromise = new Promise((resolve) => {
+    resolveSettings = resolve;
+  });
+  const harness = await installSelectionListener({ settingsPromise });
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => message.type), [
+    "SAYTHIS_PREPARE_PLAYBACK",
+    "SAYTHIS_SPEAK"
+  ]);
+
+  resolveSettings({ selectToHear: true });
+});
+
 test("committed selection prepares from speak path when earlier prepare is still waiting", async () => {
   let resolveSettings;
   const settingsPromise = new Promise((resolve) => {
@@ -79,6 +98,23 @@ test("selection changes prime playback without preparing transient text", async 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""]
   ]);
+});
+
+test("selection start primes playback before slow settings read resolves", async () => {
+  let resolveSettings;
+  const settingsPromise = new Promise((resolve) => {
+    resolveSettings = resolve;
+  });
+  const harness = await installSelectionListener({ settingsPromise });
+
+  harness.dispatch("selectstart");
+  await delay(5);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""]
+  ]);
+
+  resolveSettings({ selectToHear: true });
 });
 
 test("selection start primes playback before selected text exists", async () => {
