@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  setTimeout as delay
+} from "node:timers/promises";
+import {
   handleContextMenuClick
 } from "../../src/background/context-menu-flow.js";
 
@@ -122,6 +125,7 @@ test("online context menu plays shared audio before refreshing the result", asyn
   assert.equal(result.result, refreshed);
   assert.deepEqual(compactTraceCalls(calls), [
     ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu-online" }],
+    ["requestSharedAudio", "Exampletown", null],
     ["resolveSelection", "Exampletown", {
       useOnline: false,
       trace: { action: "context-menu-online" }
@@ -138,6 +142,75 @@ test("online context menu plays shared audio before refreshing the result", asyn
     ["setStorage", { lastResult: refreshed }],
     ["showResultOnTab", 42, refreshed]
   ]);
+});
+
+test("context menu plays direct approved shared audio before slow local resolution", async () => {
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Direct shared audio",
+        url: "https://audio.example/direct.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  let resolveStarted = false;
+  let finishResolve;
+  const slowResolved = new Promise((resolve) => {
+    finishResolve = () => resolve({ display: "Late result" });
+  });
+
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: " Exampletown " }, { id: 42 }, {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return value ? value : direct;
+    },
+    resolveSelection: async (text, options) => {
+      resolveStarted = true;
+      calls.push(["resolveSelection", text, options]);
+      return slowResolved;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    directSharedAudioWaitMs: 25,
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(resolveStarted, true);
+  assert.deepEqual(compactTraceCalls(calls.slice(0, 6)), [
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu" }],
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      trace: { action: "context-menu" },
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", {
+      useOnline: false,
+      trace: { action: "context-menu" }
+    }],
+    ["setStorage", { lastResult: direct }],
+    ["playResolvedResult", direct, 42]
+  ]);
+
+  finishResolve();
+  await delay(0);
 });
 
 test("online context menu reuses matching stored audio before local fallback can resolve it", async () => {
