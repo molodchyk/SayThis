@@ -139,6 +139,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service can reject browser-originated requests outside configured allowed origins.
 - Community service serializes store writes so concurrent submissions do not overwrite pending entries.
 - Community service trusts proxy rate-limit headers only when explicitly enabled.
+- Community service enforces a persisted public provider-generation budget before paid shared-audio synthesis.
 - Community service can store reviewed or token-gated service-generated audio artifacts and publish shared audio URLs through approved entries.
 - Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
@@ -227,7 +228,7 @@ The first useful version should be narrow and trusted:
 - Prefer curated or native-speaker audio over generated voices.
 - Use detected or resolved language to feed source forms into shared provider generation only when there is a resolved source-form difference or a non-English provider locale, then publish useful generated results as reviewed shared audio artifacts and keep them below recordings.
 - Promote useful generated samples into moderated shared audio artifacts so one reviewed generation can be reused by every client that resolves the same source form and language.
-- Add cost controls before enabling any shared paid voice provider.
+- Keep shared provider generation behind service-side opt-in, bearer-token authorization, rate limits, useful-target validation, and persisted generation budgets.
 - Show confidence and source labels in the UI.
 - Let users confirm, correct, or request missing entries so SayThis becomes a community memory layer.
 

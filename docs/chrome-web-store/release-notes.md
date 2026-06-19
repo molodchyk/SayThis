@@ -50,6 +50,7 @@
 - Makes generated Cyrillic source-form guides language-sensitive.
 - Ignores incompatible provider voice overrides so generated fallback audio follows the resolved TTS locale.
 - Keeps provider generation behind service-side opt-in, rate limits, and required bearer-token controls.
+- Adds a persisted public provider-generation budget before paid shared-audio synthesis.
 - Updates the Chrome extension and package version to 1.0.0.
 
 ## 0.1.0

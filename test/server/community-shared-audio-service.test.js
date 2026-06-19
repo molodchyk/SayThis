@@ -157,6 +157,57 @@ test("labels public generated shared audio without moderator review", async () =
   ]);
 });
 
+test("limits public provider generation before synthesis", async () => {
+  let calls = 0;
+  const ttsProvider = {
+    async synthesize(request) {
+      calls += 1;
+      return {
+        ok: true,
+        audio: {
+          mimeType: "audio/ogg",
+          dataBase64: Buffer.from(`generated shared sample ${request.text}`).toString("base64")
+        },
+        voice: {
+          languageCode: "pl-PL",
+          name: "pl-PL-TestVoice"
+        }
+      };
+    }
+  };
+  const options = {
+    publicAudioGenerationEnabled: true,
+    publicAudioGenerationToken: "client-token",
+    publicBaseUrl: "https://community.example",
+    publicAudioGenerationLimit: 1,
+    publicAudioGenerationWindowMs: 60_000,
+    now: () => Date.parse("2026-01-01T00:00:00.000Z"),
+    ttsProvider
+  };
+
+  let response = await handleCommunityRequest(sharedGenerationRequest({
+    term: "Exampletown",
+    lookupKey: "exampletown",
+    sourceForm: "Przykladowo"
+  }), createEmptyStore(), options);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.generated, true);
+  assert.equal(calls, 1);
+
+  response = await handleCommunityRequest(sharedGenerationRequest({
+    term: "Secondtown",
+    lookupKey: "secondtown",
+    sourceForm: "Drugie"
+  }), response.store, options);
+
+  assert.equal(response.status, 429);
+  assert.equal(response.body.error, "generation-budget-exhausted");
+  assert.equal(response.body.resetAt, "2026-01-01T00:01:00.000Z");
+  assert.equal(calls, 1);
+  assert.equal(response.store.generationUsage.publicAudioGeneration.count, 1);
+});
+
 async function storeAudioArtifact(overrides = {}) {
   return handleCommunityRequest({
     method: "POST",
@@ -189,4 +240,20 @@ async function requestSharedAudio(store, overrides = {}) {
       ...overrides
     })
   }, store);
+}
+
+function sharedGenerationRequest(overrides = {}) {
+  return {
+    method: "POST",
+    url: "/audio/generate",
+    headers: { authorization: "Bearer client-token" },
+    body: JSON.stringify({
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "Polish",
+      ttsLang: "Polish",
+      ...overrides
+    })
+  };
 }

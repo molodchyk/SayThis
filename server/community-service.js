@@ -13,6 +13,10 @@ import {
   removePendingSubmission
 } from "./community-store.js";
 import {
+  DEFAULT_PUBLIC_AUDIO_GENERATION_LIMIT,
+  DEFAULT_PUBLIC_AUDIO_GENERATION_WINDOW_MS
+} from "./generation-budget.js";
+import {
   DEFAULT_MAX_AUDIO_BYTES,
   generatedAudioArtifactFromBody,
   normalizeHttpsEndpoint,
@@ -276,6 +280,14 @@ export async function createCommunityServer(options = {}) {
   const publicAudioGenerationEnabled = normalizeBoolean(
     options.publicAudioGenerationEnabled ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_ENABLED
   );
+  const publicAudioGenerationLimit = normalizePositiveInteger(
+    options.publicAudioGenerationLimit ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_LIMIT,
+    DEFAULT_PUBLIC_AUDIO_GENERATION_LIMIT
+  );
+  const publicAudioGenerationWindowMs = normalizePositiveInteger(
+    options.publicAudioGenerationWindowMs ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_WINDOW_MS,
+    DEFAULT_PUBLIC_AUDIO_GENERATION_WINDOW_MS
+  );
   const publicAudioGenerationToken = String(
     options.publicAudioGenerationToken ?? process.env.SAYTHIS_PUBLIC_AUDIO_GENERATION_TOKEN ?? ""
   ).trim();
@@ -318,6 +330,8 @@ export async function createCommunityServer(options = {}) {
           publicBaseUrl,
           ttsProvider,
           publicAudioGenerationEnabled,
+          publicAudioGenerationLimit,
+          publicAudioGenerationWindowMs,
           publicAudioGenerationToken,
           allowedOrigins,
           rateLimiter,

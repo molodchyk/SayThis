@@ -7,6 +7,7 @@ import {
   normalizeTtsLanguage
 } from "../src/resolver/language.js";
 import { normalizeAudioArtifactMap } from "./community-audio-store.js";
+import { normalizeGenerationUsageMap } from "./generation-budget.js";
 
 export const STORE_SCHEMA_VERSION = 1;
 
@@ -18,6 +19,7 @@ export function createEmptyStore(now = new Date().toISOString()) {
     pending: [],
     approved: {},
     audioArtifacts: {},
+    generationUsage: {},
     rejected: []
   };
 }
@@ -34,6 +36,7 @@ export function normalizeStore(value, now = new Date().toISOString()) {
     pending: Array.isArray(value.pending) ? value.pending.map(normalizeSubmission).filter(Boolean) : [],
     approved: normalizeApprovedMap(value.approved),
     audioArtifacts: normalizeAudioArtifactMap(value.audioArtifacts),
+    generationUsage: normalizeGenerationUsageMap(value.generationUsage),
     rejected: Array.isArray(value.rejected) ? value.rejected.map(normalizeRejection).filter(Boolean) : []
   };
 }
