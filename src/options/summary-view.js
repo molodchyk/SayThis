@@ -47,7 +47,8 @@ export function debugSummaryText(diagnostics = {}) {
       ? `; online refresh finished in ${refreshMs} ms`
       : "";
     const sourceText = timing.storedResultHit ? " from stored audio" : "";
-    return `Last audio started${sourceText} in ${audioMs} ms${refreshText}.`;
+    const detailText = timingDetailText(timing);
+    return `Last audio started${sourceText} in ${audioMs} ms${detailText}${refreshText}.`;
   }
 
   if (!diagnostics.lastResult) {
@@ -68,6 +69,22 @@ export function debugSummaryText(diagnostics = {}) {
   }
 
   return `Voice ready: ${speech.selectedVoice}.`;
+}
+
+function timingDetailText(timing = {}) {
+  const parts = [
+    ["setup", timing.prepareElapsedMs],
+    ["resolve", timing.resolveElapsedMs],
+    ["shared audio", timing.sharedAudioElapsedMs],
+    ["play", timing.audioElapsedMs]
+  ]
+    .map(([label, value]) => {
+      const number = Math.round(Number(value));
+      return Number.isFinite(number) ? `${label} ${number} ms` : "";
+    })
+    .filter(Boolean);
+
+  return parts.length ? ` (${parts.join("; ")})` : "";
 }
 
 export function summarizeQueue(queue) {

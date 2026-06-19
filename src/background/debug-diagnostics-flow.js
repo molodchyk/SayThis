@@ -291,28 +291,70 @@ function playbackTimingSummary(events = []) {
   }
 
   const trace = latest[0].trace || {};
+  const trigger = latest.find((event) => String(event.kind || "").startsWith("ui:"));
+  const prepareStart = latest.find((event) => event.kind === "audio-prepare:start");
+  const prepareResult = latestEvent(latest, [
+    "audio-prepare:result",
+    "audio-prepare:error"
+  ]);
+  const resolveStart = latest.find((event) => event.kind === "resolve:start");
+  const resolveResult = latestEvent(latest, [
+    "resolve:result",
+    "resolve:error"
+  ]);
+  const sharedAudioStart = latest.find((event) => event.kind === "shared-audio:start");
+  const sharedAudioResult = latestEvent(latest, [
+    "shared-audio:result",
+    "shared-audio:error"
+  ]);
+  const audioRequest = latest.find((event) => event.kind === "audio:start");
+  const audioResult = latestEvent(latest, [
+    "audio:result",
+    "audio:error"
+  ]);
+  const speechStart = latest.find((event) => event.kind === "speech:start");
+  const speechResult = latestEvent(latest, [
+    "speech:result",
+    "speech:error"
+  ]);
   const audioStart = latest.find((event) => [
     "audio:popup-start",
     "audio:overlay-start",
     "audio:offscreen-response",
-    "offscreen-audio:result"
+    "offscreen-audio:result",
+    "audio:result"
   ].includes(event.kind));
   const last = latest[latest.length - 1];
   const storedHit = latest.find((event) => event.kind === "stored-result:hit");
-  const onlineRefresh = latest.findLast?.((event) => [
+  const onlineRefresh = latestEvent(latest, [
     "online-refresh:result",
     "online-refresh:error"
-  ].includes(event.kind)) || [...latest].reverse().find((event) => [
-    "online-refresh:result",
-    "online-refresh:error"
-  ].includes(event.kind));
+  ]);
 
   return {
     traceId: normalizeSelection(trace.id),
     source: normalizeSelection(trace.source),
     action: normalizeSelection(trace.action),
+    triggerKind: normalizeSelection(trigger?.kind),
+    triggerMs: numberOrNull(trigger?.sinceTraceStartMs),
+    prepareStartMs: numberOrNull(prepareStart?.sinceTraceStartMs),
+    prepareReadyMs: numberOrNull(prepareResult?.sinceTraceStartMs),
+    prepareElapsedMs: numberOrNull(prepareResult?.elapsedMs),
+    resolveStartMs: numberOrNull(resolveStart?.sinceTraceStartMs),
+    resolveResultMs: numberOrNull(resolveResult?.sinceTraceStartMs),
+    resolveElapsedMs: numberOrNull(resolveResult?.elapsedMs),
+    sharedAudioStartMs: numberOrNull(sharedAudioStart?.sinceTraceStartMs),
+    sharedAudioResultMs: numberOrNull(sharedAudioResult?.sinceTraceStartMs),
+    sharedAudioElapsedMs: numberOrNull(sharedAudioResult?.elapsedMs),
+    audioRequestMs: numberOrNull(audioRequest?.sinceTraceStartMs),
+    audioResultMs: numberOrNull(audioResult?.sinceTraceStartMs),
+    audioElapsedMs: numberOrNull(audioResult?.elapsedMs),
+    speechStartMs: numberOrNull(speechStart?.sinceTraceStartMs),
+    speechResultMs: numberOrNull(speechResult?.sinceTraceStartMs),
+    speechElapsedMs: numberOrNull(speechResult?.elapsedMs),
     audioStartMs: numberOrNull(audioStart?.sinceTraceStartMs),
     onlineRefreshMs: numberOrNull(onlineRefresh?.sinceTraceStartMs),
+    onlineRefreshElapsedMs: numberOrNull(onlineRefresh?.elapsedMs),
     storedResultHit: Boolean(storedHit),
     lastEventMs: numberOrNull(last?.sinceTraceStartMs),
     eventCount: latest.length,
@@ -331,6 +373,12 @@ function playbackTimingSummary(events = []) {
 
 function lastEvent(events = []) {
   return events[events.length - 1] || null;
+}
+
+function latestEvent(events = [], kinds = []) {
+  const kindSet = new Set(kinds);
+  return events.findLast?.((event) => kindSet.has(event.kind)) ||
+    [...events].reverse().find((event) => kindSet.has(event.kind));
 }
 
 function countKeys(value) {

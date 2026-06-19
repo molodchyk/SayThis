@@ -6,6 +6,28 @@ import {
   handleActiveSelectionCommand
 } from "../../src/background/active-selection-flow.js";
 
+function compactTraceCalls(calls) {
+  return calls.map((call) => call.map(compactTraceValue));
+}
+
+function compactTraceValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(compactTraceValue);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  if (value.id && value.source === "background" && value.action && value.startedAt) {
+    return { action: value.action };
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, innerValue]) => [key, compactTraceValue(innerValue)])
+  );
+}
+
 test("maps keyboard command names to active-selection options", () => {
   assert.deepEqual(activeSelectionOptionsForCommand("pronounce-selection"), {
     source: "keyboard"
@@ -47,11 +69,20 @@ test("routes online keyboard command names through active-selection handling", a
   });
 
   assert.equal(result.handled, true);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard-online" }],
-    ["resolveSelection", "Gnocchi", { useOnline: false }],
-    ["resolveSelection", "Gnocchi", { useOnline: true, localResult: resolved }],
+    ["resolveSelection", "Gnocchi", {
+      source: "keyboard-online",
+      useOnline: false,
+      trace: { action: "keyboard-online" }
+    }],
+    ["resolveSelection", "Gnocchi", {
+      source: "keyboard-online",
+      useOnline: true,
+      localResult: resolved,
+      trace: { action: "keyboard-online" }
+    }],
     ["playResolvedResult", resolved, 7]
   ]);
 });
@@ -97,11 +128,20 @@ test("resolves, stores, and plays keyboard selections", async () => {
 
   assert.equal(result.handled, true);
   assert.equal(result.result, resolved);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard-online" }],
-    ["resolveSelection", "Gnocchi", { useOnline: false }],
-    ["resolveSelection", "Gnocchi", { useOnline: true, localResult: resolved }],
+    ["resolveSelection", "Gnocchi", {
+      source: "keyboard-online",
+      useOnline: false,
+      trace: { action: "keyboard-online" }
+    }],
+    ["resolveSelection", "Gnocchi", {
+      source: "keyboard-online",
+      useOnline: true,
+      localResult: resolved,
+      trace: { action: "keyboard-online" }
+    }],
     ["playResolvedResult", resolved, 7]
   ]);
 });
@@ -144,13 +184,22 @@ test("online keyboard command plays shared audio before refreshing the result", 
 
   assert.equal(result.handled, true);
   assert.equal(result.result, refreshed);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard-online" }],
-    ["resolveSelection", "Exampletown", { useOnline: false }],
+    ["resolveSelection", "Exampletown", {
+      source: "keyboard-online",
+      useOnline: false,
+      trace: { action: "keyboard-online" }
+    }],
     ["requestSharedAudio", "Exampletown", local],
     ["playResolvedResult", shared, 7],
-    ["resolveSelection", "Exampletown", { useOnline: true, localResult: local }],
+    ["resolveSelection", "Exampletown", {
+      source: "keyboard-online",
+      useOnline: true,
+      localResult: local,
+      trace: { action: "keyboard-online" }
+    }],
     ["requestSharedAudio", "Exampletown", refreshed],
     ["showResultOnTab", 7, refreshed]
   ]);
@@ -200,12 +249,17 @@ test("online keyboard command reuses matching stored audio before local fallback
 
   assert.equal(result.handled, true);
   assert.equal(result.result, refreshed);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard-online" }],
     ["getStorage", ["lastResult"]],
     ["playResolvedResult", stored, 7],
-    ["resolveSelection", "Exampletown", { useOnline: true, localResult: stored }],
+    ["resolveSelection", "Exampletown", {
+      source: "keyboard-online",
+      useOnline: true,
+      localResult: stored,
+      trace: { action: "keyboard-online" }
+    }],
     ["requestSharedAudio", "Exampletown", refreshed],
     ["showResultOnTab", 7, refreshed]
   ]);
@@ -284,11 +338,18 @@ test("enriches no-audio keyboard selections before playback", async () => {
 
   assert.equal(result.handled, true);
   assert.equal(result.result, enriched);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard" }],
-    ["resolveSelection", "Gnocchi", { useOnline: undefined }],
-    ["resolveSelection", "Gnocchi", { useOnline: true, localResult: resolved }],
+    ["resolveSelection", "Gnocchi", {
+      useOnline: undefined,
+      trace: { action: "keyboard" }
+    }],
+    ["resolveSelection", "Gnocchi", {
+      useOnline: true,
+      localResult: resolved,
+      trace: { action: "keyboard" }
+    }],
     ["playResolvedResult", enriched, 7]
   ]);
 });

@@ -44,8 +44,13 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
       [dependencies.lastSourceKey || "lastSource"]: options.source || "keyboard"
     });
 
+    const tracedOptions = {
+      ...options,
+      trace
+    };
+
     if (options.useOnline === true) {
-      return await handleOnlineLookupAndPronounce(selectedText, tab.id, options, dependencies, trace);
+      return await handleOnlineLookupAndPronounce(selectedText, tab.id, tracedOptions, dependencies, trace);
     }
 
     const storedResult = await readStoredPlayableResult(selectedText, dependencies);
@@ -56,10 +61,12 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
     }
 
     const result = await dependencies.resolveSelection?.(selectedText, {
-      useOnline: options.useOnline
+      useOnline: options.useOnline,
+      trace
     });
     const playableResult = await resolvePlayableResult(selectedText, result, {
-      useOnline: options.useOnline
+      useOnline: options.useOnline,
+      trace
     }, dependencies);
     await dependencies.playResolvedResult?.(playableResult, tab.id, trace);
 
@@ -99,11 +106,12 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
 
   if (!immediateResult) {
     localResult = await dependencies.resolveSelection?.(selectedText, {
+      ...options,
       useOnline: false
     });
     immediateResult = await resolvePlayableResult(selectedText, localResult, {
-      useOnline: true,
-      trace
+      ...options,
+      useOnline: true
     }, dependencies);
   }
 
@@ -121,12 +129,13 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
       trace
     });
     const onlineResult = await dependencies.resolveSelection?.(selectedText, {
+      ...options,
       useOnline: true,
       localResult
     });
     const playableResult = await resolvePlayableResult(selectedText, onlineResult, {
-      useOnline: true,
-      trace
+      ...options,
+      useOnline: true
     }, dependencies);
     dependencies.recordDebugEvent?.("online-refresh:result", {
       elapsedMs: Date.now() - refreshStartedAt,

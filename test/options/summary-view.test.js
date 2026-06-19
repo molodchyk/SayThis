@@ -93,9 +93,13 @@ test("summarizes missing locale voice with shared-audio readiness", () => {
     timing: {
       audioStartMs: 157,
       onlineRefreshMs: 5835,
+      prepareElapsedMs: 20,
+      resolveElapsedMs: 80,
+      sharedAudioElapsedMs: 30,
+      audioElapsedMs: 7,
       storedResultHit: true
     }
-  }), "Last audio started from stored audio in 157 ms; online refresh finished in 5835 ms.");
+  }), "Last audio started from stored audio in 157 ms (setup 20 ms; resolve 80 ms; shared audio 30 ms; play 7 ms); online refresh finished in 5835 ms.");
   assert.equal(debugSummaryText({}), "No resolved result has been stored yet.");
   assert.equal(debugSummaryText({
     lastResult: { display: "Exampletown" },

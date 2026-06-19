@@ -30,7 +30,10 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
       lastSource: action.source
     });
 
-    const options = action.options || {};
+    const options = {
+      ...(action.options || {}),
+      trace
+    };
     if (options.useOnline === true) {
       return await handleOnlineLookupAndPronounce(selectedText, tab?.id, options, dependencies, trace);
     }
@@ -46,7 +49,7 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
     }
 
     const result = await dependencies.resolveSelection(selectedText, options);
-    const playableResult = await resolvePlayableResult(selectedText, result, action.options || {}, dependencies);
+    const playableResult = await resolvePlayableResult(selectedText, result, options, dependencies);
     await dependencies.setStorage?.({
       [dependencies.lastResultKey || "lastResult"]: playableResult
     });

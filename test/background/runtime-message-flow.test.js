@@ -311,7 +311,7 @@ test("runtime speak starts playback preparation before resolving", async () => {
   assert.equal(handled, true);
   assert.deepEqual(calls, [
     ["preparePlayback", trace],
-    ["resolveSelection", "Exampletown", {}],
+    ["resolveSelection", "Exampletown", { trace }],
     ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
   ]);
   assert.equal(responses[0].ok, true);
@@ -374,7 +374,7 @@ test("runtime speak falls back to resolving when stored-result read fails", asyn
       error: "storage temporarily unavailable",
       trace
     }],
-    ["resolveSelection", "Exampletown", {}],
+    ["resolveSelection", "Exampletown", { trace }],
     ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
   ]);
   assert.deepEqual(responses, [{

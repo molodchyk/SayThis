@@ -79,31 +79,105 @@ test("builds speech and voice diagnostics from stored result", async () => {
     }),
     getDebugEvents: () => [{
       at: "2026-06-19T00:00:00.000Z",
-      kind: "ui:speak-click",
+      kind: "ui:selection-auto-speak",
       trace: {
         id: "trace-1",
-        source: "popup",
-        action: "popup-speak",
+        source: "content-selection",
+        action: "select-to-hear",
         startedAt: 1800000000000
       },
       sinceTraceStartMs: 0
     }, {
-      at: "2026-06-19T00:00:00.250Z",
-      kind: "audio:popup-start",
+      at: "2026-06-19T00:00:00.005Z",
+      kind: "audio-prepare:start",
       trace: {
         id: "trace-1",
-        source: "popup",
-        action: "popup-speak",
+        source: "content-selection",
+        action: "select-to-hear",
         startedAt: 1800000000000
       },
-      sinceTraceStartMs: 250
+      sinceTraceStartMs: 5
+    }, {
+      at: "2026-06-19T00:00:00.040Z",
+      kind: "audio-prepare:result",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 40,
+      elapsedMs: 35
+    }, {
+      at: "2026-06-19T00:00:00.042Z",
+      kind: "resolve:start",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 42
+    }, {
+      at: "2026-06-19T00:00:00.210Z",
+      kind: "resolve:result",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 210,
+      elapsedMs: 168
+    }, {
+      at: "2026-06-19T00:00:00.220Z",
+      kind: "shared-audio:start",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 220
+    }, {
+      at: "2026-06-19T00:00:00.245Z",
+      kind: "shared-audio:result",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 245,
+      elapsedMs: 25
+    }, {
+      at: "2026-06-19T00:00:00.247Z",
+      kind: "audio:start",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 247
+    }, {
+      at: "2026-06-19T00:00:00.250Z",
+      kind: "audio:result",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 250,
+      elapsedMs: 3
     }, {
       at: "2026-06-19T00:00:05.000Z",
       kind: "online-refresh:result",
       trace: {
         id: "trace-1",
-        source: "popup",
-        action: "popup-speak",
+        source: "content-selection",
+        action: "select-to-hear",
         startedAt: 1800000000000
       },
       sinceTraceStartMs: 5000,
@@ -135,9 +209,20 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.offscreenSpeech.selectedVoice.name, "Polish Web");
   assert.equal(diagnostics.playback.sharedAudioCandidate, true);
   assert.equal(diagnostics.timing.audioStartMs, 250);
+  assert.equal(diagnostics.timing.triggerKind, "ui:selection-auto-speak");
+  assert.equal(diagnostics.timing.prepareReadyMs, 40);
+  assert.equal(diagnostics.timing.prepareElapsedMs, 35);
+  assert.equal(diagnostics.timing.resolveResultMs, 210);
+  assert.equal(diagnostics.timing.resolveElapsedMs, 168);
+  assert.equal(diagnostics.timing.sharedAudioResultMs, 245);
+  assert.equal(diagnostics.timing.sharedAudioElapsedMs, 25);
+  assert.equal(diagnostics.timing.audioRequestMs, 247);
+  assert.equal(diagnostics.timing.audioResultMs, 250);
+  assert.equal(diagnostics.timing.audioElapsedMs, 3);
   assert.equal(diagnostics.timing.onlineRefreshMs, 5000);
-  assert.equal(diagnostics.timing.source, "popup");
-  assert.equal(diagnostics.recentEvents.length, 4);
+  assert.equal(diagnostics.timing.onlineRefreshElapsedMs, 4750);
+  assert.equal(diagnostics.timing.source, "content-selection");
+  assert.equal(diagnostics.recentEvents.length, 11);
 });
 
 test("summarizes debug payloads without full objects", () => {

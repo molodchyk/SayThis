@@ -100,7 +100,8 @@ async function resolveSelection(text, options = {}) {
   const startedAt = Date.now();
   recordDebugEvent("resolve:start", {
     text: normalizeSelection(text),
-    options: debugOptions(options)
+    options: debugOptions(options),
+    trace: options.trace
   });
   try {
     const result = await resolveSelectionFlow(text, options, {
@@ -112,13 +113,15 @@ async function resolveSelection(text, options = {}) {
     });
     recordDebugEvent("resolve:result", {
       elapsedMs: Date.now() - startedAt,
-      result: summarizeResultForDebug(result)
+      result: summarizeResultForDebug(result),
+      trace: options.trace
     });
     return result;
   } catch (error) {
     recordDebugEvent("resolve:error", {
       elapsedMs: Date.now() - startedAt,
-      error: errorMessage(error)
+      error: errorMessage(error),
+      trace: options.trace
     });
     throw error;
   }

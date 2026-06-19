@@ -31,7 +31,10 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       return true;
     }
 
-    const options = useOnlineMessageOptions(message);
+    const options = {
+      ...useOnlineMessageOptions(message),
+      ...(message.trace ? { trace: message.trace } : {})
+    };
     startPreparingPlayback(dependencies, message.trace);
     const storedResultPromise = message.result
       ? Promise.resolve(null)

@@ -4,6 +4,28 @@ import {
   handleContextMenuClick
 } from "../../src/background/context-menu-flow.js";
 
+function compactTraceCalls(calls) {
+  return calls.map((call) => call.map(compactTraceValue));
+}
+
+function compactTraceValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(compactTraceValue);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  if (value.id && value.source === "background" && value.action && value.startedAt) {
+    return { action: value.action };
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, innerValue]) => [key, compactTraceValue(innerValue)])
+  );
+}
+
 test("ignores unknown context menu actions", async () => {
   const result = await handleContextMenuClick({ menuItemId: "unknown", selectionText: "Gnocchi" }, {}, {
     resolveOptionsForMenuId: () => ({ ok: false }),
@@ -50,10 +72,14 @@ test("resolves, enriches, stores, and plays context menu selections", async () =
 
   assert.equal(result.handled, true);
   assert.equal(result.result, enriched);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["setStorage", { lastSelection: "Gnocchi", lastSource: "context-menu" }],
-    ["resolveSelection", "Gnocchi", { useOnline: false }],
-    ["resolveSelection", "Gnocchi", { useOnline: true, localResult: resolved }],
+    ["resolveSelection", "Gnocchi", { useOnline: false, trace: { action: "context-menu" } }],
+    ["resolveSelection", "Gnocchi", {
+      useOnline: true,
+      localResult: resolved,
+      trace: { action: "context-menu" }
+    }],
     ["setStorage", { lastResult: enriched }],
     ["playResolvedResult", enriched, 42]
   ]);
@@ -94,13 +120,20 @@ test("online context menu plays shared audio before refreshing the result", asyn
 
   assert.equal(result.handled, true);
   assert.equal(result.result, refreshed);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu-online" }],
-    ["resolveSelection", "Exampletown", { useOnline: false }],
+    ["resolveSelection", "Exampletown", {
+      useOnline: false,
+      trace: { action: "context-menu-online" }
+    }],
     ["requestSharedAudio", "Exampletown", local],
     ["setStorage", { lastResult: shared }],
     ["playResolvedResult", shared, 42],
-    ["resolveSelection", "Exampletown", { useOnline: true, localResult: local }],
+    ["resolveSelection", "Exampletown", {
+      useOnline: true,
+      localResult: local,
+      trace: { action: "context-menu-online" }
+    }],
     ["requestSharedAudio", "Exampletown", refreshed],
     ["setStorage", { lastResult: refreshed }],
     ["showResultOnTab", 42, refreshed]
@@ -147,12 +180,16 @@ test("online context menu reuses matching stored audio before local fallback can
 
   assert.equal(result.handled, true);
   assert.equal(result.result, refreshed);
-  assert.deepEqual(calls, [
+  assert.deepEqual(compactTraceCalls(calls), [
     ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu-online" }],
     ["getStorage", ["lastResult"]],
     ["setStorage", { lastResult: stored }],
     ["playResolvedResult", stored, 42],
-    ["resolveSelection", "Exampletown", { useOnline: true, localResult: stored }],
+    ["resolveSelection", "Exampletown", {
+      useOnline: true,
+      localResult: stored,
+      trace: { action: "context-menu-online" }
+    }],
     ["requestSharedAudio", "Exampletown", refreshed],
     ["setStorage", { lastResult: refreshed }],
     ["showResultOnTab", 42, refreshed]
