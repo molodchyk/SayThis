@@ -412,6 +412,7 @@ test("options page exposes shared-entry data controls", async () => {
 test("selection listener speaks bounded selected text directly", async () => {
   const manifestSource = await readText("manifest.json");
   const source = await readText("src/selection-listener.js");
+  const runtimeSource = await readText("src/background/runtime-message-flow.js");
 
   assert.match(manifestSource, /src\/selection-listener\.js/);
   assert.match(source, /selectionchange/);
@@ -423,7 +424,8 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /MAX_AUTO_WORDS = 5/);
   assert.match(source, /selectToHear !== false/);
   assert.match(source, /SAYTHIS_SPEAK/);
-  assert.match(source, /ui:selection-auto-speak/);
+  assert.doesNotMatch(source, /SAYTHIS_DEBUG_EVENT/);
+  assert.match(runtimeSource, /ui:selection-auto-speak/);
   assert.match(source, /lastSentKey/);
   assert.match(source, /lastSentAt/);
   assert.match(source, /isSuppressedRepeat/);

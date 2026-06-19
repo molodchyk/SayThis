@@ -253,6 +253,10 @@ test("runtime speak reuses matching stored audio without resolving", async () =>
     text: "Stored shared audio"
   });
   assert.deepEqual(calls, [
+    ["recordDebugEvent", "ui:selection-auto-speak", {
+      text: "Exampletown",
+      trace
+    }],
     ["getStorage", ["lastResult"]],
     ["recordDebugEvent", "stored-result:hit", {
       text: "Exampletown",
@@ -538,6 +542,10 @@ test("runtime speak falls back to resolving when stored-result read fails", asyn
 
   assert.equal(handled, true);
   assert.deepEqual(calls, [
+    ["recordDebugEvent", "ui:selection-auto-speak", {
+      text: "Exampletown",
+      trace
+    }],
     ["getStorage"],
     ["recordDebugEvent", "stored-result:error", {
       text: "Exampletown",

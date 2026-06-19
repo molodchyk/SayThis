@@ -5,7 +5,6 @@
   window.__sayThisSelectionListenerReady = true;
 
   const MESSAGE_TYPE_SPEAK = "SAYTHIS_SPEAK";
-  const MESSAGE_TYPE_DEBUG = "SAYTHIS_DEBUG_EVENT";
   const SETTINGS_KEY = "settings";
   const SELECTION_CHANGE_DEBOUNCE_MS = 160;
   const COMMITTED_SELECTION_DEBOUNCE_MS = 25;
@@ -78,14 +77,6 @@
     lastSentKey = key;
     lastSentAt = Date.now();
     const trace = createTrace("select-to-hear");
-    sendRuntimeMessage({
-      type: MESSAGE_TYPE_DEBUG,
-      kind: "ui:selection-auto-speak",
-      payload: {
-        text: selectedText,
-        trace
-      }
-    });
     sendRuntimeMessage({
       type: MESSAGE_TYPE_SPEAK,
       text: selectedText,

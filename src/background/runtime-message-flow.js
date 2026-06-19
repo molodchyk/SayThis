@@ -34,6 +34,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       return true;
     }
 
+    recordSelectionTrigger(selectedText, message.trace, dependencies);
     const options = {
       ...useOnlineMessageOptions(message),
       ...(message.trace ? { trace: message.trace } : {})
@@ -403,6 +404,17 @@ function startPreparingPlayback(dependencies = {}, trace = null) {
   } catch {
     // Playback can still try to prepare its surface at the point of use.
   }
+}
+
+function recordSelectionTrigger(selectedText, trace = null, dependencies = {}) {
+  if (trace?.source !== "content-selection" || trace?.action !== "select-to-hear") {
+    return;
+  }
+
+  dependencies.recordDebugEvent?.("ui:selection-auto-speak", {
+    text: selectedText,
+    trace
+  });
 }
 
 function speechSummary(speech = {}) {
