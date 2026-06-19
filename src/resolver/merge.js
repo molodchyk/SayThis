@@ -1,4 +1,5 @@
 import {
+  languageCodeFromLanguage,
   languageNameFromCode,
   ttsLangFromLanguage
 } from "./language.js";
@@ -278,5 +279,5 @@ function isUsefulAlternate(result = {}) {
 }
 
 function normalizeLanguage(language) {
-  return String(language || "").trim();
+  return languageCodeFromLanguage(language) || String(language || "").trim();
 }

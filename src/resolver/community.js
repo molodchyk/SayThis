@@ -3,6 +3,10 @@ import {
   normalizeSelection
 } from "./text.js";
 import {
+  languageCodeFromLanguage,
+  ttsLangFromLanguage
+} from "./language.js";
+import {
   normalizeAliases,
   normalizeCount,
   normalizeTrustSignals,
@@ -75,6 +79,10 @@ export function updateCommunityEntries(entries, selection, feedback = {}) {
         ? normalizeAliases(feedback[field])
         : field === "audioUrl" || field === "sourceUrl"
           ? normalizeUrl(feedback[field])
+          : field === "language"
+            ? normalizeLanguage(feedback[field])
+            : field === "ttsLang"
+              ? normalizeTtsLanguage(feedback[field])
           : normalizeSelection(feedback[field]);
       if (Array.isArray(value) ? value.length : Boolean(value)) {
         next[field] = value;
@@ -165,7 +173,7 @@ function normalizeCommunityEntry(entry = {}, fallbackLookupKey = "") {
     sourceForm: normalizeSelection(entry.sourceForm),
     aliases: normalizeAliases(entry.aliases),
     language: normalizeLanguage(entry.language),
-    ttsLang: normalizeLanguage(entry.ttsLang),
+    ttsLang: normalizeTtsLanguage(entry.ttsLang),
     languageName: normalizeSelection(entry.languageName),
     origin: normalizeSelection(entry.origin),
     root: normalizeSelection(entry.root),
@@ -232,7 +240,7 @@ function normalizeRequest(value = {}) {
     sourceForm: normalizeSelection(value.sourceForm),
     aliases: normalizeAliases(value.aliases),
     language: normalizeLanguage(value.language),
-    ttsLang: normalizeLanguage(value.ttsLang),
+    ttsLang: normalizeTtsLanguage(value.ttsLang),
     languageName: normalizeSelection(value.languageName),
     origin: normalizeSelection(value.origin),
     root: normalizeSelection(value.root),
@@ -298,5 +306,9 @@ function communityEntryKeys(entry = {}) {
 }
 
 function normalizeLanguage(language) {
-  return String(language || "").trim();
+  return languageCodeFromLanguage(language) || String(language || "").trim();
+}
+
+function normalizeTtsLanguage(language) {
+  return ttsLangFromLanguage(language) || String(language || "").trim();
 }

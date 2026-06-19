@@ -217,6 +217,37 @@ test("reuses local approved shared audio by source form and stores the selected 
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("reuses local approved shared audio when language names and codes match", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      existingspelling: {
+        term: "Existing spelling",
+        lookupKey: "existingspelling",
+        sourceForm: "Przykladowo",
+        language: "Polish",
+        audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+        sourceStatus: "generated-audio",
+        trustSignals: ["moderator-reviewed", "generated-audio", "audio-backed"]
+      }
+    },
+    settings: {}
+  });
+  const baseResult = resolvedStructuredResult();
+  const refreshed = resolvedGeneratedAudioResult(baseResult);
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, {}, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch when source-form audio is approved locally");
+    },
+    resolveSelection: async () => refreshed
+  });
+
+  assert.equal(result, refreshed);
+  assert.equal(storage.state.approvedCommunityEntries.exampletown.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
+  assert.equal(storage.state.approvedCommunityEntries.exampletown.language, "Polish");
+});
+
 test("reuses local approved shared audio by alias and variant request keys", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {

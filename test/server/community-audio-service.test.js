@@ -239,8 +239,7 @@ test("reuses approved audio through the public shared audio action", async () =>
       term: "Exampletown",
       lookupKey: "exampletown",
       sourceForm: "Przykladowo",
-      language: "pl",
-      ttsLang: "pl-PL"
+      language: "Polish"
     })
   }, response.store);
 

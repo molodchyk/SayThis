@@ -55,21 +55,40 @@ const SCRIPT_HINTS = {
 
 const LANGUAGE_NAMES = {
   ar: "Arabic",
+  bg: "Bulgarian",
+  cs: "Czech",
+  da: "Danish",
   de: "German",
   el: "Greek",
   en: "English",
   es: "Spanish",
   fa: "Persian",
+  fi: "Finnish",
   fr: "French",
   ga: "Irish",
   he: "Hebrew",
+  hi: "Hindi",
+  hr: "Croatian",
+  hu: "Hungarian",
+  hy: "Armenian",
+  id: "Indonesian",
   it: "Italian",
   ja: "Japanese",
   ko: "Korean",
   la: "Latin",
+  mr: "Marathi",
+  ms: "Malay",
+  ne: "Nepali",
+  nl: "Dutch",
+  no: "Norwegian",
   pl: "Polish",
   pt: "Portuguese",
+  ro: "Romanian",
   ru: "Russian",
+  sr: "Serbian",
+  sv: "Swedish",
+  th: "Thai",
+  tr: "Turkish",
   vi: "Vietnamese",
   zh: "Chinese"
 };
@@ -81,19 +100,39 @@ export function scriptHintForScript(script) {
 }
 
 export function ttsLangFromLanguage(language) {
-  if (!language) {
+  const normalized = languageCodeFromLanguage(language);
+  if (!normalized) {
     return "";
   }
 
-  if (language.includes("-")) {
-    return language;
+  if (normalized.includes("-")) {
+    return normalized;
   }
 
-  return LANGUAGE_TO_TTS[language] || language;
+  return LANGUAGE_TO_TTS[normalized] || normalized;
+}
+
+export function languageCodeFromLanguage(language) {
+  const raw = String(language || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  const code = normalizeLanguageCode(raw);
+  if (code) {
+    return code;
+  }
+
+  const key = normalizeLanguageName(raw);
+  if (!key) {
+    return "";
+  }
+
+  return languageCodeByName().get(key) || "";
 }
 
 export function languageNameFromCode(language) {
-  const code = String(language || "").trim().replace(/_/g, "-").toLowerCase();
+  const code = languageCodeFromLanguage(language) || String(language || "").trim().replace(/_/g, "-").toLowerCase();
   const baseCode = code.split("-")[0];
 
   return LANGUAGE_NAMES[code] ||
@@ -118,4 +157,55 @@ function displayLanguageName(language) {
   } catch {
     return "";
   }
+}
+
+let languageCodeByNameCache;
+
+function languageCodeByName() {
+  if (languageCodeByNameCache) {
+    return languageCodeByNameCache;
+  }
+
+  const entries = new Map();
+  for (const code of Object.keys(LANGUAGE_TO_TTS)) {
+    addLanguageName(entries, code, LANGUAGE_NAMES[code]);
+    addLanguageName(entries, code, displayLanguageName(code));
+  }
+  for (const locale of Object.values(LANGUAGE_TO_TTS)) {
+    addLanguageName(entries, locale, displayLanguageName(locale));
+  }
+
+  languageCodeByNameCache = entries;
+  return entries;
+}
+
+function addLanguageName(entries, code, name) {
+  const normalizedCode = normalizeLanguageCode(code);
+  const key = normalizeLanguageName(name);
+  if (normalizedCode && key && !entries.has(key)) {
+    entries.set(key, normalizedCode);
+  }
+}
+
+function normalizeLanguageCode(value) {
+  const raw = String(value || "")
+    .trim()
+    .replace(/_/g, "-");
+  const match = raw.match(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/i)?.[0] || "";
+  if (!match) {
+    return "";
+  }
+
+  const [base, region] = match.split("-");
+  return [
+    base.toLowerCase(),
+    region ? region.toUpperCase() : ""
+  ].filter(Boolean).join("-");
+}
+
+function normalizeLanguageName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 }

@@ -25,6 +25,9 @@ import {
   hasUsefulSharedAudioTarget
 } from "../result/shared-audio.js";
 import {
+  languageCodeFromLanguage
+} from "../resolver/language.js";
+import {
   resultWithSharedAudioEntry
 } from "./community/shared-audio-result.js";
 
@@ -544,7 +547,7 @@ function firstSourceUrl(result = {}) {
 }
 
 function baseLanguage(value) {
-  return normalizeSelection(value).toLowerCase().split(/[-_]/)[0];
+  return (languageCodeFromLanguage(value) || normalizeSelection(value)).toLowerCase().split(/[-_]/)[0];
 }
 
 function fetcher(dependencies = {}) {

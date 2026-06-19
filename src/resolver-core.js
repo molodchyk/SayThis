@@ -4,6 +4,7 @@ import {
   normalizeSelection
 } from "./resolver/text.js";
 import {
+  languageCodeFromLanguage,
   languageNameFromCode,
   scriptHintForScript,
   ttsLangFromLanguage
@@ -391,7 +392,7 @@ function normalizeOrigin(origin) {
 }
 
 function normalizeLanguage(language) {
-  return String(language || "").trim();
+  return languageCodeFromLanguage(language) || String(language || "").trim();
 }
 
 function entryKeys(entry) {

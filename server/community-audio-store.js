@@ -2,6 +2,9 @@ import {
   createLookupKey,
   normalizeSelection
 } from "../src/resolver-core.js";
+import {
+  languageCodeFromLanguage
+} from "../src/resolver/language.js";
 import { normalizeAudioMimeType } from "./community-audio-artifacts.js";
 
 export function upsertGeneratedAudioArtifact(store, artifact, now = new Date().toISOString(), options = {}) {
@@ -294,7 +297,7 @@ function normalizeHttpsUrl(value) {
 }
 
 function baseLanguage(value) {
-  return normalizeSelection(value).toLowerCase().split(/[-_]/)[0];
+  return (languageCodeFromLanguage(value) || normalizeSelection(value)).toLowerCase().split(/[-_]/)[0];
 }
 
 function clampNumber(value, min, max) {

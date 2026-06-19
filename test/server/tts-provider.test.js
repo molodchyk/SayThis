@@ -65,6 +65,33 @@ test("calls Google-compatible TTS endpoint with selected voice", async () => {
   });
 });
 
+test("maps language names before calling Google-compatible TTS", async () => {
+  const calls = [];
+  const provider = createGoogleTtsProvider({
+    accessToken: "token",
+    fetch: async (url, init) => {
+      calls.push({ url, init });
+      return {
+        ok: true,
+        async json() {
+          return { audioContent: Buffer.from("audio").toString("base64") };
+        }
+      };
+    }
+  });
+
+  const result = await provider.synthesize({
+    text: "Przykladowo",
+    language: "Polish"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.voice.languageCode, "pl-PL");
+  assert.deepEqual(JSON.parse(calls[0].init.body).voice, {
+    languageCode: "pl-PL"
+  });
+});
+
 test("converts provider output into a shared audio artifact payload", async () => {
   const provider = {
     async synthesize() {

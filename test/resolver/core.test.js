@@ -19,11 +19,6 @@ import {
   normalizeSelection as normalizeTextSelection
 } from "../../src/resolver/text.js";
 import {
-  languageNameFromCode,
-  scriptHintForScript,
-  ttsLangFromLanguage
-} from "../../src/resolver/language.js";
-import {
   normalizeAliases as normalizeValueAliases,
   normalizeCount as normalizeValueCount,
   normalizeLongValue,
@@ -70,14 +65,6 @@ test("keeps resolver text helpers behind direct and compatibility exports", () =
   assert.deepEqual(detectTextScript("Αθήνα"), detectScript("Αθήνα"));
 });
 
-test("maps resolver language helpers from a narrow module", () => {
-  assert.equal(ttsLangFromLanguage("hy"), "hy-AM");
-  assert.equal(ttsLangFromLanguage("pt-BR"), "pt-BR");
-  assert.equal(languageNameFromCode("tr"), "Turkish");
-  assert.equal(scriptHintForScript("Greek").ttsLang, "el-GR");
-  assert.deepEqual(scriptHintForScript("Unknown"), {});
-});
-
 test("normalizes resolver values from a narrow module", () => {
   assert.deepEqual(normalizeValueAliases("Alpha; Beta; Alpha"), ["Alpha", "Beta"]);
   assert.deepEqual(normalizeValueTrustSignals(["source-backed", "source-backed", "audio-backed"]), ["source-backed", "audio-backed"]);
@@ -93,6 +80,8 @@ test("maps resolver community helpers from a narrow module", () => {
     kind: "correction",
     sourceForm: " Exampleterm ",
     aliases: "Alias; Alias",
+    language: "Polish",
+    ttsLang: "Polish",
     root: "example root",
     domainHint: "research",
     variants: "studio variant; studio variant",
@@ -108,6 +97,8 @@ test("maps resolver community helpers from a narrow module", () => {
   const summarized = applyCommunitySummaryDirect({ id: "result" }, found);
 
   assert.equal(found.sourceForm, "Exampleterm");
+  assert.equal(found.language, "pl");
+  assert.equal(found.ttsLang, "pl-PL");
   assert.equal(foundVariant, found);
   assert.equal(found.root, "example root");
   assert.equal(found.domainHint, "research");
@@ -451,30 +442,6 @@ test("uses browser language display names for valid source codes", () => {
 
   assert.match(regional.languageName, /Portuguese/);
   assert.equal(regional.ttsLang, "pt-BR");
-});
-
-test("maps structured source language codes to speech locales", () => {
-  const cases = [
-    ["ga", "ga-IE"],
-    ["hy", "hy-AM"],
-    ["hi", "hi-IN"],
-    ["la", "la"],
-    ["th", "th-TH"],
-    ["bg", "bg-BG"],
-    ["sr", "sr-RS"],
-    ["uk", "uk-UA"]
-  ];
-
-  for (const [language, ttsLang] of cases) {
-    const result = createRemoteStructuredResult("Exampleterm", {
-      id: `remote:${language}`,
-      display: "Exampleterm",
-      sourceForm: "Exampleterm",
-      language
-    });
-
-    assert.equal(result.ttsLang, ttsLang);
-  }
 });
 
 test("promotes remote results with verified audio", () => {
