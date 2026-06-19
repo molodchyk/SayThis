@@ -68,6 +68,37 @@ test("selection start primes playback before selected text exists", async () => 
   ]);
 });
 
+test("pointer down primes playback before selected text exists", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""]
+  ]);
+});
+
+test("keyboard selection shortcuts prime playback before selected text exists", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("keydown", { key: "ArrowRight", shiftKey: true });
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""]
+  ]);
+});
+
+test("ordinary keydown does not prime playback", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("keydown", { key: "r" });
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages, []);
+});
+
 test("selection changes do not prime playback when select-to-hear is disabled", async () => {
   const harness = await installSelectionListener({
     settings: { selectToHear: false }
@@ -208,9 +239,9 @@ async function installSelectionListener(options = {}) {
     setSelection(value) {
       selectedText = value;
     },
-    dispatch(type) {
+    dispatch(type, event = {}) {
       for (const listener of listeners.get(type) || []) {
-        listener();
+        listener(event);
       }
     }
   };

@@ -32,8 +32,16 @@
 
   readSettings();
 
+  document.addEventListener("pointerdown", () => {
+    primePlaybackSurface();
+  }, true);
   document.addEventListener("selectstart", () => {
     primePlaybackSurface();
+  }, true);
+  document.addEventListener("keydown", (event) => {
+    if (isLikelyKeyboardSelection(event)) {
+      primePlaybackSurface();
+    }
   }, true);
   document.addEventListener("selectionchange", () => {
     const selectedText = readSelectedText();
@@ -325,6 +333,16 @@
     }
 
     return !(words.length > 1 && /[.!?。！？]$/.test(text));
+  }
+
+  function isLikelyKeyboardSelection(event = {}) {
+    if (event.shiftKey) {
+      const key = String(event.key || "").toLowerCase();
+      return ["arrowleft", "arrowright", "arrowup", "arrowdown", "home", "end"].includes(key);
+    }
+
+    const key = String(event.key || "").toLowerCase();
+    return key === "a" && (event.ctrlKey || event.metaKey);
   }
 
   async function readSettings() {

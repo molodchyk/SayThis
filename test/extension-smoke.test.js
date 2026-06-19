@@ -425,6 +425,8 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(manifestSource, /"run_at": "document_start"/);
   assert.match(source, /selectionchange/);
   assert.match(source, /selectstart/);
+  assert.match(source, /pointerdown/);
+  assert.match(source, /keydown/);
   assert.match(source, /SELECTION_CHANGE_DEBOUNCE_MS = 120/);
   assert.match(source, /SELECTION_PREPARE_DEBOUNCE_MS = 90/);
   assert.match(source, /COMMITTED_SELECTION_DEBOUNCE_MS = 0/);
@@ -448,6 +450,7 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /prepareTimerId/);
   assert.match(source, /stable: true/);
   assert.match(source, /primePlaybackSurface/);
+  assert.match(source, /isLikelyKeyboardSelection/);
   assert.match(source, /hasCommittedCheckPending/);
   assert.match(source, /isSuppressedRepeat/);
   assert.match(source, /isSuppressedPrepare/);
