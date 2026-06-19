@@ -7,6 +7,7 @@
   let host;
   let root;
   let audioPlayer;
+  let currentResult = null;
   const overlayStyles = globalThis.__sayThisOverlayStyles || "";
   const overlayRuntime = globalThis.__sayThisOverlayRuntimeAdapters || {};
   const overlayResultView = globalThis.__sayThisOverlayResultView || {};
@@ -43,12 +44,14 @@
   overlayRuntime.addShowResultListener?.((result, options) => {
     renderOverlay(result, options);
   }, runtimeAdapters);
+  overlayRuntime.addVisibleResultListener?.(() => currentResult, runtimeAdapters);
 
   function renderOverlay(result, options = {}) {
     if (!result) {
       return;
     }
 
+    currentResult = result;
     ensureRoot();
     const evidence = [
       ...trustSignalItems(result.trustSignals),
@@ -168,6 +171,7 @@
       host.remove();
       host = null;
       root = null;
+      currentResult = null;
     });
 
     root.querySelector('[data-action="speak"]').addEventListener("click", () => speak(result, 0.82, {

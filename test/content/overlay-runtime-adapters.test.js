@@ -58,10 +58,35 @@ test("registers a show-result listener with response handling", () => {
   assert.deepEqual(plain(responses), [{ ok: true }]);
 });
 
+test("registers a visible-result listener with response handling", () => {
+  let registered;
+  const responses = [];
+  const runtime = loadRuntime();
+  const visible = { display: "Gnocchi" };
+  const added = runtime.addVisibleResultListener(() => visible, {
+    addMessageListener: (listener) => {
+      registered = listener;
+    }
+  });
+
+  assert.equal(added, true);
+  assert.equal(registered({ type: "OTHER" }, {}, () => {
+    throw new Error("should not respond");
+  }), false);
+  assert.equal(registered({
+    type: "SAYTHIS_GET_VISIBLE_RESULT"
+  }, {}, (response) => responses.push(response)), true);
+  assert.deepEqual(plain(responses), [{
+    ok: true,
+    result: visible
+  }]);
+});
+
 test("reports missing listener support", () => {
   const runtime = loadRuntime();
 
   assert.equal(runtime.addShowResultListener(() => {}, {}), false);
+  assert.equal(runtime.addVisibleResultListener(() => {}, {}), false);
 });
 
 test("normalizes runtime message failures", async () => {

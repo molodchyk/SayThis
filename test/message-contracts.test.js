@@ -4,6 +4,7 @@ import {
   createFeedbackMessage,
   createDebugEventMessage,
   createFlushSyncMessage,
+  createGetVisibleResultMessage,
   createGetDebugStateMessage,
   createOffscreenDebugStateMessage,
   createOffscreenPrepareAudioMessage,
@@ -292,6 +293,9 @@ test("builds overlay and offscreen audio messages", () => {
     type: MESSAGE_TYPES.playAudio,
     audio,
     rate: 0.45
+  });
+  assert.deepEqual(createGetVisibleResultMessage(), {
+    type: MESSAGE_TYPES.getVisibleResult
   });
   assert.deepEqual(createOffscreenSpeakMessage(" Przykladowo ", {
     lang: "pl-PL",

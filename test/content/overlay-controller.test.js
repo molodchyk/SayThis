@@ -11,6 +11,59 @@ import {
   resultViewSource
 } from "../../test-support/content/overlay-test-harness.js";
 
+test("visible result listener returns the rendered overlay result", () => {
+  const fakeDom = createFakeDom();
+  let showResultListener;
+  let visibleResultReader;
+  const result = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    pronunciation: {
+      audio: [{
+        label: "Shared generated audio",
+        url: "https://audio.example/shared.ogg",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const context = vm.createContext({
+    Audio: class {},
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    addVisibleResultListener(listener) {
+      visibleResultReader = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return {};
+    },
+    async sendRuntimeMessage() {
+      return { ok: true };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  assert.equal(typeof visibleResultReader, "function");
+  assert.equal(visibleResultReader(), null);
+
+  showResultListener(result, { onlineChecked: true });
+
+  assert.equal(visibleResultReader(), result);
+});
+
 test("source-form playback row sends a speak message", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();

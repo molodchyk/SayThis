@@ -4,6 +4,9 @@ import {
   resultToSpeechOptions
 } from "./resolver-core.js";
 import {
+  createGetVisibleResultMessage
+} from "./message-contracts.js";
+import {
   contextMenuDefinitions,
   resolveOptionsForMenuId
 } from "./extension-actions.js";
@@ -76,6 +79,7 @@ platform.addContextMenuClickedListener((info, tab) => {
     resolveSelection,
     requestSharedAudio,
     preparePlayback,
+    getVisibleResultOnTab,
     playResolvedResult,
     showResultOnTab,
     recordDebugEvent,
@@ -268,6 +272,21 @@ async function playResolvedResult(result, tabId, trace) {
 
 async function showResultOnTab(tabId, result, options = {}) {
   return playbackSurface.showResultOnTab(tabId, result, options);
+}
+
+async function getVisibleResultOnTab(tabId) {
+  if (!tabId) {
+    return null;
+  }
+
+  try {
+    const response = await platform.sendTabMessage(tabId, createGetVisibleResultMessage());
+    return response?.ok && response.result && typeof response.result === "object"
+      ? response.result
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 async function stopPlayback() {

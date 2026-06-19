@@ -14,6 +14,7 @@ export const MESSAGE_TYPES = Object.freeze({
   requestSharedAudio: "SAYTHIS_REQUEST_SHARED_AUDIO",
   preparePlayback: "SAYTHIS_PREPARE_PLAYBACK",
   showResult: "SAYTHIS_SHOW_RESULT",
+  getVisibleResult: "SAYTHIS_GET_VISIBLE_RESULT",
   playAudio: "SAYTHIS_PLAY_AUDIO",
   offscreenDebugState: "SAYTHIS_OFFSCREEN_DEBUG_STATE",
   offscreenPrepareAudio: "SAYTHIS_OFFSCREEN_PREPARE_AUDIO",
@@ -109,6 +110,10 @@ export function createShowResultMessage(result, options = {}) {
     result: result && typeof result === "object" ? result : undefined,
     autoPlay: Boolean(options.autoPlay)
   });
+}
+
+export function createGetVisibleResultMessage() {
+  return { type: MESSAGE_TYPES.getVisibleResult };
 }
 
 export function createPlayAudioMessage(audio, options = {}) {

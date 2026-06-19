@@ -44,7 +44,7 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
       return await handleOnlineLookupAndPronounce(selectedText, tab?.id, options, dependencies, trace);
     }
 
-    const candidate = await firstContextMenuAudioCandidate(selectedText, options, dependencies, trace);
+    const candidate = await firstContextMenuAudioCandidate(selectedText, tab?.id, options, dependencies, trace);
     if (candidate?.result) {
       const storedResult = candidate.result;
       setStorageBestEffort(dependencies, {
@@ -77,7 +77,7 @@ export async function handleContextMenuClick(info = {}, tab = {}, dependencies =
 }
 
 async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
-  const immediateCandidate = await firstContextMenuAudioCandidate(selectedText, options, dependencies, trace);
+  const immediateCandidate = await firstContextMenuAudioCandidate(selectedText, tabId, options, dependencies, trace);
   const localResult = immediateCandidate?.localResult || immediateCandidate?.result || null;
   const immediateResult = immediateCandidate?.result || null;
 
@@ -137,7 +137,12 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
   }
 }
 
-async function firstContextMenuAudioCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
+async function firstContextMenuAudioCandidate(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
+  const visibleCandidate = await visibleAudioCandidate(selectedText, tabId, dependencies, trace);
+  if (visibleCandidate) {
+    return visibleCandidate;
+  }
+
   const storedCandidatePromise = storedAudioCandidate(selectedText, dependencies, trace);
   const storedGracePromise = waitForStoredResultGrace(
     storedCandidatePromise,
@@ -159,6 +164,40 @@ async function firstContextMenuAudioCandidate(selectedText, options = {}, depend
     promiseWithinWait(directSharedAudioPromise, waitMs),
     promiseWithinWait(localAudioPromise, waitMs)
   ]) || await localPlayablePromise;
+}
+
+async function visibleAudioCandidate(selectedText, tabId, dependencies = {}, trace = null) {
+  if (!tabId || typeof dependencies.getVisibleResultOnTab !== "function") {
+    return null;
+  }
+
+  try {
+    const result = await dependencies.getVisibleResultOnTab(tabId);
+    const missReason = storedResultMissReason(result, selectedText);
+    if (missReason) {
+      recordStoredResultMiss(selectedText, result, `visible-${missReason}`, dependencies, trace);
+      return null;
+    }
+
+    dependencies.recordDebugEvent?.("visible-result:hit", {
+      text: selectedText,
+      sourceStatus: result.sourceStatus || "",
+      audioQuality: getBestAudio(result)?.quality || "",
+      trace
+    });
+    return {
+      result,
+      localResult: result,
+      source: "visible"
+    };
+  } catch (error) {
+    dependencies.recordDebugEvent?.("visible-result:error", {
+      text: selectedText,
+      error: error?.message || String(error || "Unknown visible result error"),
+      trace
+    });
+    return null;
+  }
 }
 
 async function storedAudioCandidate(selectedText, dependencies = {}, trace = null) {

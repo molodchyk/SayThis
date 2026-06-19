@@ -136,6 +136,58 @@ test("online context menu plays shared audio before refreshing the result", asyn
   ]);
 });
 
+test("context menu reuses visible overlay audio before storage or lookup", async () => {
+  const calls = [];
+  const visible = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Visible shared audio",
+        url: "https://audio.example/visible.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await handleContextMenuClick({ menuItemId: "say", selectionText: " Exampletown " }, { id: 42 }, {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    getVisibleResultOnTab: async (tabId) => {
+      calls.push(["getVisibleResultOnTab", tabId]);
+      return visible;
+    },
+    getStorage: async () => {
+      throw new Error("should not read storage when visible audio matches");
+    },
+    requestSharedAudio: async () => {
+      throw new Error("should not request shared audio when visible audio matches");
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve when visible audio matches");
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    lastResultKey: "lastResult"
+  });
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, visible);
+  assert.equal(result.reusedStored, true);
+  assert.deepEqual(calls, [
+    ["setStorage", { lastSelection: "Exampletown", lastSource: "context-menu" }],
+    ["getVisibleResultOnTab", 42],
+    ["setStorage", { lastResult: visible }],
+    ["playResolvedResult", visible, 42]
+  ]);
+});
+
 test("context menu plays direct approved shared audio before slow local resolution", async () => {
   const calls = [];
   const direct = {
