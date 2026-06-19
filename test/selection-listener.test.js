@@ -45,6 +45,30 @@ test("changing selection waits until the selection is stable", async () => {
   assert.equal(speakMessages[0].text, "Exampletown");
 });
 
+test("changing selection does not prepare transient fragments", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Exam");
+  harness.dispatch("selectionchange");
+  await delay(70);
+
+  assert.deepEqual(harness.sentMessages, []);
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(110);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
+  ]);
+
+  await delay(70);
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
 test("committed selection is not delayed by a later selectionchange event", async () => {
   const harness = await installSelectionListener();
 

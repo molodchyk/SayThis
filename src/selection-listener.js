@@ -8,6 +8,7 @@
   const MESSAGE_TYPE_PREPARE_PLAYBACK = "SAYTHIS_PREPARE_PLAYBACK";
   const SETTINGS_KEY = "settings";
   const SELECTION_CHANGE_DEBOUNCE_MS = 160;
+  const SELECTION_PREPARE_DEBOUNCE_MS = 90;
   const COMMITTED_SELECTION_DEBOUNCE_MS = 0;
   const REPEAT_SELECTION_COOLDOWN_MS = 1200;
   const MAX_AUTO_TEXT_LENGTH = 80;
@@ -15,6 +16,7 @@
   const chromeApi = globalThis.chrome;
 
   let timerId = null;
+  let prepareTimerId = null;
   let scheduledCheckAt = 0;
   let scheduledCheckMode = "";
   let lastSentKey = "";
@@ -35,6 +37,7 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       clearScheduledCheck();
+      clearScheduledPrepare();
     }
   });
 
@@ -46,10 +49,16 @@
   });
 
   function scheduleSelectionCheck(delayMs, options = {}) {
-    preparePotentialSelection();
     const now = Date.now();
     const dueAt = now + Math.max(0, Number(delayMs) || 0);
     const mode = options.stable === true ? "stable" : "committed";
+    if (mode === "committed") {
+      clearScheduledPrepare();
+      preparePotentialSelection();
+    } else {
+      schedulePotentialSelectionPreparation(SELECTION_PREPARE_DEBOUNCE_MS);
+    }
+
     if (timerId !== null && scheduledCheckMode === "committed" && mode === "stable") {
       return;
     }
@@ -75,6 +84,21 @@
       timerId = null;
       scheduledCheckAt = 0;
       scheduledCheckMode = "";
+    }
+  }
+
+  function schedulePotentialSelectionPreparation(delayMs) {
+    clearScheduledPrepare();
+    prepareTimerId = setTimeout(() => {
+      prepareTimerId = null;
+      preparePotentialSelection();
+    }, Math.max(0, Number(delayMs) || 0));
+  }
+
+  function clearScheduledPrepare() {
+    if (prepareTimerId !== null) {
+      clearTimeout(prepareTimerId);
+      prepareTimerId = null;
     }
   }
 
