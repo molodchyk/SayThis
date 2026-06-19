@@ -10,6 +10,9 @@ import {
   handleRuntimeMessage,
   useOnlineMessageOptions
 } from "../../src/background/runtime-message-flow.js";
+import {
+  clearPreparedSharedAudioForTests
+} from "../../src/background/prepared-shared-audio-flow.js";
 
 test("normalizes online options from runtime messages", () => {
   assert.deepEqual(useOnlineMessageOptions({ languageHints: "pl, tr, bad!" }), {
@@ -1094,6 +1097,105 @@ test("routes prepare playback messages without resolving", async () => {
   assert.equal(handled, true);
   assert.deepEqual(calls, [["preparePlayback", trace]]);
   assert.deepEqual(responses, [{ ok: true }]);
+});
+
+test("select-to-hear lets fast prepared shared audio beat source-form fallback", async () => {
+  clearPreparedSharedAudioForTests();
+  const responses = [];
+  const calls = [];
+  const resolved = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const direct = {
+    ...resolved,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Prepared shared audio",
+        url: "https://community.example/audio/aud_prepared_fast",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-prepared-direct-before-fallback",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let finishDirect;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+  const dependencies = {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return result ? null : directPromise;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak source-form fallback when prepared audio is fast");
+    },
+    preparedAudioFallbackGraceMs: 50,
+    preparedSharedAudioTtlMs: 200,
+    directSharedAudioWaitMs: 120,
+    lastResultKey: "lastResult"
+  };
+
+  handleRuntimeMessage({
+    type: MESSAGE_TYPES.preparePlayback,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(["prepare", value]), dependencies);
+  const speakHandled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(["speak", value]), dependencies);
+
+  setTimeout(finishDirect, 15);
+  await delay(90);
+
+  assert.equal(speakHandled, true);
+  assert.equal(responses[0][0], "prepare");
+  assert.deepEqual(responses[0][1], { ok: true });
+  assert.equal(responses[1][0], "speak");
+  assert.equal(responses[1][1].ok, true);
+  assert.equal(responses[1][1].result, direct);
+  assert.deepEqual(responses[1][1].speech, {
+    fallback: "audio",
+    text: "Prepared shared audio"
+  });
+  assert.deepEqual(calls, [
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["getStorage", ["lastResult"]],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
+    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+  ]);
+  clearPreparedSharedAudioForTests();
 });
 
 test("runtime speak reuses prepared direct shared audio", async () => {

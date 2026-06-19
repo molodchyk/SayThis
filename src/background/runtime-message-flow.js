@@ -13,12 +13,14 @@ import {
   resolvePlayableResult
 } from "./pronunciation-playback-flow.js";
 import {
+  hasPreparedSharedAudio,
   prepareSharedAudio,
   requestPreparedOrDirectSharedAudio
 } from "./prepared-shared-audio-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 120;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
+const DEFAULT_PREPARED_AUDIO_FALLBACK_GRACE_MS = 32;
 
 export function handleRuntimeMessage(message = {}, sendResponse = () => {}, dependencies = {}) {
   if (message?.type === MESSAGE_TYPES.resolve) {
@@ -77,6 +79,9 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       visibleResultGracePromise,
       waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
     ]);
+    const preparedSharedAudioIsPending = preferImmediatePlayback &&
+      !message.result &&
+      hasPreparedSharedAudio(selectedText, message);
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
       : visibleOrStoredGracePromise.then((fastResult) => fastResult
@@ -112,7 +117,13 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
           resolvedPlayablePromise,
           dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS
         ),
-        preferImmediatePlayback ? resolvedSelectionPromise : null
+        preferImmediatePlayback
+          ? delayResolvedFallbackWhenPreparedAudioIsPending(
+            resolvedSelectionPromise,
+            preparedSharedAudioIsPending,
+            dependencies
+          )
+          : null
       ]).then((fastResult) => fastResult || resolvedSelectionPromise);
     respondWithResult(
       resultPromise.then(async (result) => {
@@ -276,6 +287,24 @@ async function promiseWithinWait(promise, waitMs) {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+async function delayResolvedFallbackWhenPreparedAudioIsPending(promise, isPending, dependencies = {}) {
+  if (!isPending) {
+    return promise;
+  }
+
+  const graceMs = normalizeWaitMs(
+    dependencies.preparedAudioFallbackGraceMs,
+    DEFAULT_PREPARED_AUDIO_FALLBACK_GRACE_MS
+  );
+  if (!graceMs || typeof setTimeout !== "function") {
+    return promise;
+  }
+
+  const result = await promise;
+  await new Promise((resolve) => setTimeout(resolve, graceMs));
+  return result;
 }
 
 async function waitForStoredResultGrace(storedResultPromise, waitMs) {
@@ -515,6 +544,11 @@ function compactOptions(options = {}) {
   return Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   );
+}
+
+function normalizeWaitMs(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : fallback;
 }
 
 function withoutPlaybackOnlyOptions(options = {}) {

@@ -74,6 +74,10 @@ export function takePreparedSharedAudio(selectedText, options = {}) {
   return Date.now() <= record.expiresAt ? record.promise : null;
 }
 
+export function hasPreparedSharedAudio(selectedText, options = {}) {
+  return Boolean(preparedRecordForKeys(preparedSharedAudioKeys(selectedText, options.trace)));
+}
+
 export async function requestPreparedOrDirectSharedAudio(selectedText, options = {}, dependencies = {}) {
   const prepared = preparedRecordForKeys(preparedSharedAudioKeys(selectedText, options.trace));
   if (prepared) {
