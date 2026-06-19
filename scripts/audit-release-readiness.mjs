@@ -29,6 +29,9 @@ export async function auditReleaseReadiness(root = ROOT) {
   const category = await readText(root, "docs/chrome-web-store-category.md");
   const nestedCategory = await readText(root, "docs/chrome-web-store/category.md");
   const optionsHtml = await readText(root, "src/options/options.html");
+  const optionsScript = await readText(root, "src/options/index.js");
+  const settingsScript = await readText(root, "src/shared/settings.js");
+  const permissionScript = await readText(root, "src/permission-origins.js");
   const storeIconPath = "store-listing/chrome-web-store/media/icon-128.png";
   const storeScreenshotPaths = [
     "store-listing/chrome-web-store/media/screenshots/01-popup-lookup.png",
@@ -144,7 +147,22 @@ export async function auditReleaseReadiness(root = ROOT) {
     }
   }
 
+  for (const [label, source] of [
+    ["options HTML", optionsHtml],
+    ["options script", optionsScript],
+    ["settings normalizer", settingsScript],
+    ["permission origin adapter", permissionScript]
+  ]) {
+    if (hasRetiredDirectGeneratedAudioControl(source)) {
+      fail(`${label} must not expose retired direct generated-audio controls.`);
+    }
+  }
+
   return failures;
+}
+
+export function hasRetiredDirectGeneratedAudioControl(value) {
+  return /voiceService|voice-service|voice service|voice service URL template|voice-service URL template/i.test(String(value || ""));
 }
 
 async function readText(root, path) {

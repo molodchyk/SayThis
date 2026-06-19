@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
-  auditReleaseReadiness
+  auditReleaseReadiness,
+  hasRetiredDirectGeneratedAudioControl
 } from "../scripts/audit-release-readiness.mjs";
 import {
   BACKGROUND_STORAGE_KEYS
@@ -133,6 +134,12 @@ test("runs release audits in non-browser CI", async () => {
   assert.match(workflow, /npm run audit:public-audio/);
   assert.match(workflow, /npm run audit:release/);
   assert.deepEqual(failures, []);
+});
+
+test("release audit detects retired direct generated-audio controls", () => {
+  assert.equal(hasRetiredDirectGeneratedAudioControl("voiceServiceEnabled"), true);
+  assert.equal(hasRetiredDirectGeneratedAudioControl("voice-service URL template"), true);
+  assert.equal(hasRetiredDirectGeneratedAudioControl("shared audio generation token"), false);
 });
 
 function pngDimensions(buffer) {
