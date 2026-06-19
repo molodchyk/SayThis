@@ -163,6 +163,16 @@ test("builds speech and voice diagnostics from stored result", async () => {
       sinceTraceStartMs: 245,
       elapsedMs: 25
     }, {
+      at: "2026-06-19T00:00:00.246Z",
+      kind: "playback:start",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 246
+    }, {
       at: "2026-06-19T00:00:00.247Z",
       kind: "audio:start",
       trace: {
@@ -183,6 +193,18 @@ test("builds speech and voice diagnostics from stored result", async () => {
       },
       sinceTraceStartMs: 250,
       elapsedMs: 3
+    }, {
+      at: "2026-06-19T00:00:00.251Z",
+      kind: "playback:result",
+      trace: {
+        id: "trace-1",
+        source: "content-selection",
+        action: "select-to-hear",
+        startedAt: 1800000000000
+      },
+      sinceTraceStartMs: 251,
+      elapsedMs: 5,
+      mode: "offscreen-audio"
     }, {
       at: "2026-06-19T00:00:05.000Z",
       kind: "online-refresh:result",
@@ -228,6 +250,10 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.timing.resolveElapsedMs, 168);
   assert.equal(diagnostics.timing.sharedAudioResultMs, 245);
   assert.equal(diagnostics.timing.sharedAudioElapsedMs, 25);
+  assert.equal(diagnostics.timing.playbackStartMs, 246);
+  assert.equal(diagnostics.timing.playbackResultMs, 251);
+  assert.equal(diagnostics.timing.playbackElapsedMs, 5);
+  assert.equal(diagnostics.timing.playbackMode, "offscreen-audio");
   assert.equal(diagnostics.timing.audioRequestMs, 247);
   assert.equal(diagnostics.timing.audioResultMs, 250);
   assert.equal(diagnostics.timing.audioElapsedMs, 3);
@@ -238,7 +264,11 @@ test("builds speech and voice diagnostics from stored result", async () => {
   assert.equal(diagnostics.timing.source, "content-selection");
   assert.equal(diagnostics.timing.events[3].reason, "selection-mismatch");
   assert.equal(diagnostics.timing.events[3].storedDisplay, "Different term");
-  assert.equal(diagnostics.recentEvents.length, 12);
+  assert.equal(
+    diagnostics.timing.events.find((event) => event.kind === "playback:result")?.mode,
+    "offscreen-audio"
+  );
+  assert.equal(diagnostics.recentEvents.length, 14);
 });
 
 test("summarizes debug payloads without full objects", () => {

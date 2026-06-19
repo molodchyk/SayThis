@@ -15,7 +15,7 @@ export async function playResolvedResult(result, tabId, dependencies = {}, trace
     }
   }
 
-  const speech = await dependencies.speakResult?.(result);
+  const speech = await dependencies.speakResult?.(result, trace ? { trace } : undefined);
   dependencies.showResultOnTab?.(tabId, result);
   if (!speech || speech.spoken === false) {
     return {

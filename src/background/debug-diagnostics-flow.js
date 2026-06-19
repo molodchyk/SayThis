@@ -307,6 +307,11 @@ function playbackTimingSummary(events = []) {
     "shared-audio:result",
     "shared-audio:error"
   ]);
+  const playbackStart = latest.find((event) => event.kind === "playback:start");
+  const playbackResult = latestEvent(latest, [
+    "playback:result",
+    "playback:error"
+  ]);
   const audioRequest = latest.find((event) => event.kind === "audio:start");
   const audioResult = latestEvent(latest, [
     "audio:result",
@@ -347,6 +352,11 @@ function playbackTimingSummary(events = []) {
     sharedAudioStartMs: numberOrNull(sharedAudioStart?.sinceTraceStartMs),
     sharedAudioResultMs: numberOrNull(sharedAudioResult?.sinceTraceStartMs),
     sharedAudioElapsedMs: numberOrNull(sharedAudioResult?.elapsedMs),
+    playbackStartMs: numberOrNull(playbackStart?.sinceTraceStartMs),
+    playbackResultMs: numberOrNull(playbackResult?.sinceTraceStartMs),
+    playbackElapsedMs: numberOrNull(playbackResult?.elapsedMs),
+    playbackMode: normalizeSelection(playbackResult?.mode),
+    playbackError: normalizeSelection(playbackResult?.error),
     audioRequestMs: numberOrNull(audioRequest?.sinceTraceStartMs),
     audioResultMs: numberOrNull(audioResult?.sinceTraceStartMs),
     audioElapsedMs: numberOrNull(audioResult?.elapsedMs),
@@ -369,6 +379,7 @@ function playbackTimingSummary(events = []) {
       urlHost: normalizeSelection(event.urlHost),
       sourceStatus: normalizeSelection(event.sourceStatus),
       audioQuality: normalizeSelection(event.audioQuality),
+      mode: normalizeSelection(event.mode),
       reason: normalizeSelection(event.reason),
       storedDisplay: normalizeSelection(event.storedDisplay),
       error: normalizeSelection(event.error)

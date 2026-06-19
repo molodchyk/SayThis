@@ -209,13 +209,15 @@ async function speakResult(result, overrides = {}) {
     const speech = await playbackSurface.speakResult(result, overrides);
     recordDebugEvent("speech:result", {
       elapsedMs: Date.now() - startedAt,
-      speech: summarizeSpeechForDebug(speech)
+      speech: summarizeSpeechForDebug(speech),
+      trace: overrides.trace
     });
     return speech;
   } catch (error) {
     recordDebugEvent("speech:error", {
       elapsedMs: Date.now() - startedAt,
-      error: errorMessage(error)
+      error: errorMessage(error),
+      trace: overrides.trace
     });
     throw error;
   }
@@ -274,7 +276,30 @@ async function prepareAudio(audio, trace) {
 }
 
 async function playResolvedResult(result, tabId, trace) {
-  return playbackSurface.playResolvedResult(result, tabId, trace);
+  const startedAt = Date.now();
+  recordDebugEvent("playback:start", {
+    audio: summarizeAudioForDebug(getBestAudio(result)),
+    result: summarizeResultForDebug(result),
+    tabId,
+    trace
+  });
+  try {
+    const playback = await playbackSurface.playResolvedResult(result, tabId, trace);
+    recordDebugEvent("playback:result", {
+      elapsedMs: Date.now() - startedAt,
+      mode: playback?.mode || "",
+      error: playback?.error || "",
+      trace
+    });
+    return playback;
+  } catch (error) {
+    recordDebugEvent("playback:error", {
+      elapsedMs: Date.now() - startedAt,
+      error: errorMessage(error),
+      trace
+    });
+    throw error;
+  }
 }
 
 async function showResultOnTab(tabId, result, options = {}) {
