@@ -55,14 +55,14 @@ test("changing selection waits until the selection is stable", async () => {
 
   harness.setSelection("Exam");
   harness.dispatch("selectionchange");
-  await delay(40);
+  await delay(30);
   harness.setSelection("Exampletown");
   harness.dispatch("selectionchange");
-  await delay(55);
+  await delay(45);
 
   assert.equal(harness.sentMessages.some((message) => message.type === "SAYTHIS_SPEAK"), false);
 
-  await delay(40);
+  await delay(30);
   const speakMessages = harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK");
 
   assert.equal(speakMessages.length, 1);
@@ -140,7 +140,7 @@ test("changing selection does not prepare transient fragments", async () => {
 
   harness.setSelection("Exam");
   harness.dispatch("selectionchange");
-  await delay(50);
+  await delay(35);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""]
@@ -148,7 +148,7 @@ test("changing selection does not prepare transient fragments", async () => {
 
   harness.setSelection("Exampletown");
   harness.dispatch("selectionchange");
-  await delay(65);
+  await delay(45);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
