@@ -14,7 +14,7 @@ import {
 } from "./pronunciation-playback-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
-const DEFAULT_STORED_RESULT_GRACE_MS = 30;
+const DEFAULT_STORED_RESULT_GRACE_MS = 10;
 
 export function handleRuntimeMessage(message = {}, sendResponse = () => {}, dependencies = {}) {
   if (message?.type === MESSAGE_TYPES.resolve) {
