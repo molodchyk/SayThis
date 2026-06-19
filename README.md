@@ -142,7 +142,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
 - Shared audio requests reuse locally approved shared artifacts before contacting the endpoint again, even after endpoint access is disabled.
-- Generic verified recordings can reuse local approved shared artifacts without contacting the endpoint for provider generation.
+- Generic verified recordings can reuse approved shared artifacts from local memory or the configured endpoint without authorizing fresh provider generation.
 - Shared audio reuse can match lookup key, term, source form, alias, or variant when the base language matches, and stores a selected-key alias so refreshed results can play the shared sample.
 - Returned shared audio is attached to the current result when resolver refresh does not surface it immediately, so the same click can still play the approved sample.
 - Source-backed or curated shared recordings keep top-tier audio quality when attached to results.

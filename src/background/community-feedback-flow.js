@@ -200,20 +200,28 @@ export async function requestSharedAudioForResult(text, result = null, options =
     );
   }
 
-  if (hasPreferredAudio(baseResult)) {
-    return baseResult;
-  }
-
   const settings = normalizeSettings(stored[storageKeys.settings]);
   const credentials = normalizeCredentials(stored[storageKeys.credentials]);
+  const hasPreferred = hasPreferredAudio(baseResult);
   if (!settings.communityEndpoint) {
+    if (hasPreferred) {
+      return baseResult;
+    }
     throw new Error("Shared audio endpoint is not configured.");
   }
 
-  const payload = await requestSharedAudioEntry(settings.communityEndpoint, body, {
-    ...dependencies,
-    sharedAudioGenerationToken: credentials.sharedAudioGenerationToken
-  });
+  let payload;
+  try {
+    payload = await requestSharedAudioEntry(settings.communityEndpoint, body, {
+      ...dependencies,
+      sharedAudioGenerationToken: hasPreferred ? "" : credentials.sharedAudioGenerationToken
+    });
+  } catch (error) {
+    if (hasPreferred) {
+      return baseResult;
+    }
+    throw error;
+  }
   const incoming = approvedEntriesForSharedAudioRequest(payload.entry, body);
   const approvedCommunityEntries = mergeApprovedEntries(
     stored[storageKeys.approvedCommunityEntries],
