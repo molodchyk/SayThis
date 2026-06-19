@@ -180,13 +180,19 @@ async function requestSharedAudio(text, result, options = {}) {
       resolveSelection,
       storageKeys: STORAGE_KEYS
     });
+    const cachedResult = preloadSharedAudioForPlayback(sharedResult, options.trace);
+    if (cachedResult !== sharedResult) {
+      setStorageBestEffort({
+        [STORAGE_KEYS.lastResult]: cachedResult
+      });
+    }
     recordDebugEvent("shared-audio:result", {
       elapsedMs: Date.now() - startedAt,
-      audio: summarizeAudioForDebug(getBestAudio(sharedResult)),
-      result: summarizeResultForDebug(sharedResult),
+      audio: summarizeAudioForDebug(getBestAudio(cachedResult)),
+      result: summarizeResultForDebug(cachedResult),
       trace: options.trace
     });
-    return sharedResult;
+    return cachedResult;
   } catch (error) {
     recordDebugEvent("shared-audio:error", {
       elapsedMs: Date.now() - startedAt,
@@ -434,6 +440,36 @@ function preloadLastResultAudio(reason) {
         trace
       });
     });
+}
+
+function preloadSharedAudioForPlayback(result = {}, trace = null) {
+  const audio = preloadableSharedAudio(result);
+  if (!audio) {
+    return result;
+  }
+
+  const cachedResult = resultWithCachedAudioFlag(result, audio);
+  try {
+    const prepared = prepareAudio({ ...audio, cacheBeforePlayback: true }, trace);
+    if (prepared && typeof prepared.catch === "function") {
+      prepared.catch(() => {});
+    }
+  } catch {
+    // Playback can still fetch the audio lazily.
+  }
+
+  return cachedResult;
+}
+
+function setStorageBestEffort(value = {}) {
+  try {
+    const stored = platform.setStorage(value);
+    if (stored && typeof stored.catch === "function") {
+      stored.catch(() => {});
+    }
+  } catch {
+    // Storage bookkeeping should not block pronunciation.
+  }
 }
 
 function preloadableSharedAudio(result = {}) {

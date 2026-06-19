@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  setTimeout as delay
+} from "node:timers/promises";
+import {
   clampPlaybackRate,
   clampSpeechRate,
   createOffscreenAudioPlayback,
@@ -184,6 +187,78 @@ test("preloads generated audio into the offscreen cache without playing it", asy
   assert.equal(second.cacheMode, "cache-api-hit");
   assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
   assert.equal(calls.filter((call) => call[0] === "createAudio").length, 0);
+});
+
+test("reuses an in-flight preload when cached playback starts", async () => {
+  const calls = [];
+  const cacheEntries = new Map();
+  let finishFetch;
+  const fetchPromise = new Promise((resolve) => {
+    finishFetch = () => resolve(responseFromBlob("audio-bytes"));
+  });
+  const playback = createOffscreenAudioPlayback({
+    createRequest: (url) => url,
+    caches: {
+      async open(name) {
+        calls.push(["cache.open", name]);
+        return {
+          async match(request) {
+            calls.push(["cache.match", request]);
+            return cacheEntries.get(request) || null;
+          },
+          async put(request, response) {
+            calls.push(["cache.put", request]);
+            cacheEntries.set(request, response);
+          }
+        };
+      }
+    },
+    fetch: async (request) => {
+      calls.push(["fetch", request]);
+      return fetchPromise;
+    },
+    createObjectUrl: (blob) => {
+      calls.push(["createObjectUrl", blob]);
+      return `blob:${blob}`;
+    },
+    createAudio: (url) => {
+      calls.push(["createAudio", url]);
+      return {
+        currentTime: 0,
+        pause: () => calls.push(["pause", url]),
+        play: async () => calls.push(["play", url]),
+        set playbackRate(value) {
+          calls.push(["playbackRate", value]);
+        }
+      };
+    }
+  });
+
+  const preparePromise = playback.prepareAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated"
+  });
+  await delay(0);
+  const playPromise = playback.playAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated",
+    cacheBeforePlayback: true
+  }, 1);
+  await delay(0);
+
+  assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
+  finishFetch();
+  const [prepared, played] = await Promise.all([preparePromise, playPromise]);
+
+  assert.equal(prepared.prepared, true);
+  assert.equal(played.cacheMode, "cache-api-object-url");
+  assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "cache.put").length, 1);
+  assert.deepEqual(calls.slice(-3), [
+    ["createAudio", "blob:audio-bytes"],
+    ["playbackRate", 1],
+    ["play", "blob:audio-bytes"]
+  ]);
 });
 
 test("speaks source forms with matching Web Speech voices", async () => {

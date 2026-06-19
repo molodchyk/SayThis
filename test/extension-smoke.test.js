@@ -149,6 +149,7 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /refreshApprovedSharedEntries\("startup"\)/);
   assert.match(source, /preloadLastResultAudio\("installed"\)/);
   assert.match(source, /preloadLastResultAudio\("startup"\)/);
+  assert.match(source, /preloadSharedAudioForPlayback\(sharedResult, options\.trace\)/);
   assert.match(source, /approved-pull:result/);
   assert.match(source, /last-audio-preload:result/);
   assert.match(source, /cacheBeforePlayback: true/);

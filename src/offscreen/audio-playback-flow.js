@@ -9,6 +9,11 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
   let audioPlayer = null;
   let audioObjectUrl = "";
   let speechUtterance = null;
+  const audioCacheRequests = new Map();
+  const cacheDependencies = {
+    ...dependencies,
+    audioCacheRequests
+  };
 
   return {
     debugState,
@@ -48,7 +53,7 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
     }
 
     try {
-      const cached = await cachedAudioResponse(url, dependencies);
+      const cached = await cachedAudioResponse(url, cacheDependencies);
       return {
         prepared: Boolean(cached.response),
         elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
@@ -75,7 +80,7 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
     }
 
     stopAudio();
-    const prepared = await audioUrlForPlayback(audio, dependencies);
+    const prepared = await audioUrlForPlayback(audio, cacheDependencies);
     const playbackUrl = prepared.url;
     audioObjectUrl = playbackUrl !== url ? playbackUrl : "";
     audioPlayer = createAudio(playbackUrl, dependencies);
@@ -281,6 +286,7 @@ function shouldCacheAudio(audio = {}) {
 async function cachedAudioResponse(url, dependencies = {}) {
   const cacheStorage = dependencies.caches || globalThis.caches;
   const fetchAudio = dependencies.fetch || globalThis.fetch?.bind(globalThis);
+  const requests = dependencies.audioCacheRequests;
   if (!cacheStorage || typeof cacheStorage.open !== "function" || typeof fetchAudio !== "function") {
     return {
       response: null,
@@ -288,6 +294,22 @@ async function cachedAudioResponse(url, dependencies = {}) {
     };
   }
 
+  if (requests?.has?.(url)) {
+    return cloneCachedResponse(await requests.get(url), "cache-api-in-flight");
+  }
+
+  const requestPromise = readOrFetchCachedAudio(url, dependencies, cacheStorage, fetchAudio);
+  requests?.set?.(url, requestPromise);
+  try {
+    return await requestPromise;
+  } finally {
+    if (requests?.get?.(url) === requestPromise) {
+      requests.delete(url);
+    }
+  }
+}
+
+async function readOrFetchCachedAudio(url, dependencies = {}, cacheStorage, fetchAudio) {
   const request = createRequest(url, dependencies);
   const cache = await cacheStorage.open("saythis-generated-audio-v1");
   const cached = await cache.match(request);
@@ -310,6 +332,16 @@ async function cachedAudioResponse(url, dependencies = {}) {
   return {
     response,
     mode: "cache-api-stored"
+  };
+}
+
+function cloneCachedResponse(result = {}, fallbackMode = "") {
+  const response = result?.response?.clone ? result.response.clone() : result?.response || null;
+  return {
+    response,
+    mode: result?.mode === "cache-api-stored" && fallbackMode
+      ? fallbackMode
+      : result?.mode || fallbackMode
   };
 }
 
