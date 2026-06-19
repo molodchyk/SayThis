@@ -26,6 +26,30 @@ test("committed selection sends prepare and speak with one trace", async () => {
   assert.equal(harness.sentMessages[0].trace.id, harness.sentMessages[1].trace.id);
 });
 
+test("committed selection prepares from speak path when earlier prepare is still waiting", async () => {
+  let resolveSettings;
+  const settingsPromise = new Promise((resolve) => {
+    resolveSettings = resolve;
+  });
+  const harness = await installSelectionListener({ settingsPromise });
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  harness.dispatchStorageChange({ selectToHear: true });
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => message.type), [
+    "SAYTHIS_PREPARE_PLAYBACK",
+    "SAYTHIS_SPEAK"
+  ]);
+  assert.equal(harness.sentMessages[0].trace.id, harness.sentMessages[1].trace.id);
+
+  resolveSettings({ selectToHear: true });
+  await delay(5);
+
+  assert.equal(harness.sentMessages.filter((message) => message.type === "SAYTHIS_PREPARE_PLAYBACK").length, 1);
+});
+
 test("changing selection waits until the selection is stable", async () => {
   const harness = await installSelectionListener();
 
@@ -202,6 +226,7 @@ async function installSelectionListener(options = {}) {
   const source = await readFile(join(root, "src", "selection-listener.js"), "utf8");
   const listeners = new Map();
   const sentMessages = [];
+  let storageListener = null;
   let selectedText = "";
 
   const context = {
@@ -232,12 +257,17 @@ async function installSelectionListener(options = {}) {
       },
       storage: {
         local: {
-          get: async () => ({
-            settings: options.settings || { selectToHear: true }
-          })
+          get: async () => {
+            const settings = options.settingsPromise
+              ? await options.settingsPromise
+              : options.settings || { selectToHear: true };
+            return { settings };
+          }
         },
         onChanged: {
-          addListener: () => {}
+          addListener: (listener) => {
+            storageListener = listener;
+          }
         }
       }
     },
@@ -267,6 +297,13 @@ async function installSelectionListener(options = {}) {
       for (const listener of listeners.get(type) || []) {
         listener(event);
       }
+    },
+    dispatchStorageChange(settings) {
+      storageListener?.({
+        settings: {
+          newValue: settings
+        }
+      }, "local");
     }
   };
 }

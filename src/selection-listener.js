@@ -25,6 +25,7 @@
   let lastSentAt = 0;
   let lastPreparedKey = "";
   let lastPreparedAt = 0;
+  let lastPreparedSentAt = 0;
   let lastPreparedTrace = null;
   let lastPrimeAt = 0;
   let primePlaybackPromise = null;
@@ -139,6 +140,7 @@
     lastSentAt = 0;
     lastPreparedKey = "";
     lastPreparedAt = 0;
+    lastPreparedSentAt = 0;
     lastPreparedTrace = null;
   }
 
@@ -185,7 +187,11 @@
 
     lastSentKey = key;
     lastSentAt = Date.now();
-    const trace = preparedTraceForKey(key) || createTrace("select-to-hear");
+    const preparedTrace = sentPreparedTraceForKey(key);
+    const trace = preparedTrace || pendingPreparedTraceForKey(key) || createTrace("select-to-hear");
+    if (!preparedTrace) {
+      sendPrepareForSelection(selectedText, key, trace);
+    }
     sendRuntimeMessage({
       type: MESSAGE_TYPE_SPEAK,
       text: selectedText,
@@ -213,23 +219,20 @@
     const trace = createTrace("select-to-hear");
     lastPreparedKey = key;
     lastPreparedAt = Date.now();
+    lastPreparedSentAt = 0;
     lastPreparedTrace = trace;
 
     if (!selectToHearEnabled(await readSettings())) {
       if (lastPreparedTrace === trace) {
         lastPreparedKey = "";
         lastPreparedAt = 0;
+        lastPreparedSentAt = 0;
         lastPreparedTrace = null;
       }
       return;
     }
 
-    sendRuntimeMessage({
-      type: MESSAGE_TYPE_PREPARE_PLAYBACK,
-      text: selectedText,
-      rate: 0.82,
-      trace
-    });
+    sendPrepareForSelection(selectedText, key, trace);
   }
 
   function isSuppressedRepeat(key) {
@@ -248,7 +251,15 @@
     return Date.now() - lastPreparedAt < REPEAT_SELECTION_COOLDOWN_MS;
   }
 
-  function preparedTraceForKey(key) {
+  function sentPreparedTraceForKey(key) {
+    if (!lastPreparedSentAt) {
+      return null;
+    }
+
+    return pendingPreparedTraceForKey(key);
+  }
+
+  function pendingPreparedTraceForKey(key) {
     if (key !== lastPreparedKey || !lastPreparedTrace) {
       return null;
     }
@@ -258,6 +269,30 @@
     }
 
     return lastPreparedTrace;
+  }
+
+  function sendPrepareForSelection(selectedText, key, trace) {
+    if (!key || !trace) {
+      return;
+    }
+
+    const now = Date.now();
+    if (key !== lastPreparedKey || lastPreparedTrace?.id !== trace.id) {
+      lastPreparedKey = key;
+      lastPreparedTrace = trace;
+    }
+    lastPreparedAt = now;
+    if (lastPreparedSentAt && now - lastPreparedSentAt < PREPARED_SELECTION_TTL_MS) {
+      return;
+    }
+
+    lastPreparedSentAt = now;
+    sendRuntimeMessage({
+      type: MESSAGE_TYPE_PREPARE_PLAYBACK,
+      text: selectedText,
+      rate: 0.82,
+      trace
+    });
   }
 
   function readSelectedText() {
