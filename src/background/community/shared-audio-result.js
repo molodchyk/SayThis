@@ -14,12 +14,13 @@ export function resultWithSharedAudioEntry(result = {}, entry = {}) {
 
   const generated = normalizeSelection(normalized.sourceStatus) === "generated-audio" ||
     normalizeList(normalized.trustSignals).includes("generated-audio");
+  const trustSignals = normalizeList(normalized.trustSignals);
   const sourceStatus = generated ? "generated-audio" : "verified-audio";
   const audioItem = {
     url: normalized.audioUrl,
     label: generated ? "Generated shared audio" : "Shared pronunciation audio",
     source: "SayThis shared audio",
-    quality: generated ? "generated" : "verified"
+    quality: sharedAudioQuality(generated, trustSignals)
   };
   const existingAudio = Array.isArray(result?.pronunciation?.audio)
     ? result.pronunciation.audio
@@ -29,9 +30,9 @@ export function resultWithSharedAudioEntry(result = {}, entry = {}) {
     ...(Array.isArray(result?.evidence) ? result.evidence : []),
     generated ? "Shared generated audio" : "Shared pronunciation audio"
   ]);
-  const trustSignals = uniqueTextItems([
+  const mergedTrustSignals = uniqueTextItems([
     ...(Array.isArray(result?.trustSignals) ? result.trustSignals : []),
-    ...normalizeList(normalized.trustSignals),
+    ...trustSignals,
     generated ? "generated-audio" : "audio-backed"
   ]);
   const sources = appendSharedAudioSource(result?.sources, normalized.sourceUrl);
@@ -45,9 +46,30 @@ export function resultWithSharedAudioEntry(result = {}, entry = {}) {
       audio
     },
     evidence,
-    trustSignals,
+    trustSignals: mergedTrustSignals,
     sources
   };
+}
+
+function sharedAudioQuality(generated, trustSignals = []) {
+  if (generated) {
+    return "generated";
+  }
+
+  const signals = new Set(trustSignals.map((item) => normalizeSelection(item).toLowerCase()));
+  if (signals.has("native") || signals.has("native-speaker") || signals.has("native speaker")) {
+    return "native-speaker";
+  }
+
+  if (signals.has("curated") || signals.has("curator-reviewed")) {
+    return "curated";
+  }
+
+  if (signals.has("source-backed") || signals.has("moderator-reviewed")) {
+    return "source-backed";
+  }
+
+  return "verified";
 }
 
 function prependUniqueAudio(first, rest = []) {
