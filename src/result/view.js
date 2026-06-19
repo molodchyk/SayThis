@@ -67,7 +67,7 @@ export function playbackItemsForResult(result, limit = 4) {
     return fallback.slice(0, limit);
   }
 
-  if (audio.some((item) => !isGeneratedAudioItem(item))) {
+  if (audio.some((item) => isPreferredPlaybackAudioItem(item, result))) {
     return audio;
   }
 
@@ -237,6 +237,24 @@ function audioItemLabel(label, source, quality, url) {
 
 function isGeneratedAudioItem(item = {}) {
   return isGeneratedAudioQuality(item.quality);
+}
+
+function isPreferredPlaybackAudioItem(item = {}, result = {}) {
+  const quality = normalizeSelection(item.quality).toLowerCase();
+  if (!item.url || quality === "generated") {
+    return false;
+  }
+
+  return [
+    "curated",
+    "native",
+    "native speaker",
+    "native-speaker",
+    "recorded",
+    "source-backed",
+    "verified"
+  ].includes(quality) ||
+    ["verified-audio", "community-confirmed"].includes(normalizeSelection(result?.sourceStatus));
 }
 
 function isGeneratedAudioQuality(value) {

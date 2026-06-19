@@ -178,6 +178,32 @@ test("renders generated fallback audio without recording status", () => {
   assert.equal(spoken[0].result.ttsLang, "pl-PL");
 });
 
+test("renders practice alternatives for unknown-quality audio", () => {
+  const elements = createElements();
+
+  renderPopupResult({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "p-shih-kla-doh-voh",
+      audio: [{
+        label: "Unreviewed audio",
+        source: "Archive",
+        url: "https://audio.example/unreviewed.ogg"
+      }]
+    }
+  }, elements, {
+    document: fakeDocument()
+  });
+
+  assert.equal(elements.audioList.children[0].children[1].textContent, "Unreviewed audio");
+  assert.equal(elements.audioList.children[1].children[1].textContent, "Source-form speech");
+  assert.equal(elements.audioList.children[2].children[1].textContent, "Guide speech");
+});
+
 function sampleResult() {
   return {
     query: "Example",

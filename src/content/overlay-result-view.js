@@ -98,7 +98,7 @@
       return fallback;
     }
 
-    if (audio.some((item) => normalizeText(item.quality).toLowerCase() !== "generated")) {
+    if (audio.some((item) => isPreferredAudioItem(item, result?.sourceStatus))) {
       return audio;
     }
 

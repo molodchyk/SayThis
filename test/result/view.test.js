@@ -177,6 +177,7 @@ test("builds playable audio items", () => {
 
 test("builds playback items from audio before source speech and guide speech", () => {
   assert.deepEqual(playbackItemsForResult({
+    sourceStatus: "verified-audio",
     sourceForm: "Przykladowo",
     language: "pl",
     ttsLang: "pl-PL",
@@ -216,6 +217,37 @@ test("builds playback items from audio before source speech and guide speech", (
     source: "Voice service",
     quality: "generated",
     url: "https://voice.example/exampletown.ogg"
+  }, {
+    kind: "speech",
+    label: "Source-form speech",
+    text: "Przykladowo",
+    lang: "pl-PL"
+  }, {
+    kind: "guide",
+    label: "Guide speech",
+    text: "eg-ZAM-pluh-term"
+  }]);
+
+  assert.deepEqual(playbackItemsForResult({
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    pronunciation: {
+      simple: "eg-ZAM-pluh-term",
+      audio: [{
+        label: "Unreviewed audio",
+        source: "Archive",
+        url: "https://audio.example/unreviewed.ogg"
+      }]
+    }
+  }), [{
+    kind: "audio",
+    label: "Unreviewed audio",
+    source: "Archive",
+    quality: "",
+    url: "https://audio.example/unreviewed.ogg"
   }, {
     kind: "speech",
     label: "Source-form speech",

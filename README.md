@@ -151,7 +151,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Legacy direct audio URL templates are ignored; provider generation runs through shared-audio endpoints so useful samples can be reused.
 - Generated fallback samples do not relabel a result that already has a verified or native-speaker recording.
 - Generated fallback samples are labeled separately from source-backed recordings in popup and on-page playback rows.
-- Generated-only fallback results keep source-form speech and guide rows visible so users can compare practice options.
+- Generated-only or unknown-quality audio results keep source-form speech and guide rows visible so users can compare practice options.
 - Container image and deployment notes for the community service.
 - Non-browser CI for unit tests, syntax checks, release audits, and Chrome package creation.
 - Architecture audit for file-size, folder-density, and browser API adapter-boundary budgets with an explicit current-debt baseline.
