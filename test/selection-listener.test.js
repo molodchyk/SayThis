@@ -35,7 +35,7 @@ test("committed selection does not wait for an unresolved settings read by defau
 
   harness.setSelection("Exampletown");
   harness.dispatch("pointerup");
-  await delay(25);
+  await delay(60);
 
   assert.deepEqual(harness.sentMessages.map((message) => message.type), [
     "SAYTHIS_PREPARE_PLAYBACK",
@@ -74,14 +74,14 @@ test("changing selection waits until the selection is stable", async () => {
 
   harness.setSelection("Exam");
   harness.dispatch("selectionchange");
-  await delay(30);
+  await delay(20);
   harness.setSelection("Exampletown");
   harness.dispatch("selectionchange");
-  await delay(45);
+  await delay(30);
 
   assert.equal(harness.sentMessages.some((message) => message.type === "SAYTHIS_SPEAK"), false);
 
-  await delay(30);
+  await delay(25);
   const speakMessages = harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK");
 
   assert.equal(speakMessages.length, 1);
@@ -176,7 +176,7 @@ test("changing selection does not prepare transient fragments", async () => {
 
   harness.setSelection("Exam");
   harness.dispatch("selectionchange");
-  await delay(35);
+  await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""]
@@ -184,14 +184,14 @@ test("changing selection does not prepare transient fragments", async () => {
 
   harness.setSelection("Exampletown");
   harness.dispatch("selectionchange");
-  await delay(45);
+  await delay(35);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
     ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
   ]);
 
-  await delay(25);
+  await delay(15);
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
     ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
