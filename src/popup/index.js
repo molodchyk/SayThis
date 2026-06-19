@@ -37,6 +37,7 @@ import {
   renderPopupResult
 } from "./result-renderer.js";
 import {
+  isReusableResultForSelection,
   shouldRefreshBeforeSpeech
 } from "./speech-refresh.js";
 
@@ -186,17 +187,26 @@ async function speakSelection(rate) {
 
 async function init() {
   const activeSelection = await readActiveTabSelection(runtimeAdapters);
+  const settings = await readPopupSettings(runtimeAdapters);
+  const stored = await readStoredPopupState(runtimeAdapters);
 
   if (activeSelection) {
     selectionInput.value = activeSelection;
     await writeActiveTabPopupState(activeSelection, runtimeAdapters);
+
+    if (settings.autoSpeakPopup && isReusableResultForSelection(stored.lastResult, activeSelection)) {
+      currentResult = stored.lastResult;
+      renderResult(currentResult);
+      await speakSelection(0.82);
+      updateButtonState();
+      return;
+    }
+
     const result = await resolveSelection();
-    const settings = await readPopupSettings(runtimeAdapters);
     if (settings.autoSpeakPopup && result) {
       await speakSelection(0.82);
     }
   } else {
-    const stored = await readStoredPopupState(runtimeAdapters);
     selectionInput.value = stored.lastSelection || "";
     if (stored.lastResult) {
       currentResult = stored.lastResult;

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  isReusableResultForSelection,
   shouldRefreshBeforeSpeech
 } from "../../src/popup/speech-refresh.js";
 
@@ -62,4 +63,28 @@ test("refreshes speech when no playback path exists yet", () => {
 
 test("does not refresh empty speech state", () => {
   assert.equal(shouldRefreshBeforeSpeech(null), false);
+});
+
+test("reuses stored result when the active selection matches", () => {
+  assert.equal(isReusableResultForSelection({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Przykladowo"
+  }, " Exampleterm "), true);
+});
+
+test("reuses stored result when the active selection is the source form", () => {
+  assert.equal(isReusableResultForSelection({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Przykladowo"
+  }, "Przykladowo"), true);
+});
+
+test("does not reuse stored result for a different active selection", () => {
+  assert.equal(isReusableResultForSelection({
+    query: "Exampleterm",
+    display: "Exampleterm",
+    sourceForm: "Przykladowo"
+  }, "Differentterm"), false);
 });

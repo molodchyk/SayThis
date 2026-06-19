@@ -13,6 +13,19 @@ export function shouldRefreshBeforeSpeech(result) {
   );
 }
 
+export function isReusableResultForSelection(result, selection) {
+  const text = normalizeSelection(selection);
+  if (!result || !text) {
+    return false;
+  }
+
+  return [
+    result.query,
+    result.display,
+    result.sourceForm
+  ].some((value) => normalizeSelection(value) === text);
+}
+
 function hasGeneratedAudio(result = {}) {
   const audio = Array.isArray(result?.pronunciation?.audio) ? result.pronunciation.audio : [];
   return result?.sourceStatus === "generated-audio" ||
