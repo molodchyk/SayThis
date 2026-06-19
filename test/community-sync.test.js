@@ -127,6 +127,23 @@ test("stores the best shareable result audio in community submissions", () => {
   });
 
   assert.equal(submission.result.audioUrl, "https://example.com/source-backed.ogg");
+  assert.equal(submission.result.provider, "");
+});
+
+test("stores generated result provider in community submissions", () => {
+  const submission = createCommunitySubmission("Exampletown", { kind: "confirm" }, {
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/generated.ogg",
+        quality: "generated",
+        source: "pl-PL-TestVoice"
+      }]
+    }
+  });
+
+  assert.equal(submission.result.audioUrl, "https://example.com/generated.ogg");
+  assert.equal(submission.result.provider, "pl-PL-TestVoice");
 });
 
 test("drops empty correction submissions before sync queueing", () => {

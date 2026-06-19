@@ -215,6 +215,7 @@ function approvedEntryFromSubmission(submission, override = {}, now) {
     ipa: override.ipa || correction.ipa || result.ipa,
     simple: override.simple || correction.simple || result.simple,
     audioUrl: override.audioUrl || correction.audioUrl || result.audioUrl,
+    provider: override.provider || result.provider,
     sourceUrl: override.sourceUrl || correction.sourceUrl || result.sourceUrl,
     variantNote: override.variantNote || correction.variantNote || result.variantNote,
     trustSignals: trustSignals.length ? trustSignals : defaultTrustSignals(submission, correction, result, override),
@@ -278,6 +279,7 @@ function normalizeCorrection(value = {}) {
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
+    provider: normalizeSelection(value.provider),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote)
   };
@@ -303,6 +305,7 @@ function normalizeResultMetadata(value = {}) {
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
     audioUrl: normalizeHttpsUrl(value.audioUrl),
+    provider: normalizeSelection(value.provider),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote || value.notes),
     trustSignals: normalizeTrustSignals(value.trustSignals),

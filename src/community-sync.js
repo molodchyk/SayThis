@@ -207,6 +207,7 @@ function normalizeResultMetadata(result = null) {
     ipa: normalizeSelection(result.pronunciation?.ipa),
     simple: normalizeSelection(result.pronunciation?.simple),
     audioUrl: firstResultAudioUrl(result),
+    provider: firstResultProvider(result),
     sourceUrl: firstResultSourceUrl(result),
     variantNote: normalizeSelection(result.variantNote || result.notes),
     trustSignals: normalizeTrustSignals(result.trustSignals),
@@ -325,15 +326,35 @@ function hasApprovedEntryContent(entry = {}) {
 }
 
 function firstResultAudioUrl(result = {}) {
+  return normalizeHttpsUrl(firstResultAudioItem(result)?.url);
+}
+
+function firstResultAudioItem(result = {}) {
   const audio = Array.isArray(result.pronunciation?.audio) ? result.pronunciation.audio : [];
   for (const item of rankedAudioItems(audio)) {
     const url = normalizeHttpsUrl(item?.url);
     if (url) {
-      return url;
+      return item;
     }
   }
 
-  return "";
+  return null;
+}
+
+function firstResultProvider(result = {}) {
+  const item = firstResultAudioItem(result);
+  const generated = normalizeSelection(item?.quality).toLowerCase() === "generated" ||
+    normalizeSelection(result.sourceStatus) === "generated-audio";
+  if (!generated) {
+    return "";
+  }
+
+  const direct = normalizeSelection(result.provider);
+  if (direct) {
+    return direct;
+  }
+
+  return normalizeSelection(item?.source);
 }
 
 function firstResultSourceUrl(result = {}) {
