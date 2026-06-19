@@ -385,6 +385,19 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(summarySource, /wrong-result flags/);
 });
 
+test("options page does not expose retired direct generated-audio controls", async () => {
+  const html = await readText("src/options/options.html");
+  const source = await readText("src/options/index.js");
+  const settings = await readText("src/shared/settings.js");
+  const permissions = await readText("src/permission-origins.js");
+
+  for (const text of [html, source, settings, permissions]) {
+    assert.doesNotMatch(text, /voiceService/i);
+    assert.doesNotMatch(text, /voice-service/i);
+    assert.doesNotMatch(text, /URL template/i);
+  }
+});
+
 test("background uses shared community pronunciation-data policy", async () => {
   const background = await readText("src/background.js");
   const feedbackFlow = await readText("src/background/community-feedback-flow.js");
