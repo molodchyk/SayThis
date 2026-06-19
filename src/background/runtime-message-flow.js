@@ -14,8 +14,7 @@ import {
 } from "./pronunciation-playback-flow.js";
 import {
   prepareSharedAudio,
-  requestDirectSharedAudio,
-  takePreparedSharedAudio
+  requestPreparedOrDirectSharedAudio
 } from "./prepared-shared-audio-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
@@ -61,14 +60,11 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       });
     const storedResultGraceMs = dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS;
     const storedResultWaitMs = dependencies.storedResultWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
-    const preparedDirectSharedAudioPromise = message.result
-      ? Promise.resolve(null)
-      : takePreparedSharedAudio(selectedText, message);
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
       : waitForStoredResultGrace(storedResultPromise, storedResultGraceMs).then((storedResult) => storedResult
         ? null
-        : (preparedDirectSharedAudioPromise || requestDirectSharedAudio(selectedText, message, dependencies))).then((result) => {
+        : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies)).then((result) => {
           directSharedAudioResult = result;
           return result;
         });

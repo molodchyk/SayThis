@@ -1,9 +1,11 @@
 import {
   createLookupKey,
+  getBestAudio,
   normalizeSelection
 } from "../resolver-core.js";
 
 const DEFAULT_PREPARED_SHARED_AUDIO_TTL_MS = 8000;
+const DEFAULT_PREPARED_SHARED_AUDIO_WAIT_MS = 120;
 const DEFAULT_MAX_PREPARED_SHARED_AUDIO_RECORDS = 8;
 const preparedSharedAudioRequests = new Map();
 
@@ -26,12 +28,17 @@ export async function requestDirectSharedAudio(selectedText, options = {}, depen
 
 export function prepareSharedAudio(selectedText, options = {}, dependencies = {}) {
   if (typeof dependencies.requestSharedAudio !== "function") {
-    return;
+    return null;
   }
 
   const keys = preparedSharedAudioKeys(selectedText, options.trace);
-  if (!keys.length || preparedRecordForKeys(keys)) {
-    return;
+  if (!keys.length) {
+    return null;
+  }
+
+  const existing = preparedRecordForKeys(keys);
+  if (existing) {
+    return existing.promise;
   }
 
   const ttlMs = normalizePreparedTtlMs(dependencies.preparedSharedAudioTtlMs);
@@ -49,6 +56,12 @@ export function prepareSharedAudio(selectedText, options = {}, dependencies = {}
     }
   }, ttlMs);
   timeoutId?.unref?.();
+
+  record.promise
+    .then((result) => prepareGeneratedSharedAudio(result, options, dependencies))
+    .catch(() => {});
+
+  return record.promise;
 }
 
 export function takePreparedSharedAudio(selectedText, options = {}) {
@@ -59,6 +72,21 @@ export function takePreparedSharedAudio(selectedText, options = {}) {
 
   deletePreparedRecord(record);
   return Date.now() <= record.expiresAt ? record.promise : null;
+}
+
+export async function requestPreparedOrDirectSharedAudio(selectedText, options = {}, dependencies = {}) {
+  const prepared = takePreparedSharedAudio(selectedText, options);
+  if (prepared) {
+    const result = await promiseWithinWait(
+      prepared,
+      normalizePreparedWaitMs(dependencies.preparedSharedAudioWaitMs)
+    );
+    if (result) {
+      return result;
+    }
+  }
+
+  return requestDirectSharedAudio(selectedText, options, dependencies);
 }
 
 export function clearPreparedSharedAudioForTests() {
@@ -116,6 +144,13 @@ function normalizePreparedTtlMs(value) {
     : DEFAULT_PREPARED_SHARED_AUDIO_TTL_MS;
 }
 
+function normalizePreparedWaitMs(value) {
+  const number = Number(value);
+  return Number.isFinite(number)
+    ? Math.max(0, number)
+    : DEFAULT_PREPARED_SHARED_AUDIO_WAIT_MS;
+}
+
 function normalizeMaxRecords(value) {
   const number = Number(value);
   return Number.isFinite(number)
@@ -127,4 +162,63 @@ function compactOptions(options = {}) {
   return Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   );
+}
+
+async function promiseWithinWait(promise, waitMs) {
+  const normalizedWaitMs = Math.max(0, Number(waitMs) || 0);
+  if (!promise || !normalizedWaitMs || typeof setTimeout !== "function") {
+    try {
+      return await promise;
+    } catch {
+      return null;
+    }
+  }
+
+  promise.catch?.(() => {});
+  let timeoutId;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((resolve) => {
+        timeoutId = setTimeout(() => resolve(null), normalizedWaitMs);
+      })
+    ]);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function prepareGeneratedSharedAudio(result = {}, options = {}, dependencies = {}) {
+  if (typeof dependencies.prepareAudio !== "function") {
+    return;
+  }
+
+  const audio = getBestAudio(result);
+  if (!audio?.url || !isGeneratedSharedAudio(result, audio)) {
+    return;
+  }
+
+  const prepared = await dependencies.prepareAudio(audio, options.trace);
+  if (prepared === true || prepared?.prepared) {
+    audio.cacheBeforePlayback = true;
+  }
+}
+
+function isGeneratedSharedAudio(result = {}, audio = {}) {
+  return normalizeSelection(result.sourceStatus).toLowerCase() === "generated-audio" ||
+    normalizeSelection(audio.quality).toLowerCase() === "generated" ||
+    normalizeList(result.trustSignals).includes("generated-audio");
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeSelection(item).toLowerCase()).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(/[;,\n]/)
+    .map((item) => normalizeSelection(item).toLowerCase())
+    .filter(Boolean);
 }

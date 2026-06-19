@@ -12,6 +12,7 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
 
   return {
     debugState,
+    prepareAudio,
     playAudio,
     speakText,
     stopAudio
@@ -37,6 +38,33 @@ export function createOffscreenAudioPlayback(dependencies = {}) {
       matchingVoices: matchingVoices.slice(0, 20),
       voices: voices.map(summarizeVoice).slice(0, 80)
     };
+  }
+
+  async function prepareAudio(audio, options = {}) {
+    const startedAt = nowMs(dependencies);
+    const url = String(audio?.url || "");
+    if (!url) {
+      throw new Error("Missing audio URL.");
+    }
+
+    try {
+      const cached = await cachedAudioResponse(url, dependencies);
+      return {
+        prepared: Boolean(cached.response),
+        elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+        cacheMode: cached.mode,
+        urlHost: hostLabel(url),
+        trace: options.trace
+      };
+    } catch {
+      return {
+        prepared: false,
+        elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+        cacheMode: "cache-api-error",
+        urlHost: hostLabel(url),
+        trace: options.trace
+      };
+    }
   }
 
   async function playAudio(audio, playbackRate = 1, options = {}) {
@@ -229,13 +257,13 @@ async function audioUrlForPlayback(audio = {}, dependencies = {}) {
   }
 
   try {
-    const response = await cachedAudioResponse(url, dependencies);
-    const blob = await response?.blob?.();
+    const cached = await cachedAudioResponse(url, dependencies);
+    const blob = await cached.response?.blob?.();
     const objectUrl = blob ? createObjectUrl(blob, dependencies) : "";
     return {
       url: objectUrl || url,
       elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
-      mode: objectUrl ? "cache-api-object-url" : "cache-api-miss"
+      mode: objectUrl ? "cache-api-object-url" : cached.mode || "cache-api-miss"
     };
   } catch {
     return {
@@ -254,23 +282,35 @@ async function cachedAudioResponse(url, dependencies = {}) {
   const cacheStorage = dependencies.caches || globalThis.caches;
   const fetchAudio = dependencies.fetch || globalThis.fetch?.bind(globalThis);
   if (!cacheStorage || typeof cacheStorage.open !== "function" || typeof fetchAudio !== "function") {
-    return null;
+    return {
+      response: null,
+      mode: "cache-api-unavailable"
+    };
   }
 
   const request = createRequest(url, dependencies);
   const cache = await cacheStorage.open("saythis-generated-audio-v1");
   const cached = await cache.match(request);
   if (cached) {
-    return cached;
+    return {
+      response: cached,
+      mode: "cache-api-hit"
+    };
   }
 
   const response = await fetchAudio(request);
   if (!response?.ok) {
-    return null;
+    return {
+      response: null,
+      mode: "cache-api-fetch-miss"
+    };
   }
 
   await cache.put(request, response.clone ? response.clone() : response);
-  return response;
+  return {
+    response,
+    mode: "cache-api-stored"
+  };
 }
 
 function createRequest(url, dependencies = {}) {

@@ -25,6 +25,42 @@ test("routes offscreen play-audio messages", async () => {
   assert.deepEqual(responses, [{ ok: true }]);
 });
 
+test("routes offscreen prepare-audio messages", async () => {
+  const calls = [];
+  const responses = [];
+  const trace = {
+    id: "trace-preload",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  const handled = handleOffscreenAudioMessage({
+    type: MESSAGE_TYPES.offscreenPrepareAudio,
+    audio: { url: "https://example.test/a.ogg" },
+    trace
+  }, (response) => responses.push(response), {
+    prepareAudio: async (audio, options) => {
+      calls.push(["prepareAudio", audio, options]);
+      return {
+        prepared: true,
+        cacheMode: "cache-api-hit"
+      };
+    }
+  });
+
+  await flushPromises();
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [["prepareAudio", { url: "https://example.test/a.ogg" }, { trace }]]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    prepared: {
+      prepared: true,
+      cacheMode: "cache-api-hit"
+    }
+  }]);
+});
+
 test("routes offscreen debug-state messages", async () => {
   const calls = [];
   const responses = [];

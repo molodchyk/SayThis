@@ -568,6 +568,53 @@ test("plays verified audio through the offscreen document", async () => {
   assert.equal(calls[1][1].playbackRate, 0.75);
 });
 
+test("prepares generated audio through the offscreen document", async () => {
+  const calls = [];
+  const debugEvents = [];
+  let hasDocument = false;
+  const audio = {
+    url: "https://example.test/generated.mp3",
+    quality: "generated"
+  };
+  const trace = {
+    id: "trace-preload",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  const surface = createPlaybackSurface({
+    hasOffscreenAudioSupport: () => true,
+    hasOffscreenDocument: () => hasDocument,
+    createOffscreenDocument: async (options) => {
+      calls.push(["createOffscreenDocument", options]);
+      hasDocument = true;
+    },
+    sendRuntimeMessage: async (message) => {
+      calls.push(["sendRuntimeMessage", message]);
+      return {
+        ok: true,
+        prepared: {
+          prepared: true,
+          cacheMode: "cache-api-stored",
+          urlHost: "example.test"
+        }
+      };
+    },
+    onDebugEvent: (kind, payload) => debugEvents.push([kind, payload])
+  });
+
+  const prepared = await surface.prepareAudioItemOffscreen(audio, trace);
+
+  assert.equal(prepared.prepared, true);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1][0], "sendRuntimeMessage");
+  assert.equal(calls[1][1].type, MESSAGE_TYPES.offscreenPrepareAudio);
+  assert.equal(calls[1][1].audio, audio);
+  assert.deepEqual(calls[1][1].trace, trace);
+  assert.equal(debugEvents[0][0], "offscreen-audio:prepare");
+  assert.equal(debugEvents[0][1].cacheMode, "cache-api-stored");
+});
+
 test("reuses in-flight offscreen creation before probing again", async () => {
   const calls = [];
   let finishCreate;

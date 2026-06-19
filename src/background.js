@@ -234,6 +234,34 @@ async function playAudio(audio, rate, trace) {
   }
 }
 
+async function prepareAudio(audio, trace) {
+  if (!platform.hasOffscreenAudioSupport?.()) {
+    return false;
+  }
+
+  const startedAt = Date.now();
+  recordDebugEvent("audio-preload:start", {
+    audio: summarizeAudioForDebug(audio),
+    trace
+  });
+  try {
+    const prepared = await playbackSurface.prepareAudioItemOffscreen(audio, trace);
+    recordDebugEvent("audio-preload:result", {
+      elapsedMs: Date.now() - startedAt,
+      prepared: Boolean(prepared),
+      trace
+    });
+    return prepared;
+  } catch (error) {
+    recordDebugEvent("audio-preload:error", {
+      elapsedMs: Date.now() - startedAt,
+      error: errorMessage(error),
+      trace
+    });
+    return false;
+  }
+}
+
 async function playResolvedResult(result, tabId, trace) {
   return playbackSurface.playResolvedResult(result, tabId, trace);
 }
@@ -294,6 +322,7 @@ function runtimeMessageDependencies() {
     pullApprovedCommunityEntries,
     requestSharedAudio,
     preparePlayback,
+    prepareAudio,
     getStorage: platform.getStorage,
     getDebugState,
     recordDebugEvent

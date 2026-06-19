@@ -6,6 +6,7 @@ import {
   createFlushSyncMessage,
   createGetDebugStateMessage,
   createOffscreenDebugStateMessage,
+  createOffscreenPrepareAudioMessage,
   createOffscreenSpeakMessage,
   createOffscreenPlayAudioMessage,
   createOffscreenStopAudioMessage,
@@ -263,6 +264,23 @@ test("builds overlay and offscreen audio messages", () => {
     type: MESSAGE_TYPES.offscreenPlayAudio,
     audio,
     playbackRate: 0.45
+  });
+  assert.deepEqual(createOffscreenPrepareAudioMessage(audio, {
+    trace: {
+      id: "trace-audio",
+      source: "content-selection",
+      action: "select-to-hear",
+      startedAt: 1800000000000
+    }
+  }), {
+    type: MESSAGE_TYPES.offscreenPrepareAudio,
+    audio,
+    trace: {
+      id: "trace-audio",
+      source: "content-selection",
+      action: "select-to-hear",
+      startedAt: 1800000000000
+    }
   });
   assert.deepEqual(createOffscreenDebugStateMessage({
     lang: "pl-PL"

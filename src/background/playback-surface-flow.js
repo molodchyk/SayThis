@@ -7,6 +7,7 @@ import {
 } from "../resolver-core.js";
 import {
   createOffscreenDebugStateMessage,
+  createOffscreenPrepareAudioMessage,
   createOffscreenPlayAudioMessage,
   createOffscreenSpeakMessage,
   createOffscreenStopAudioMessage,
@@ -52,6 +53,7 @@ export function createPlaybackSurface(dependencies = {}) {
     getOffscreenDebugState,
     getSettings,
     hasOffscreenAudioDocument,
+    prepareAudioItemOffscreen,
     playAudioItemOffscreen,
     playAudioOffscreen,
     playResolvedResult,
@@ -94,6 +96,28 @@ export function createPlaybackSurface(dependencies = {}) {
         })),
       onOffscreenAudioDebug: (payload) => recordPlaybackDebug("offscreen-audio:result", payload)
     }, rate, trace);
+  }
+
+  async function prepareAudioItemOffscreen(audio, trace) {
+    if (!audio?.url || !dependencies.hasOffscreenAudioSupport?.()) {
+      return false;
+    }
+
+    try {
+      await ensureOffscreenAudioDocument();
+      const response = await dependencies.sendRuntimeMessage?.(createOffscreenPrepareAudioMessage(audio, {
+        trace
+      }));
+      if (response?.prepared) {
+        recordPlaybackDebug("offscreen-audio:prepare", {
+          ...response.prepared,
+          trace
+        });
+      }
+      return response?.prepared || Boolean(response?.ok);
+    } catch {
+      return false;
+    }
   }
 
   async function speakResult(result, overrides = {}) {

@@ -6,8 +6,7 @@ import {
   resolvePlayableResult
 } from "./pronunciation-playback-flow.js";
 import {
-  requestDirectSharedAudio,
-  takePreparedSharedAudio
+  requestPreparedOrDirectSharedAudio
 } from "./prepared-shared-audio-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
@@ -168,12 +167,15 @@ async function firstActiveSelectionAudioCandidate(selectedText, options = {}, de
   const localPlayablePromise = storedGracePromise.then((candidate) => candidate
     ? candidate
     : localPlayableCandidate(selectedText, options, dependencies, trace));
+  const localAudioPromise = localPlayablePromise.then((candidate) => getBestAudio(candidate?.result)?.url
+    ? candidate
+    : null);
   const waitMs = dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
 
   return await firstNonNullResult([
     promiseWithinWait(storedCandidatePromise, waitMs),
     promiseWithinWait(directSharedAudioPromise, waitMs),
-    promiseWithinWait(localPlayablePromise, waitMs)
+    promiseWithinWait(localAudioPromise, waitMs)
   ]) || await localPlayablePromise;
 }
 
@@ -201,14 +203,11 @@ async function storedAudioCandidate(selectedText, dependencies = {}, trace = nul
 }
 
 async function directSharedAudioCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
-  const prepared = takePreparedSharedAudio(selectedText, { trace });
-  const result = prepared
-    ? await prepared
-    : await requestDirectSharedAudio(selectedText, {
-      rate: options.rate,
-      trace
-    }, dependencies);
-  return result
+  const result = await requestPreparedOrDirectSharedAudio(selectedText, {
+    rate: options.rate,
+    trace
+  }, dependencies);
+  return getBestAudio(result)?.url
     ? {
       result,
       localResult: result,

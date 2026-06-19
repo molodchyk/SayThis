@@ -19,6 +19,25 @@ export function handleOffscreenAudioMessage(message, sendResponse, playback = {}
     return true;
   }
 
+  if (message?.type === MESSAGE_TYPES.offscreenPrepareAudio) {
+    playback.prepareAudio?.(message.audio, {
+      trace: message.trace
+    })
+      .then((prepared) => {
+        sendResponse?.({
+          ok: true,
+          ...(prepared && typeof prepared === "object" ? { prepared } : {})
+        });
+      })
+      .catch((error) => {
+        sendResponse?.({
+          ok: false,
+          error: error?.message || "Audio preload failed."
+        });
+      });
+    return true;
+  }
+
   if (message?.type === MESSAGE_TYPES.offscreenPlayAudio) {
     playback.playAudio?.(message.audio, message.playbackRate, {
       trace: message.trace

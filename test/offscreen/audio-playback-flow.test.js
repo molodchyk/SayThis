@@ -139,6 +139,53 @@ test("caches audio before offscreen playback only when requested", async () => {
   assert.equal(calls.filter((call) => call[0] === "createAudio" && call[1] === "blob:audio-bytes").length, 2);
 });
 
+test("preloads generated audio into the offscreen cache without playing it", async () => {
+  const calls = [];
+  const cacheEntries = new Map();
+  const playback = createOffscreenAudioPlayback({
+    createRequest: (url) => url,
+    caches: {
+      async open(name) {
+        calls.push(["cache.open", name]);
+        return {
+          async match(request) {
+            calls.push(["cache.match", request]);
+            return cacheEntries.get(request) || null;
+          },
+          async put(request, response) {
+            calls.push(["cache.put", request]);
+            cacheEntries.set(request, response);
+          }
+        };
+      }
+    },
+    fetch: async (request) => {
+      calls.push(["fetch", request]);
+      return responseFromBlob("audio-bytes");
+    },
+    createAudio: (url) => {
+      calls.push(["createAudio", url]);
+      throw new Error("preload should not create an audio player");
+    }
+  });
+
+  const first = await playback.prepareAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated"
+  });
+  const second = await playback.prepareAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated"
+  });
+
+  assert.equal(first.prepared, true);
+  assert.equal(first.cacheMode, "cache-api-stored");
+  assert.equal(second.prepared, true);
+  assert.equal(second.cacheMode, "cache-api-hit");
+  assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "createAudio").length, 0);
+});
+
 test("speaks source forms with matching Web Speech voices", async () => {
   const calls = [];
   const synth = {

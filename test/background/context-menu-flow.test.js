@@ -298,6 +298,79 @@ test("context menu reuses shared audio prepared from selection", async () => {
   clearPreparedSharedAudioForTests();
 });
 
+test("context menu does not wait on a stuck prepared shared-audio request", async () => {
+  clearPreparedSharedAudioForTests();
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Fresh shared audio",
+        url: "https://audio.example/fresh.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  const selectionTrace = {
+    id: "selection-stuck-context",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let requestCount = 0;
+  let finishResolve;
+  const slowResolved = new Promise((resolve) => {
+    finishResolve = () => resolve({ display: "Late result" });
+  });
+  const dependencies = {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    requestSharedAudio: async (text, value, options) => {
+      requestCount += 1;
+      calls.push(["requestSharedAudio", text, value, options]);
+      return requestCount === 1 ? new Promise(() => {}) : direct;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return slowResolved;
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    preparedSharedAudioWaitMs: 5,
+    directSharedAudioWaitMs: 80,
+    lastResultKey: "lastResult"
+  };
+
+  prepareSharedAudio("Exampletown", {
+    rate: 0.82,
+    trace: selectionTrace
+  }, dependencies);
+  const result = await handleContextMenuClick(
+    { menuItemId: "say", selectionText: " Exampletown " },
+    { id: 42 },
+    dependencies
+  );
+
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(requestCount, 2);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
+
+  finishResolve();
+  await delay(0);
+  clearPreparedSharedAudioForTests();
+});
+
 test("online context menu reuses matching stored audio before local fallback can resolve it", async () => {
   const calls = [];
   const stored = {
