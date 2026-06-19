@@ -40,6 +40,18 @@ test("normalizes stored audio artifact language names for reuse", async () => {
   assert.equal(response.body.entry.ttsLang, "pl-PL");
 });
 
+test("stores generated audio artifacts with loopback URLs for local development", async () => {
+  const response = await storeAudioArtifact({
+    language: "pl",
+    ttsLang: "pl-PL"
+  }, "http://127.0.0.1:8787");
+
+  assert.equal(response.status, 200);
+  assert.match(response.body.artifact.audioUrl, /^http:\/\/127\.0\.0\.1:8787\/audio\/aud_[a-f0-9]{32}$/);
+  assert.equal(response.body.entry.audioUrl, response.body.artifact.audioUrl);
+  assert.equal(response.store.approved.existingspelling.audioUrl, response.body.artifact.audioUrl);
+});
+
 test("does not reuse approved source-form audio across languages", async () => {
   let response = await storeAudioArtifact({
     language: "it",
@@ -208,7 +220,7 @@ test("limits public provider generation before synthesis", async () => {
   assert.equal(response.store.generationUsage.publicAudioGeneration.count, 1);
 });
 
-async function storeAudioArtifact(overrides = {}) {
+async function storeAudioArtifact(overrides = {}, publicBaseUrl = "https://community.example") {
   return handleCommunityRequest({
     method: "POST",
     url: "/admin/audio-artifacts",
@@ -224,7 +236,7 @@ async function storeAudioArtifact(overrides = {}) {
     })
   }, createEmptyStore(), {
     adminToken: "secret",
-    publicBaseUrl: "https://community.example"
+    publicBaseUrl
   });
 }
 

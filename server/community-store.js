@@ -285,7 +285,7 @@ function normalizeCorrection(value = {}) {
     variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    audioUrl: normalizePublicAudioUrl(value.audioUrl),
     provider: normalizeSelection(value.provider),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote)
@@ -311,7 +311,7 @@ function normalizeResultMetadata(value = {}) {
     variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    audioUrl: normalizePublicAudioUrl(value.audioUrl),
     provider: normalizeSelection(value.provider),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote || value.notes),
@@ -360,7 +360,7 @@ function normalizeApprovedEntry(value = {}, fallbackLookupKey = "") {
     variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    audioUrl: normalizePublicAudioUrl(value.audioUrl),
     provider: normalizeSelection(value.provider),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote),
@@ -377,7 +377,8 @@ function hasApprovedEntryContent(value = {}) {
     normalizeAliases(value.aliases).length ||
     normalizeVariants(value.variants).length ||
     normalizeSelection(value.language || value.ttsLang || value.languageName || value.origin || value.root || value.domainHint || value.ipa || value.simple || value.provider || value.variantNote || value.sourceStatus) ||
-    normalizeHttpsUrl(value.audioUrl || value.sourceUrl) ||
+    normalizePublicAudioUrl(value.audioUrl) ||
+    normalizeHttpsUrl(value.sourceUrl) ||
     normalizeTrustSignals(value.trustSignals).length ||
     clampNumber(value.confirmations, 0, 100000) ||
     clampNumber(value.corrections, 0, 100000) ||
@@ -394,7 +395,8 @@ function hasApprovedPronunciationData(entry = {}) {
     normalizeAliases(entry.aliases).length ||
     normalizeVariants(entry.variants).length ||
     normalizeSelection(entry.language || entry.languageName || entry.origin || entry.root || entry.ipa || entry.simple || entry.variantNote) ||
-    normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl)
+    normalizePublicAudioUrl(entry.audioUrl) ||
+    normalizeHttpsUrl(entry.sourceUrl)
   );
 }
 
@@ -520,4 +522,22 @@ function normalizeHttpsUrl(value) {
   } catch {
     return "";
   }
+}
+
+function normalizePublicAudioUrl(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" || isLocalHttpEndpoint(url) ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function isLocalHttpEndpoint(url) {
+  return url?.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
 }

@@ -11,7 +11,7 @@ $env:SAYTHIS_ADMIN_TOKEN = "change-me"
 $env:SAYTHIS_STORE = "data/community-store.json"
 $env:SAYTHIS_MAX_BODY_BYTES = "16384"
 $env:SAYTHIS_MAX_AUDIO_BYTES = "524288"
-$env:SAYTHIS_PUBLIC_BASE_URL = "https://example.com"
+$env:SAYTHIS_PUBLIC_BASE_URL = "http://127.0.0.1:8787"
 $env:SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN = ""
 $env:SAYTHIS_GOOGLE_TTS_VOICE = ""
 $env:SAYTHIS_GOOGLE_TTS_AUDIO_ENCODING = "MP3"
@@ -28,7 +28,7 @@ $env:SAYTHIS_TRUST_PROXY_HEADERS = "0"
 npm run community:serve
 ```
 
-The service listens on `http://127.0.0.1:8787` by default. The extension accepts `http://127.0.0.1` and `http://localhost` community endpoints for local development only. For real extension sync, deploy it behind HTTPS and configure the extension endpoint to the public `/community` URL.
+The service listens on `http://127.0.0.1:8787` by default. The extension accepts `http://127.0.0.1` and `http://localhost` community endpoints for local development only, and the service can publish loopback audio artifact URLs in that mode. For real extension sync, deploy it behind HTTPS and configure the extension endpoint to the public `/community` URL.
 
 Container deployment notes are in `docs/deployment.md`.
 

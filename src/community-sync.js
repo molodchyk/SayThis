@@ -289,7 +289,7 @@ function normalizeCorrection(value = {}) {
     variants: normalizeVariants(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    audioUrl: normalizeHttpsUrl(value.audioUrl),
+    audioUrl: normalizePublicAudioUrl(value.audioUrl),
     sourceUrl: normalizeHttpsUrl(value.sourceUrl),
     variantNote: normalizeSelection(value.variantNote)
   };
@@ -324,7 +324,7 @@ function normalizeApprovedEntry(entry = {}, fallbackLookupKey = "") {
     variants: normalizeVariants(entry.variants),
     ipa: normalizeSelection(entry.ipa),
     simple: normalizeSelection(entry.simple),
-    audioUrl: normalizeHttpsUrl(entry.audioUrl),
+    audioUrl: normalizePublicAudioUrl(entry.audioUrl),
     provider: normalizeSelection(entry.provider),
     sourceUrl: normalizeHttpsUrl(entry.sourceUrl),
     variantNote: normalizeSelection(entry.variantNote),
@@ -341,7 +341,8 @@ function hasApprovedEntryContent(entry = {}) {
     normalizeAliases(entry.aliases).length ||
     normalizeVariants(entry.variants).length ||
     normalizeSelection(entry.language || entry.ttsLang || entry.languageName || entry.origin || entry.root || entry.domainHint || entry.ipa || entry.simple || entry.provider || entry.variantNote || entry.sourceStatus) ||
-    normalizeHttpsUrl(entry.audioUrl || entry.sourceUrl) ||
+    normalizePublicAudioUrl(entry.audioUrl) ||
+    normalizeHttpsUrl(entry.sourceUrl) ||
     normalizeTrustSignals(entry.trustSignals).length ||
     clampNumber(entry.confirmations, 0, 100000) ||
     clampNumber(entry.corrections, 0, 100000) ||
@@ -436,6 +437,20 @@ function normalizeHttpsUrl(value) {
   try {
     const url = new URL(raw);
     return url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function normalizePublicAudioUrl(value) {
+  const raw = normalizeLongValue(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" || isLocalHttpEndpoint(url) ? url.toString() : "";
   } catch {
     return "";
   }

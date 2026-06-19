@@ -400,6 +400,23 @@ test("normalizes approved community entries", () => {
   assert.equal(entries.chiaroscuro.sourceUrl, "https://example.com/chiaroscuro");
 });
 
+test("keeps loopback approved audio URLs for local community service testing", () => {
+  const entries = normalizeApprovedEntries({
+    entries: [{
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL",
+      audioUrl: "http://127.0.0.1:8787/audio/aud_1234567890abcdef",
+      sourceUrl: "http://127.0.0.1:8787/source"
+    }]
+  });
+
+  assert.equal(entries.exampletown.audioUrl, "http://127.0.0.1:8787/audio/aud_1234567890abcdef");
+  assert.equal(entries.exampletown.sourceUrl, "");
+});
+
 test("keeps object-map keys for sparse approved entries", () => {
   const entries = normalizeApprovedEntries({
     entries: {

@@ -158,7 +158,7 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
   const dataBase64 = normalizeBase64(value.dataBase64);
   const mimeType = normalizeAudioMimeType(value.mimeType);
   const byteLength = clampNumber(value.byteLength, 1, 2_000_000);
-  const audioUrl = normalizeHttpsUrl(value.audioUrl);
+  const audioUrl = normalizePublicAudioUrl(value.audioUrl);
 
   if (!id || !term || !lookupKey || !dataBase64 || !mimeType || !byteLength || !audioUrl) {
     return {};
@@ -280,6 +280,23 @@ function normalizeHash(value) {
     .match(/^[a-f0-9]{64}$/)?.[0] || "";
 }
 
+function normalizePublicAudioUrl(value) {
+  const raw = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 2048);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" || isLocalHttpEndpoint(url) ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
 function normalizeHttpsUrl(value) {
   const raw = String(value || "")
     .replace(/\s+/g, " ")
@@ -295,6 +312,10 @@ function normalizeHttpsUrl(value) {
   } catch {
     return "";
   }
+}
+
+function isLocalHttpEndpoint(url) {
+  return url?.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
 }
 
 function baseLanguage(value) {

@@ -116,6 +116,24 @@ export function normalizeHttpsEndpoint(value) {
   }
 }
 
+export function normalizePublicBaseEndpoint(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const url = new URL(raw);
+    if (url.protocol === "https:" || isLocalHttpEndpoint(url)) {
+      return url.toString();
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
 export function normalizeAudioMimeType(value) {
   const mime = String(value || "").trim().toLowerCase();
   return [
@@ -138,12 +156,16 @@ function decodeBase64Audio(value) {
 }
 
 function publicAudioUrl(publicBaseUrl, id) {
-  const base = normalizeHttpsEndpoint(publicBaseUrl);
+  const base = normalizePublicBaseEndpoint(publicBaseUrl);
   if (!base) {
     return "";
   }
 
   return new URL(`/audio/${encodeURIComponent(id)}`, base).toString();
+}
+
+function isLocalHttpEndpoint(url) {
+  return url?.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
 }
 
 function normalizePositiveInteger(value, fallback) {

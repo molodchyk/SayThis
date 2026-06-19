@@ -19,7 +19,7 @@ import {
 import {
   DEFAULT_MAX_AUDIO_BYTES,
   generatedAudioArtifactFromBody,
-  normalizeHttpsEndpoint,
+  normalizePublicBaseEndpoint,
   publicAudioArtifact
 } from "./community-audio-artifacts.js";
 import {
@@ -256,7 +256,7 @@ export async function createCommunityServer(options = {}) {
     options.maxAudioBytes ?? process.env.SAYTHIS_MAX_AUDIO_BYTES,
     DEFAULT_MAX_AUDIO_BYTES
   );
-  const publicBaseUrl = normalizeHttpsEndpoint(options.publicBaseUrl ?? process.env.SAYTHIS_PUBLIC_BASE_URL);
+  const publicBaseUrl = normalizePublicBaseEndpoint(options.publicBaseUrl ?? process.env.SAYTHIS_PUBLIC_BASE_URL);
   const ttsProvider = options.ttsProvider || createConfiguredTtsProvider({
     accessToken: options.googleTtsAccessToken ?? process.env.SAYTHIS_GOOGLE_TTS_ACCESS_TOKEN,
     endpoint: options.googleTtsEndpoint ?? process.env.SAYTHIS_GOOGLE_TTS_ENDPOINT,
