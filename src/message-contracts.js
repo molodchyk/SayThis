@@ -96,6 +96,8 @@ export function createRequestSharedAudioMessage(text, options = {}) {
 export function createPreparePlaybackMessage(options = {}) {
   return compactMessage({
     type: MESSAGE_TYPES.preparePlayback,
+    text: normalizeSelection(options.text),
+    rate: normalizeRate(options.rate),
     trace: normalizeTrace(options.trace)
   });
 }

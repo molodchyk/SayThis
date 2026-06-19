@@ -834,6 +834,100 @@ test("routes prepare playback messages without resolving", async () => {
   assert.deepEqual(responses, [{ ok: true }]);
 });
 
+test("runtime speak reuses prepared direct shared audio", async () => {
+  const responses = [];
+  const calls = [];
+  const direct = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Prepared shared audio",
+        url: "https://community.example/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-prepared-direct",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let finishDirect;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+  const dependencies = {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return directPromise;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return new Promise(() => {});
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when prepared shared audio plays");
+    },
+    preparedSharedAudioTtlMs: 200,
+    directSharedAudioWaitMs: 200,
+    lastResultKey: "lastResult"
+  };
+
+  const prepareHandled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.preparePlayback,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(["prepare", value]), dependencies);
+  const speakHandled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(["speak", value]), dependencies);
+
+  finishDirect();
+  await delay(30);
+
+  assert.equal(prepareHandled, true);
+  assert.equal(speakHandled, true);
+  assert.equal(calls.filter((call) => call[0] === "requestSharedAudio").length, 1);
+  assert.equal(responses[0][0], "prepare");
+  assert.deepEqual(responses[0][1], { ok: true });
+  assert.equal(responses[1][0], "speak");
+  assert.equal(responses[1][1].ok, true);
+  assert.equal(responses[1][1].result, direct);
+  assert.deepEqual(responses[1][1].speech, {
+    fallback: "audio",
+    text: "Prepared shared audio"
+  });
+  assert.deepEqual(calls.slice(0, 4), [
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["getStorage", ["lastResult"]],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
+    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+  ]);
+});
+
 test("routes shared audio request messages", async () => {
   const responses = [];
   const calls = [];

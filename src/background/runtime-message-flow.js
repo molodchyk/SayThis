@@ -15,6 +15,8 @@ import {
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 450;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
+const DEFAULT_PREPARED_SHARED_AUDIO_TTL_MS = 1200;
+const preparedSharedAudioRequests = new Map();
 
 export function handleRuntimeMessage(message = {}, sendResponse = () => {}, dependencies = {}) {
   if (message?.type === MESSAGE_TYPES.resolve) {
@@ -56,11 +58,14 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       });
     const storedResultGraceMs = dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS;
     const storedResultWaitMs = dependencies.storedResultWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
+    const preparedDirectSharedAudioPromise = message.result
+      ? Promise.resolve(null)
+      : takePreparedSharedAudio(selectedText, message);
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
       : waitForStoredResultGrace(storedResultPromise, storedResultGraceMs).then((storedResult) => storedResult
         ? null
-        : requestDirectSharedAudio(selectedText, message, dependencies)).then((result) => {
+        : (preparedDirectSharedAudioPromise || requestDirectSharedAudio(selectedText, message, dependencies))).then((result) => {
           directSharedAudioResult = result;
           return result;
         });
@@ -145,6 +150,10 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
 
   if (message?.type === MESSAGE_TYPES.preparePlayback) {
     startPreparingPlayback(dependencies, message.trace);
+    const selectedText = normalizeSelection(message.text);
+    if (selectedText) {
+      prepareSharedAudio(selectedText, message, dependencies);
+    }
     sendResponse({ ok: true });
     return true;
   }
@@ -246,6 +255,45 @@ async function requestDirectSharedAudio(selectedText, message = {}, dependencies
   } catch {
     return null;
   }
+}
+
+function prepareSharedAudio(selectedText, message = {}, dependencies = {}) {
+  if (typeof dependencies.requestSharedAudio !== "function") {
+    return;
+  }
+
+  const key = preparedSharedAudioKey(selectedText, message.trace);
+  if (!key || preparedSharedAudioRequests.has(key)) {
+    return;
+  }
+
+  const ttlMs = normalizePreparedTtlMs(dependencies.preparedSharedAudioTtlMs);
+  const promise = requestDirectSharedAudio(selectedText, message, dependencies);
+  preparedSharedAudioRequests.set(key, {
+    expiresAt: Date.now() + ttlMs,
+    promise
+  });
+  const timeoutId = setTimeout(() => {
+    if (preparedSharedAudioRequests.get(key)?.promise === promise) {
+      preparedSharedAudioRequests.delete(key);
+    }
+  }, ttlMs);
+  timeoutId?.unref?.();
+}
+
+function takePreparedSharedAudio(selectedText, message = {}) {
+  const key = preparedSharedAudioKey(selectedText, message.trace);
+  if (!key) {
+    return null;
+  }
+
+  const cached = preparedSharedAudioRequests.get(key);
+  if (!cached) {
+    return null;
+  }
+
+  preparedSharedAudioRequests.delete(key);
+  return Date.now() <= cached.expiresAt ? cached.promise : null;
 }
 
 async function promiseWithinWait(promise, waitMs) {
@@ -416,6 +464,19 @@ function shouldPreferImmediatePlayback(message = {}) {
   return message.useOnline !== true &&
     message.trace?.source === "content-selection" &&
     message.trace?.action === "select-to-hear";
+}
+
+function preparedSharedAudioKey(selectedText, trace = null) {
+  const lookupKey = createLookupKey(selectedText);
+  const traceId = normalizeSelection(trace?.id);
+  return lookupKey && traceId ? `${traceId}:${lookupKey}` : "";
+}
+
+function normalizePreparedTtlMs(value) {
+  const number = Number(value);
+  return Number.isFinite(number)
+    ? Math.max(0, number)
+    : DEFAULT_PREPARED_SHARED_AUDIO_TTL_MS;
 }
 
 function respondWithResult(promise, sendResponse, buildResponse, fallbackError) {

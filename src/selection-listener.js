@@ -132,6 +132,8 @@
 
     sendRuntimeMessage({
       type: MESSAGE_TYPE_PREPARE_PLAYBACK,
+      text: selectedText,
+      rate: 0.82,
       trace
     });
   }

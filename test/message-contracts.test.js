@@ -90,6 +90,8 @@ test("builds compact stop and sync messages", () => {
   assert.deepEqual(createPullApprovedMessage(), { type: MESSAGE_TYPES.pullApproved });
   assert.deepEqual(createGetDebugStateMessage(), { type: MESSAGE_TYPES.getDebugState });
   assert.deepEqual(createPreparePlaybackMessage({
+    text: " Exampletown ",
+    rate: 0.82,
     trace: {
       id: "trace-prepare",
       source: "content-selection",
@@ -98,6 +100,8 @@ test("builds compact stop and sync messages", () => {
     }
   }), {
     type: MESSAGE_TYPES.preparePlayback,
+    text: "Exampletown",
+    rate: 0.82,
     trace: {
       id: "trace-prepare",
       source: "content-selection",
