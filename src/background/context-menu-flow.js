@@ -138,6 +138,10 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
 }
 
 async function firstContextMenuAudioCandidate(selectedText, tabId, options = {}, dependencies = {}, trace = null) {
+  const raceStartedAt = Date.now();
+  recordCandidateEvent(dependencies, trace, "context-candidate:race-start", {
+    text: selectedText
+  });
   const visibleCandidatePromise = visibleAudioCandidate(selectedText, tabId, dependencies, trace);
   const storedCandidatePromise = storedAudioCandidate(selectedText, dependencies, trace);
   const quickLocalCandidatePromise = firstNonNullResult([
@@ -161,24 +165,47 @@ async function firstContextMenuAudioCandidate(selectedText, tabId, options = {},
     : null);
   const waitMs = dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
 
-  return await firstNonNullResult([
+  const selected = await firstNonNullResult([
     promiseWithinWait(visibleCandidatePromise, waitMs),
     promiseWithinWait(storedCandidatePromise, waitMs),
     promiseWithinWait(directSharedAudioPromise, waitMs),
     promiseWithinWait(localAudioPromise, waitMs)
   ]) || await localPlayablePromise;
+  recordCandidateEvent(dependencies, trace, "context-candidate:race-result", {
+    text: selectedText,
+    elapsedMs: Date.now() - raceStartedAt,
+    selected: selected?.source || "none",
+    hit: Boolean(getBestAudio(selected?.result)?.url)
+  });
+  return selected;
 }
 
 async function visibleAudioCandidate(selectedText, tabId, dependencies = {}, trace = null) {
   if (!tabId || typeof dependencies.getVisibleResultOnTab !== "function") {
+    recordCandidateEvent(dependencies, trace, "context-candidate:visible-skip", {
+      text: selectedText,
+      reason: tabId ? "missing-adapter" : "missing-tab"
+    });
     return null;
   }
 
+  const startedAt = Date.now();
+  recordCandidateEvent(dependencies, trace, "context-candidate:visible-start", {
+    text: selectedText
+  });
   try {
     const result = await dependencies.getVisibleResultOnTab(tabId);
     const missReason = storedResultMissReason(result, selectedText);
     if (missReason) {
       recordStoredResultMiss(selectedText, result, `visible-${missReason}`, dependencies, trace);
+      recordCandidateEvent(dependencies, trace, "context-candidate:visible-result", {
+        text: selectedText,
+        elapsedMs: Date.now() - startedAt,
+        hit: false,
+        reason: missReason,
+        sourceStatus: result?.sourceStatus || "",
+        audioQuality: getBestAudio(result)?.quality || ""
+      });
       return null;
     }
 
@@ -187,6 +214,13 @@ async function visibleAudioCandidate(selectedText, tabId, dependencies = {}, tra
       sourceStatus: result.sourceStatus || "",
       audioQuality: getBestAudio(result)?.quality || "",
       trace
+    });
+    recordCandidateEvent(dependencies, trace, "context-candidate:visible-result", {
+      text: selectedText,
+      elapsedMs: Date.now() - startedAt,
+      hit: true,
+      sourceStatus: result.sourceStatus || "",
+      audioQuality: getBestAudio(result)?.quality || ""
     });
     return {
       result,
@@ -199,18 +233,42 @@ async function visibleAudioCandidate(selectedText, tabId, dependencies = {}, tra
       error: error?.message || String(error || "Unknown visible result error"),
       trace
     });
+    recordCandidateEvent(dependencies, trace, "context-candidate:visible-result", {
+      text: selectedText,
+      elapsedMs: Date.now() - startedAt,
+      hit: false,
+      reason: "error",
+      error: error?.message || String(error || "Unknown visible result error")
+    });
     return null;
   }
 }
 
 async function storedAudioCandidate(selectedText, dependencies = {}, trace = null) {
+  const startedAt = Date.now();
+  recordCandidateEvent(dependencies, trace, "context-candidate:stored-start", {
+    text: selectedText
+  });
   try {
     const result = await readStoredPlayableResult(selectedText, dependencies, trace);
     if (!result) {
+      recordCandidateEvent(dependencies, trace, "context-candidate:stored-result", {
+        text: selectedText,
+        elapsedMs: Date.now() - startedAt,
+        hit: false
+      });
       return null;
     }
 
     recordStoredResultHit(selectedText, result, dependencies, trace);
+    recordCandidateEvent(dependencies, trace, "context-candidate:stored-result", {
+      text: selectedText,
+      elapsedMs: Date.now() - startedAt,
+      hit: true,
+      sourceStatus: result.sourceStatus || "",
+      audioQuality: getBestAudio(result)?.quality || "",
+      urlHost: hostForUrl(getBestAudio(result)?.url)
+    });
     return {
       result,
       localResult: result,
@@ -222,15 +280,35 @@ async function storedAudioCandidate(selectedText, dependencies = {}, trace = nul
       error: error?.message || String(error || "Unknown storage error"),
       trace
     });
+    recordCandidateEvent(dependencies, trace, "context-candidate:stored-result", {
+      text: selectedText,
+      elapsedMs: Date.now() - startedAt,
+      hit: false,
+      reason: "error",
+      error: error?.message || String(error || "Unknown storage error")
+    });
     return null;
   }
 }
 
 async function directSharedAudioCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
+  const startedAt = Date.now();
+  recordCandidateEvent(dependencies, trace, "context-candidate:shared-start", {
+    text: selectedText
+  });
   const result = await requestPreparedOrDirectSharedAudio(selectedText, {
     rate: options.rate,
     trace
   }, dependencies);
+  const audio = getBestAudio(result);
+  recordCandidateEvent(dependencies, trace, "context-candidate:shared-result", {
+    text: selectedText,
+    elapsedMs: Date.now() - startedAt,
+    hit: Boolean(audio?.url),
+    sourceStatus: result?.sourceStatus || "",
+    audioQuality: audio?.quality || "",
+    urlHost: hostForUrl(audio?.url)
+  });
   return getBestAudio(result)?.url
     ? {
       result,
@@ -241,6 +319,10 @@ async function directSharedAudioCandidate(selectedText, options = {}, dependenci
 }
 
 async function localPlayableCandidate(selectedText, options = {}, dependencies = {}, trace = null) {
+  const startedAt = Date.now();
+  recordCandidateEvent(dependencies, trace, "context-candidate:local-start", {
+    text: selectedText
+  });
   const localResult = await dependencies.resolveSelection(selectedText, {
     ...options,
     useOnline: false
@@ -259,6 +341,15 @@ async function localPlayableCandidate(selectedText, options = {}, dependencies =
     immediatePlaybackOptions(playableOptions),
     dependencies
   );
+  const audio = getBestAudio(playableResult);
+  recordCandidateEvent(dependencies, trace, "context-candidate:local-result", {
+    text: selectedText,
+    elapsedMs: Date.now() - startedAt,
+    hit: Boolean(audio?.url),
+    sourceStatus: playableResult?.sourceStatus || "",
+    audioQuality: audio?.quality || "",
+    urlHost: hostForUrl(audio?.url)
+  });
   return playableResult
     ? {
       result: playableResult,
@@ -388,6 +479,13 @@ function recordStoredResultMiss(selectedText, result = {}, reason = "", dependen
     sourceStatus: result?.sourceStatus || "",
     storedDisplay: result?.display || result?.query || "",
     audioQuality: audio?.quality || "",
+    trace
+  });
+}
+
+function recordCandidateEvent(dependencies = {}, trace = null, kind = "", payload = {}) {
+  dependencies.recordDebugEvent?.(kind, {
+    ...payload,
     trace
   });
 }

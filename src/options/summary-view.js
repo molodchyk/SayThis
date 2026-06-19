@@ -48,10 +48,11 @@ export function debugSummaryText(diagnostics = {}) {
       : "";
     const sourceText = timing.storedResultHit ? " from stored audio" : "";
     const detailText = timingDetailText(timing);
+    const contextText = contextCandidateText(timing);
     const missText = timing.storedResultMissReason
       ? `; stored audio miss: ${timing.storedResultMissReason}`
       : "";
-    return `Last audio started${sourceText} in ${audioMs} ms${detailText}${missText}${refreshText}.`;
+    return `Last audio started${sourceText} in ${audioMs} ms${detailText}${contextText}${missText}${refreshText}.`;
   }
 
   if (!diagnostics.lastResult) {
@@ -88,6 +89,29 @@ function timingDetailText(timing = {}) {
     .filter(Boolean);
 
   return parts.length ? ` (${parts.join("; ")})` : "";
+}
+
+function contextCandidateText(timing = {}) {
+  const candidates = Array.isArray(timing.contextCandidates)
+    ? timing.contextCandidates
+    : [];
+  const results = candidates
+    .filter((event) => String(event.kind || "").endsWith("-result") &&
+      event.kind !== "context-candidate:race-result")
+    .map((event) => {
+      const elapsed = Math.round(Number(event.elapsedMs));
+      const elapsedText = Number.isFinite(elapsed) ? ` ${elapsed} ms` : "";
+      const status = event.hit === true ? "hit" : event.hit === false ? "miss" : "checked";
+      const reason = event.reason ? `/${event.reason}` : "";
+      return `${event.candidate || "candidate"} ${status}${reason}${elapsedText}`;
+    })
+    .slice(0, 4);
+  const selected = candidates.find((event) => event.kind === "context-candidate:race-result")?.selected;
+  const selectedText = selected ? `; selected ${selected}` : "";
+
+  return results.length || selectedText
+    ? `; context ${results.join(", ")}${selectedText}`
+    : "";
 }
 
 export function summarizeQueue(queue) {

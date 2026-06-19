@@ -107,6 +107,31 @@ test("summarizes missing locale voice with shared-audio readiness", () => {
       storedResultMissReason: "selection-mismatch"
     }
   }), "Last audio started in 4210 ms (resolve 3900 ms); stored audio miss: selection-mismatch.");
+  assert.equal(debugSummaryText({
+    timing: {
+      audioStartMs: 190,
+      contextCandidates: [{
+        kind: "context-candidate:visible-result",
+        candidate: "visible",
+        elapsedMs: 12,
+        hit: false,
+        reason: "selection-mismatch"
+      }, {
+        kind: "context-candidate:stored-result",
+        candidate: "stored",
+        elapsedMs: 3,
+        hit: false
+      }, {
+        kind: "context-candidate:shared-result",
+        candidate: "shared",
+        elapsedMs: 118,
+        hit: true
+      }, {
+        kind: "context-candidate:race-result",
+        selected: "direct-shared-audio"
+      }]
+    }
+  }), "Last audio started in 190 ms; context visible miss/selection-mismatch 12 ms, stored miss 3 ms, shared hit 118 ms; selected direct-shared-audio.");
   assert.equal(debugSummaryText({}), "No resolved result has been stored yet.");
   assert.equal(debugSummaryText({
     lastResult: { display: "Exampletown" },

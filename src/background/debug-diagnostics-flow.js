@@ -336,6 +336,8 @@ function playbackTimingSummary(events = []) {
     "online-refresh:result",
     "online-refresh:error"
   ]);
+  const contextCandidates = latest
+    .filter((event) => String(event.kind || "").startsWith("context-candidate:"));
 
   return {
     traceId: normalizeSelection(trace.id),
@@ -369,12 +371,16 @@ function playbackTimingSummary(events = []) {
     storedResultHit: Boolean(storedHit),
     storedResultMiss: Boolean(storedMiss),
     storedResultMissReason: normalizeSelection(storedMiss?.reason),
+    contextCandidates: contextCandidates.map(summarizeContextCandidateEvent),
     lastEventMs: numberOrNull(last?.sinceTraceStartMs),
     eventCount: latest.length,
     events: latest.map((event) => ({
       kind: normalizeSelection(event.kind),
       sinceTraceStartMs: numberOrNull(event.sinceTraceStartMs),
       elapsedMs: numberOrNull(event.elapsedMs),
+      candidate: candidateName(event),
+      hit: typeof event.hit === "boolean" ? event.hit : undefined,
+      selected: normalizeSelection(event.selected),
       cacheMode: normalizeSelection(event.cacheMode),
       urlHost: normalizeSelection(event.urlHost),
       sourceStatus: normalizeSelection(event.sourceStatus),
@@ -385,6 +391,29 @@ function playbackTimingSummary(events = []) {
       error: normalizeSelection(event.error)
     }))
   };
+}
+
+function summarizeContextCandidateEvent(event = {}) {
+  return {
+    kind: normalizeSelection(event.kind),
+    candidate: candidateName(event),
+    sinceTraceStartMs: numberOrNull(event.sinceTraceStartMs),
+    elapsedMs: numberOrNull(event.elapsedMs),
+    hit: typeof event.hit === "boolean" ? event.hit : undefined,
+    selected: normalizeSelection(event.selected),
+    reason: normalizeSelection(event.reason),
+    sourceStatus: normalizeSelection(event.sourceStatus),
+    audioQuality: normalizeSelection(event.audioQuality),
+    urlHost: normalizeSelection(event.urlHost),
+    error: normalizeSelection(event.error)
+  };
+}
+
+function candidateName(event = {}) {
+  const kind = normalizeSelection(event.kind);
+  return kind.startsWith("context-candidate:")
+    ? kind.replace(/^context-candidate:/, "").replace(/-(?:start|result|skip)$/, "")
+    : "";
 }
 
 function lastEvent(events = []) {
