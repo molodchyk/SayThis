@@ -3,7 +3,13 @@
   "name": "saythis-community",
   "main": "worker/community-worker.js",
   "compatibility_date": "2026-06-19",
-  "workers_dev": true,
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "api.molodchyk.com",
+      "custom_domain": true
+    }
+  ],
   "placement": {
     "mode": "smart"
   },
@@ -31,7 +37,7 @@
       "binding": "SAYTHIS_DB",
       "database_name": "saythis-community",
       // Replace after `npx wrangler d1 create saythis-community`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "290e4ae7-e80a-4b28-bb30-26a0b3457281",
       "migrations_dir": "worker/migrations"
     }
   ]

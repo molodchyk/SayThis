@@ -121,6 +121,67 @@ test("accepts pending submissions and approves them into exported entries", asyn
   assert.equal(approved.entries[0].sourceForm, "Przykladowo");
 });
 
+test("imports approved local store metadata through an admin-only endpoint", async () => {
+  const env = createWorkerEnv();
+  const response = await handleWorkerRequest(jsonRequest("https://community.example/admin/import-approved", {
+    method: "POST",
+    token: "secret",
+    body: {
+      approved: {
+        existingspelling: {
+          term: "Existing spelling",
+          lookupKey: "existingspelling",
+          sourceForm: "Przykladowo",
+          aliases: ["Exampletown"],
+          language: "pl",
+          ttsLang: "pl-PL",
+          audioUrl: "https://audio.example/audio/sha256/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.ogg",
+          provider: "pl-PL-TestVoice",
+          sourceStatus: "generated-audio",
+          trustSignals: ["moderator-reviewed", "generated-audio", "audio-backed"]
+        }
+      },
+      audioArtifacts: {
+        aud_aaaaaaaaaaaaaaaa: {
+          id: "aud_aaaaaaaaaaaaaaaa",
+          term: "Existing spelling",
+          lookupKey: "existingspelling",
+          sourceForm: "Przykladowo",
+          language: "pl",
+          ttsLang: "pl-PL",
+          provider: "pl-PL-TestVoice",
+          mimeType: "audio/ogg",
+          byteLength: 10,
+          sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          storageKey: "audio/sha256/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.ogg",
+          audioUrl: "https://audio.example/audio/sha256/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.ogg"
+        }
+      }
+    }
+  }), env);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    imported: true,
+    approved: 1,
+    audioArtifacts: 1
+  });
+
+  const sharedResponse = await handleWorkerRequest(jsonRequest("https://community.example/community?action=audio", {
+    method: "POST",
+    body: {
+      term: "Exampletown",
+      lookupKey: "exampletown",
+      sourceForm: "Przykladowo",
+      language: "pl",
+      ttsLang: "pl-PL"
+    }
+  }), env);
+
+  assert.equal(sharedResponse.status, 200);
+  assert.equal((await sharedResponse.json()).entry.provider, "pl-PL-TestVoice");
+});
+
 function createWorkerEnv(options = {}) {
   return {
     SAYTHIS_STORE: createMemoryCommunityStore(),

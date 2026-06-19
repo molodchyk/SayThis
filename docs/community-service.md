@@ -15,6 +15,7 @@ Important deployment properties:
 - `SAYTHIS_ADMIN_TOKEN` must be a Wrangler secret, not a checked-in variable.
 - Public `/community?action=audio` requests only reuse approved audio. They do not trigger paid provider generation.
 - Moderator-created `/admin/audio-artifacts` uploads store bytes in R2 and publish reusable metadata in D1.
+- Admin-only `/admin/import-approved` imports an existing approved local store into D1 without uploading new audio bytes.
 
 Deployment steps are in `docs/deployment.md`.
 

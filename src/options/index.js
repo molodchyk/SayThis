@@ -84,7 +84,7 @@ const refreshDebugButton = document.getElementById("refresh-debug");
 const copyDebugButton = document.getElementById("copy-debug");
 const debugSummary = document.getElementById("debug-summary");
 const debugOutput = document.getElementById("debug-output");
-const LOCAL_DEV_COMMUNITY_ENDPOINT = "http://127.0.0.1:8787/community";
+const DEFAULT_COMMUNITY_ENDPOINT = "https://api.molodchyk.com/community";
 
 init();
 
@@ -535,7 +535,7 @@ function ensureCommunityEndpointForEnabledFeature() {
     return false;
   }
 
-  syncEndpoint.value = LOCAL_DEV_COMMUNITY_ENDPOINT;
+  syncEndpoint.value = DEFAULT_COMMUNITY_ENDPOINT;
   return true;
 }
 
@@ -562,7 +562,7 @@ function settingsStatusMessage(state = {}) {
   }
 
   if (state.communityEndpointAutofilled) {
-    return "Settings saved. Local community endpoint filled.";
+    return "Settings saved. SayThis community endpoint filled.";
   }
 
   return "Settings saved.";

@@ -2,6 +2,7 @@ import {
   acceptSubmission,
   approveSubmission,
   createEmptyStore,
+  normalizeStore,
   pendingPayload,
   rejectSubmission
 } from "../server/community-store.js";
@@ -33,6 +34,7 @@ const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
 const DEFAULT_MAX_PENDING_SUBMISSIONS = 1000;
 const DEFAULT_MAX_REJECTED_SUBMISSIONS = 1000;
 const DEFAULT_APPROVED_EXPORT_LIMIT = 5000;
+const DEFAULT_MAX_IMPORT_BYTES = 1024 * 1024;
 const TEXT_ENCODER = new TextEncoder();
 
 export default {
@@ -213,6 +215,38 @@ export async function handleWorkerRequest(request, env = {}, _ctx = {}) {
       reason: "",
       artifact: publicAudioArtifact(result.artifact),
       entry: result.entry || null
+    }, 200, options, origin);
+  }
+
+  if (method === "POST" && url.pathname === "/admin/import-approved") {
+    const auth = await authorizeAdmin(request, env);
+    if (!auth.ok) {
+      return jsonResponse({ error: auth.error }, auth.status, options, origin);
+    }
+
+    const body = await readJsonBody(request, options.maxImportBytes);
+    if (!body.ok) {
+      return jsonResponse({ error: body.error }, body.status, options, origin);
+    }
+
+    const imported = normalizeStore(body.value);
+    const artifacts = Object.values(imported.audioArtifacts || {});
+    const entries = Object.values(imported.approved || {});
+    if (!artifacts.length && !entries.length) {
+      return jsonResponse({ imported: false, reason: "empty-import" }, 400, options, origin);
+    }
+
+    for (const artifact of artifacts) {
+      await store.putAudioArtifact(artifact);
+    }
+    for (const entry of entries) {
+      await store.putApproved(entry);
+    }
+
+    return jsonResponse({
+      imported: true,
+      approved: entries.length,
+      audioArtifacts: artifacts.length
     }, 200, options, origin);
   }
 
@@ -712,7 +746,8 @@ function workerOptions(env = {}) {
     maxAudioBytes: normalizePositiveInteger(env.SAYTHIS_MAX_AUDIO_BYTES, DEFAULT_MAX_AUDIO_BYTES),
     maxPendingSubmissions: normalizePositiveInteger(env.SAYTHIS_MAX_PENDING_SUBMISSIONS, DEFAULT_MAX_PENDING_SUBMISSIONS),
     maxRejectedSubmissions: normalizePositiveInteger(env.SAYTHIS_MAX_REJECTED_SUBMISSIONS, DEFAULT_MAX_REJECTED_SUBMISSIONS),
-    approvedExportLimit: normalizePositiveInteger(env.SAYTHIS_APPROVED_EXPORT_LIMIT, DEFAULT_APPROVED_EXPORT_LIMIT)
+    approvedExportLimit: normalizePositiveInteger(env.SAYTHIS_APPROVED_EXPORT_LIMIT, DEFAULT_APPROVED_EXPORT_LIMIT),
+    maxImportBytes: normalizePositiveInteger(env.SAYTHIS_MAX_IMPORT_BYTES, DEFAULT_MAX_IMPORT_BYTES)
   };
 }
 

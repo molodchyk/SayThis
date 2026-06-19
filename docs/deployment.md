@@ -52,6 +52,19 @@ https://audio.molodchyk.com/
 
 The Worker public shared-audio route only returns already approved audio. It does not call paid provider generation for anonymous clients. Moderator-approved uploads go through `/admin/audio-artifacts`, write bytes to R2, and publish metadata to D1 for reuse.
 
+To migrate an existing local approved store after deploying, send it to the admin-only import endpoint with the moderator token:
+
+```powershell
+$token = Get-Content -Raw private/cloudflare-worker-admin-token.txt
+Invoke-WebRequest -Method POST `
+  -Uri https://api.molodchyk.com/admin/import-approved `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -ContentType "application/json" `
+  -Body (Get-Content -Raw private/community-store-local.json)
+```
+
+This imports approved metadata and artifact records only. Public submission limits remain unchanged.
+
 ## Community Service Image
 
 Build the community moderation service image:
