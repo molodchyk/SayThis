@@ -440,6 +440,7 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /stable: true/);
   assert.match(source, /isSuppressedRepeat/);
   assert.match(source, /isSuppressedPrepare/);
+  assert.match(source, /resetSelectionTracking/);
   assert.match(source, /settingsPromise/);
   assert.match(source, /readStoredSettings/);
 });

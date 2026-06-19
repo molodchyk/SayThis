@@ -29,7 +29,16 @@
 
   readSettings();
 
-  document.addEventListener("selectionchange", () => scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true }), true);
+  document.addEventListener("selectionchange", () => {
+    if (!readSelectedText()) {
+      clearScheduledCheck();
+      clearScheduledPrepare();
+      resetSelectionTracking();
+      return;
+    }
+
+    scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true });
+  }, true);
   document.addEventListener("pointerup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("mouseup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("keyup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
@@ -102,10 +111,18 @@
     }
   }
 
+  function resetSelectionTracking() {
+    lastSentKey = "";
+    lastSentAt = 0;
+    lastPreparedKey = "";
+    lastPreparedAt = 0;
+    lastPreparedTrace = null;
+  }
+
   async function speakStableSelection() {
     const selectedText = readSelectedText();
     if (!selectedText) {
-      lastSentKey = "";
+      resetSelectionTracking();
       return;
     }
 

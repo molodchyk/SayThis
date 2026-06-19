@@ -83,6 +83,27 @@ test("committed selection is not delayed by a later selectionchange event", asyn
   assert.equal(speakMessages[0].text, "Exampletown");
 });
 
+test("clearing selection allows the same word to be heard again immediately", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  harness.setSelection("");
+  harness.dispatch("selectionchange");
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  const speakMessages = harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK");
+
+  assert.equal(speakMessages.length, 2);
+  assert.equal(speakMessages[0].text, "Exampletown");
+  assert.equal(speakMessages[1].text, "Exampletown");
+  assert.notEqual(speakMessages[0].trace.id, speakMessages[1].trace.id);
+});
+
 async function installSelectionListener(options = {}) {
   const source = await readFile(join(root, "src", "selection-listener.js"), "utf8");
   const listeners = new Map();
