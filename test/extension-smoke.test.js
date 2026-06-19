@@ -417,6 +417,7 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /selectionchange/);
   assert.match(source, /SELECTION_CHANGE_DEBOUNCE_MS = 160/);
   assert.match(source, /COMMITTED_SELECTION_DEBOUNCE_MS = 25/);
+  assert.match(source, /REPEAT_SELECTION_COOLDOWN_MS = 1200/);
   assert.match(source, /pointerup/);
   assert.match(source, /MAX_AUTO_TEXT_LENGTH = 80/);
   assert.match(source, /MAX_AUTO_WORDS = 5/);
@@ -424,6 +425,8 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /SAYTHIS_SPEAK/);
   assert.match(source, /ui:selection-auto-speak/);
   assert.match(source, /lastSentKey/);
+  assert.match(source, /lastSentAt/);
+  assert.match(source, /isSuppressedRepeat/);
 });
 
 test("options page does not expose retired direct generated-audio controls", async () => {

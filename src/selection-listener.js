@@ -9,12 +9,14 @@
   const SETTINGS_KEY = "settings";
   const SELECTION_CHANGE_DEBOUNCE_MS = 160;
   const COMMITTED_SELECTION_DEBOUNCE_MS = 25;
+  const REPEAT_SELECTION_COOLDOWN_MS = 1200;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
   const chromeApi = globalThis.chrome;
 
   let timerId = null;
   let lastSentKey = "";
+  let lastSentAt = 0;
   let lastSettings = null;
 
   readSettings();
@@ -63,7 +65,7 @@
     }
 
     const key = lookupKey(selectedText);
-    if (!key || key === lastSentKey) {
+    if (!key || isSuppressedRepeat(key)) {
       return;
     }
 
@@ -72,6 +74,7 @@
     }
 
     lastSentKey = key;
+    lastSentAt = Date.now();
     const trace = createTrace("select-to-hear");
     sendRuntimeMessage({
       type: MESSAGE_TYPE_DEBUG,
@@ -89,8 +92,17 @@
     }).then((response) => {
       if (!response?.ok) {
         lastSentKey = "";
+        lastSentAt = 0;
       }
     });
+  }
+
+  function isSuppressedRepeat(key) {
+    if (key !== lastSentKey) {
+      return false;
+    }
+
+    return Date.now() - lastSentAt < REPEAT_SELECTION_COOLDOWN_MS;
   }
 
   function readSelectedText() {
