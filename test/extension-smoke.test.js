@@ -427,6 +427,8 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /lastSentKey/);
   assert.match(source, /lastSentAt/);
   assert.match(source, /isSuppressedRepeat/);
+  assert.match(source, /settingsPromise/);
+  assert.match(source, /readStoredSettings/);
 });
 
 test("options page does not expose retired direct generated-audio controls", async () => {

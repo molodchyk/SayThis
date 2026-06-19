@@ -18,6 +18,7 @@
   let lastSentKey = "";
   let lastSentAt = 0;
   let lastSettings = null;
+  let settingsPromise = null;
 
   readSettings();
 
@@ -34,7 +35,8 @@
 
   chromeApi?.storage?.onChanged?.addListener?.((changes, areaName) => {
     if (areaName === "local" && Object.prototype.hasOwnProperty.call(changes, SETTINGS_KEY)) {
-      lastSettings = changes[SETTINGS_KEY].newValue || null;
+      lastSettings = changes[SETTINGS_KEY].newValue || {};
+      settingsPromise = null;
     }
   });
 
@@ -186,13 +188,24 @@
       return lastSettings;
     }
 
+    if (!settingsPromise) {
+      settingsPromise = readStoredSettings();
+    }
+
+    return settingsPromise;
+  }
+
+  async function readStoredSettings() {
     try {
       const stored = await chromeApi?.storage?.local?.get?.([SETTINGS_KEY]);
       lastSettings = stored?.[SETTINGS_KEY] || {};
-      return lastSettings;
     } catch {
-      return {};
+      lastSettings = {};
+    } finally {
+      settingsPromise = null;
     }
+
+    return lastSettings;
   }
 
   function selectToHearEnabled(settings = {}) {
