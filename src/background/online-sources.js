@@ -106,7 +106,8 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
 
 export function onlineLookupLanguageHints(configuredHints = [], localResult = {}) {
   const hints = normalizedLanguageHints(configuredHints);
-  const localLanguage = localResult?.sourceStatus === "best-effort-fallback"
+  const localStatus = normalizeSelection(localResult?.sourceStatus);
+  const localLanguage = ["best-effort-fallback", "generated-from-source"].includes(localStatus)
     ? normalizeLanguageHint(localResult.language)
     : "";
 

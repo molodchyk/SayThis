@@ -25,6 +25,56 @@ test("adds local fallback language to online lookup hints", () => {
     language: "pl",
     sourceStatus: "structured-source"
   }), []);
+  assert.deepEqual(onlineLookupLanguageHints([], resolveTerm("Αθήνα", { entries: [] })), ["el"]);
+  assert.deepEqual(onlineLookupLanguageHints([], resolveTerm("قطر", { entries: [] })), []);
+});
+
+test("uses clean script fallback language hints for Wiktionary editions", async () => {
+  const originalFetch = globalThis.fetch;
+  const localResult = resolveTerm("Αθήνα", { entries: [] });
+  const requestedEditions = [];
+
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      if (parsed.host === "www.wikidata.org") {
+        return jsonResponse({ search: [] });
+      }
+
+      if (parsed.host.endsWith(".wiktionary.org")) {
+        const sourceLanguage = parsed.host.split(".")[0];
+        requestedEditions.push(sourceLanguage);
+        return jsonResponse({
+          query: {
+            pages: sourceLanguage === "el"
+              ? [{
+                title: "Αθήνα",
+                revisions: [{
+                  slots: {
+                    main: {
+                      content: "==Greek==\n===Pronunciation===\n* {{IPA|el|/aˈθina/}}"
+                    }
+                  }
+                }]
+              }]
+              : [{ missing: true }]
+          }
+        });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const result = await resolveWithOnlineSources("Αθήνα", {}, {}, {
+      localResult
+    });
+
+    assert.deepEqual(requestedEditions, ["el", "en"]);
+    assert.equal(result.language, "el");
+    assert.equal(result.pronunciation.ipa, "/aˈθina/");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("uses local fallback language hints for Forvo lookup candidates", async () => {
