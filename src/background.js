@@ -64,10 +64,12 @@ platform.addInstalledListener(() => {
     createContextMenu: platform.createContextMenu
   });
   activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
+  primePlaybackSurface("installed");
 });
 
 platform.addStartupListener(() => {
   activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
+  primePlaybackSurface("startup");
 });
 
 platform.addContextMenuClickedListener((info, tab) => {
@@ -317,6 +319,23 @@ async function preparePlayback(trace) {
       trace
     });
     return false;
+  }
+}
+
+function primePlaybackSurface(reason) {
+  const trace = {
+    id: `background-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    source: "background",
+    action: `playback-prime-${reason}`,
+    startedAt: Date.now()
+  };
+  try {
+    const prepared = preparePlayback(trace);
+    if (prepared && typeof prepared.catch === "function") {
+      prepared.catch(() => {});
+    }
+  } catch {
+    // First user-triggered playback can still create the offscreen surface.
   }
 }
 

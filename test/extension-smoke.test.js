@@ -143,6 +143,9 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /getVisibleResult: \(\) => getVisibleResultOnTab\(sender\?\.tab\?\.id\)/);
   assert.match(source, /activateSelectionListenerOnOpenTabs\(selectionActivationDependencies\(\)\)/);
   assert.match(source, /platform\.addStartupListener/);
+  assert.match(source, /primePlaybackSurface\("installed"\)/);
+  assert.match(source, /primePlaybackSurface\("startup"\)/);
+  assert.match(source, /action: `playback-prime-\$\{reason\}`/);
   assert.match(source, /createPlaybackSurface\(\{/);
   assert.match(source, /createPlaybackSurfacePlatformDependencies\(platform, STORAGE_KEYS\)/);
   assert.match(source, /onDebugEvent: recordPlaybackDebugEvent/);
