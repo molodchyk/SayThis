@@ -43,6 +43,7 @@ const DEFAULT_STORAGE_KEYS = {
   syncSummary: "syncSummary",
   settings: "settings"
 };
+const DEFAULT_SHARED_AUDIO_HTTP_TIMEOUT_MS = 8000;
 
 export async function saveFeedback(text, feedback, dependencies = {}) {
   const storageKeys = storageKeysFor(dependencies);
@@ -266,15 +267,36 @@ export async function requestSharedAudioEntry(endpoint, body, dependencies = {})
   const token = normalizeCredentials({
     sharedAudioGenerationToken: dependencies.sharedAudioGenerationToken
   }).sharedAudioGenerationToken;
-  const response = await fetcher(dependencies)(url.toString(), {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      ...(token ? { "Authorization": `Bearer ${token}` } : {})
-    },
-    body: JSON.stringify(body)
-  });
+  const abortController = createAbortController(dependencies);
+  const timeoutMs = normalizeTimeoutMs(
+    dependencies.sharedAudioHttpTimeoutMs ?? dependencies.sharedAudioTimeoutMs,
+    DEFAULT_SHARED_AUDIO_HTTP_TIMEOUT_MS
+  );
+  let timeoutId;
+  let response;
+  try {
+    if (abortController && timeoutMs && typeof setTimeout === "function") {
+      timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+    }
+
+    response = await fetcher(dependencies)(url.toString(), {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(body),
+      ...(abortController ? { signal: abortController.signal } : {})
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new Error("Shared audio timed out.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`Shared audio failed with ${response.status}`);
@@ -553,4 +575,18 @@ function baseLanguage(value) {
 
 function fetcher(dependencies = {}) {
   return dependencies.fetch || globalThis.fetch;
+}
+
+function createAbortController(dependencies = {}) {
+  const Controller = dependencies.AbortController || globalThis.AbortController;
+  return typeof Controller === "function" ? new Controller() : null;
+}
+
+function normalizeTimeoutMs(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : fallback;
+}
+
+function isAbortError(error) {
+  return error?.name === "AbortError";
 }

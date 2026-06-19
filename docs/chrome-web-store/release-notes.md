@@ -5,6 +5,7 @@
 - Adds shared generated audio requests through the configured community endpoint.
 - Reuses approved shared audio artifacts before any provider generation.
 - Reuses reviewed shared audio across alternate spellings when the resolved source form and base language match.
+- Keeps shared-audio lookup timeout-bounded so matching browser speech can start when the endpoint is slow or unavailable.
 - Preserves returned shared audio on the current result when local refresh does not expose it immediately.
 - Preserves source-backed or curated shared recording quality when approved audio is attached to results.
 - Reuses approved shared artifacts for generic verified recordings from local memory or the configured endpoint without authorizing fresh provider generation.
@@ -17,6 +18,7 @@
 - Keeps the primary result visible when playing shared audio for an alternate candidate.
 - Refreshes cached no-audio lookups for structured local entries so public recordings can replace guide-only playback.
 - Keeps verified recording labels when generated fallback samples are also available.
+- Shows source and quality context on popup playback rows.
 - Labels generated fallback playback separately from source-backed recordings in the popup and on-page card.
 - Keeps source-form speech and guide rows visible when generated fallback or unknown-quality audio is the only audio.
 - Skips automatic playback for unknown-quality audio while keeping it available as a manual choice.

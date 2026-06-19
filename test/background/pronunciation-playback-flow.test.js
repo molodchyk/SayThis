@@ -237,6 +237,59 @@ test("requests shared audio after generated-audio retry finds no recording", asy
   ]);
 });
 
+test("skips shared audio when caller already tried it", async () => {
+  const calls = [];
+  const enriched = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", enriched, { skipSharedAudio: true }, {
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return enriched;
+    },
+    requestSharedAudio: async () => {
+      throw new Error("should not request shared audio");
+    }
+  });
+
+  assert.equal(playable, enriched);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: enriched }]
+  ]);
+});
+
+test("keeps source-form result when shared audio wait expires", async () => {
+  const calls = [];
+  const enriched = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+
+  const playable = await resolvePlayableResult("Exampletown", enriched, {}, {
+    sharedAudioWaitMs: 1,
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return enriched;
+    },
+    requestSharedAudio: async (text, item, options) => {
+      calls.push(["requestSharedAudio", text, item, options]);
+      return new Promise(() => {});
+    }
+  });
+
+  assert.equal(playable, enriched);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: enriched }],
+    ["requestSharedAudio", "Exampletown", enriched, {}]
+  ]);
+});
+
 test("keeps current result when audio exists or retry fails", async () => {
   const calls = [];
   const audioResult = {

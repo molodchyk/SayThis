@@ -110,7 +110,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Forvo results preserve additional same-word, same-language recordings for source-backed practice options.
 - Forvo recordings are ranked as native-speaker audio ahead of generic verified recordings.
 - Forvo lookup can use lookup language hints when no Forvo-specific language filter is set.
-- Popup and on-page cards expose playable recording choices when a result has multiple audio sources.
+- Popup and on-page cards expose playable recording choices with source and quality context when a result has multiple audio sources.
 - Source-form, alias, and variant-guided pronunciation-audio lookup that tries resolved spellings before raw selected text.
 - Forvo lookup retries configured-language candidates with resolved source-language hints when available.
 - Verified audio from matching sources is merged onto structured results so IPA, origin, and source context stay visible.
@@ -142,6 +142,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Community service enforces a persisted public provider-generation budget before paid shared-audio synthesis.
 - Community service can store reviewed or token-gated service-generated audio artifacts and publish shared audio URLs through approved entries.
 - Popup, on-page, context-menu, and keyboard playback can request shared generated audio from the configured community endpoint when no preferred recording exists.
+- Shared audio checks are timeout-bounded and non-gating, so verified matching browser speech can start when the endpoint is slow or unavailable.
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
 - Shared audio requests reuse locally approved shared artifacts before contacting the endpoint again, even after endpoint access is disabled.
 - Shared audio playback has its own endpoint toggle, so users can enable reusable audio for Speak without enabling correction sync or approved-entry refresh.
@@ -173,7 +174,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 
 Chrome TTS is not the final product. The intended product should prioritize curated native recordings and reliable pronunciation databases, then use browser speech only when the voice is verified for the resolved language or when a simple guide can be spoken. It should not route a non-English resolved language through an English voice for source-form speech. Paid-provider generation belongs behind service-side controls, with useful generated samples saved as shared reviewed audio artifacts.
 
-MVP quality bar: SayThis should prefer verified recordings from source-backed services. If no recording is available, it may use a verified matching browser voice for the resolved source form. If the browser cannot verify a matching voice, SayThis should use the simple guide when present or report that speech is unavailable instead of playing a misleading fallback voice.
+MVP quality bar: SayThis should prefer verified recordings from source-backed services. If no recording is available, it may use a verified matching browser voice for the resolved source form. Shared audio lookup must not block that verified matching voice path. If the browser cannot verify a matching voice, SayThis should use the simple guide when present or report that speech is unavailable instead of playing a misleading fallback voice.
 
 ## Core Docs
 

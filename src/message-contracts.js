@@ -41,7 +41,8 @@ export function createSpeakMessage(text, options = {}) {
     rate: normalizeRate(options.rate),
     lang: normalizeLanguageOption(options.lang),
     useOnline: normalizeOptionalBoolean(options, "useOnline"),
-    languageHints: normalizeLanguageHints(options.languageHints)
+    languageHints: normalizeLanguageHints(options.languageHints),
+    skipSharedAudio: normalizeOptionalBoolean(options, "skipSharedAudio")
   });
 }
 

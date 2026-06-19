@@ -85,6 +85,7 @@ const correctionVariant = document.getElementById("correction-variant");
 let currentResult = null;
 const audioPlayback = createPopupAudioPlayback();
 const runtimeAdapters = createPopupRuntimeAdapters();
+const SHARED_AUDIO_UI_WAIT_MS = normalizeUiWaitMs(globalThis.__sayThisSharedAudioUiWaitMs, 900);
 
 init();
 
@@ -149,7 +150,8 @@ async function speakSelection(rate) {
 
   const response = await sendMessage(createSpeakMessage(text, {
     result: currentResult,
-    rate
+    rate,
+    skipSharedAudio: true
   }));
 
   if (response.ok) {
@@ -325,7 +327,8 @@ async function speakResultCandidate(result, rate, statusBase = "Speaking", optio
 
   const response = await sendMessage(createSpeakMessage(text, {
     result: sharedAudioResult,
-    rate
+    rate,
+    skipSharedAudio: true
   }));
 
   setStatus(response.ok
@@ -344,11 +347,14 @@ async function ensureSharedAudio(result, rate, options = {}) {
   }
 
   setStatus("Requesting shared voice.");
-  const response = await sendMessage(createRequestSharedAudioMessage(text, {
+  const response = await responseWithinSharedAudioWait(sendMessage(createRequestSharedAudioMessage(text, {
     result,
     rate
-  }));
+  })));
   if (!response.ok || !getBestAudio(response.result)) {
+    if (response.timedOut) {
+      setStatus("Using matching voice.");
+    }
     return result;
   }
 
@@ -385,7 +391,8 @@ function playAudioItem(audio, result, rate, options = {}) {
     const text = normalizeSelection(selectionInput.value);
     const response = await sendMessage(createSpeakMessage(text, {
       result,
-      rate
+      rate,
+      skipSharedAudio: true
     }));
     if (response.ok) {
       if (options.replaceCurrent !== false) {
@@ -424,6 +431,27 @@ function stopAudio() {
 
 function sendMessage(message) {
   return sendRuntimeMessage(message, runtimeAdapters);
+}
+
+function responseWithinSharedAudioWait(promise) {
+  if (!SHARED_AUDIO_UI_WAIT_MS || typeof setTimeout !== "function") {
+    return promise;
+  }
+
+  let timeoutId;
+  return Promise.race([
+    promise,
+    new Promise((resolve) => {
+      timeoutId = setTimeout(() => resolve({ ok: false, timedOut: true }), SHARED_AUDIO_UI_WAIT_MS);
+    })
+  ]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
+function normalizeUiWaitMs(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : fallback;
 }
 
 function setStatus(value) {

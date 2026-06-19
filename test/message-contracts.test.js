@@ -72,6 +72,12 @@ test("builds a speak message with clamped rate and resolved result", () => {
     text: "gnocchi",
     useOnline: false
   });
+
+  assert.deepEqual(createSpeakMessage(" gnocchi ", { skipSharedAudio: true }), {
+    type: MESSAGE_TYPES.speak,
+    text: "gnocchi",
+    skipSharedAudio: true
+  });
 });
 
 test("builds compact stop and sync messages", () => {

@@ -88,8 +88,12 @@ export function renderPopupResult(result, elements, actions = {}) {
       }
     });
     const label = doc.createElement("span");
+    label.className = "playback-label";
     label.textContent = item.label || "Pronunciation audio";
-    li.append(button, label);
+    const meta = doc.createElement("span");
+    meta.className = "playback-meta";
+    meta.textContent = playbackMetaForItem(item);
+    li.append(...[button, label, meta].filter((node) => node.textContent || node === button));
     elements.audioList.append(li);
   }
 
@@ -111,4 +115,65 @@ export function renderPopupResult(result, elements, actions = {}) {
     li.append(anchor);
     elements.sources.append(li);
   }
+}
+
+function playbackMetaForItem(item = {}) {
+  if (item.kind === "audio") {
+    return compactMeta([
+      item.source,
+      playbackQualityLabel(item.quality)
+    ]);
+  }
+
+  if (item.kind === "speech") {
+    return compactMeta([item.lang, "matching voice"]);
+  }
+
+  if (item.kind === "guide") {
+    return "en-US / guide speech";
+  }
+
+  return "";
+}
+
+function playbackQualityLabel(value) {
+  const quality = normalizeShortText(value).toLowerCase();
+  if (!quality) {
+    return "";
+  }
+
+  if (quality === "generated") {
+    return "generated fallback";
+  }
+
+  if (quality === "native-speaker" || quality === "native speaker") {
+    return "native speaker recording";
+  }
+
+  if (quality === "source-backed") {
+    return "source-backed recording";
+  }
+
+  if (quality === "curated") {
+    return "curated recording";
+  }
+
+  if (quality === "verified") {
+    return "verified recording";
+  }
+
+  return quality;
+}
+
+function compactMeta(values = []) {
+  return values
+    .map(normalizeShortText)
+    .filter(Boolean)
+    .join(" / ");
+}
+
+function normalizeShortText(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }

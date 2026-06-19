@@ -20,6 +20,9 @@ test("normalizes online options from runtime messages", () => {
     languageHints: ["ja", "en"]
   });
   assert.deepEqual(useOnlineMessageOptions({}), {});
+  assert.deepEqual(useOnlineMessageOptions({ skipSharedAudio: true }), {
+    skipSharedAudio: true
+  });
 });
 
 test("ignores unknown runtime messages", () => {
@@ -243,6 +246,51 @@ test("falls back to speech when refreshed runtime audio cannot play", async () =
   assert.deepEqual(responses, [{
     ok: true,
     result: refreshed,
+    speech: {
+      text: "Przykladowo"
+    }
+  }]);
+});
+
+test("skips shared audio retry when speak caller already tried it", async () => {
+  const responses = [];
+  const calls = [];
+  const supplied = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    result: supplied,
+    rate: 0.82,
+    skipSharedAudio: true
+  }, (value) => responses.push(value), {
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return supplied;
+    },
+    requestSharedAudio: async () => {
+      throw new Error("shared audio should not be retried");
+    },
+    speakResult: async (result, options) => {
+      calls.push(["speakResult", result, options]);
+      return { spoken: true, text: result.sourceForm };
+    }
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", { useOnline: true, localResult: supplied }],
+    ["speakResult", supplied, { rate: 0.82, lang: undefined }]
+  ]);
+  assert.deepEqual(responses, [{
+    ok: true,
+    result: supplied,
     speech: {
       text: "Przykladowo"
     }

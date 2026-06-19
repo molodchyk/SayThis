@@ -156,14 +156,14 @@ async function playResolvedAudio(result, rate, dependencies = {}) {
 
 export function useOnlineMessageOptions(message = {}) {
   const languageHints = normalizeLanguageHints(message.languageHints);
-  if (!Object.prototype.hasOwnProperty.call(message, "useOnline")) {
-    return languageHints.length ? { languageHints } : {};
-  }
+  const options = Object.prototype.hasOwnProperty.call(message, "useOnline")
+    ? {
+      useOnline: Boolean(message.useOnline),
+      ...(languageHints.length ? { languageHints } : {})
+    }
+    : languageHints.length ? { languageHints } : {};
 
-  return {
-    useOnline: Boolean(message.useOnline),
-    ...(languageHints.length ? { languageHints } : {})
-  };
+  return message.skipSharedAudio ? { ...options, skipSharedAudio: true } : options;
 }
 
 function respondWithResult(promise, sendResponse, buildResponse, fallbackError) {

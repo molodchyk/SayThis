@@ -11,6 +11,7 @@
   const overlayRuntime = globalThis.__sayThisOverlayRuntimeAdapters || {};
   const overlayResultView = globalThis.__sayThisOverlayResultView || {};
   const runtimeAdapters = overlayRuntime.createOverlayRuntimeAdapters?.() || {};
+  const sharedAudioUiWaitMs = normalizeUiWaitMs(globalThis.__sayThisSharedAudioUiWaitMs, 900);
   const {
     aliasesTextFromResult,
     alternateItems,
@@ -412,7 +413,8 @@
       type: "SAYTHIS_SPEAK",
       text: result.query || result.sourceForm || result.display,
       result,
-      rate
+      rate,
+      ...(options.skipSharedAudio ? { skipSharedAudio: true } : {})
     }).then((response) => {
       setStatus(response?.ok ? speakingStatus(response, rate) : response?.error || "Speech failed.");
     });
@@ -424,13 +426,16 @@
     }
 
     setStatus("Requesting shared voice.");
-    return sendOverlayMessage({
+    return responseWithinSharedAudioWait(sendOverlayMessage({
       type: "SAYTHIS_REQUEST_SHARED_AUDIO",
       text: result.query || result.display || result.sourceForm,
       result,
       rate
-    }).then((response) => {
+    })).then((response) => {
       if (!response?.ok || !getBestAudio(response.result)) {
+        if (response?.timedOut) {
+          setStatus("Using matching voice.");
+        }
         return result;
       }
 
@@ -474,7 +479,8 @@
         type: "SAYTHIS_SPEAK",
         text: result.query || result.display,
         result,
-        rate
+        rate,
+        skipSharedAudio: true
       }).then((response) => {
         if (response?.ok) {
           setStatus(speakingStatus(response, rate));
@@ -533,6 +539,27 @@
     }
 
     return overlayRuntime.sendRuntimeMessage(message, runtimeAdapters);
+  }
+
+  function responseWithinSharedAudioWait(promise) {
+    if (!sharedAudioUiWaitMs || typeof setTimeout !== "function") {
+      return promise;
+    }
+
+    let timeoutId;
+    return Promise.race([
+      promise,
+      new Promise((resolve) => {
+        timeoutId = setTimeout(() => resolve({ ok: false, timedOut: true }), sharedAudioUiWaitMs);
+      })
+    ]).finally(() => {
+      clearTimeout(timeoutId);
+    });
+  }
+
+  function normalizeUiWaitMs(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.max(0, number) : fallback;
   }
 
   function speakingStatus(response, rate) {

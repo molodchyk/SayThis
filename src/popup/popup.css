@@ -221,7 +221,21 @@ dd {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+
+.playback-label,
+.playback-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.playback-meta {
+  grid-column: 2;
+  color: #66736e;
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .alternates li {
@@ -320,6 +334,7 @@ input {
   .sources,
   .alternates,
   .audio-list,
+  .playback-meta,
   .eyebrow,
   dt {
     color: #aab8b3;

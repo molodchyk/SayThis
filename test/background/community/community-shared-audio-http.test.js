@@ -39,6 +39,21 @@ test("adds shared audio generation bearer token when configured", async () => {
   assert.equal(payload.entry.audioUrl, "https://example.com/audio/aud_1234567890abcdef");
 });
 
+test("times out shared audio HTTP requests", async () => {
+  await assert.rejects(
+    requestSharedAudioEntry("https://example.com/community", REQUEST_BODY, {
+      sharedAudioHttpTimeoutMs: 1,
+      fetch: async (_url, options) => new Promise((_resolve, reject) => {
+        assert.ok(options.signal);
+        options.signal.addEventListener("abort", () => {
+          reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
+        });
+      })
+    }),
+    /Shared audio timed out/
+  );
+});
+
 function sharedAudioResponse() {
   return {
     ok: true,
