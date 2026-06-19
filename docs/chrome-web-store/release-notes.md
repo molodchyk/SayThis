@@ -20,6 +20,7 @@
 - Avoids generated fallback audio for plain English same-text structured results.
 - Avoids browser TTS fallback for plain English same-text structured results without a guide.
 - Avoids browser TTS fallback when a non-English resolved language would use an English voice.
+- Avoids guessed browser speech for unresolved scripts shared by multiple languages.
 - Rejects public shared-audio generation for plain English same-text requests at the service boundary.
 - Rejects generated provider/shared audio when a non-English resolved language would use an English TTS locale.
 - Removes direct client audio URL template generation; generated provider output now belongs on the shared-audio endpoint path.

@@ -40,12 +40,12 @@ const LANGUAGE_TO_TTS = {
 };
 
 const SCRIPT_HINTS = {
-  Arabic: { language: "ar", languageName: "Arabic", ttsLang: "ar" },
+  Arabic: { languageName: "Arabic-script term" },
   Armenian: { language: "hy", languageName: "Armenian", ttsLang: "hy-AM" },
-  Cyrillic: { language: "ru", languageName: "Cyrillic-script term", ttsLang: "ru-RU" },
-  Devanagari: { language: "hi", languageName: "Devanagari-script term", ttsLang: "hi-IN" },
+  Cyrillic: { languageName: "Cyrillic-script term" },
+  Devanagari: { languageName: "Devanagari-script term" },
   Greek: { language: "el", languageName: "Greek", ttsLang: "el-GR" },
-  Han: { language: "zh", languageName: "CJK ideographic term", ttsLang: "zh-CN" },
+  Han: { languageName: "CJK ideographic term" },
   Hangul: { language: "ko", languageName: "Korean", ttsLang: "ko-KR" },
   Hebrew: { language: "he", languageName: "Hebrew", ttsLang: "he-IL" },
   Hiragana: { language: "ja", languageName: "Japanese", ttsLang: "ja-JP" },

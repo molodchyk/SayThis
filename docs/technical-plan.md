@@ -85,7 +85,7 @@ Chrome Manifest V3 components:
 - `test/background/sources/commons-audio-source.test.js`: verifies Commons audio URL planning, pronunciation evidence filters, and language-prefix ranking.
 - `test/extension-smoke.test.js`: verifies extension page DOM bindings, packaged manifest references, and static module import resolution.
 
-Verified audio from resolver results is preferred when available. Browser speech is only a fallback when SayThis can verify a matching voice for the resolved language, or when it can speak a simple guide instead. Matching accepts exact locale voices and base-only voices, but rejects region-specific voices from a different locale variant and rejects non-English resolved languages routed through English voices for source-form speech.
+Verified audio from resolver results is preferred when available. Browser speech is only a fallback when SayThis can verify a matching voice for the resolved language, or when it can speak a simple guide instead. Matching accepts exact locale voices and base-only voices, but rejects region-specific voices from a different locale variant and rejects non-English resolved languages routed through English voices for source-form speech. Fallbacks for scripts shared by multiple languages keep script context but do not assign a guessed speech locale; a structured source, lookup hint, approved entry, or correction must resolve the language before source-form speech is allowed.
 
 ## Implemented MVP
 
@@ -122,6 +122,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Pronunciation-audio selection and normalization have a narrow pure module.
 - Local community-memory normalization and summaries have a narrow pure module.
 - Script-sensitive fallback for non-Latin selected text.
+- Ambiguous-script fallbacks do not speak through a guessed browser voice when structured lookup cannot resolve a language.
 - Compact, connector-marked, punctuation-spaced, and technical mixed-case initialisms can use guide speech.
 - Latin orthography hints can guide fallback speech policy and optional pronunciation-audio lookup when structured sources are absent.
 - Latin-to-Cyrillic transliteration candidates, including bounded suffix heuristics, can broaden Wikidata lookup for romanized terms without adding a chat surface.

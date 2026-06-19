@@ -137,7 +137,8 @@ test("detects non-Latin scripts and creates source-form fallback", () => {
 
   assert.equal(script.script, "Arabic");
   assert.equal(result.sourceStatus, "generated-from-source");
-  assert.equal(result.ttsLang, "ar");
+  assert.equal(result.languageName, "Arabic-script term");
+  assert.equal(result.ttsLang, "");
 });
 
 test("uses local community correction before fallback", () => {
