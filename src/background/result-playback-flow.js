@@ -1,6 +1,6 @@
 export async function playResolvedResult(result, tabId, dependencies = {}) {
   const audio = dependencies.getBestAudio?.(result);
-  if (audio) {
+  if (audio && shouldAutoPlayAudio(audio, result, dependencies)) {
     if (isGeneratedAudio(audio, result)) {
       const played = await dependencies.playAudioOffscreen?.(result);
       dependencies.showResultOnTab?.(tabId, result);
@@ -58,4 +58,34 @@ export async function playAudioItemOffscreen(audio, dependencies = {}, rate = 0.
 function isGeneratedAudio(audio = {}, result = {}) {
   return String(audio.quality || "").trim().toLowerCase() === "generated" ||
     result?.sourceStatus === "generated-audio";
+}
+
+function shouldAutoPlayAudio(audio = {}, result = {}, dependencies = {}) {
+  if (isGeneratedAudio(audio, result)) {
+    return true;
+  }
+
+  if (typeof dependencies.hasPreferredAudio === "function") {
+    return dependencies.hasPreferredAudio(result);
+  }
+
+  return isPreferredAudioItem(audio, result);
+}
+
+function isPreferredAudioItem(audio = {}, result = {}) {
+  const quality = String(audio.quality || "").trim().toLowerCase();
+  if (!audio.url || quality === "generated") {
+    return false;
+  }
+
+  return [
+    "curated",
+    "native",
+    "native speaker",
+    "native-speaker",
+    "recorded",
+    "source-backed",
+    "verified"
+  ].includes(quality) ||
+    ["verified-audio", "community-confirmed"].includes(String(result?.sourceStatus || "").trim().toLowerCase());
 }

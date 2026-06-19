@@ -8,7 +8,10 @@ import {
 const AUDIO_RESULT = {
   display: "Gnocchi",
   pronunciation: {
-    audio: [{ url: "https://example.test/gnocchi.ogg" }]
+    audio: [{
+      url: "https://example.test/gnocchi.ogg",
+      quality: "verified"
+    }]
   }
 };
 
@@ -16,6 +19,7 @@ test("plays verified audio through the overlay when injection succeeds", async (
   const calls = [];
   const result = await playResolvedResult(AUDIO_RESULT, 7, {
     getBestAudio: (value) => value.pronunciation.audio[0],
+    hasPreferredAudio: () => true,
     showResultOnTab: async (tabId, value, options) => {
       calls.push(["showResultOnTab", tabId, value.display, options]);
       return true;
@@ -37,6 +41,7 @@ test("uses offscreen audio when overlay autoplay cannot be injected", async () =
   const calls = [];
   const result = await playResolvedResult(AUDIO_RESULT, 7, {
     getBestAudio: (value) => value.pronunciation.audio[0],
+    hasPreferredAudio: () => true,
     showResultOnTab: async (tabId, value, options) => {
       calls.push(["showResultOnTab", tabId, value.display, options || {}]);
       return calls.length === 1 ? false : true;
@@ -70,6 +75,7 @@ test("uses offscreen audio before overlay autoplay for generated audio", async (
   const calls = [];
   const result = await playResolvedResult(generated, 7, {
     getBestAudio: (value) => value.pronunciation.audio[0],
+    hasPreferredAudio: () => false,
     showResultOnTab: async (tabId, value, options) => {
       calls.push(["showResultOnTab", tabId, value.display, options || {}]);
       return true;
@@ -105,6 +111,44 @@ test("falls back to TTS when no verified audio can play", async () => {
     ["showResultOnTab", 7, "Gnocchi", { autoPlay: true }],
     ["speakResult", "Gnocchi"],
     ["showResultOnTab", 7, "Gnocchi", {}]
+  ]);
+});
+
+test("does not autoplay unknown-quality audio before speech", async () => {
+  const unreviewed = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    pronunciation: {
+      audio: [{
+        url: "https://audio.example/unreviewed.ogg"
+      }]
+    }
+  };
+  const calls = [];
+  const result = await playResolvedResult(unreviewed, 7, {
+    getBestAudio: (value) => value.pronunciation.audio[0],
+    hasPreferredAudio: () => false,
+    showResultOnTab: async (tabId, value, options) => {
+      calls.push(["showResultOnTab", tabId, value.display, options || {}]);
+      return true;
+    },
+    playAudioOffscreen: async () => {
+      calls.push(["playAudioOffscreen"]);
+      return true;
+    },
+    speakResult: async (value) => {
+      calls.push(["speakResult", value.sourceForm]);
+      return {
+        spoken: true,
+        text: value.sourceForm
+      };
+    }
+  });
+
+  assert.deepEqual(result, { mode: "tts" });
+  assert.deepEqual(calls, [
+    ["speakResult", "Przykladowo"],
+    ["showResultOnTab", 7, "Exampletown", {}]
   ]);
 });
 

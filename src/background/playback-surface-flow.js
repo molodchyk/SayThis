@@ -1,6 +1,7 @@
 import {
   createLookupKey,
   getBestAudio,
+  hasPreferredAudio,
   normalizeSelection,
   resultToSpeechOptions
 } from "../resolver-core.js";
@@ -61,6 +62,7 @@ export function createPlaybackSurface(dependencies = {}) {
   async function playResolvedResult(result, tabId) {
     return playResolvedResultFlow(result, tabId, {
       getBestAudio,
+      hasPreferredAudio,
       showResultOnTab,
       playAudioOffscreen,
       speakResult

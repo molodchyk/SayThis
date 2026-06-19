@@ -19,6 +19,7 @@
 - Keeps verified recording labels when generated fallback samples are also available.
 - Labels generated fallback playback separately from source-backed recordings in the popup and on-page card.
 - Keeps source-form speech and guide rows visible when generated fallback or unknown-quality audio is the only audio.
+- Skips automatic playback for unknown-quality audio while keeping it available as a manual choice.
 - Avoids generated fallback audio for plain English same-text structured results.
 - Avoids browser TTS fallback for plain English same-text structured results without a guide.
 - Avoids browser TTS fallback when a non-English resolved language would use an English voice.

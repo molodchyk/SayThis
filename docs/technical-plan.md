@@ -214,6 +214,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Source-backed or curated shared recordings keep top-tier audio quality when attached to results.
 - Generic verified recordings can reuse approved shared artifacts from local memory or the configured endpoint without authorizing fresh provider generation.
 - Generated-only and unknown-quality audio rows keep source-form speech and guide alternatives visible in popup and on-page cards.
+- Automatic result playback requires a preferred recording or generated fallback audio before playing audio; unknown-quality audio remains selectable but does not preempt verified speech or guide fallback.
 - Community service container image and deployment notes.
 - Options page for remote lookup defaults, on-page card display, and import/export/clear controls for local and shared memory.
 - Verified-audio playback from popup, page overlay, or offscreen audio document, with verified matching browser voice or guide speech fallback.
