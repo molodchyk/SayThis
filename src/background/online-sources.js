@@ -1,5 +1,4 @@
 import {
-  hasGeneratedAudio,
   hasPreferredAudio,
   mergeRemoteResult,
   normalizeSelection
@@ -31,8 +30,7 @@ import {
 } from "../resolver/transliteration.js";
 import {
   buildCustomSourceResult,
-  buildCustomSourceUrl,
-  buildVoiceServiceResult
+  buildCustomSourceUrl
 } from "../sources/custom-source-adapter.js";
 import {
   buildDbpediaLookupUrl,
@@ -101,14 +99,7 @@ export async function resolveWithOnlineSources(text, settings = {}, credentials 
   const commonsAudioResult = !hasPreferredAudio(preAudioResult)
     ? await resolveWithCommonsAudioCandidates(text, preAudioResult)
     : null;
-  const audioBaseResult = [preAudioResult, commonsAudioResult]
-    .filter(Boolean)
-    .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
-  const voiceServiceResult = settings.voiceServiceEnabled
-    ? resolveWithVoiceService(text, audioBaseResult, settings)
-    : null;
-
-  return [refinedStructuredResult, forvoResult, commonsAudioResult, voiceServiceResult]
+  return [refinedStructuredResult, forvoResult, commonsAudioResult]
     .filter(Boolean)
     .reduce((best, candidate) => mergeRemoteResult(best, candidate), null);
 }
@@ -122,17 +113,6 @@ export function onlineLookupLanguageHints(configuredHints = [], localResult = {}
   return localLanguage && !hints.includes(localLanguage)
     ? [...hints, localLanguage].slice(0, 8)
     : hints;
-}
-
-export function resolveWithVoiceService(text, result, settings = {}) {
-  if (!settings.voiceServiceUrlTemplate || hasPreferredAudio(result) || hasGeneratedAudio(result)) {
-    return null;
-  }
-
-  return buildVoiceServiceResult(text, result, {
-    urlTemplate: settings.voiceServiceUrlTemplate,
-    label: settings.voiceServiceLabel
-  });
 }
 
 export async function resolveSafely(resolver, ...args) {

@@ -197,6 +197,7 @@ Verified audio from resolver results is preferred when available. Browser speech
 - Community service serialized store writes for overlapping public or moderator requests.
 - Community service proxy IP headers are ignored for rate limiting unless explicitly enabled.
 - Community service can store reviewed or token-gated service-generated audio artifacts, generate provider audio through moderator or explicitly enabled shared routes, serve artifacts with immutable cache headers, and publish their URLs through approved entries.
+- Legacy direct audio URL templates are retired from the client path; generated provider output is requested through the shared-audio endpoint so reusable artifacts can be reviewed, served, and refreshed like other approved entries.
 - Shared generated-audio reuse checks exact lookup keys first, then term, source form, alias, and variant keys only when the base language matches.
 - Shared-audio requests check locally approved shared artifacts before requiring or contacting the configured endpoint again.
 - Community service container image and deployment notes.

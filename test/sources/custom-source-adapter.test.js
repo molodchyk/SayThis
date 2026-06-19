@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  buildVoiceServiceAudioUrl,
-  buildVoiceServiceResult,
   buildCustomSourceResult,
   buildCustomSourceUrl,
-  normalizeVoiceServiceUrlTemplate,
   selectBestCustomEntry
 } from "../../src/sources/custom-source-adapter.js";
 
@@ -20,135 +17,6 @@ test("builds a custom source lookup URL", () => {
 
 test("rejects non-https custom source endpoints", () => {
   assert.equal(buildCustomSourceUrl("term", "http://example.com/search"), "");
-});
-
-test("builds voice-service audio URLs from templates", () => {
-  assert.equal(buildVoiceServiceAudioUrl("https://voice.example/speak?text={text}&lang={lang}", {
-    text: "Przykladowo",
-    lang: "pl-PL"
-  }), "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
-
-  assert.equal(buildVoiceServiceAudioUrl("https://voice.example/speak", {
-    text: "Przykladowo",
-    lang: "pl-PL"
-  }), "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
-});
-
-test("rejects unsafe voice-service templates", () => {
-  assert.equal(normalizeVoiceServiceUrlTemplate("http://voice.example/speak?text={text}"), "");
-  assert.equal(normalizeVoiceServiceUrlTemplate("javascript:alert(1)"), "");
-});
-
-test("builds generated audio results from resolved source forms", () => {
-  const result = buildVoiceServiceResult("Exampletown", {
-    display: "Exampletown",
-    sourceForm: "Przykladowo",
-    language: "pl",
-    languageName: "Polish",
-    ttsLang: "pl-PL",
-    category: "place",
-    origin: "sample source",
-    root: "przyklad",
-    domainHint: "field term",
-    sourceStatus: "structured-source",
-    trustSignals: ["source-backed", "root-noted"],
-    variantNote: "regional reading note",
-    sources: [{ label: "Structured source", url: "https://source.example/przykladowo" }]
-  }, {
-    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}",
-    label: "Example voice"
-  });
-
-  assert.equal(result.sourceStatus, "generated-audio");
-  assert.equal(result.sourceLabel, "Generated audio");
-  assert.equal(result.sourceForm, "Przykladowo");
-  assert.equal(result.language, "pl");
-  assert.equal(result.ttsLang, "pl-PL");
-  assert.equal(result.origin, "sample source");
-  assert.equal(result.root, "przyklad");
-  assert.equal(result.domainHint, "field term");
-  assert.deepEqual(result.trustSignals, ["source-backed", "root-noted", "audio-backed"]);
-  assert.equal(result.notes, "regional reading note");
-  assert.deepEqual(result.sources, [
-    { label: "Structured source", url: "https://source.example/przykladowo" },
-    { label: "Example voice", url: "https://voice.example/speak?text=Przykladowo&lang=pl-PL" }
-  ]);
-  assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
-  assert.equal(result.pronunciation.audio[0].quality, "generated");
-});
-
-test("does not build generated audio for unresolved or language-less results", () => {
-  assert.equal(buildVoiceServiceResult("Exampleterm", {
-    display: "Exampleterm",
-    sourceForm: "Exampleterm",
-    sourceStatus: "best-effort-fallback",
-    ttsLang: "en-US"
-  }, {
-    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  }), null);
-
-  assert.equal(buildVoiceServiceResult("Exampleterm", {
-    display: "Exampleterm",
-    sourceForm: "Exampleterm",
-    sourceStatus: "structured-source"
-  }, {
-    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  }), null);
-});
-
-test("does not build generated audio for same-text English results", () => {
-  assert.equal(buildVoiceServiceResult("Exampleterm", {
-    display: "Exampleterm",
-    sourceForm: "Exampleterm",
-    language: "en",
-    ttsLang: "en-US",
-    sourceStatus: "structured-source"
-  }, {
-    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  }), null);
-});
-
-test("builds generated audio for resolved abbreviation source forms", () => {
-  const result = buildVoiceServiceResult("P&L", {
-    display: "P&L",
-    sourceForm: "P N L",
-    language: "en",
-    ttsLang: "en-US",
-    sourceStatus: "structured-source"
-  }, {
-    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  });
-
-  assert.equal(result.sourceStatus, "generated-audio");
-  assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=P%20N%20L&lang=en-US");
-});
-
-test("builds generated audio for non-English TTS locales even when spelling matches", () => {
-  const result = buildVoiceServiceResult("Saoirse", {
-    display: "Saoirse",
-    sourceForm: "Saoirse",
-    language: "ga",
-    ttsLang: "ga-IE",
-    sourceStatus: "structured-source"
-  }, {
-    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  });
-
-  assert.equal(result.sourceStatus, "generated-audio");
-  assert.equal(result.language, "ga");
-  assert.equal(result.ttsLang, "ga-IE");
-});
-
-test("does not build generated audio for non-English languages routed to English TTS", () => {
-  assert.equal(buildVoiceServiceResult("Saoirse", {
-    display: "Saoirse",
-    sourceForm: "Saoirse",
-    language: "ga",
-    ttsLang: "en-IE",
-    sourceStatus: "structured-source"
-  }, {
-    urlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  }), null);
 });
 
 test("selects the matching custom source entry", () => {

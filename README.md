@@ -135,7 +135,8 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Shared audio requests reuse approved artifacts first and require server-side opt-in before provider generation can run.
 - Shared audio requests reuse locally approved shared artifacts before contacting the endpoint again, even after endpoint access is disabled.
 - Shared audio reuse can match lookup key, term, source form, alias, or variant when the base language matches, and stores a selected-key alias so refreshed results can play the shared sample.
-- Generated voice-service/provider audio is blocked when a non-English resolved language would be routed through an English TTS locale.
+- Generated provider/shared audio is blocked when a non-English resolved language would be routed through an English TTS locale.
+- Legacy direct audio URL templates are ignored; provider generation runs through shared-audio endpoints so useful samples can be reused.
 - Generated fallback samples do not relabel a result that already has a verified or native-speaker recording.
 - Generated fallback samples are labeled separately from source-backed recordings in popup and on-page playback rows.
 - Container image and deployment notes for the community service.
@@ -209,7 +210,7 @@ The first useful version should be narrow and trusted:
 - Treat each useful lookup as a reusable pronunciation-graph entry, not a chat response or a closed-list item.
 - Treat community submissions as structured pronunciation knowledge: source form, root, domain hint, audio, guide, variant, source, and trust signal.
 - Prefer curated or native-speaker audio over generated voices.
-- Use detected or resolved language to feed source forms into optional voice-service fallback only when there is a resolved source-form difference or a non-English provider locale, then publish useful generated results as reviewed shared audio artifacts and keep them below recordings.
+- Use detected or resolved language to feed source forms into shared provider generation only when there is a resolved source-form difference or a non-English provider locale, then publish useful generated results as reviewed shared audio artifacts and keep them below recordings.
 - Promote useful generated samples into moderated shared audio artifacts so one reviewed generation can be reused by every client that resolves the same source form and language.
 - Add cost controls before enabling any shared paid voice provider.
 - Show confidence and source labels in the UI.

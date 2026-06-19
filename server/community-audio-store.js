@@ -175,7 +175,7 @@ function normalizeAudioArtifact(value = {}, now = new Date().toISOString()) {
     variants: normalizeList(value.variants),
     ipa: normalizeSelection(value.ipa),
     simple: normalizeSelection(value.simple),
-    provider: normalizeSelection(value.provider || "voice-service"),
+    provider: normalizeSelection(value.provider || "generated-provider"),
     mimeType,
     byteLength,
     sha256: normalizeHash(value.sha256),

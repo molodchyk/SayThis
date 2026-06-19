@@ -9,8 +9,7 @@ import {
   resolveWithCustomSourceCandidates,
   resolveWithForvoCandidates,
   resolveWithWikidata,
-  resolveWithOnlineSources,
-  resolveWithVoiceService
+  resolveWithOnlineSources
 } from "../../src/background/online-sources.js";
 
 test("adds local fallback language to online lookup hints", () => {
@@ -291,7 +290,8 @@ test("retries custom source with resolved source-form candidates", async () => {
   }
 });
 
-test("builds voice-service audio from resolved structured results", async () => {
+test("ignores legacy direct generator settings during online lookup", async () => {
+  const originalFetch = globalThis.fetch;
   const structured = createRemoteStructuredResult("Exampletown", {
     id: "remote:exampletown",
     display: "Exampletown",
@@ -301,67 +301,52 @@ test("builds voice-service audio from resolved structured results", async () => 
     ttsLang: "pl-PL",
     category: "place"
   });
+  const requestedHosts = [];
 
-  const result = resolveWithVoiceService("Exampletown", structured, {
-    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}",
-    voiceServiceLabel: "Example voice"
-  });
+  try {
+    globalThis.fetch = async (url) => {
+      const parsed = new URL(url);
+      requestedHosts.push(parsed.host);
 
-  assert.equal(result.sourceStatus, "generated-audio");
-  assert.equal(result.sourceForm, "Przykladowo");
-  assert.equal(result.pronunciation.audio[0].url, "https://voice.example/speak?text=Przykladowo&lang=pl-PL");
+      if (parsed.host === "www.wikidata.org") {
+        return jsonResponse({ search: [] });
+      }
+
+      if (parsed.host.endsWith(".wiktionary.org")) {
+        return jsonResponse({
+          query: {
+            pages: [{ missing: true }]
+          }
+        });
+      }
+
+      if (parsed.host === "commons.wikimedia.org") {
+        return jsonResponse({
+          query: {
+            pages: {}
+          }
+        });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const result = await resolveWithOnlineSources("Exampletown", {
+      voiceServiceEnabled: true,
+      voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
+    }, {}, {
+      localResult: structured
+    });
+
+    assert.equal(result, null);
+    assert.ok(requestedHosts.includes("commons.wikimedia.org"));
+    assert.equal(requestedHosts.includes("voice.example"), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
-test("does not build voice-service audio when a recording exists", async () => {
-  const recorded = createRemoteStructuredResult("Exampletown", {
-    id: "remote:recorded",
-    display: "Exampletown",
-    sourceForm: "Przykladowo",
-    language: "pl",
-    pronunciation: {
-      audio: [{ url: "https://audio.example/przykladowo.ogg" }]
-    }
-  });
-
-  assert.equal(resolveWithVoiceService("Exampletown", recorded, {
-    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  }), null);
-});
-
-test("does not rebuild voice-service audio when generated audio already exists", async () => {
-  const generated = createRemoteStructuredResult("Exampletown", {
-    id: "voice:exampletown",
-    display: "Exampletown",
-    sourceForm: "Przykladowo",
-    language: "pl",
-    ttsLang: "pl-PL",
-    sourceStatus: "generated-audio",
-    pronunciation: {
-      audio: [{
-        url: "https://cached.example/przykladowo.ogg",
-        label: "Cached voice",
-        source: "Voice service",
-        quality: "generated"
-      }]
-    }
-  });
-
-  assert.equal(resolveWithVoiceService("Exampletown", generated, {
-    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  }), null);
-});
-
-test("does not build voice-service audio for best-effort fallback results", async () => {
-  const fallback = resolveTerm("Exampleterm", { entries: [] });
-
-  const result = resolveWithVoiceService("Exampleterm", fallback, {
-    voiceServiceUrlTemplate: "https://voice.example/speak?text={sourceForm}&lang={lang}"
-  });
-
-  assert.equal(result, null);
-});
-
-test("uses Commons audio before generated voice-service audio", async () => {
+test("uses Commons audio while ignoring legacy direct generator settings", async () => {
   const originalFetch = globalThis.fetch;
   const structured = createRemoteStructuredResult("Exampletown", {
     id: "remote:exampletown",
