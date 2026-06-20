@@ -605,6 +605,7 @@ test("runtime speak does not wait for slow stored-result miss before direct shar
   };
   let storageFinished = false;
   let requestStartedBeforeStorageFinished = false;
+  let resolveStartedBeforeStorageFinished = false;
   let playbackStartedBeforeStorageFinished = false;
 
   const handled = handleRuntimeMessage({
@@ -625,6 +626,7 @@ test("runtime speak does not wait for slow stored-result miss before direct shar
       return direct;
     },
     resolveSelection: async (text, options) => {
+      resolveStartedBeforeStorageFinished = !storageFinished;
       calls.push(["resolveSelection", text, options]);
       return new Promise(() => {});
     },
@@ -637,7 +639,7 @@ test("runtime speak does not wait for slow stored-result miss before direct shar
       throw new Error("should not speak when direct shared audio plays");
     },
     directSharedAudioWaitMs: 100,
-    storedResultGraceMs: 5,
+    storedResultGraceMs: 80,
     lastResultKey: "lastResult"
   });
 
@@ -645,6 +647,7 @@ test("runtime speak does not wait for slow stored-result miss before direct shar
 
   assert.equal(handled, true);
   assert.equal(requestStartedBeforeStorageFinished, true);
+  assert.equal(resolveStartedBeforeStorageFinished, true);
   assert.equal(playbackStartedBeforeStorageFinished, true);
   assert.equal(responses[0].ok, true);
   assert.equal(responses[0].result, direct);
@@ -1038,20 +1041,36 @@ test("runtime speak falls back to resolving when stored-result read fails", asyn
   await delay(0);
 
   assert.equal(handled, true);
-  assert.deepEqual(calls, [
-    ["recordDebugEvent", "ui:selection-auto-speak", {
-      text: "Exampletown",
-      trace
-    }],
-    ["getStorage"],
-    ["recordDebugEvent", "stored-result:error", {
+  assert.deepEqual(calls[0], ["recordDebugEvent", "ui:selection-auto-speak", {
+    text: "Exampletown",
+    trace
+  }]);
+  assert.deepEqual(calls[1], ["getStorage"]);
+  assert.deepEqual(calls.find((call) => call[0] === "recordDebugEvent" && call[1] === "stored-result:error"), [
+    "recordDebugEvent",
+    "stored-result:error",
+    {
       text: "Exampletown",
       error: "storage temporarily unavailable",
       trace
-    }],
-    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
-    ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
+    }
   ]);
+  assert.deepEqual(calls.find((call) => call[0] === "resolveSelection"), [
+    "resolveSelection",
+    "Exampletown",
+    { useOnline: false, trace }
+  ]);
+  assert.deepEqual(calls.find((call) => call[0] === "playAudio"), [
+    "playAudio",
+    resolved.pronunciation.audio[0],
+    0.82,
+    trace
+  ]);
+  assert.equal(
+    calls.findIndex((call) => call[0] === "resolveSelection") <
+      calls.findIndex((call) => call[0] === "recordDebugEvent" && call[1] === "stored-result:error"),
+    true
+  );
   assert.deepEqual(responses, [{
     ok: true,
     result: resolved,

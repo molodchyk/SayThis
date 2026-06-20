@@ -81,12 +81,15 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       visibleResultGracePromise,
       waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
     ]);
+    const immediateLookupGatePromise = preferImmediatePlayback
+      ? visibleResultGracePromise
+      : visibleOrStoredGracePromise;
     const preparedSharedAudioIsPending = preferImmediatePlayback &&
       !message.result &&
       hasPreparedSharedAudio(selectedText, message);
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
-      : visibleOrStoredGracePromise.then((fastResult) => fastResult
+      : immediateLookupGatePromise.then((fastResult) => fastResult
         ? null
         : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies)).then((result) => {
           directSharedAudioResult = result;
@@ -94,7 +97,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         });
     const resolvedSelectionPromise = message.result
       ? Promise.resolve(message.result)
-      : withHandledRejection(visibleOrStoredGracePromise
+      : withHandledRejection(immediateLookupGatePromise
         .then((result) => result || dependencies.resolveSelection(selectedText, resolverOptions)));
     const resolvedPlayablePromise = message.result
       ? Promise.resolve(null)
