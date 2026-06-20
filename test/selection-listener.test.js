@@ -309,6 +309,23 @@ test("pointer selection prepares while dragging and speaks on release", async ()
   ]);
 });
 
+test("pointer release speaks late browser selection without waiting for stable debounce", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  harness.dispatch("pointerup");
+  await delay(5);
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(35);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
 test("pointer cancellation speaks after a selected word survives the canceled gesture", async () => {
   const harness = await installSelectionListener();
 

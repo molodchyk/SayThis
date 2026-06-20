@@ -10,6 +10,7 @@
   const SELECTION_CHANGE_DEBOUNCE_MS = 40;
   const SELECTION_PREPARE_DEBOUNCE_MS = 30;
   const COMMITTED_SELECTION_DEBOUNCE_MS = 0;
+  const LATE_COMMITTED_SELECTION_DEBOUNCE_MS = 25;
   const REPEAT_SELECTION_COOLDOWN_MS = 350;
   const PREPARED_SELECTION_TTL_MS = 1200;
   const PLAYBACK_PRIME_COOLDOWN_MS = 3000;
@@ -150,7 +151,10 @@
 
     markActiveSelectionStarted();
     clearSelectionGestureInProgress();
-    scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
+    const delayMs = readSelectedText()
+      ? COMMITTED_SELECTION_DEBOUNCE_MS
+      : LATE_COMMITTED_SELECTION_DEBOUNCE_MS;
+    scheduleSelectionCheck(delayMs);
   }
 
   function scheduleKeyboardCommittedSelectionCheck(event) {
