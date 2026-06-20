@@ -4,6 +4,7 @@ import {
 
 const DEFAULT_SEED_DATA_URL = "data/pronunciation-seed.json";
 const DEFAULT_STORAGE_KEYS = {
+  lastResult: "lastResult",
   lastSelection: "lastSelection",
   lastSource: "lastSource"
 };
@@ -31,9 +32,11 @@ export function createRuntimeAdapters(dependencies = {}) {
       setStorage: dependencies.setStorage,
       resolveSelection: workflows.resolveSelection,
       requestSharedAudio: workflows.requestSharedAudio,
+      preparePlayback: workflows.preparePlayback,
       playResolvedResult: workflows.playResolvedResult,
       showResultOnTab: workflows.showResultOnTab,
       recordDebugEvent: workflows.recordDebugEvent,
+      lastResultKey: storageKeys.lastResult,
       lastSelectionKey: storageKeys.lastSelection,
       lastSourceKey: storageKeys.lastSource
     };

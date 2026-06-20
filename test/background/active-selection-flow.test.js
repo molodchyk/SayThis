@@ -563,6 +563,49 @@ test("plays immediate keyboard selections without hidden online retry", async ()
   ]);
 });
 
+test("keyboard command starts playback preparation without blocking playback", async () => {
+  const calls = [];
+  const resolved = { display: "Gnocchi", sourceStatus: "structured-source" };
+  const result = await Promise.race([
+    handleActiveSelectionCommand({
+      source: "keyboard"
+    }, {
+      getActiveTab: async () => ({ id: 7 }),
+      readSelectionFromTab: async (tabId) => {
+        calls.push(["readSelectionFromTab", tabId]);
+        return "Gnocchi";
+      },
+      preparePlayback: (trace) => {
+        calls.push(["preparePlayback", trace]);
+        return new Promise(() => {});
+      },
+      setStorage: async (value) => calls.push(["setStorage", value]),
+      resolveSelection: async (text, options) => {
+        calls.push(["resolveSelection", text, options]);
+        return resolved;
+      },
+      playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+      lastSelectionKey: "lastSelection",
+      lastSourceKey: "lastSource"
+    }),
+    delay(25).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.deepEqual(compactTraceCalls(calls), [
+    ["readSelectionFromTab", 7],
+    ["preparePlayback", { action: "keyboard" }],
+    ["setStorage", { lastSelection: "Gnocchi", lastSource: "keyboard" }],
+    ["resolveSelection", "Gnocchi", {
+      source: "keyboard",
+      useOnline: false,
+      trace: { action: "keyboard" }
+    }],
+    ["playResolvedResult", resolved, 7]
+  ]);
+});
+
 test("plain keyboard command only checks local shared audio after local resolution", async () => {
   const calls = [];
   const resolved = {

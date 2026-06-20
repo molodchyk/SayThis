@@ -114,6 +114,26 @@ test("reads the first non-empty active tab frame selection", async () => {
   assert.equal(selection, "Chiaroscuro");
 });
 
+test("reads active tab selection from focused text controls", async () => {
+  const selection = await readActiveTabSelection({
+    queryTabs: async () => [{ id: 7 }],
+    executeScript: async (details) => [{
+      result: runActiveTabSelectionReader(details.func, {
+        activeElement: {
+          tagName: "input",
+          type: "search",
+          value: "Find Chiaroscuro now",
+          selectionStart: 5,
+          selectionEnd: 16
+        },
+        selectionText: ""
+      })
+    }]
+  });
+
+  assert.equal(selection, "Chiaroscuro");
+});
+
 test("returns empty selection when there is no readable active tab", async () => {
   assert.equal(await readActiveTabSelection({
     queryTabs: async () => []
@@ -254,3 +274,34 @@ test("opens extension options with error normalization", async () => {
 test("normalizes lookup hints", () => {
   assert.deepEqual(lookupHintsFromValue(" pl, pt-BR, bad!, ja, pl "), ["pl", "pt", "ja"]);
 });
+
+function runActiveTabSelectionReader(func, options = {}) {
+  const previousDocument = globalThis.document;
+  const previousWindow = globalThis.window;
+  const hadDocument = Object.prototype.hasOwnProperty.call(globalThis, "document");
+  const hadWindow = Object.prototype.hasOwnProperty.call(globalThis, "window");
+
+  try {
+    globalThis.document = {
+      activeElement: options.activeElement || null
+    };
+    globalThis.window = {
+      getSelection: () => ({
+        toString: () => options.selectionText || ""
+      })
+    };
+    return func();
+  } finally {
+    if (hadDocument) {
+      globalThis.document = previousDocument;
+    } else {
+      delete globalThis.document;
+    }
+
+    if (hadWindow) {
+      globalThis.window = previousWindow;
+    } else {
+      delete globalThis.window;
+    }
+  }
+}

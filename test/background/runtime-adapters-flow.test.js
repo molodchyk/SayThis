@@ -84,6 +84,7 @@ test("builds active-selection dependencies from browser adapters and workflows",
   const calls = [];
   const workflows = {
     resolveSelection: async () => {},
+    preparePlayback: async () => {},
     playResolvedResult: async () => {}
   };
   const adapters = createRuntimeAdapters({
@@ -94,6 +95,7 @@ test("builds active-selection dependencies from browser adapters and workflows",
     executeScript: async () => [{ result: "Gnocchi" }],
     setStorage: async (value) => calls.push(["setStorage", value]),
     storageKeys: {
+      lastResult: "customLastResult",
       lastSelection: "customLastSelection",
       lastSource: "customLastSource"
     }
@@ -104,7 +106,9 @@ test("builds active-selection dependencies from browser adapters and workflows",
   assert.equal(await dependencies.readSelectionFromTab(7), "Gnocchi");
   await dependencies.setStorage({ customLastSelection: "Gnocchi" });
   assert.equal(dependencies.resolveSelection, workflows.resolveSelection);
+  assert.equal(dependencies.preparePlayback, workflows.preparePlayback);
   assert.equal(dependencies.playResolvedResult, workflows.playResolvedResult);
+  assert.equal(dependencies.lastResultKey, "customLastResult");
   assert.equal(dependencies.lastSelectionKey, "customLastSelection");
   assert.equal(dependencies.lastSourceKey, "customLastSource");
   assert.deepEqual(calls, [
