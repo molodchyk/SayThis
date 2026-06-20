@@ -16,7 +16,8 @@
   const PLAYBACK_PRIME_COOLDOWN_MS = 3000;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
-  const EDGE_SELECTED_TEXT_PUNCTUATION = /^[\s"'([{]+|[\s"')\]},.;:!?]+$/g;
+  const EDGE_SELECTED_TEXT_PUNCTUATION =
+    /^[\s"'([{<\u00a1\u00ab\u00bf\u2010-\u2015\u2018-\u201f\u2039\u3008\u300a\u300c\u300e\u3010\u3014\u3016\u3018\u301a\uff08]+|[\s"')\]},.;:!?\u00bb\u2010-\u2015\u2018-\u201f\u2026\u203a\u3002\u3009\u300b\u300d\u300f\u3011\u3015\u3017\u3019\u301b\uff09]+$/g;
   const chromeApi = globalThis.chrome;
 
   let timerId = null;

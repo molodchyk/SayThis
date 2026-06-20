@@ -39,6 +39,32 @@ test("committed selection trims adjacent sentence punctuation before speaking", 
   ]);
 });
 
+test("committed selection trims typographic edge punctuation before speaking", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("\u201c\u2014Exampletown\u2014\u201d");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
+test("committed selection trims non-latin brackets before speaking", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("\u300cExampletown\u300d\u3002");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
 test("committed selection preserves internal symbol terms while trimming wrappers", async () => {
   const harness = await installSelectionListener();
 
