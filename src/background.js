@@ -73,8 +73,10 @@ const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDepend
 const debugEvents = [];
 const DEBUG_EVENT_LIMIT = 180;
 const APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_MS = 15 * 60 * 1000;
+const APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_DELAY_MS = 1200;
 let approvedSharedEntriesRefreshPromise = null;
 let approvedSharedEntriesLastRefreshAt = 0;
+let approvedSharedEntriesSelectionRefreshTimer = null;
 
 platform.addInstalledListener(() => {
   registerContextMenus(contextMenuDefinitions(), {
@@ -352,9 +354,8 @@ async function stopPlayback() {
 }
 
 async function preparePlayback(trace) {
-  refreshApprovedSharedEntriesForSelectionPrime(trace);
-
   if (!platform.hasOffscreenAudioSupport?.()) {
+    refreshApprovedSharedEntriesForSelectionPrime(trace);
     return false;
   }
 
@@ -368,6 +369,7 @@ async function preparePlayback(trace) {
       elapsedMs: Date.now() - startedAt,
       trace
     });
+    refreshApprovedSharedEntriesForSelectionPrime(trace);
     return true;
   } catch (error) {
     recordDebugEvent("audio-prepare:error", {
@@ -375,6 +377,7 @@ async function preparePlayback(trace) {
       error: errorMessage(error),
       trace
     });
+    refreshApprovedSharedEntriesForSelectionPrime(trace);
     return false;
   }
 }
@@ -439,11 +442,26 @@ function refreshApprovedSharedEntriesForSelectionPrime(trace = null) {
     return;
   }
 
-  if (Date.now() - approvedSharedEntriesLastRefreshAt < APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_MS) {
+  const now = Date.now();
+  if (
+    approvedSharedEntriesRefreshPromise ||
+    approvedSharedEntriesSelectionRefreshTimer ||
+    now - approvedSharedEntriesLastRefreshAt < APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_MS
+  ) {
     return;
   }
 
-  refreshApprovedSharedEntries("selection-prime");
+  approvedSharedEntriesLastRefreshAt = now;
+  recordDebugEvent("approved-pull:defer", {
+    reason: "selection-prime",
+    delayMs: APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_DELAY_MS,
+    trace
+  });
+  approvedSharedEntriesSelectionRefreshTimer = setTimeout(() => {
+    approvedSharedEntriesSelectionRefreshTimer = null;
+    refreshApprovedSharedEntries("selection-prime");
+  }, APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_DELAY_MS);
+  approvedSharedEntriesSelectionRefreshTimer?.unref?.();
 }
 
 function preloadLastResultAudio(reason) {
