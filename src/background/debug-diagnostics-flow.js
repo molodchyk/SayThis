@@ -284,8 +284,7 @@ function playbackTimingSummary(events = []) {
     groups.set(id, group);
   }
 
-  const latest = [...groups.values()]
-    .sort((left, right) => eventTime(lastEvent(right)?.at) - eventTime(lastEvent(left)?.at))[0];
+  const latest = selectLatestTimingGroup([...groups.values()]);
   if (!latest?.length) {
     return null;
   }
@@ -407,6 +406,17 @@ function summarizeContextCandidateEvent(event = {}) {
     urlHost: normalizeSelection(event.urlHost),
     error: normalizeSelection(event.error)
   };
+}
+
+function selectLatestTimingGroup(groups = []) {
+  const sorted = groups
+    .filter((group) => Array.isArray(group) && group.length)
+    .sort((left, right) => eventTime(lastEvent(right)?.at) - eventTime(lastEvent(left)?.at));
+  return sorted.find(isUserPlaybackGroup) || sorted[0];
+}
+
+function isUserPlaybackGroup(events = []) {
+  return events.some((event) => String(event?.kind || "").startsWith("ui:"));
 }
 
 function candidateName(event = {}) {

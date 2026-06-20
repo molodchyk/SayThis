@@ -221,6 +221,17 @@ test("builds speech and voice diagnostics from stored result", async () => {
       speech: {
         spoken: true
       }
+    }, {
+      at: "2026-06-19T00:00:06.000Z",
+      kind: "audio-prepare:result",
+      trace: {
+        id: "background-prime",
+        source: "background",
+        action: "playback-prime-startup",
+        startedAt: 1800000005000
+      },
+      sinceTraceStartMs: 1000,
+      elapsedMs: 1000
     }]
   });
 
@@ -268,7 +279,7 @@ test("builds speech and voice diagnostics from stored result", async () => {
     diagnostics.timing.events.find((event) => event.kind === "playback:result")?.mode,
     "offscreen-audio"
   );
-  assert.equal(diagnostics.recentEvents.length, 14);
+  assert.equal(diagnostics.recentEvents.length, 15);
 });
 
 test("summarizes debug payloads without full objects", () => {
