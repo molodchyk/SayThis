@@ -428,6 +428,8 @@ test("selection listener speaks bounded selected text directly", async () => {
 
   assert.match(manifestSource, /src\/selection-listener\.js/);
   assert.match(manifestSource, /"run_at": "document_start"/);
+  assert.match(manifestSource, /"all_frames": true/);
+  assert.match(manifestSource, /"match_about_blank": true/);
   assert.match(source, /selectionchange/);
   assert.match(source, /selectstart/);
   assert.match(source, /pointerdown/);
