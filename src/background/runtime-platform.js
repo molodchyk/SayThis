@@ -17,6 +17,7 @@ export const BACKGROUND_STORAGE_KEYS = Object.freeze({
 export function createBackgroundPlatformAdapters(chromeApi = globalThis.chrome, environment = globalThis) {
   const storage = chromeApi?.storage?.local;
   const runtime = chromeApi?.runtime;
+  const storageApi = chromeApi?.storage;
   const contextMenus = chromeApi?.contextMenus;
   const commands = chromeApi?.commands;
   const offscreen = chromeApi?.offscreen;
@@ -30,6 +31,7 @@ export function createBackgroundPlatformAdapters(chromeApi = globalThis.chrome, 
     addInstalledListener: listener => runtime?.onInstalled?.addListener?.(listener),
     addMessageListener: listener => runtime?.onMessage?.addListener?.(listener),
     addStartupListener: listener => runtime?.onStartup?.addListener?.(listener),
+    addStorageChangedListener: listener => storageApi?.onChanged?.addListener?.(listener),
     createContextMenu: item => contextMenus?.create?.(item),
     createOffscreenDocument: options => offscreen?.createDocument?.(options),
     executeScript: details => scripting?.executeScript?.(details),

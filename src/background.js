@@ -32,6 +32,9 @@ import {
   createPlaybackSurface
 } from "./background/playback-surface-flow.js";
 import {
+  createHotStorageCache
+} from "./background/hot-storage-cache.js";
+import {
   activateSelectionListenerOnOpenTabs,
   registerContextMenus
 } from "./background/install-activation-flow.js";
@@ -52,6 +55,15 @@ import {
 } from "./background/runtime-platform.js";
 
 const platform = createBackgroundPlatformAdapters();
+const sharedAudioStorage = createHotStorageCache({
+  getStorage: platform.getStorage,
+  setStorage: platform.setStorage
+}, {
+  keys: [
+    STORAGE_KEYS.approvedCommunityEntries,
+    STORAGE_KEYS.settings
+  ]
+});
 const playbackSurface = createPlaybackSurface({
   ...createPlaybackSurfacePlatformDependencies(platform, STORAGE_KEYS),
   onDebugEvent: recordPlaybackDebugEvent,
@@ -78,6 +90,9 @@ platform.addStartupListener(() => {
   primePlaybackSurface("startup");
   refreshApprovedSharedEntries("startup");
   preloadLastResultAudio("startup");
+});
+platform.addStorageChangedListener?.((changes, areaName) => {
+  sharedAudioStorage.applyStorageChanges(changes, areaName);
 });
 
 platform.addContextMenuClickedListener((info, tab) => {
@@ -178,8 +193,8 @@ async function requestSharedAudio(text, result, options = {}) {
   });
   try {
     const sharedResult = await requestSharedAudioForResultFlow(text, result, options, {
-      getStorage: platform.getStorage,
-      setStorage: platform.setStorage,
+      getStorage: sharedAudioStorage.getStorage,
+      setStorage: sharedAudioStorage.setStorage,
       fetch: platform.fetch,
       resolveSelection,
       storageKeys: STORAGE_KEYS
