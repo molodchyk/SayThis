@@ -26,6 +26,20 @@ test("committed selection sends prepare and speak with one trace", async () => {
   assert.equal(harness.sentMessages[0].trace.id, harness.sentMessages[1].trace.id);
 });
 
+test("committed selection speaks without waiting for a timer tick", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages.map((message) => message.type), [
+    "SAYTHIS_PREPARE_PLAYBACK",
+    "SAYTHIS_SPEAK"
+  ]);
+});
+
 test("committed selection does not wait for an unresolved settings read by default", async () => {
   let resolveSettings;
   const settingsPromise = new Promise((resolve) => {

@@ -98,13 +98,18 @@
     }
 
     clearScheduledCheck();
+    if (mode === "committed" && dueAt <= now) {
+      speakStableSelection().catch(() => {});
+      return;
+    }
+
     scheduledCheckAt = dueAt;
     scheduledCheckMode = mode;
     timerId = setTimeout(() => {
       timerId = null;
       scheduledCheckAt = 0;
       scheduledCheckMode = "";
-      speakStableSelection();
+      speakStableSelection().catch(() => {});
     }, Math.max(0, dueAt - now));
   }
 
