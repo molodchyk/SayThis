@@ -126,7 +126,12 @@ export function playbackStatusForItem(item = {}, rate = 0.82) {
 }
 
 export function shouldPreferSpeechBeforeAudio(result = {}) {
-  return Boolean(selectedAliasSpeechItemForResult(result));
+  const sourceForm = normalizeSelection(result.sourceForm || result.display || result.query);
+  const selected = normalizeSelection(result.query || result.display);
+  return Boolean(
+    selectedAliasSpeechItemForResult(result) ||
+    isBestEffortProperNameSpeech(result, sourceForm, selected)
+  );
 }
 
 export function preferredSpeechResultForResult(result) {

@@ -467,7 +467,7 @@
       text: result?.query || result?.display || result?.sourceForm
     });
 
-    if (!options.onlineChecked && !hasTopTierAudio(result)) {
+    if (!options.onlineChecked && !hasTopTierAudio(result) && !shouldPreferSpeechBeforeAudio(result)) {
       ensureSharedAudio(result, rate, {
         ...playbackOptions,
         trace
@@ -505,7 +505,7 @@
       return;
     }
 
-    if (!options.onlineChecked) {
+    if (!options.onlineChecked && !shouldPreferSpeechBeforeAudio(result)) {
       resolveOnline(result, {
         autoPlay: true,
         rate,
@@ -519,7 +519,7 @@
         return;
       }
 
-      speakCandidate(sharedResult, rate, { ...playbackOptions, skipSharedAudio: true, trace });
+      speakCandidate(preferredSpeechResult(sharedResult), rate, { ...playbackOptions, skipSharedAudio: true, trace });
     });
   }
 

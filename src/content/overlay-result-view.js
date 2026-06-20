@@ -139,7 +139,12 @@
   }
 
   function shouldPreferSpeechBeforeAudio(result = {}) {
-    return Boolean(selectedAliasSpeechItem(result));
+    const sourceForm = normalizeText(result.sourceForm || result.display || result.query);
+    const selected = normalizeText(result.query || result.display);
+    return Boolean(
+      selectedAliasSpeechItem(result) ||
+      isBestEffortProperNameSpeech(result, sourceForm, selected)
+    );
   }
 
   function speechResultForPlaybackItem(result, item = {}) {

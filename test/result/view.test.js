@@ -441,6 +441,7 @@ test("offers explicit best-effort speech for unresolved title-case proper names"
     sourceStatus: "best-effort-fallback"
   };
 
+  assert.equal(shouldPreferSpeechBeforeAudio(result), true);
   assert.deepEqual(playbackItemsForResult(result), [{
     kind: "speech",
     label: "Best-effort speech",

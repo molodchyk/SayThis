@@ -476,6 +476,7 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.doesNotMatch(source, /SAYTHIS_DEBUG_EVENT/);
   assert.match(runtimeSource, /ui:selection-auto-speak/);
   assert.match(runtimeSource, /MESSAGE_TYPES\.preparePlayback/);
+  assert.match(runtimeSource, /DEFAULT_SELECT_TO_HEAR_AUDIO_FALLBACK_WAIT_MS = 350/);
   assert.match(source, /lastSentKey/);
   assert.match(source, /lastSentAt/);
   assert.match(source, /lastPreparedTrace/);

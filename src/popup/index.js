@@ -159,7 +159,7 @@ async function speakSelection(rate) {
   }
   currentResult = sharedAudioResult;
 
-  if (shouldRefreshBeforeSpeech(currentResult)) {
+  if (!shouldPreferSpeechBeforeAudio(currentResult) && shouldRefreshBeforeSpeech(currentResult)) {
     const refreshed = await resolveSelection(true);
     if (refreshed) {
       currentResult = refreshed;
@@ -173,8 +173,11 @@ async function speakSelection(rate) {
     return;
   }
 
+  const speechResult = shouldPreferSpeechBeforeAudio(currentResult)
+    ? preferredSpeechResultForResult(currentResult)
+    : currentResult;
   const response = await sendMessage(createSpeakMessage(text, {
-    result: currentResult,
+    result: speechResult,
     rate,
     skipSharedAudio: true,
     trace

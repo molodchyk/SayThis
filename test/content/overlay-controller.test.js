@@ -190,6 +190,66 @@ test("best-effort proper-name playback row sends an English fallback speech mess
   assert.equal(sentMessages[0].message.result.ttsLang, "en-US");
 });
 
+test("main listen speaks best-effort proper names without online lookup", async () => {
+  const sentMessages = [];
+  const fakeDom = createFakeDom();
+  let showResultListener;
+
+  const context = vm.createContext({
+    Audio: class {
+      constructor() {
+        throw new Error("best-effort speech should not construct audio");
+      }
+    },
+    URL,
+    document: fakeDom.document,
+    window: {}
+  });
+
+  context.__sayThisOverlayStyles = "";
+  context.__sayThisOverlayRuntimeAdapters = {
+    addShowResultListener(listener) {
+      showResultListener = listener;
+      return true;
+    },
+    createOverlayRuntimeAdapters() {
+      return { surface: "content" };
+    },
+    async sendRuntimeMessage(message, dependencies) {
+      sentMessages.push({ message, dependencies });
+      if (message.type === "SAYTHIS_RESOLVE") {
+        throw new Error("best-effort proper-name listen should not resolve first");
+      }
+
+      return {
+        ok: true,
+        speech: {
+          text: message.result?.speakText || message.text
+        }
+      };
+    }
+  };
+
+  vm.runInContext(resultViewSource, context);
+  vm.runInContext(overlaySource, context);
+
+  showResultListener({
+    query: "Shri Gurudwara Sahib",
+    display: "Shri Gurudwara Sahib",
+    sourceForm: "Shri Gurudwara Sahib",
+    speakText: "Shri Gurudwara Sahib",
+    sourceStatus: "best-effort-fallback"
+  }, { onlineChecked: false });
+
+  fakeDom.root.querySelector('[data-action="speak"]').click();
+  await flushPromises();
+
+  assert.deepEqual(sentMessages.map((item) => item.message.type), ["SAYTHIS_SPEAK"]);
+  assert.equal(sentMessages[0].message.result.speakText, "Shri Gurudwara Sahib");
+  assert.equal(sentMessages[0].message.result.ttsLang, "en-US");
+  assert.equal(sentMessages[0].message.skipSharedAudio, true);
+});
+
 test("alternate playback prefers source-form speech before guide speech", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();
