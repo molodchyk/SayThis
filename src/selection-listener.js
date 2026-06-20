@@ -35,13 +35,25 @@
 
   readSettings();
 
-  document.addEventListener("pointerdown", () => {
+  document.addEventListener("pointerdown", (event) => {
+    if (isSayThisOverlayEvent(event)) {
+      return;
+    }
+
     primePlaybackSurface();
   }, true);
-  document.addEventListener("selectstart", () => {
+  document.addEventListener("selectstart", (event) => {
+    if (isSayThisOverlayEvent(event)) {
+      return;
+    }
+
     primePlaybackSurface();
   }, true);
   document.addEventListener("keydown", (event) => {
+    if (isSayThisOverlayEvent(event)) {
+      return;
+    }
+
     if (isLikelyKeyboardSelection(event)) {
       primePlaybackSurface();
     }
@@ -60,11 +72,11 @@
     }
     scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true });
   }, true);
-  document.addEventListener("pointerup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
-  document.addEventListener("mouseup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
-  document.addEventListener("select", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
-  document.addEventListener("keyup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
-  document.addEventListener("touchend", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
+  document.addEventListener("pointerup", scheduleCommittedSelectionCheck, true);
+  document.addEventListener("mouseup", scheduleCommittedSelectionCheck, true);
+  document.addEventListener("select", scheduleCommittedSelectionCheck, true);
+  document.addEventListener("keyup", scheduleCommittedSelectionCheck, true);
+  document.addEventListener("touchend", scheduleCommittedSelectionCheck, true);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       clearScheduledCheck();
@@ -112,6 +124,14 @@
       scheduledCheckMode = "";
       speakStableSelection().catch(() => {});
     }, Math.max(0, dueAt - now));
+  }
+
+  function scheduleCommittedSelectionCheck(event) {
+    if (isSayThisOverlayEvent(event)) {
+      return;
+    }
+
+    scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
   }
 
   function clearScheduledCheck() {
@@ -319,7 +339,7 @@
 
   function readEditableSelection() {
     const element = document.activeElement;
-    if (!isTextSelectionControl(element)) {
+    if (!isTextSelectionControl(element) || isSayThisOverlayNode(element)) {
       return "";
     }
 
@@ -355,10 +375,29 @@
       selection.anchorNode,
       selection.focusNode
     ].filter(Boolean);
-    return nodes.some((node) => {
-      const root = node.getRootNode?.();
-      return String(root?.host?.tagName || "").toLowerCase() === "saythis-overlay";
-    });
+    return nodes.some(isSayThisOverlayNode);
+  }
+
+  function isSayThisOverlayEvent(event = {}) {
+    if (isSayThisOverlayNode(event.target)) {
+      return true;
+    }
+
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+    return Array.isArray(path) && path.some(isSayThisOverlayNode);
+  }
+
+  function isSayThisOverlayNode(node) {
+    if (!node || typeof node !== "object") {
+      return false;
+    }
+
+    if (String(node.tagName || "").toLowerCase() === "saythis-overlay") {
+      return true;
+    }
+
+    const root = node.getRootNode?.();
+    return String(root?.host?.tagName || "").toLowerCase() === "saythis-overlay";
   }
 
   function isAutoPronounceCandidate(value) {

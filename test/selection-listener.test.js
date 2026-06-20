@@ -59,6 +59,35 @@ test("native select event speaks textarea selection", async () => {
   ]);
 });
 
+test("overlay events do not prime playback", async () => {
+  const harness = await installSelectionListener();
+  const target = overlayNode("button");
+
+  harness.dispatch("pointerdown", { target });
+  harness.dispatch("selectstart", { target });
+  harness.dispatch("keydown", { target, key: "ArrowRight", shiftKey: true });
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages, []);
+});
+
+test("overlay editable selections do not speak", async () => {
+  const harness = await installSelectionListener();
+  const target = {
+    ...overlayNode("textarea"),
+    value: "Practice Chiaroscuro today",
+    selectionStart: 9,
+    selectionEnd: 20
+  };
+
+  harness.setActiveElement(target);
+  harness.dispatch("select", { target });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages, []);
+});
+
 test("committed selection does not wait for an unresolved settings read by default", async () => {
   let resolveSettings;
   const settingsPromise = new Promise((resolve) => {
@@ -380,5 +409,16 @@ async function installSelectionListener(options = {}) {
         }
       }, "local");
     }
+  };
+}
+
+function overlayNode(tagName = "span") {
+  return {
+    tagName,
+    getRootNode: () => ({
+      host: {
+        tagName: "saythis-overlay"
+      }
+    })
   };
 }
