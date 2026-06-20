@@ -1,4 +1,5 @@
 import {
+  DEFAULT_COMMUNITY_ENDPOINT,
   endpointOriginPattern
 } from "../community-sync.js";
 import {
@@ -15,6 +16,9 @@ export const OPTIONS_STORAGE_KEYS = {
   syncSummary: "syncSummary",
   settings: "settings"
 };
+const REQUIRED_ENDPOINT_ORIGINS = new Set([
+  endpointOriginPattern(DEFAULT_COMMUNITY_ENDPOINT)
+]);
 
 export function createOptionsRuntimeAdapters(chromeApi = globalThis.chrome) {
   const storage = chromeApi?.storage?.local;
@@ -54,6 +58,10 @@ export async function requestEndpointPermission(endpoint, dependencies = {}) {
     return false;
   }
 
+  if (isRequiredEndpointOrigin(origin)) {
+    return true;
+  }
+
   if (typeof dependencies.containsPermission !== "function" &&
       typeof dependencies.requestPermission !== "function") {
     return true;
@@ -77,6 +85,10 @@ export async function requestEndpointPermissionFromUserGesture(endpoint, depende
     return false;
   }
 
+  if (isRequiredEndpointOrigin(origin)) {
+    return true;
+  }
+
   if (typeof dependencies.requestPermission === "function") {
     return Boolean(await dependencies.requestPermission(origin));
   }
@@ -86,6 +98,10 @@ export async function requestEndpointPermissionFromUserGesture(endpoint, depende
   }
 
   return true;
+}
+
+function isRequiredEndpointOrigin(origin) {
+  return REQUIRED_ENDPOINT_ORIGINS.has(origin);
 }
 
 export async function removeUnusedRemotePermissions(previousSettings, nextSettings, previousCredentials, nextCredentials, dependencies = {}) {
