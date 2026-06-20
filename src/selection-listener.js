@@ -23,6 +23,7 @@
   let scheduledCheckMode = "";
   let lastSentKey = "";
   let lastSentAt = 0;
+  let lastSentSelectionStartedAt = 0;
   let lastPreparedKey = "";
   let lastPreparedAt = 0;
   let lastPreparedSentAt = 0;
@@ -180,6 +181,7 @@
   function resetSelectionTracking() {
     lastSentKey = "";
     lastSentAt = 0;
+    lastSentSelectionStartedAt = 0;
     lastPreparedKey = "";
     lastPreparedAt = 0;
     lastPreparedSentAt = 0;
@@ -243,6 +245,7 @@
 
     lastSentKey = key;
     lastSentAt = Date.now();
+    lastSentSelectionStartedAt = activeSelectionStartedAt;
     const preparedTrace = sentPreparedTraceForKey(key);
     const trace = preparedTrace || pendingPreparedTraceForKey(key) || createTrace("select-to-hear");
     if (!preparedTrace) {
@@ -257,6 +260,7 @@
       if (!response?.ok) {
         lastSentKey = "";
         lastSentAt = 0;
+        lastSentSelectionStartedAt = 0;
       }
     });
   }
@@ -294,6 +298,10 @@
   function isSuppressedRepeat(key) {
     if (key !== lastSentKey) {
       return false;
+    }
+
+    if (activeSelectionStartedAt && activeSelectionStartedAt === lastSentSelectionStartedAt) {
+      return true;
     }
 
     return Date.now() - lastSentAt < REPEAT_SELECTION_COOLDOWN_MS;

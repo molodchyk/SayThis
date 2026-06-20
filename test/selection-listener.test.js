@@ -376,7 +376,7 @@ test("committed selection is not delayed by a later selectionchange event", asyn
   assert.equal(speakMessages[0].text, "Exampletown");
 });
 
-test("same selection can be replayed after the short duplicate cooldown", async () => {
+test("same selection is not replayed without a new selection gesture", async () => {
   const harness = await installSelectionListener();
 
   harness.setSelection("Exampletown");
@@ -389,6 +389,24 @@ test("same selection can be replayed after the short duplicate cooldown", async 
   assert.equal(harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK").length, 1);
 
   await delay(360);
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  const speakMessages = harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK");
+
+  assert.equal(speakMessages.length, 1);
+  assert.equal(speakMessages[0].text, "Exampletown");
+});
+
+test("same selection can be replayed after a new selection gesture", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  await delay(360);
+  harness.dispatch("pointerdown");
   harness.dispatch("pointerup");
   await delay(25);
 
