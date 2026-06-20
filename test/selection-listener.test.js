@@ -40,6 +40,26 @@ test("committed selection speaks without waiting for a timer tick", async () => 
   ]);
 });
 
+test("committed selection trace starts at the pointer gesture", async () => {
+  let now = 1000;
+  const harness = await installSelectionListener({
+    Date: {
+      now: () => now
+    }
+  });
+
+  harness.dispatch("pointerdown");
+  now = 1040;
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  const speakMessage = harness.sentMessages.find((message) => message.type === "SAYTHIS_SPEAK");
+
+  assert.equal(speakMessage.trace.startedAt, 1000);
+});
+
 test("native select event speaks textarea selection", async () => {
   const harness = await installSelectionListener();
 
@@ -158,6 +178,30 @@ test("stable selection preparation does not wait for unresolved settings", async
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
     ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
   ]);
+});
+
+test("stable selection trace starts at the first selection change", async () => {
+  let now = 2000;
+  const harness = await installSelectionListener({
+    Date: {
+      now: () => now
+    }
+  });
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  now = 2035;
+  await delay(35);
+  now = 2045;
+  await delay(15);
+
+  const preparedMessage = harness.sentMessages.find((message) =>
+    message.type === "SAYTHIS_PREPARE_PLAYBACK" && message.text === "Exampletown");
+  const speakMessage = harness.sentMessages.find((message) => message.type === "SAYTHIS_SPEAK");
+
+  assert.equal(preparedMessage.trace.startedAt, 2000);
+  assert.equal(speakMessage.trace.startedAt, 2000);
+  assert.equal(preparedMessage.trace.id, speakMessage.trace.id);
 });
 
 test("changing selection waits until the selection is stable", async () => {
@@ -431,7 +475,7 @@ async function installSelectionListener(options = {}) {
     },
     setTimeout,
     clearTimeout,
-    Date,
+    Date: options.Date || Date,
     Math,
     Number,
     Object,

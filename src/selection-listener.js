@@ -27,6 +27,8 @@
   let lastPreparedAt = 0;
   let lastPreparedSentAt = 0;
   let lastPreparedTrace = null;
+  let selectionGestureStartedAt = 0;
+  let activeSelectionStartedAt = 0;
   let lastPrimeAt = 0;
   let primePlaybackPromise = null;
   let lastSettings = null;
@@ -39,6 +41,7 @@
       return;
     }
 
+    markSelectionGestureStarted();
     primePlaybackSurface();
   }, true);
   document.addEventListener("selectstart", (event) => {
@@ -46,6 +49,7 @@
       return;
     }
 
+    markSelectionGestureStarted();
     primePlaybackSurface();
   }, true);
   document.addEventListener("keydown", (event) => {
@@ -54,6 +58,7 @@
     }
 
     if (isLikelyKeyboardSelection(event)) {
+      markSelectionGestureStarted();
       primePlaybackSurface();
     }
   }, true);
@@ -66,6 +71,7 @@
       return;
     }
 
+    markActiveSelectionStarted();
     if (!hasCommittedCheckPending()) {
       primePlaybackSurface();
     }
@@ -130,6 +136,7 @@
       return;
     }
 
+    markActiveSelectionStarted();
     scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
   }
 
@@ -138,6 +145,7 @@
       return;
     }
 
+    markActiveSelectionStarted();
     scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
   }
 
@@ -176,6 +184,19 @@
     lastPreparedAt = 0;
     lastPreparedSentAt = 0;
     lastPreparedTrace = null;
+    selectionGestureStartedAt = 0;
+    activeSelectionStartedAt = 0;
+  }
+
+  function markSelectionGestureStarted() {
+    selectionGestureStartedAt = Date.now();
+    activeSelectionStartedAt = 0;
+  }
+
+  function markActiveSelectionStarted() {
+    if (!activeSelectionStartedAt) {
+      activeSelectionStartedAt = selectionGestureStartedAt || Date.now();
+    }
   }
 
   function primePlaybackSurface() {
@@ -489,7 +510,9 @@
   }
 
   function createTrace(action) {
-    const startedAt = Date.now();
+    const startedAt = action === "select-to-hear"
+      ? activeSelectionStartedAt || selectionGestureStartedAt || Date.now()
+      : Date.now();
     const random = Math.random().toString(36).slice(2, 8);
     return {
       id: `selection-${startedAt.toString(36)}-${random}`,
