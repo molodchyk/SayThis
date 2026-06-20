@@ -212,6 +212,34 @@ test("keyboard selection shortcuts prime playback before selected text exists", 
   ]);
 });
 
+test("keyboard selection shortcuts commit selected text on keyup", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("keyup", { key: "ArrowRight", shiftKey: true });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
+test("ordinary keyup over an existing selection does not speak", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("keyup", { key: "c", ctrlKey: true });
+  await delay(25);
+  harness.dispatch("keyup", { key: "f", ctrlKey: true });
+  await delay(25);
+  harness.dispatch("keyup", { key: "Escape" });
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages, []);
+});
+
 test("ordinary keydown does not prime playback", async () => {
   const harness = await installSelectionListener();
 

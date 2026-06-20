@@ -75,7 +75,7 @@
   document.addEventListener("pointerup", scheduleCommittedSelectionCheck, true);
   document.addEventListener("mouseup", scheduleCommittedSelectionCheck, true);
   document.addEventListener("select", scheduleCommittedSelectionCheck, true);
-  document.addEventListener("keyup", scheduleCommittedSelectionCheck, true);
+  document.addEventListener("keyup", scheduleKeyboardCommittedSelectionCheck, true);
   document.addEventListener("touchend", scheduleCommittedSelectionCheck, true);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
@@ -128,6 +128,14 @@
 
   function scheduleCommittedSelectionCheck(event) {
     if (isSayThisOverlayEvent(event)) {
+      return;
+    }
+
+    scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
+  }
+
+  function scheduleKeyboardCommittedSelectionCheck(event) {
+    if (isSayThisOverlayEvent(event) || !isLikelyKeyboardSelection(event)) {
       return;
     }
 
