@@ -283,30 +283,47 @@ async function audioUrlForPlayback(audio = {}, dependencies = {}) {
     };
   }
 
-  try {
-    const cached = await cachedAudioResponse(url, dependencies);
-    const preparedObjectUrl = await objectUrlForCachedResponse(url, cached.response, dependencies);
-    const objectUrl = preparedObjectUrl.url;
-    return {
-      url: objectUrl || url,
-      elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
-      mode: objectUrl
-        ? preparedObjectUrl.fromMemory ? "memory-object-url" : "cache-api-object-url"
-        : cached.mode || "cache-api-miss",
-      revokeAfterPlayback: false
-    };
-  } catch {
-    return {
-      url,
-      elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
-      mode: "cache-api-error-direct",
-      revokeAfterPlayback: false
-    };
-  }
+  primeAudioObjectUrl(url, dependencies);
+  return {
+    url,
+    elapsedMs: Math.max(0, nowMs(dependencies) - startedAt),
+    mode: audioCacheIsPending(url, dependencies)
+      ? "cache-api-pending-direct"
+      : "cache-api-prime-direct",
+    revokeAfterPlayback: false
+  };
 }
 
 function shouldCacheAudio(audio = {}) {
   return Boolean(audio.cacheBeforePlayback);
+}
+
+function audioCacheIsPending(url, dependencies = {}) {
+  return Boolean(
+    dependencies.audioCacheRequests?.has?.(url) ||
+    dependencies.audioObjectUrlRequests?.has?.(url)
+  );
+}
+
+function primeAudioObjectUrl(url, dependencies = {}) {
+  scheduleCachePrime(async () => {
+    try {
+      const cached = await cachedAudioResponse(url, dependencies);
+      await objectUrlForCachedResponse(url, cached.response, dependencies);
+    } catch {
+      // Playback already uses the direct URL; cache priming is opportunistic.
+    }
+  }, dependencies);
+}
+
+function scheduleCachePrime(callback, dependencies = {}) {
+  const schedule = dependencies.setTimeout || globalThis.setTimeout;
+  if (typeof schedule === "function") {
+    schedule(callback, 0);
+    return;
+  }
+
+  Promise.resolve().then(callback);
 }
 
 async function cachedAudioResponse(url, dependencies = {}) {

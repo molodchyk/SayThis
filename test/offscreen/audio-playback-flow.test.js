@@ -84,7 +84,7 @@ test("plays generated public audio directly unless cache-before-playback is requ
   ]);
 });
 
-test("caches audio before offscreen playback only when requested", async () => {
+test("primes audio cache without blocking immediate playback", async () => {
   const calls = [];
   const cacheEntries = new Map();
   const playback = createOffscreenAudioPlayback({
@@ -126,20 +126,33 @@ test("caches audio before offscreen playback only when requested", async () => {
     }
   });
 
-  await playback.playAudio({
-    url: "https://voice.example/a.ogg",
-    quality: "generated",
-    cacheBeforePlayback: true
-  }, 1);
-  await playback.playAudio({
+  const first = await playback.playAudio({
     url: "https://voice.example/a.ogg",
     quality: "generated",
     cacheBeforePlayback: true
   }, 1);
 
+  assert.equal(first.cacheMode, "cache-api-prime-direct");
+  assert.deepEqual(calls.slice(0, 3), [
+    ["createAudio", "https://voice.example/a.ogg"],
+    ["playbackRate", 1],
+    ["play", "https://voice.example/a.ogg"]
+  ]);
+
+  await delay(0);
+  await delay(0);
+
+  const second = await playback.playAudio({
+    url: "https://voice.example/a.ogg",
+    quality: "generated",
+    cacheBeforePlayback: true
+  }, 1);
+
+  assert.equal(second.cacheMode, "memory-object-url");
   assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
   assert.equal(calls.filter((call) => call[0] === "cache.put").length, 1);
-  assert.equal(calls.filter((call) => call[0] === "createAudio" && call[1] === "blob:audio-bytes").length, 2);
+  assert.equal(calls.filter((call) => call[0] === "createAudio" && call[1] === "https://voice.example/a.ogg").length, 1);
+  assert.equal(calls.filter((call) => call[0] === "createAudio" && call[1] === "blob:audio-bytes").length, 1);
 });
 
 test("preloads generated audio into the offscreen cache without playing it", async () => {
@@ -318,7 +331,7 @@ test("uses a prepared object URL even when the playback item is not cache flagge
   ]);
 });
 
-test("reuses an in-flight preload when cached playback starts", async () => {
+test("does not wait for an in-flight preload when cached playback starts", async () => {
   const calls = [];
   const cacheEntries = new Map();
   let finishFetch;
@@ -375,21 +388,27 @@ test("reuses an in-flight preload when cached playback starts", async () => {
   }, 1);
   await delay(0);
 
+  const played = await Promise.race([
+    playPromise,
+    delay(10).then(() => "timeout")
+  ]);
+
+  assert.notEqual(played, "timeout");
+  assert.equal(played.cacheMode, "cache-api-pending-direct");
+  assert.deepEqual(calls.slice(-3), [
+    ["createAudio", "https://voice.example/a.ogg"],
+    ["playbackRate", 1],
+    ["play", "https://voice.example/a.ogg"]
+  ]);
   assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
   finishFetch();
-  const [prepared, played] = await Promise.all([preparePromise, playPromise]);
+  const prepared = await preparePromise;
 
   assert.equal(prepared.prepared, true);
   assert.equal(prepared.objectUrlReady, true);
-  assert.equal(new Set(["cache-api-object-url", "memory-object-url"]).has(played.cacheMode), true);
   assert.equal(calls.filter((call) => call[0] === "fetch").length, 1);
   assert.equal(calls.filter((call) => call[0] === "cache.put").length, 1);
   assert.equal(calls.filter((call) => call[0] === "createObjectUrl").length, 1);
-  assert.deepEqual(calls.slice(-3), [
-    ["createAudio", "blob:audio-bytes"],
-    ["playbackRate", 1],
-    ["play", "blob:audio-bytes"]
-  ]);
 });
 
 test("speaks source forms with matching Web Speech voices", async () => {
