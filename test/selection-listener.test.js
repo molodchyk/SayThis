@@ -107,6 +107,21 @@ test("committed selection does not wait for an unresolved settings read by defau
   resolveSettings({ selectToHear: true });
 });
 
+test("committed selection does not wait for the settings grace window", async () => {
+  const settingsPromise = new Promise(() => {});
+  const harness = await installSelectionListener({ settingsPromise });
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages.map((message) => message.type), [
+    "SAYTHIS_PREPARE_PLAYBACK",
+    "SAYTHIS_SPEAK"
+  ]);
+});
+
 test("committed selection prepares from speak path when earlier prepare is still waiting", async () => {
   let resolveSettings;
   const settingsPromise = new Promise((resolve) => {
@@ -129,6 +144,20 @@ test("committed selection prepares from speak path when earlier prepare is still
   await delay(5);
 
   assert.equal(harness.sentMessages.filter((message) => message.type === "SAYTHIS_PREPARE_PLAYBACK").length, 1);
+});
+
+test("stable selection preparation does not wait for unresolved settings", async () => {
+  const settingsPromise = new Promise(() => {});
+  const harness = await installSelectionListener({ settingsPromise });
+
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(35);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
+  ]);
 });
 
 test("changing selection waits until the selection is stable", async () => {

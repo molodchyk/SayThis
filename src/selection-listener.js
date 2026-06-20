@@ -13,7 +13,6 @@
   const REPEAT_SELECTION_COOLDOWN_MS = 350;
   const PREPARED_SELECTION_TTL_MS = 1200;
   const PLAYBACK_PRIME_COOLDOWN_MS = 3000;
-  const SETTINGS_READ_WAIT_MS = 8;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
   const chromeApi = globalThis.chrome;
@@ -217,7 +216,7 @@
       return;
     }
 
-    if (!await selectToHearEnabledForAction()) {
+    if (!selectToHearEnabledForAction()) {
       return;
     }
 
@@ -258,7 +257,7 @@
     lastPreparedSentAt = 0;
     lastPreparedTrace = trace;
 
-    if (!await selectToHearEnabledForAction()) {
+    if (!selectToHearEnabledForAction()) {
       if (lastPreparedTrace === trace) {
         lastPreparedKey = "";
         lastPreparedAt = 0;
@@ -469,33 +468,9 @@
     return !lastSettings || selectToHearEnabled(lastSettings);
   }
 
-  async function selectToHearEnabledForAction() {
-    if (lastSettings) {
-      return selectToHearEnabled(lastSettings);
-    }
-
-    const settings = await readSettingsWithinWait(SETTINGS_READ_WAIT_MS);
-    return settings ? selectToHearEnabled(settings) : true;
-  }
-
-  async function readSettingsWithinWait(waitMs) {
-    const settings = readSettings();
-    const normalizedWaitMs = Math.max(0, Number(waitMs) || 0);
-    if (!normalizedWaitMs || typeof setTimeout !== "function") {
-      return settings;
-    }
-
-    let timeoutId;
-    try {
-      return await Promise.race([
-        settings,
-        new Promise((resolve) => {
-          timeoutId = setTimeout(() => resolve(null), normalizedWaitMs);
-        })
-      ]);
-    } finally {
-      clearTimeout(timeoutId);
-    }
+  function selectToHearEnabledForAction() {
+    readSettings();
+    return selectToHearAllowedByKnownSettings();
   }
 
   function sendRuntimeMessage(message) {
