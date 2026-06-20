@@ -90,9 +90,11 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       hasPreparedSharedAudio(selectedText, message);
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
-      : immediateLookupGatePromise.then((fastResult) => fastResult
-        ? null
-        : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies)).then((result) => {
+      : (preparedSharedAudioIsPending
+        ? requestPreparedOrDirectSharedAudio(selectedText, message, dependencies)
+        : immediateLookupGatePromise.then((fastResult) => fastResult
+          ? null
+          : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies))).then((result) => {
           directSharedAudioResult = result;
           return result;
         });

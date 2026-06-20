@@ -1449,6 +1449,104 @@ test("select-to-hear lets fast prepared shared audio beat source-form fallback",
   clearPreparedSharedAudioForTests();
 });
 
+test("select-to-hear consumes prepared shared audio before a slow visible probe", async () => {
+  clearPreparedSharedAudioForTests();
+  const responses = [];
+  const calls = [];
+  const direct = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Prepared shared audio",
+        url: "https://community.example/audio/aud_prepared_visible_probe",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-prepared-before-visible-probe",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let finishDirect;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+  const dependencies = {
+    getVisibleResult: async () => {
+      calls.push(["getVisibleResult"]);
+      return new Promise(() => {});
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return directPromise;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return new Promise(() => {});
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when prepared shared audio plays");
+    },
+    visibleResultGraceMs: 100,
+    preparedSharedAudioTtlMs: 200,
+    directSharedAudioWaitMs: 200,
+    lastResultKey: "lastResult"
+  };
+
+  handleRuntimeMessage({
+    type: MESSAGE_TYPES.preparePlayback,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(["prepare", value]), dependencies);
+  const speakHandled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(["speak", value]), dependencies);
+
+  setTimeout(finishDirect, 10);
+  await delay(60);
+
+  const speakResponse = responses.find(([kind]) => kind === "speak")?.[1];
+  assert.equal(speakHandled, true);
+  assert.ok(speakResponse);
+  assert.equal(speakResponse.ok, true);
+  assert.equal(speakResponse.result, direct);
+  assert.deepEqual(speakResponse.speech, {
+    fallback: "audio",
+    text: "Prepared shared audio"
+  });
+  assert.equal(calls.filter((call) => call[0] === "requestSharedAudio").length, 1);
+  assert.deepEqual(calls.slice(0, 3), [
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["getVisibleResult"],
+    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+  ]);
+  clearPreparedSharedAudioForTests();
+});
+
 test("runtime speak reuses prepared direct shared audio", async () => {
   const responses = [];
   const calls = [];
