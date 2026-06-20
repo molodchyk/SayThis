@@ -93,6 +93,15 @@ class FakeRoot {
       return this.correctionFields;
     }
 
+    if (selector === '[data-playback-control="true"]') {
+      return [
+        this.elements.get('[data-action="speak"]'),
+        this.elements.get('[data-action="slow"]'),
+        ...this.alternateButtons,
+        ...this.recordingButtons
+      ].filter(Boolean);
+    }
+
     return [];
   }
 }
@@ -104,6 +113,14 @@ class FakeElement {
     this.hidden = false;
     this.textContent = "";
     this.value = "";
+    this.disabled = false;
+    this.attributes = new Map();
+    const classes = new Set();
+    this.classList = {
+      add: (...names) => names.forEach((name) => classes.add(name)),
+      remove: (...names) => names.forEach((name) => classes.delete(name)),
+      contains: (name) => classes.has(name)
+    };
   }
 
   addEventListener(name, callback) {
@@ -112,8 +129,17 @@ class FakeElement {
 
   click() {
     this.events.click?.({
+      currentTarget: this,
       preventDefault() {}
     });
+  }
+
+  setAttribute(name, value) {
+    this.attributes.set(name, String(value));
+  }
+
+  removeAttribute(name) {
+    this.attributes.delete(name);
   }
 
   focus() {}

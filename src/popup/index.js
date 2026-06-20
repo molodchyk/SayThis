@@ -2,6 +2,7 @@ import { getBestAudio, normalizeSelection } from "../resolver-core.js";
 import {
   playbackItemsForResult,
   preferredSpeechResultForResult,
+  shouldPreferSpeechBeforeAudio,
   speechResultForPlaybackItem
 } from "../result/view.js";
 import {
@@ -149,7 +150,9 @@ async function speakSelection(rate) {
   }
 
   const sharedAudioResult = await ensureSharedAudio(currentResult, rate, { trace });
-  if (shouldPlayBeforeOnlineRefresh(currentResult, sharedAudioResult) && playAudio(sharedAudioResult, rate, trace)) {
+  if (!shouldPreferSpeechBeforeAudio(sharedAudioResult) &&
+      shouldPlayBeforeOnlineRefresh(currentResult, sharedAudioResult) &&
+      playAudio(sharedAudioResult, rate, trace)) {
     currentResult = sharedAudioResult;
     setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
     return;
@@ -165,7 +168,7 @@ async function speakSelection(rate) {
 
   currentResult = await ensureSharedAudio(currentResult, rate, { trace });
 
-  if (playAudio(currentResult, rate, trace)) {
+  if (!shouldPreferSpeechBeforeAudio(currentResult) && playAudio(currentResult, rate, trace)) {
     setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
     return;
   }
@@ -391,7 +394,7 @@ async function speakResultCandidate(result, rate, statusBase = "Speaking", optio
     ...options,
     trace
   });
-  if (playAudio(sharedAudioResult, rate, trace)) {
+  if (!shouldPreferSpeechBeforeAudio(sharedAudioResult) && playAudio(sharedAudioResult, rate, trace)) {
     setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
     return;
   }

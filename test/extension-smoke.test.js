@@ -100,6 +100,8 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(source, /variantItems\(result\.variants\)/);
   assert.match(source, /\.filter\(Boolean\)\.slice\(0, 2\)/);
   assert.match(source, /class="recordings"/);
+  assert.match(source, /class="listen-main"/);
+  assert.match(source, /data-playback-control="true"/);
   assert.match(source, /data-action="alternate"/);
   assert.match(source, /data-action="recording"/);
   assert.match(source, /data-lookup-hints/);
@@ -111,11 +113,11 @@ test("overlay exposes playback and feedback actions", async () => {
   assert.match(resultView, /normalizeLanguageHints/);
   assert.match(source, /const alternate = result\.alternateResults\?\.\[index\]/);
   assert.match(source, /const alternateAudio = typeof getBestAudio === "function" \? getBestAudio\(alternate\) : null/);
-  assert.match(source, /playAudioItem\(alternateAudio, alternate, 0\.82, \{ replaceCurrent: false \}\)/);
-  assert.match(source, /speakCandidate\(preferredSpeechResult\(alternate\), 0\.82, \{\s*replaceCurrent: false\s*\}\)/);
+  assert.match(source, /playAudioItem\(alternateAudio, alternate, 0\.82, \{[\s\S]*button,[\s\S]*replaceCurrent: false,[\s\S]*status: "Playing alternate\."/);
+  assert.match(source, /speakCandidate\(preferredSpeechResult\(alternate\), 0\.82, \{[\s\S]*button,[\s\S]*replaceCurrent: false[\s\S]*\}\)/);
   assert.match(source, /speechResultForPlaybackItem\(result, item\)/);
   assert.match(source, /item\?\.kind !== "audio"/);
-  assert.match(source, /playAudioItem\(item, result, 0\.82\)/);
+  assert.match(source, /playAudioItem\(item, result, 0\.82, \{[\s\S]*button,[\s\S]*status: playbackStatus\(item, 0\.82\)[\s\S]*\}\)/);
 
   for (const field of ["sourceForm", "aliases", "language", "languageName", "simple", "ipa", "origin", "root", "domainHint", "variants", "audioUrl", "sourceUrl", "variantNote"]) {
     assert.match(source, new RegExp(`correctionInput\\([^\\n]+["']${field}["']`));

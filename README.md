@@ -12,7 +12,7 @@ The initial audience is creators, journalists, educators, and professionals who 
 
 This repository is an early Manifest V3 Chrome extension implementation. It includes:
 
-- Context-menu actions for selected text, including an explicit online lookup action.
+- A single selected-text context-menu action that pronounces the highlighted surface form.
 - Background-owned context-menu workflow coverage with deterministic fallback behavior.
 - Background-owned keyboard command routing and selection workflow coverage with deterministic fallback behavior.
 - Background-owned runtime message routing with deterministic validation and error responses.
@@ -61,7 +61,7 @@ This repository is an early Manifest V3 Chrome extension implementation. It incl
 - Wikidata pronunciation-audio lookup preserves multiple Commons recordings when an entity provides them, preferring language-qualified recordings that match the resolved result.
 - Optional Wikidata lookup language hints for rare Latin-script terms and competing source forms.
 - Popup and on-page one-off lookup language hints can guide a single online resolve without changing saved defaults.
-- A compact on-page result card with aliases, speak, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
+- A compact on-page result card with aliases, a primary listen control, online lookup, slow replay, structured correction, confirm, missing, and wrong actions after context-menu or keyboard use.
 - Split on-page overlay style payload so the overlay controller stays narrow.
 - Split on-page overlay runtime messaging into a companion content adapter.
 - Split on-page overlay result formatting, escaping, and correction-field helpers into a companion content script.
@@ -218,7 +218,6 @@ C:\Users\molod\Documents\Personal\settings\SayThis
 Then highlight text on a web page and either:
 
 - Right-click and choose `SayThis: pronounce...`.
-- Right-click and choose `SayThis: online lookup and pronounce...` for a one-off remote lookup.
 - Press `Alt+Shift+S`.
 - Press `Alt+Shift+O` for a one-off remote lookup.
 - Click the extension icon to open the popup and press Speak.

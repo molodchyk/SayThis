@@ -93,23 +93,33 @@
 
   function playbackItems(result) {
     const audio = audioItems(result).map((item) => ({ ...item, kind: "audio" }));
+    const selectedAlias = selectedAliasSpeechItem(result);
     const speech = sourceSpeechItem(result);
     const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
-    const fallback = speechFallbackItems(speech, guide);
+    const fallback = speechFallbackItems(selectedAlias, speech, guide);
 
     if (!audio.length) {
       return fallback;
     }
 
     if (audio.some((item) => isPreferredAudioItem(item, result?.sourceStatus))) {
-      return audio;
+      return selectedAlias ? [selectedAlias, ...audio] : audio;
+    }
+
+    if (selectedAlias) {
+      return [
+        selectedAlias,
+        ...audio,
+        ...fallback.filter((item) => item !== selectedAlias)
+      ];
     }
 
     return fallback.length ? [...audio, ...fallback] : audio;
   }
 
-  function speechFallbackItems(speech, guide) {
+  function speechFallbackItems(selectedAlias, speech, guide) {
     return [
+      selectedAlias,
       speech,
       guide
         ? {
@@ -126,6 +136,10 @@
     const item = items.find((candidate) => candidate.kind === "speech")
       || items.find((candidate) => candidate.kind === "guide");
     return speechResultForPlaybackItem(result, item);
+  }
+
+  function shouldPreferSpeechBeforeAudio(result = {}) {
+    return Boolean(selectedAliasSpeechItem(result));
   }
 
   function speechResultForPlaybackItem(result, item = {}) {
@@ -417,6 +431,92 @@
     return Boolean(languageBase && !["unknown", "und", "en", "eng"].includes(languageBase) && baseLanguage(lang) === "en");
   }
 
+  function selectedAliasSpeechItem(result = {}) {
+    const selected = normalizeText(result.query || result.display);
+    const sourceForm = normalizeText(result.sourceForm || result.display);
+    const selectedKey = createLookupKey(selected);
+    if (!selected || !selectedKey || sourceFormMatchesSelected(sourceForm, selected)) {
+      return null;
+    }
+
+    const surfaceKeys = [
+      ...normalizeAliases(result.aliases),
+      ...normalizeAliases(result.variants)
+    ].map(createLookupKey);
+    if (!surfaceKeys.includes(selectedKey)) {
+      return null;
+    }
+
+    const lang = selectedAliasLanguage(result);
+    if (!lang) {
+      return null;
+    }
+
+    return {
+      kind: "speech",
+      label: "Selected text speech",
+      text: selected,
+      lang
+    };
+  }
+
+  function selectedAliasLanguage(result = {}) {
+    const lang = normalizeTtsLanguage(result.selectedTtsLang || result.aliasTtsLang || result.ttsLang, result.language);
+    if (!lang || shouldHideCrossLanguageEnglishSpeech(result.language, lang)) {
+      return "en-US";
+    }
+
+    return lang;
+  }
+
+  function sourceFormMatchesSelected(sourceForm, selected) {
+    const sourceKey = createLookupKey(sourceForm);
+    const selectedKey = createLookupKey(selected);
+    if (!sourceKey || !selectedKey || sourceKey === selectedKey) {
+      return true;
+    }
+
+    if (detectScript(selected) === "Latin" && detectScript(sourceForm) === "Cyrillic") {
+      const romanizedKey = createLookupKey(transliterateCyrillicToLatin(sourceForm));
+      return Boolean(romanizedKey && compactKey(romanizedKey) === compactKey(selectedKey));
+    }
+
+    return false;
+  }
+
+  function detectScript(value) {
+    const text = normalizeText(value);
+    const latin = (text.match(/[\u0041-\u007a\u00c0-\u024f\u1e00-\u1eff]/g) || []).length;
+    const cyrillic = (text.match(/[\u0400-\u052f]/g) || []).length;
+    if (!latin && !cyrillic) {
+      return "Unknown";
+    }
+
+    return cyrillic > latin ? "Cyrillic" : "Latin";
+  }
+
+  function transliterateCyrillicToLatin(value = "") {
+    const map = {
+      а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ye", ё: "yo", ж: "zh", з: "z",
+      и: "y", і: "i", ї: "yi", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+      с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "",
+      ъ: "", ы: "y", э: "e", ю: "yu", я: "ya"
+    };
+    return String(value || "").replace(/[\u0400-\u052f]/g, (character) => {
+      const lower = character.toLocaleLowerCase();
+      const replacement = map[lower] ?? character;
+      return character === lower ? replacement : capitalize(replacement);
+    });
+  }
+
+  function capitalize(value) {
+    return value ? value[0].toLocaleUpperCase() + value.slice(1) : value;
+  }
+
+  function compactKey(value) {
+    return String(value || "").replace(/\s+/g, "");
+  }
+
   function hasUsefulSharedAudioTarget(selectedText, sourceForm, language, ttsLang) {
     const sourceFormChanged = createLookupKey(selectedText) !== createLookupKey(sourceForm);
     const nonEnglishLanguage = hasNonEnglishLanguageSignal(language);
@@ -484,6 +584,7 @@
     playbackItems,
     playbackStatus,
     preferredSpeechResult,
+    shouldPreferSpeechBeforeAudio,
     speechResultForPlaybackItem,
     sourceItems,
     trustSignalItems,

@@ -128,7 +128,7 @@ export function createRemoteStructuredResult(selection, source) {
 }
 
 export function resultToSpeechOptions(result, overrides = {}) {
-  const text = normalizeSelection(overrides.text || result?.speakText || result?.sourceForm || result?.display || result?.query);
+  const text = normalizeSelection(overrides.text || safeResultSpeechText(result));
   const lang = overrides.lang && overrides.lang !== "auto"
     ? normalizeTtsLanguage(overrides.lang, result?.language)
     : normalizeTtsLanguage(result?.ttsLang, result?.language);
@@ -143,6 +143,70 @@ export function resultToSpeechOptions(result, overrides = {}) {
   }
 
   return { text, options };
+}
+
+function safeResultSpeechText(result = {}) {
+  const speakText = normalizeSelection(result?.speakText);
+  const sourceForm = normalizeSelection(result?.sourceForm);
+  const selected = normalizeSelection(result?.query || result?.display);
+  if (speakText && (!sourceForm || createLookupKey(speakText) !== createLookupKey(sourceForm))) {
+    return speakText;
+  }
+
+  if (sourceForm && selected && selectedIsKnownSurfaceAlias(result, selected) && !sourceFormMatchesSelected(sourceForm, selected)) {
+    return selected;
+  }
+
+  return speakText || sourceForm || normalizeSelection(result?.display || result?.query);
+}
+
+function selectedIsKnownSurfaceAlias(result = {}, selected = "") {
+  const selectedKey = createLookupKey(selected);
+  if (!selectedKey) {
+    return false;
+  }
+
+  return [
+    ...normalizeAliases(result?.aliases),
+    ...normalizeAliases(result?.variants)
+  ].map(createLookupKey).includes(selectedKey);
+}
+
+function sourceFormMatchesSelected(sourceForm, selected) {
+  const sourceKey = createLookupKey(sourceForm);
+  const selectedKey = createLookupKey(selected);
+  if (!sourceKey || !selectedKey || sourceKey === selectedKey) {
+    return true;
+  }
+
+  if (detectScript(selected).script === "Latin" && detectScript(sourceForm).script === "Cyrillic") {
+    const romanizedKey = createLookupKey(transliterateCyrillicToLatin(sourceForm));
+    return Boolean(romanizedKey && compactKey(romanizedKey) === compactKey(selectedKey));
+  }
+
+  return false;
+}
+
+function transliterateCyrillicToLatin(value = "") {
+  const map = {
+    а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ye", ё: "yo", ж: "zh", з: "z",
+    и: "y", і: "i", ї: "yi", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+    с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "",
+    ъ: "", ы: "y", э: "e", ю: "yu", я: "ya"
+  };
+  return String(value || "").replace(/[\u0400-\u052f]/g, (character) => {
+    const lower = character.toLocaleLowerCase();
+    const replacement = map[lower] ?? character;
+    return character === lower ? replacement : capitalize(replacement);
+  });
+}
+
+function capitalize(value) {
+  return value ? value[0].toLocaleUpperCase() + value.slice(1) : value;
+}
+
+function compactKey(value) {
+  return String(value || "").replace(/\s+/g, "");
 }
 
 function remoteSpeakText(source = {}, sourceForm, query, hasAudio) {

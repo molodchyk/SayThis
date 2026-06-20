@@ -91,13 +91,14 @@ Verified audio from resolver results is preferred when available. Browser speech
 
 ## Implemented MVP
 
-- Selection capture from popup, privacy-first context menu, explicit online context menu, `Alt+Shift+S`, and online lookup with `Alt+Shift+O`.
+- Selection capture from popup, a single privacy-first context menu action, `Alt+Shift+S`, and online lookup with `Alt+Shift+O`.
 - Keyboard command routing and handling has a narrow background module with deterministic mapping and fallback tests.
 - Context-menu click handling has a narrow background module with deterministic fallback tests.
 - Runtime message handling has a narrow background router with deterministic validation and error-response tests.
 - Runtime speak messages use the shared playable-result policy so online refresh, audio playback, and shared-audio reuse happen before speech fallback.
 - Runtime speak messages retry online before playing generic verified recordings so native/source-backed audio can replace them when available.
 - Popup and on-page Speak use the same top-tier audio rule before playing local recording URLs.
+- Selected surface text is authoritative for playback. If a resolved source form, alias, native label, or generated audio belongs to a different written name than the user's selection, primary playback must speak the selected surface form instead of silently substituting the other name.
 - Runtime browser adapters have a narrow background module with tests for seed-data caching, tab selection extraction, and keyboard dependency wiring.
 - Service-worker platform adapters have deterministic tests for storage, runtime, tabs, scripting, commands, context menus, TTS, offscreen APIs, and dependency bundles.
 - Result playback order has a narrow background module with deterministic overlay, offscreen, and verified speech fallback tests.

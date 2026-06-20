@@ -94,6 +94,51 @@ test("uses offscreen audio before overlay autoplay for generated audio", async (
   ]);
 });
 
+test("uses selected speech instead of generated audio when the source form is unsafe", async () => {
+  const generated = {
+    query: "Targetname",
+    display: "Targetname",
+    sourceForm: "Староназва",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://voice.example/old.ogg",
+        quality: "generated"
+      }]
+    }
+  };
+  const selectedSpeech = {
+    ...generated,
+    speakText: "Targetname",
+    sourceForm: "Targetname"
+  };
+  const calls = [];
+  const result = await playResolvedResult(generated, 7, {
+    getBestAudio: (value) => value.pronunciation.audio[0],
+    hasPreferredAudio: () => false,
+    shouldPreferSpeechBeforeAudio: () => true,
+    preferredSpeechResultForResult: () => selectedSpeech,
+    showResultOnTab: async (tabId, value, options) => {
+      calls.push(["showResultOnTab", tabId, value.display, options || {}]);
+      return true;
+    },
+    playAudioOffscreen: async (value) => {
+      calls.push(["playAudioOffscreen", value.display]);
+      return true;
+    },
+    speakResult: async (value) => {
+      calls.push(["speakResult", value.speakText]);
+      return { spoken: true };
+    }
+  });
+
+  assert.deepEqual(result, { mode: "tts" });
+  assert.deepEqual(calls, [
+    ["speakResult", "Targetname"],
+    ["showResultOnTab", 7, "Targetname", {}]
+  ]);
+});
+
 test("falls back to TTS when no verified audio can play", async () => {
   const calls = [];
   const result = await playResolvedResult(AUDIO_RESULT, 7, {

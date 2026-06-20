@@ -65,7 +65,7 @@ Every pronunciation result should expose its source and confidence:
 The interaction should be compact:
 
 - Highlight text.
-- Click SayThis or use the context menu.
+- Click SayThis, use the context menu, or use the card's listen control.
 - Hear audio immediately.
 - Optional popup shows native/source spelling, origin, source, confidence, slow replay, and correction controls.
 
@@ -74,3 +74,5 @@ The UI should avoid teaching users how to use the extension inside the product s
 The UI should also avoid becoming chat-like. Results should appear as a constrained pronunciation card, not a conversation.
 
 The UI should also avoid feeling like a closed word list. When SayThis cannot resolve a term, the useful action is to expose uncertainty and collect a structured missing-entry or correction signal.
+
+When a source returns aliases or historical/current alternate labels, SayThis should never silently replace the user's selected written form with a different written name. The selected surface form remains the playback target unless the resolved source form is a clear pronunciation-equivalent spelling for that same selection.

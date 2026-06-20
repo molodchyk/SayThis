@@ -220,6 +220,39 @@ test("uses lookup language hints when source forms compete", () => {
   assert.ok(result.evidence.includes("Source form matched lookup language hint: pl"));
 });
 
+test("uses exact romanized Cyrillic source form before conflicting native labels", () => {
+  const result = buildWikidataResult("Pochetne", {
+    id: "Qromanized",
+    label: "Pochetne",
+    language: "en",
+    description: "settlement"
+  }, {
+    id: "Qromanized",
+    labels: {
+      en: { language: "en", value: "Pochetne" },
+      ru: { language: "ru", value: "Почётное" },
+      uk: { language: "uk", value: "Почетне" }
+    },
+    descriptions: {
+      en: { language: "en", value: "settlement" }
+    },
+    claims: {
+      P1705: [{
+        mainsnak: {
+          datavalue: {
+            value: { language: "ru", text: "Почётное" }
+          }
+        }
+      }]
+    },
+    aliases: {}
+  });
+
+  assert.equal(result.sourceForm, "Почетне");
+  assert.equal(result.language, "uk");
+  assert.deepEqual(result.variants, ["Почётное"]);
+});
+
 test("uses taxon names as source-form candidates", () => {
   const result = buildWikidataResult("yellow fever mosquito", {
     id: "Q4",

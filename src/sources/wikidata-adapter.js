@@ -179,7 +179,7 @@ function chooseSourceCandidate(query, match, entity, options = {}) {
     .map((candidate) => ({
       ...candidate,
       languageHint: matchesLanguageHint(candidate.language, languageHints),
-      score: scoreCandidate(candidate, selectedScript, languageHints)
+      score: scoreCandidate(candidate, selectedScript, languageHints, query)
     }))
     .sort((left, right) => right.score - left.score)[0];
 }
@@ -337,7 +337,7 @@ function isUsefulWikidataAlternate(result = {}) {
   );
 }
 
-function scoreCandidate(candidate, selectedScript, languageHints = new Set()) {
+function scoreCandidate(candidate, selectedScript, languageHints = new Set(), query = "") {
   const script = detectScript(candidate.value).script;
   let score = 0;
 
@@ -375,11 +375,51 @@ function scoreCandidate(candidate, selectedScript, languageHints = new Set()) {
     score += 4;
   }
 
+  score += romanizedSourceMatchScore(candidate, query);
+
   if (candidate.language === "en") {
     score -= 2;
   }
 
   return score;
+}
+
+function romanizedSourceMatchScore(candidate = {}, query = "") {
+  if (detectScript(query).script !== "Latin" || detectScript(candidate.value).script !== "Cyrillic") {
+    return 0;
+  }
+
+  const queryKey = createLookupKey(query);
+  const romanizedKey = createLookupKey(transliterateCyrillicToLatin(candidate.value));
+  if (!queryKey || !romanizedKey) {
+    return 0;
+  }
+
+  if (romanizedKey === queryKey) {
+    return 34;
+  }
+
+  return romanizedKey.replace(/\s+/g, "") === queryKey.replace(/\s+/g, "")
+    ? 22
+    : 0;
+}
+
+function transliterateCyrillicToLatin(value = "") {
+  const map = {
+    а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ye", ё: "yo", ж: "zh", з: "z",
+    и: "y", і: "i", ї: "yi", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+    с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "",
+    ъ: "", ы: "y", э: "e", ю: "yu", я: "ya"
+  };
+  return String(value || "").replace(/[\u0400-\u052f]/g, (character) => {
+    const lower = character.toLocaleLowerCase();
+    const value = map[lower] ?? character;
+    return character === lower ? value : capitalize(value);
+  });
+}
+
+function capitalize(value) {
+  return value ? value[0].toLocaleUpperCase() + value.slice(1) : value;
 }
 
 function confidenceForCandidate(query, candidate) {

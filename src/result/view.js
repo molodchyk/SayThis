@@ -1,5 +1,6 @@
 import {
   createLookupKey,
+  detectScript,
   normalizeSelection,
   rankedAudioItems
 } from "../resolver-core.js";
@@ -62,20 +63,29 @@ export function audioItemsForResult(result, limit = 4) {
 export function playbackItemsForResult(result, limit = 4) {
   const audio = audioItemsForResult(result, limit)
     .map((item) => ({ ...item, kind: "audio" }));
+  const selectedAlias = selectedAliasSpeechItemForResult(result);
   const speech = sourceSpeechItemForResult(result);
   const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
-  const fallback = speechFallbackItems(speech, guide);
+  const fallback = speechFallbackItems(selectedAlias, speech, guide);
 
   if (!audio.length) {
     return fallback.slice(0, limit);
   }
 
   if (audio.some((item) => isPreferredPlaybackAudioItem(item, result))) {
-    return audio;
+    return selectedAlias ? [selectedAlias, ...audio].slice(0, limit) : audio;
   }
 
   if (!fallback.length) {
     return audio;
+  }
+
+  if (selectedAlias) {
+    return [
+      selectedAlias,
+      ...audio.slice(0, Math.max(1, limit - fallback.length)),
+      ...fallback.filter((item) => item !== selectedAlias)
+    ].slice(0, limit);
   }
 
   const generatedLimit = Math.max(1, limit - fallback.length);
@@ -85,8 +95,9 @@ export function playbackItemsForResult(result, limit = 4) {
   ].slice(0, limit);
 }
 
-function speechFallbackItems(speech, guide) {
+function speechFallbackItems(selectedAlias, speech, guide) {
   return [
+    selectedAlias,
     speech,
     guide
       ? {
@@ -112,6 +123,10 @@ export function playbackStatusForItem(item = {}, rate = 0.82) {
   }
 
   return rate < 0.7 ? "Speaking slowly." : "Speaking.";
+}
+
+export function shouldPreferSpeechBeforeAudio(result = {}) {
+  return Boolean(selectedAliasSpeechItemForResult(result));
 }
 
 export function preferredSpeechResultForResult(result) {
@@ -287,6 +302,81 @@ function sourceSpeechItemForResult(result = {}) {
     text: sourceForm,
     lang
   };
+}
+
+function selectedAliasSpeechItemForResult(result = {}) {
+  const selected = normalizeSelection(result.query || result.display);
+  const sourceForm = normalizeSelection(result.sourceForm || result.display);
+  const selectedKey = createLookupKey(selected);
+  if (!selected || !selectedKey || sourceFormMatchesSelected(sourceForm, selected)) {
+    return null;
+  }
+
+  const surfaceKeys = [
+    ...normalizeTrustSignals(result.aliases),
+    ...normalizeTrustSignals(result.variants)
+  ].map(createLookupKey);
+  if (!surfaceKeys.includes(selectedKey)) {
+    return null;
+  }
+
+  const lang = selectedAliasLanguage(result);
+  if (!lang) {
+    return null;
+  }
+
+  return {
+    kind: "speech",
+    label: "Selected text speech",
+    text: selected,
+    lang
+  };
+}
+
+function selectedAliasLanguage(result = {}) {
+  const lang = normalizeTtsLanguage(result.selectedTtsLang || result.aliasTtsLang || result.ttsLang, result.language);
+  if (!lang || shouldHideCrossLanguageEnglishSpeech(result.language, lang)) {
+    return "en-US";
+  }
+
+  return lang;
+}
+
+function sourceFormMatchesSelected(sourceForm, selected) {
+  const sourceKey = createLookupKey(sourceForm);
+  const selectedKey = createLookupKey(selected);
+  if (!sourceKey || !selectedKey || sourceKey === selectedKey) {
+    return true;
+  }
+
+  if (detectScript(selected).script === "Latin" && detectScript(sourceForm).script === "Cyrillic") {
+    const romanizedKey = createLookupKey(transliterateCyrillicToLatin(sourceForm));
+    return Boolean(romanizedKey && compactKey(romanizedKey) === compactKey(selectedKey));
+  }
+
+  return false;
+}
+
+function transliterateCyrillicToLatin(value = "") {
+  const map = {
+    а: "a", б: "b", в: "v", г: "h", ґ: "g", д: "d", е: "e", є: "ye", ё: "yo", ж: "zh", з: "z",
+    и: "y", і: "i", ї: "yi", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+    с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ь: "",
+    ъ: "", ы: "y", э: "e", ю: "yu", я: "ya"
+  };
+  return String(value || "").replace(/[\u0400-\u052f]/g, (character) => {
+    const lower = character.toLocaleLowerCase();
+    const replacement = map[lower] ?? character;
+    return character === lower ? replacement : capitalize(replacement);
+  });
+}
+
+function capitalize(value) {
+  return value ? value[0].toLocaleUpperCase() + value.slice(1) : value;
+}
+
+function compactKey(value) {
+  return String(value || "").replace(/\s+/g, "");
 }
 
 function baseLanguage(value) {

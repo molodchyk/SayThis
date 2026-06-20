@@ -532,6 +532,33 @@ test("uses remote simple guides for no-audio speech", () => {
   assert.deepEqual(result.variants, ["Regional form"]);
 });
 
+test("uses selected surface speech when the source form is a different entity label", () => {
+  const result = createRemoteStructuredResult("Targetname", {
+    id: "remote:mismatched-source",
+    display: "Targetname",
+    sourceForm: "Староназва",
+    aliases: ["Targetname"],
+    language: "ru",
+    ttsLang: "ru-RU"
+  });
+
+  assert.equal(resultToSpeechOptions(result).text, "Targetname");
+  assert.equal(resultToSpeechOptions(result).options.lang, "ru-RU");
+});
+
+test("keeps matching Cyrillic source form when it romanizes to the selected surface", () => {
+  const result = createRemoteStructuredResult("Pochetne", {
+    id: "remote:matching-source",
+    display: "Pochetne",
+    sourceForm: "Почетне",
+    language: "uk",
+    ttsLang: "uk-UA"
+  });
+
+  assert.equal(resultToSpeechOptions(result).text, "Почетне");
+  assert.equal(resultToSpeechOptions(result).options.lang, "uk-UA");
+});
+
 test("does not use explanatory remote guide prose as speech text", () => {
   const result = createRemoteStructuredResult("Exampleterm", {
     id: "remote:prose-guide",

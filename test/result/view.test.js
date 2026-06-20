@@ -7,6 +7,7 @@ import {
   playbackItemsForResult,
   playbackStatusForItem,
   preferredSpeechResultForResult,
+  shouldPreferSpeechBeforeAudio,
   speechResultForPlaybackItem,
   sourceItemsForResult
 } from "../../src/result/view.js";
@@ -337,6 +338,98 @@ test("builds playback items from audio before source speech and guide speech", (
       simple: "English pronunciations vary; source form should use a matching voice"
     }
   }), []);
+});
+
+test("prefers selected alias speech before audio when display is a different entity label", () => {
+  const result = {
+    query: "Selectedtown",
+    display: "Renamedtown",
+    sourceForm: "Рінеймдтаун",
+    aliases: ["Selectedtown"],
+    language: "uk",
+    ttsLang: "uk-UA",
+    sourceStatus: "verified-audio",
+    pronunciation: {
+      audio: [{
+        label: "Pronunciation audio",
+        quality: "verified",
+        url: "https://example.com/audio.ogg"
+      }]
+    }
+  };
+
+  assert.equal(shouldPreferSpeechBeforeAudio(result), true);
+  assert.deepEqual(playbackItemsForResult(result), [{
+    kind: "speech",
+    label: "Selected text speech",
+    text: "Selectedtown",
+    lang: "uk-UA"
+  }, {
+    kind: "audio",
+    label: "Pronunciation audio",
+    source: "",
+    quality: "verified",
+    url: "https://example.com/audio.ogg"
+  }]);
+  assert.equal(preferredSpeechResultForResult(result).speakText, "Selectedtown");
+});
+
+test("prefers selected surface speech before mismatched source-form audio", () => {
+  const result = {
+    query: "Targetname",
+    display: "Targetname",
+    sourceForm: "Староназва",
+    aliases: ["Targetname"],
+    language: "ru",
+    ttsLang: "ru-RU",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Generated shared audio",
+        quality: "generated",
+        url: "https://example.com/audio.ogg"
+      }]
+    }
+  };
+
+  assert.equal(shouldPreferSpeechBeforeAudio(result), true);
+  assert.deepEqual(playbackItemsForResult(result), [{
+    kind: "speech",
+    label: "Selected text speech",
+    text: "Targetname",
+    lang: "ru-RU"
+  }, {
+    kind: "audio",
+    label: "Generated shared audio",
+    source: "",
+    quality: "generated",
+    url: "https://example.com/audio.ogg"
+  }, {
+    kind: "speech",
+    label: "Source-form speech",
+    text: "Староназва",
+    lang: "ru-RU"
+  }]);
+  assert.equal(preferredSpeechResultForResult(result).speakText, "Targetname");
+});
+
+test("keeps transliterating source-form speech when it matches the selected surface", () => {
+  const result = {
+    query: "Pochetne",
+    display: "Pochetne",
+    sourceForm: "Почетне",
+    language: "uk",
+    ttsLang: "uk-UA",
+    sourceStatus: "structured-source"
+  };
+
+  assert.equal(shouldPreferSpeechBeforeAudio(result), false);
+  assert.deepEqual(playbackItemsForResult(result), [{
+    kind: "speech",
+    label: "Source-form speech",
+    text: "Почетне",
+    lang: "uk-UA"
+  }]);
 });
 
 test("builds speech-specific result copies for playback rows", () => {

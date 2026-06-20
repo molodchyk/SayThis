@@ -140,6 +140,40 @@ test("does not speak unresolved Latin text with raw browser TTS", async () => {
   assert.deepEqual(calls, []);
 });
 
+test("speaks unresolved title-case proper-name phrases with an English fallback voice", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    query: "Shri Gurudwara Sahib",
+    display: "Shri Gurudwara Sahib",
+    sourceForm: "Shri Gurudwara Sahib",
+    speakText: "Shri Gurudwara Sahib",
+    sourceStatus: "best-effort-fallback"
+  });
+
+  assert.deepEqual(result, {
+    spoken: true,
+    text: "Shri Gurudwara Sahib",
+    options: {
+      enqueue: false,
+      rate: 0.82,
+      lang: "en-US",
+      voiceName: "English Default"
+    }
+  });
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "Shri Gurudwara Sahib", { enqueue: false, rate: 0.82, lang: "en-US", voiceName: "English Default" }]
+  ]);
+});
+
 test("does not speak structured results through the default browser voice without a locale", async () => {
   const calls = [];
   const surface = createPlaybackSurface({

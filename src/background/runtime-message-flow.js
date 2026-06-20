@@ -60,15 +60,16 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     let resolvedPlayableResult = null;
     let storedPlayableResult = null;
     let visiblePlayableResult = null;
+    const preparedSharedAudioWasPending = preferImmediatePlayback &&
+      !message.result &&
+      hasPreparedSharedAudio(selectedText, message);
     const shouldPrepareSharedAudioFromSpeak = preferImmediatePlayback &&
       !message.result &&
       message.prepareSharedAudio === true;
     if (shouldPrepareSharedAudioFromSpeak) {
       startPreparingSharedAudio(selectedText, message, dependencies);
     }
-    const preparedSharedAudioIsPending = preferImmediatePlayback &&
-      !message.result &&
-      hasPreparedSharedAudio(selectedText, message);
+    const preparedSharedAudioIsPending = preparedSharedAudioWasPending;
     const visibleResultPromise = message.result || preparedSharedAudioIsPending
       ? Promise.resolve(null)
       : awaitVisiblePlayableResult(selectedText, dependencies, message.trace).then((result) => {

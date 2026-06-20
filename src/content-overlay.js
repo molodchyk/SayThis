@@ -35,11 +35,14 @@
     playbackStatus = (item) => item?.kind === "audio" ? "Playing recording." : "Speaking.",
     speechResultForPlaybackItem = (result) => result,
     preferredSpeechResult = (result) => speechResultForPlaybackItem(result),
+    shouldPreferSpeechBeforeAudio = () => false,
     sourceItems,
     trustSignalItems,
     variantItems,
     variantsTextFromResult
   } = overlayResultView;
+  let playbackUiToken = 0;
+  let playbackMayBeActive = false;
 
   overlayRuntime.addShowResultListener?.((result, options) => {
     renderOverlay(result, options);
@@ -64,6 +67,9 @@
     const sources = sourceItems(result).slice(0, 2);
     const alternates = alternateItems(result).slice(0, 2);
     const recordings = playbackItems(result).slice(0, 4);
+    const resultTitle = shouldPreferSpeechBeforeAudio(result)
+      ? normalizeText(result.query || result.display || result.sourceForm || "Unknown")
+      : normalizeText(result.display || result.query || result.sourceForm || "Unknown");
     const correctionAudioUrl = hasPreferredAudio(result) ? getBestAudio(result)?.url : "";
     const community = result.community || {};
     const communityText = [
@@ -77,9 +83,12 @@
       <style>${overlayStyles}</style>
       <article class="card" role="dialog" aria-label="SayThis pronunciation result">
         <div class="head">
-          <div>
+          <div class="title-block">
             <span class="eyebrow">SayThis</span>
-            <h2>${escapeHtml(result.display || result.query || "Unknown")}</h2>
+            <div class="title-row">
+              <h2>${escapeHtml(resultTitle || "Unknown")}</h2>
+              <button class="listen-main" type="button" data-action="speak" data-playback-control="true">Listen</button>
+            </div>
           </div>
           <button class="close" type="button" aria-label="Close">×</button>
         </div>
@@ -125,17 +134,16 @@
           ${evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
-        ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><button type="button" data-action="alternate" data-alternate-index="${item.index}">Speak</button><strong>${escapeHtml(item.display || "Alternate")}</strong><span>${escapeHtml(item.summary)}</span></li>`).join("")}</ul>` : ""}
-        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation playback">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}">${item.kind === "audio" ? "Play" : "Speak"}</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
+        ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><button type="button" data-action="alternate" data-alternate-index="${item.index}" data-playback-control="true">Speak</button><strong>${escapeHtml(item.display || "Alternate")}</strong><span>${escapeHtml(item.summary)}</span></li>`).join("")}</ul>` : ""}
+        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation playback">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}" data-playback-control="true">${item.kind === "audio" ? "Play" : "Speak"}</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <label class="hint-field">
           <span>Lookup hints</span>
           <input data-lookup-hints type="text" maxlength="80" value="${escapeAttribute(options.lookupHints || "")}" placeholder="pl, tr, ja" spellcheck="false">
         </label>
         <div class="actions">
-          <button class="action" type="button" data-action="speak">Speak</button>
           <button class="action secondary" type="button" data-action="online">Online</button>
-          <button class="action secondary" type="button" data-action="slow">Slow</button>
+          <button class="action secondary" type="button" data-action="slow" data-playback-control="true">Slow</button>
           <button class="action secondary" type="button" data-action="correct">Correct</button>
           <button class="action secondary" type="button" data-action="confirm">Confirm</button>
           <button class="action secondary" type="button" data-action="missing">Missing</button>
@@ -167,19 +175,21 @@
     `;
 
     root.querySelector(".close").addEventListener("click", () => {
-      stopAudio();
+      stopPlayback(true);
       host.remove();
       host = null;
       root = null;
       currentResult = null;
     });
 
-    root.querySelector('[data-action="speak"]').addEventListener("click", () => speak(result, 0.82, {
-      onlineChecked: Boolean(options.onlineChecked)
+    root.querySelector('[data-action="speak"]').addEventListener("click", (event) => speak(result, 0.82, {
+      onlineChecked: Boolean(options.onlineChecked),
+      button: event.currentTarget
     }));
     root.querySelector('[data-action="online"]').addEventListener("click", () => resolveOnline(result));
-    root.querySelector('[data-action="slow"]').addEventListener("click", () => speak(result, 0.62, {
-      onlineChecked: Boolean(options.onlineChecked)
+    root.querySelector('[data-action="slow"]').addEventListener("click", (event) => speak(result, 0.62, {
+      onlineChecked: Boolean(options.onlineChecked),
+      button: event.currentTarget
     }));
     root.querySelector('[data-action="correct"]').addEventListener("click", () => toggleCorrection());
     root.querySelector('[data-action="confirm"]').addEventListener("click", () => sendFeedback(result, "confirm"));
@@ -190,12 +200,16 @@
         const index = Number(button.dataset.alternateIndex);
         const alternate = result.alternateResults?.[index];
         const alternateAudio = typeof getBestAudio === "function" ? getBestAudio(alternate) : null;
-        if (playAudioItem(alternateAudio, alternate, 0.82, { replaceCurrent: false })) {
-          setStatus("Playing alternate.");
+        if (playAudioItem(alternateAudio, alternate, 0.82, {
+          button,
+          replaceCurrent: false,
+          status: "Playing alternate."
+        })) {
           return;
         }
 
         speakCandidate(preferredSpeechResult(alternate), 0.82, {
+          button,
           replaceCurrent: false
         });
       });
@@ -205,9 +219,12 @@
         const index = Number(button.dataset.audioIndex);
         const item = recordings[index];
         if (item?.kind !== "audio") {
-          speakCandidate(speechResultForPlaybackItem(result, item), 0.82);
-        } else if (playAudioItem(item, result, 0.82)) {
-          setStatus(playbackStatus(item, 0.82));
+          speakCandidate(speechResultForPlaybackItem(result, item), 0.82, { button });
+        } else {
+          playAudioItem(item, result, 0.82, {
+            button,
+            status: playbackStatus(item, 0.82)
+          });
         }
       });
     }
@@ -344,6 +361,94 @@
     }
   }
 
+  function ensurePlaybackOptions(options = {}, rate = 0.82) {
+    if (options.uiToken) {
+      return options;
+    }
+
+    const status = rate < 0.7 ? "Loading slow audio." : "Loading audio.";
+    return {
+      ...options,
+      stopPrevious: playbackMayBeActive,
+      uiToken: beginPlayback(options.button, status)
+    };
+  }
+
+  function beginPlayback(button, status) {
+    const token = playbackUiToken + 1;
+    playbackUiToken = token;
+    resetPlaybackButtons();
+    setPlaybackControlsDisabled(true, button);
+    setPlaybackButton(button, "Loading...", "is-busy");
+    setStatus(status);
+    return token;
+  }
+
+  function markPlaybackStarted(token, button, label, status) {
+    if (token !== playbackUiToken) {
+      return;
+    }
+
+    setPlaybackControlsDisabled(false);
+    setPlaybackButton(button, label, "is-playing");
+    setStatus(status);
+    playbackMayBeActive = true;
+  }
+
+  function failPlayback(token, status) {
+    if (token !== playbackUiToken) {
+      return;
+    }
+
+    resetPlaybackButtons();
+    setStatus(status);
+    playbackMayBeActive = false;
+  }
+
+  function resetPlaybackButtons() {
+    for (const button of playbackButtons()) {
+      restorePlaybackButton(button);
+      button.disabled = false;
+    }
+  }
+
+  function setPlaybackControlsDisabled(disabled, activeButton = null) {
+    for (const button of playbackButtons()) {
+      button.disabled = Boolean(disabled && button !== activeButton);
+    }
+  }
+
+  function setPlaybackButton(button, label, className) {
+    if (!button) {
+      return;
+    }
+
+    if (!button.dataset.originalLabel) {
+      button.dataset.originalLabel = button.textContent || "";
+    }
+    button.textContent = label;
+    button.disabled = className === "is-busy";
+    button.classList?.remove?.("is-busy", "is-playing");
+    button.classList?.add?.(className);
+    button.setAttribute?.("aria-busy", className === "is-busy" ? "true" : "false");
+  }
+
+  function restorePlaybackButton(button) {
+    if (!button) {
+      return;
+    }
+
+    if (button.dataset.originalLabel) {
+      button.textContent = button.dataset.originalLabel;
+    }
+    button.classList?.remove?.("is-busy", "is-playing");
+    button.removeAttribute?.("aria-busy");
+  }
+
+  function playbackButtons() {
+    return [...(root?.querySelectorAll?.('[data-playback-control="true"]') || [])];
+  }
+
   function ensureRoot() {
     if (host && root) {
       return;
@@ -356,6 +461,7 @@
 
   function speak(result, rate, options = {}) {
     const trace = options.trace || createTrace(rate < 0.7 ? "overlay-slow" : "overlay-speak");
+    const playbackOptions = ensurePlaybackOptions(options, rate);
     recordDebugEvent("ui:speak-click", trace, {
       rate,
       text: result?.query || result?.display || result?.sourceForm
@@ -363,11 +469,12 @@
 
     if (!options.onlineChecked && !hasTopTierAudio(result)) {
       ensureSharedAudio(result, rate, {
-        ...options,
+        ...playbackOptions,
         trace
       }).then((sharedResult) => {
-        if (shouldPlayBeforeOnlineRefresh(result, sharedResult) && playAudio(sharedResult, rate, trace)) {
-          setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
+        if (!shouldPreferSpeechBeforeAudio(sharedResult) &&
+            shouldPlayBeforeOnlineRefresh(result, sharedResult) &&
+            playAudio(sharedResult, rate, trace, playbackOptions)) {
           return;
         }
 
@@ -382,20 +489,19 @@
 
     if (isSharedAudioCandidate(result)) {
       ensureSharedAudio(result, rate, {
-        ...options,
+        ...playbackOptions,
         trace
       }).then((sharedResult) => {
-        if (playAudio(sharedResult, rate, trace)) {
-          setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
+        if (playAudio(sharedResult, rate, trace, playbackOptions)) {
           return;
         }
 
-        speakCandidate(sharedResult, rate, { skipSharedAudio: true, trace });
+        speakCandidate(sharedResult, rate, { ...playbackOptions, skipSharedAudio: true, trace });
       });
       return;
     }
 
-    if (playAudio(result, rate, trace)) {
+    if (!shouldPreferSpeechBeforeAudio(result) && playAudio(result, rate, trace, playbackOptions)) {
       return;
     }
 
@@ -408,13 +514,12 @@
       return;
     }
 
-    ensureSharedAudio(result, rate, { trace }).then((sharedResult) => {
-      if (playAudio(sharedResult, rate, trace)) {
-        setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
+    ensureSharedAudio(result, rate, { ...playbackOptions, trace }).then((sharedResult) => {
+      if (!shouldPreferSpeechBeforeAudio(sharedResult) && playAudio(sharedResult, rate, trace, playbackOptions)) {
         return;
       }
 
-      speakCandidate(sharedResult, rate, { skipSharedAudio: true, trace });
+      speakCandidate(sharedResult, rate, { ...playbackOptions, skipSharedAudio: true, trace });
     });
   }
 
@@ -424,6 +529,7 @@
     }
 
     const trace = options.trace || createTrace("overlay-speech-row");
+    const playbackOptions = ensurePlaybackOptions(options, rate);
     recordDebugEvent("ui:result-speak-click", trace, {
       rate,
       text: result.query || result.sourceForm || result.display
@@ -431,16 +537,15 @@
 
     if (!options.skipSharedAudio && isSharedAudioCandidate(result)) {
       ensureSharedAudio(result, rate, {
-        ...options,
+        ...playbackOptions,
         trace
       }).then((sharedResult) => {
-        if (playAudio(sharedResult, rate, trace)) {
-          setStatus(rate < 0.7 ? "Starting audio slowly." : "Starting audio.");
+        if (!shouldPreferSpeechBeforeAudio(sharedResult) && playAudio(sharedResult, rate, trace, playbackOptions)) {
           return;
         }
 
         speakCandidate(sharedResult, rate, {
-          ...options,
+          ...playbackOptions,
           skipSharedAudio: true,
           trace
         });
@@ -448,15 +553,19 @@
       return;
     }
 
-    sendOverlayMessage({
+    stopPlayback(playbackOptions.stopPrevious).then(() => sendOverlayMessage({
       type: "SAYTHIS_SPEAK",
       text: result.query || result.sourceForm || result.display,
       result,
       rate,
       trace,
       ...(options.skipSharedAudio ? { skipSharedAudio: true } : {})
-    }).then((response) => {
-      setStatus(response?.ok ? speakingStatus(response, rate) : response?.error || "Speech failed.");
+    })).then((response) => {
+      if (response?.ok) {
+        markPlaybackStarted(playbackOptions.uiToken, playbackOptions.button, rate < 0.7 ? "Speaking slow" : "Speaking", speakingStatus(response, rate));
+      } else {
+        failPlayback(playbackOptions.uiToken, response?.error || "Speech failed.");
+      }
     });
   }
 
@@ -488,9 +597,9 @@
     });
   }
 
-  function playAudio(result, rate, trace) {
+  function playAudio(result, rate, trace, options = {}) {
     const audio = getBestAudio(result);
-    return playAudioItem(audio, result, rate, { skipSharedAudio: true, trace });
+    return playAudioItem(audio, result, rate, { ...options, skipSharedAudio: true, trace });
   }
 
   function shouldPlayBeforeOnlineRefresh(originalResult, candidateResult) {
@@ -508,6 +617,7 @@
     }
 
     const trace = options.trace || createTrace("overlay-audio-row");
+    const playbackOptions = ensurePlaybackOptions(options, rate);
     recordDebugEvent("ui:audio-request", trace, {
       rate,
       quality: audio.quality,
@@ -519,6 +629,7 @@
       ensureSharedAudio(result, rate, options).then((sharedResult) => {
         const sharedAudio = getBestAudio(sharedResult);
         playAudioItem(sharedAudio || audio, sharedResult || result, rate, {
+          ...playbackOptions,
           ...options,
           skipSharedAudio: true
         });
@@ -534,30 +645,29 @@
 
       fallbackStarted = true;
       setStatus("Audio failed. Using speech fallback.");
-      sendOverlayMessage({
+      stopPlayback(playbackOptions.stopPrevious).then(() => sendOverlayMessage({
         type: "SAYTHIS_SPEAK",
         text: result.query || result.display,
         result,
         rate,
         skipSharedAudio: true,
         trace
-      }).then((response) => {
+      })).then((response) => {
         if (response?.ok) {
-          setStatus(speakingStatus(response, rate));
+          markPlaybackStarted(playbackOptions.uiToken, playbackOptions.button, rate < 0.7 ? "Speaking slow" : "Speaking", speakingStatus(response, rate));
         } else {
-          setStatus(response?.error || "Speech failed.");
+          failPlayback(playbackOptions.uiToken, response?.error || "Speech failed.");
         }
       });
     };
 
-    stopAudio();
     if (isGeneratedAudioItem(audio)) {
-      sendOverlayMessage({
+      stopPlayback(playbackOptions.stopPrevious).then(() => sendOverlayMessage({
         type: "SAYTHIS_PLAY_AUDIO",
         audio,
         rate,
         trace
-      }).then((response) => {
+      })).then((response) => {
         if (!response?.ok) {
           recordDebugEvent("audio:offscreen-error", trace, {
             error: response?.error || "Audio playback failed."
@@ -567,29 +677,41 @@
         }
 
         recordDebugEvent("audio:offscreen-response", trace, response.playback || {});
-        setStatus(startedStatus(rate, elapsedMs(trace)));
+        markPlaybackStarted(
+          playbackOptions.uiToken,
+          playbackOptions.button,
+          rate < 0.7 ? "Playing slow" : "Playing",
+          options.status || startedStatus(rate, elapsedMs(trace))
+        );
       });
       return true;
     }
 
-    audioPlayer = new Audio(audio.url);
-    audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
-    audioPlayer.addEventListener("error", () => {
-      recordDebugEvent("audio:overlay-error", trace, {
-        urlHost: hostLabel(audio.url)
+    stopPlayback(playbackOptions.stopPrevious).then(() => {
+      audioPlayer = new Audio(audio.url);
+      audioPlayer.playbackRate = rate < 0.7 ? 0.75 : 1;
+      audioPlayer.addEventListener("error", () => {
+        recordDebugEvent("audio:overlay-error", trace, {
+          urlHost: hostLabel(audio.url)
+        });
+        fallbackToSpeech();
       });
-      fallbackToSpeech();
-    });
-    audioPlayer.play().then(() => {
-      recordDebugEvent("audio:overlay-start", trace, {
-        urlHost: hostLabel(audio.url)
+      audioPlayer.play().then(() => {
+        recordDebugEvent("audio:overlay-start", trace, {
+          urlHost: hostLabel(audio.url)
+        });
+        markPlaybackStarted(
+          playbackOptions.uiToken,
+          playbackOptions.button,
+          rate < 0.7 ? "Playing slow" : "Playing",
+          options.status || startedStatus(rate, elapsedMs(trace))
+        );
+      }).catch(() => {
+        recordDebugEvent("audio:overlay-error", trace, {
+          urlHost: hostLabel(audio.url)
+        });
+        fallbackToSpeech();
       });
-      setStatus(startedStatus(rate, elapsedMs(trace)));
-    }).catch(() => {
-      recordDebugEvent("audio:overlay-error", trace, {
-        urlHost: hostLabel(audio.url)
-      });
-      fallbackToSpeech();
     });
     return true;
   }
@@ -610,6 +732,16 @@
     audioPlayer.pause();
     audioPlayer.currentTime = 0;
     audioPlayer = null;
+  }
+
+  function stopPlayback(force = false) {
+    stopAudio();
+    if (!force) {
+      return Promise.resolve({ ok: true });
+    }
+
+    playbackMayBeActive = false;
+    return sendOverlayMessage({ type: "SAYTHIS_STOP" }).catch(() => ({ ok: false }));
   }
 
   function sendOverlayMessage(message) {

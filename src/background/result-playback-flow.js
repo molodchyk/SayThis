@@ -1,6 +1,7 @@
 export async function playResolvedResult(result, tabId, dependencies = {}, trace = null) {
   const audio = dependencies.getBestAudio?.(result);
-  if (audio && shouldAutoPlayAudio(audio, result, dependencies)) {
+  const preferSpeech = dependencies.shouldPreferSpeechBeforeAudio?.(result) === true;
+  if (!preferSpeech && audio && shouldAutoPlayAudio(audio, result, dependencies)) {
     const played = await dependencies.playAudioOffscreen?.(result, 0.82, trace);
     if (played) {
       dependencies.showResultOnTab?.(tabId, result);
@@ -15,7 +16,8 @@ export async function playResolvedResult(result, tabId, dependencies = {}, trace
     }
   }
 
-  const speech = await dependencies.speakResult?.(result, trace ? { trace } : undefined);
+  const speechResult = dependencies.preferredSpeechResultForResult?.(result) || result;
+  const speech = await dependencies.speakResult?.(speechResult, trace ? { trace } : undefined);
   dependencies.showResultOnTab?.(tabId, result);
   if (!speech || speech.spoken === false) {
     return {

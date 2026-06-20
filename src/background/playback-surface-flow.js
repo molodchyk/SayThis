@@ -23,6 +23,10 @@ import {
   hasNonEnglishLanguageSignal
 } from "../result/shared-audio.js";
 import {
+  preferredSpeechResultForResult,
+  shouldPreferSpeechBeforeAudio
+} from "../result/view.js";
+import {
   baseVoiceLocale,
   normalizeVoiceLocale,
   preferredVoiceScoreForLabel,
@@ -67,9 +71,11 @@ export function createPlaybackSurface(dependencies = {}) {
     return playResolvedResultFlow(result, tabId, {
       getBestAudio,
       hasPreferredAudio,
+      preferredSpeechResultForResult,
       showResultOnTab,
       playAudioOffscreen,
-      speakResult
+      speakResult,
+      shouldPreferSpeechBeforeAudio
     }, trace);
   }
 
@@ -127,6 +133,10 @@ export function createPlaybackSurface(dependencies = {}) {
         spoken: false,
         error: "Speech unavailable."
       };
+    }
+
+    if (!speech.options.lang && isAllowedUnresolvedProperNameSpeech(result, speech)) {
+      speech.options.lang = "en-US";
     }
 
     if (shouldRejectUntrustedRawSpeech(result, speech)) {
@@ -304,6 +314,10 @@ export function createPlaybackSurface(dependencies = {}) {
       return false;
     }
 
+    if (isAllowedUnresolvedProperNameSpeech(result, speech)) {
+      return false;
+    }
+
     const text = normalizeSelection(speech.text);
     const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
     if (guide && text === guide) {
@@ -319,6 +333,10 @@ export function createPlaybackSurface(dependencies = {}) {
   }
 
   function shouldRejectMissingSpeechLanguage(result, speech = {}) {
+    if (isAllowedUnresolvedProperNameSpeech(result, speech)) {
+      return false;
+    }
+
     if (normalizeSelection(speech.options?.lang)) {
       return false;
     }
@@ -329,6 +347,10 @@ export function createPlaybackSurface(dependencies = {}) {
   }
 
   function shouldRejectPlainEnglishSameTextSpeech(result, speech = {}) {
+    if (isAllowedUnresolvedProperNameSpeech(result, speech)) {
+      return false;
+    }
+
     const lang = normalizeSelection(speech.options?.lang || result?.ttsLang || result?.language);
     if (baseVoiceLang(lang) !== "en") {
       return false;
@@ -343,6 +365,35 @@ export function createPlaybackSurface(dependencies = {}) {
     const selectedKey = createLookupKey(result?.query || result?.display);
     const sourceKey = createLookupKey(result?.sourceForm || result?.display || result?.query);
     return Boolean(selectedKey && sourceKey && selectedKey === sourceKey);
+  }
+
+  function isAllowedUnresolvedProperNameSpeech(result, speech = {}) {
+    if (normalizeSelection(result?.sourceStatus) !== "best-effort-fallback") {
+      return false;
+    }
+
+    const text = normalizeSelection(speech.text || result?.speakText || result?.sourceForm || result?.display || result?.query);
+    if (!text || text.length > 90 || /[.!?;:]/.test(text)) {
+      return false;
+    }
+
+    const selected = normalizeSelection(result?.query || result?.display || result?.sourceForm);
+    if (createLookupKey(text) !== createLookupKey(selected)) {
+      return false;
+    }
+
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length < 2 || words.length > 8) {
+      return false;
+    }
+
+    const latinWords = words.filter((word) => /[A-Za-z]/.test(word));
+    if (latinWords.length !== words.length) {
+      return false;
+    }
+
+    const titleLikeWords = words.filter((word) => /^[A-Z][A-Za-z'’.-]*$/.test(word));
+    return titleLikeWords.length >= Math.min(2, words.length);
   }
 
   function shouldRejectCrossLanguageEnglishSpeech(result, speech = {}) {

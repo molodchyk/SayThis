@@ -6,16 +6,15 @@ import {
   resolveOptionsForMenuId
 } from "../src/extension-actions.js";
 
-test("defines local and online context menu actions", () => {
+test("defines one selected-text context menu action", () => {
   const definitions = contextMenuDefinitions();
 
-  assert.equal(definitions.length, 2);
+  assert.equal(definitions.length, 1);
   assert.deepEqual(definitions.map((item) => item.id), [
-    MENU_IDS.pronounceSelection,
-    MENU_IDS.pronounceSelectionOnline
+    MENU_IDS.pronounceSelection
   ]);
   assert.ok(definitions.every((item) => item.contexts.includes("selection")));
-  assert.ok(definitions[1].title.includes("online lookup"));
+  assert.equal(definitions[0].title, "SayThis: pronounce \"%s\"");
 });
 
 test("maps context menu actions to resolver options", () => {
@@ -25,11 +24,6 @@ test("maps context menu actions to resolver options", () => {
     options: {}
   });
 
-  assert.deepEqual(resolveOptionsForMenuId(MENU_IDS.pronounceSelectionOnline), {
-    ok: true,
-    source: "context-menu-online",
-    options: { useOnline: true }
-  });
-
+  assert.equal(resolveOptionsForMenuId("saythis-pronounce-selection-online").ok, false);
   assert.equal(resolveOptionsForMenuId("other").ok, false);
 });
