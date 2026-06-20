@@ -1640,6 +1640,7 @@ test("select-to-hear lets fast prepared shared audio beat source-form fallback",
     fallback: "audio",
     text: "Prepared shared audio"
   });
+  assert.equal(calls.some((call) => call[0] === "getStorage"), false);
   assert.deepEqual(calls, [
     ["requestSharedAudio", "Exampletown", null, {
       rate: 0.82,
@@ -1647,7 +1648,6 @@ test("select-to-hear lets fast prepared shared audio beat source-form fallback",
       directLookup: true,
       skipRefresh: true
     }],
-    ["getStorage", ["lastResult"]],
     ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
   ]);
@@ -1744,7 +1744,7 @@ test("select-to-hear waits for pending prepared shared audio before speech fallb
   clearPreparedSharedAudioForTests();
 });
 
-test("select-to-hear consumes prepared shared audio before a slow visible probe", async () => {
+test("select-to-hear skips visible and stored probes when prepared shared audio is pending", async () => {
   clearPreparedSharedAudioForTests();
   const responses = [];
   const calls = [];
@@ -1829,6 +1829,8 @@ test("select-to-hear consumes prepared shared audio before a slow visible probe"
     text: "Prepared shared audio"
   });
   assert.equal(calls.filter((call) => call[0] === "requestSharedAudio").length, 1);
+  assert.equal(calls.some((call) => call[0] === "getVisibleResult"), false);
+  assert.equal(calls.some((call) => call[0] === "getStorage"), false);
   assert.deepEqual(calls.slice(0, 3), [
     ["requestSharedAudio", "Exampletown", null, {
       rate: 0.82,
@@ -1836,7 +1838,7 @@ test("select-to-hear consumes prepared shared audio before a slow visible probe"
       directLookup: true,
       skipRefresh: true
     }],
-    ["getVisibleResult"],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
   ]);
   clearPreparedSharedAudioForTests();
@@ -1923,14 +1925,14 @@ test("runtime speak reuses prepared direct shared audio", async () => {
     fallback: "audio",
     text: "Prepared shared audio"
   });
-  assert.deepEqual(calls.slice(0, 4), [
+  assert.equal(calls.some((call) => call[0] === "getStorage"), false);
+  assert.deepEqual(calls.slice(0, 3), [
     ["requestSharedAudio", "Exampletown", null, {
       rate: 0.82,
       trace,
       directLookup: true,
       skipRefresh: true
     }],
-    ["getStorage", ["lastResult"]],
     ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
   ]);

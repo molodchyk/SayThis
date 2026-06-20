@@ -60,7 +60,10 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     let resolvedPlayableResult = null;
     let storedPlayableResult = null;
     let visiblePlayableResult = null;
-    const visibleResultPromise = message.result
+    const preparedSharedAudioIsPending = preferImmediatePlayback &&
+      !message.result &&
+      hasPreparedSharedAudio(selectedText, message);
+    const visibleResultPromise = message.result || preparedSharedAudioIsPending
       ? Promise.resolve(null)
       : awaitVisiblePlayableResult(selectedText, dependencies, message.trace).then((result) => {
         visiblePlayableResult = result;
@@ -68,7 +71,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       });
     const visibleResultGraceMs = dependencies.visibleResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS;
     const visibleResultGracePromise = waitForVisibleResultGrace(visibleResultPromise, visibleResultGraceMs);
-    const storedResultPromise = message.result
+    const storedResultPromise = message.result || preparedSharedAudioIsPending
       ? Promise.resolve(null)
       : visibleResultGracePromise.then((visibleResult) => visibleResult
         ? null
@@ -83,11 +86,10 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
       waitForStoredResultGrace(storedResultPromise, storedResultGraceMs)
     ]);
     const immediateLookupGatePromise = preferImmediatePlayback
-      ? visibleResultGracePromise
+      ? preparedSharedAudioIsPending
+        ? Promise.resolve(null)
+        : visibleResultGracePromise
       : visibleOrStoredGracePromise;
-    const preparedSharedAudioIsPending = preferImmediatePlayback &&
-      !message.result &&
-      hasPreparedSharedAudio(selectedText, message);
     const quickLocalSharedAudioPromise = preferImmediatePlayback &&
       !message.result &&
       !preparedSharedAudioIsPending
