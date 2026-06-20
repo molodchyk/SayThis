@@ -464,8 +464,9 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /PREPARED_SELECTION_TTL_MS = 1200/);
   assert.match(source, /PLAYBACK_PRIME_COOLDOWN_MS = 3000/);
   assert.match(source, /pointerup/);
-  assert.match(source, /MAX_AUTO_TEXT_LENGTH = 80/);
-  assert.match(source, /MAX_AUTO_WORDS = 5/);
+  assert.match(source, /MAX_AUTO_TEXT_LENGTH = 120/);
+  assert.match(source, /MAX_AUTO_WORDS = 8/);
+  assert.match(source, /MAX_ORDINARY_AUTO_WORDS = 5/);
   assert.match(source, /selectToHear !== false/);
   assert.match(source, /SAYTHIS_SPEAK/);
   assert.match(source, /SAYTHIS_PREPARE_PLAYBACK/);

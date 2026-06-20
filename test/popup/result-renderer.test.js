@@ -106,6 +106,36 @@ test("renders guide speech when no recording exists", () => {
   assert.equal(spoken[0].rate, 0.82);
 });
 
+test("renders best-effort proper-name speech when unresolved", () => {
+  const elements = createElements();
+  const spoken = [];
+
+  renderPopupResult({
+    query: "Shri Gurudwara Sahib",
+    display: "Shri Gurudwara Sahib",
+    sourceForm: "Shri Gurudwara Sahib",
+    speakText: "Shri Gurudwara Sahib",
+    sourceStatus: "best-effort-fallback"
+  }, elements, {
+    document: fakeDocument(),
+    speakResult: (result, rate) => spoken.push({ result, rate })
+  });
+
+  const button = elements.audioList.children[0].children[0];
+  const label = elements.audioList.children[0].children[1];
+  const meta = elements.audioList.children[0].children[2];
+  assert.equal(button.textContent, "Speak");
+  assert.equal(label.textContent, "Best-effort speech");
+  assert.equal(meta.textContent, "en-US / voice required");
+
+  button.events.click();
+
+  assert.equal(spoken.length, 1);
+  assert.equal(spoken[0].result.speakText, "Shri Gurudwara Sahib");
+  assert.equal(spoken[0].result.ttsLang, "en-US");
+  assert.equal(spoken[0].rate, 0.82);
+});
+
 test("renders source-form speech before guide speech", () => {
   const elements = createElements();
   const spoken = [];

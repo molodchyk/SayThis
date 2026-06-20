@@ -42,6 +42,7 @@ const DEFAULT_OFFSCREEN_AUDIO_URL = "src/offscreen-audio.html";
 const DEFAULT_STORAGE_KEYS = {
   settings: "settings"
 };
+const NAME_CONNECTOR_WORDS = new Set(["a", "al", "and", "ap", "bin", "da", "de", "del", "der", "di", "du", "el", "ibn", "in", "la", "le", "of", "saint", "san", "santa", "st", "the", "van", "von"]);
 
 export function createPlaybackSurface(dependencies = {}) {
   const offscreenAudioUrl = dependencies.offscreenAudioUrl || DEFAULT_OFFSCREEN_AUDIO_URL;
@@ -387,13 +388,20 @@ export function createPlaybackSurface(dependencies = {}) {
       return false;
     }
 
-    const latinWords = words.filter((word) => /[A-Za-z]/.test(word));
-    if (latinWords.length !== words.length) {
+    return words.every(isNameLikeWord);
+  }
+
+  function isNameLikeWord(word = "") {
+    const normalized = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+    if (!normalized) {
       return false;
     }
 
-    const titleLikeWords = words.filter((word) => /^[A-Z][A-Za-z'’.-]*$/.test(word));
-    return titleLikeWords.length >= Math.min(2, words.length);
+    if (NAME_CONNECTOR_WORDS.has(normalized.toLocaleLowerCase())) {
+      return true;
+    }
+
+    return /^[\p{Lu}\p{Lt}][\p{L}\p{M}'’.-]*$/u.test(normalized);
   }
 
   function shouldRejectCrossLanguageEnglishSpeech(result, speech = {}) {

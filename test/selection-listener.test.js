@@ -287,6 +287,29 @@ test("changing selection waits until the selection is stable", async () => {
   assert.equal(speakMessages[0].text, "Exampletown");
 });
 
+test("long name-like selections can be heard without popup or context menu", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("Cathedral Basilica of Saints Peter and Paul");
+  harness.dispatch("pointerup");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  const speakMessages = harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK");
+  assert.equal(speakMessages.length, 1);
+  assert.equal(speakMessages[0].text, "Cathedral Basilica of Saints Peter and Paul");
+});
+
+test("long ordinary sentence selections are not auto-pronounced", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("ordinary selected words should not start automatic speech");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.equal(harness.sentMessages.some((message) => message.type === "SAYTHIS_SPEAK"), false);
+});
+
 test("selection changes prime playback without preparing transient text", async () => {
   const harness = await installSelectionListener();
 

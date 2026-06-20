@@ -287,6 +287,15 @@ function sourceSpeechItemForResult(result = {}) {
   const selectedKey = createLookupKey(selected);
   const sourceDiffers = Boolean(sourceKey && selectedKey && sourceKey !== selectedKey);
 
+  if (isBestEffortProperNameSpeech(result, sourceForm, selected)) {
+    return {
+      kind: "speech",
+      label: "Best-effort speech",
+      text: sourceForm,
+      lang: "en-US"
+    };
+  }
+
   if (
     !sourceForm ||
     !lang ||
@@ -340,6 +349,42 @@ function selectedAliasLanguage(result = {}) {
   }
 
   return lang;
+}
+
+const NAME_CONNECTOR_WORDS = new Set(["a", "al", "and", "ap", "bin", "da", "de", "del", "der", "di", "du", "el", "ibn", "in", "la", "le", "of", "saint", "san", "santa", "st", "the", "van", "von"]);
+
+function isBestEffortProperNameSpeech(result = {}, sourceForm = "", selected = "") {
+  if (normalizeSelection(result.sourceStatus) !== "best-effort-fallback") {
+    return false;
+  }
+
+  if (!sourceForm || sourceForm.length > 90 || /[.!?;:]/.test(sourceForm)) {
+    return false;
+  }
+
+  if (selected && createLookupKey(sourceForm) !== createLookupKey(selected)) {
+    return false;
+  }
+
+  const words = sourceForm.split(/\s+/).filter(Boolean);
+  if (words.length < 2 || words.length > 8) {
+    return false;
+  }
+
+  return words.every(isNameLikeWord);
+}
+
+function isNameLikeWord(word = "") {
+  const normalized = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+  if (!normalized) {
+    return false;
+  }
+
+  if (NAME_CONNECTOR_WORDS.has(normalized.toLocaleLowerCase())) {
+    return true;
+  }
+
+  return /^[\p{Lu}\p{Lt}][\p{L}\p{M}'’.-]*$/u.test(normalized);
 }
 
 function sourceFormMatchesSelected(sourceForm, selected) {

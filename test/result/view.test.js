@@ -432,6 +432,38 @@ test("keeps transliterating source-form speech when it matches the selected surf
   }]);
 });
 
+test("offers explicit best-effort speech for unresolved title-case proper names", () => {
+  const result = {
+    query: "Shri Gurudwara Sahib",
+    display: "Shri Gurudwara Sahib",
+    sourceForm: "Shri Gurudwara Sahib",
+    speakText: "Shri Gurudwara Sahib",
+    sourceStatus: "best-effort-fallback"
+  };
+
+  assert.deepEqual(playbackItemsForResult(result), [{
+    kind: "speech",
+    label: "Best-effort speech",
+    text: "Shri Gurudwara Sahib",
+    lang: "en-US"
+  }]);
+  assert.deepEqual(preferredSpeechResultForResult(result), {
+    ...result,
+    sourceForm: "Shri Gurudwara Sahib",
+    speakText: "Shri Gurudwara Sahib",
+    ttsLang: "en-US"
+  });
+});
+
+test("does not offer best-effort speech for unresolved ordinary words", () => {
+  assert.deepEqual(playbackItemsForResult({
+    query: "ordinary selected words",
+    display: "ordinary selected words",
+    sourceForm: "ordinary selected words",
+    sourceStatus: "best-effort-fallback"
+  }), []);
+});
+
 test("builds speech-specific result copies for playback rows", () => {
   const result = {
     display: "Exampletown",

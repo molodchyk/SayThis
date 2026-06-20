@@ -14,8 +14,11 @@
   const REPEAT_SELECTION_COOLDOWN_MS = 350;
   const PREPARED_SELECTION_TTL_MS = 1200;
   const PLAYBACK_PRIME_COOLDOWN_MS = 3000;
-  const MAX_AUTO_TEXT_LENGTH = 80;
-  const MAX_AUTO_WORDS = 5;
+  const STATUS_HIDE_MS = 1500;
+  const MAX_AUTO_TEXT_LENGTH = 120;
+  const MAX_AUTO_WORDS = 8;
+  const MAX_ORDINARY_AUTO_WORDS = 5;
+  const NAME_CONNECTOR_WORDS = new Set(["a", "al", "and", "ap", "bin", "da", "de", "del", "der", "di", "du", "el", "ibn", "in", "la", "le", "of", "saint", "san", "santa", "st", "the", "van", "von"]);
   const EDGE_SELECTED_TEXT_PUNCTUATION =
     /^[\s"'`([{<\u00a1\u00ab\u00bf\u2010-\u2015\u2018-\u201f\u2039\u3008\u300a\u300c\u300e\u3010\u3014\u3016\u3018\u301a\uff08]+|[\s"'`)>\]},.;:!?\u00bb\u2010-\u2015\u2018-\u201f\u2026\u203a\u3002\u3009\u300b\u300d\u300f\u3011\u3015\u3017\u3019\u301b\uff09]+$/g;
   const runtimeAdapters = globalThis.__sayThisSelectionRuntimeAdapters
@@ -40,6 +43,9 @@
   let primePlaybackPromise = null;
   let lastSettings = null;
   let settingsPromise = null;
+  let statusHost = null;
+  let statusRoot = null;
+  let statusTimerId = null;
 
   readSettings();
 
@@ -291,6 +297,7 @@
     lastSentSelectionStartedAt = activeSelectionStartedAt;
     const preparedTrace = sentPreparedTraceForKey(key);
     const trace = preparedTrace || pendingPreparedTraceForKey(key) || createTrace("select-to-hear");
+    showSelectionStatus(selectedText, "Loading");
     sendRuntimeMessage({
       type: MESSAGE_TYPE_SPEAK,
       text: selectedText,
@@ -302,7 +309,13 @@
         lastSentKey = "";
         lastSentAt = 0;
         lastSentSelectionStartedAt = 0;
+        showSelectionStatus(selectedText, "Unavailable", { autoHide: true });
+        return;
       }
+
+      showSelectionStatus(selectedText, response.speech?.fallback === "audio" ? "Playing" : "Speaking", {
+        autoHide: true
+      });
     });
   }
 
@@ -469,12 +482,14 @@
       return false;
     }
 
-    if (String(node.tagName || "").toLowerCase() === "saythis-overlay") {
+    const tagName = String(node.tagName || "").toLowerCase();
+    if (tagName === "saythis-overlay" || tagName === "saythis-selection-status") {
       return true;
     }
 
     const root = node.getRootNode?.();
-    return String(root?.host?.tagName || "").toLowerCase() === "saythis-overlay";
+    const hostTagName = String(root?.host?.tagName || "").toLowerCase();
+    return hostTagName === "saythis-overlay" || hostTagName === "saythis-selection-status";
   }
 
   function isAutoPronounceCandidate(value) {
@@ -492,7 +507,21 @@
       return false;
     }
 
-    return !(words.length > 1 && /[.!?。！？]$/.test(text));
+    if (words.length > 1 && /[.!?。！？]$/.test(text)) {
+      return false;
+    }
+
+    return words.length <= MAX_ORDINARY_AUTO_WORDS || isLikelyNameSelection(words);
+  }
+
+  function isLikelyNameSelection(words = []) {
+    return words.every((word) => {
+      const normalized = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+      const key = normalized.toLocaleLowerCase();
+      return NAME_CONNECTOR_WORDS.has(key) ||
+        /^[\p{Lu}\p{Lt}][\p{L}\p{M}'’.-]*$/u.test(normalized) ||
+        /[\p{Script=Cyrillic}\p{Script=Greek}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Devanagari}\p{Script=Thai}]/u.test(normalized);
+    });
   }
 
   function isLikelyKeyboardSelection(event = {}) {
@@ -556,6 +585,121 @@
     } catch {
       return Promise.resolve({ ok: false });
     }
+  }
+
+  function showSelectionStatus(selectedText, label, options = {}) {
+    const root = ensureStatusRoot();
+    if (!root) {
+      return;
+    }
+
+    const position = selectionStatusPosition();
+    root.innerHTML = `
+      <style>
+        :host {
+          all: initial;
+          position: fixed;
+          left: ${Math.round(position.left)}px;
+          top: ${Math.round(position.top)}px;
+          z-index: 2147483647;
+          pointer-events: none;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .pill {
+          box-sizing: border-box;
+          max-width: min(260px, calc(100vw - 24px));
+          border: 1px solid #0f6b58;
+          border-radius: 999px;
+          padding: 5px 8px;
+          color: #ffffff;
+          background: #0f6b58;
+          box-shadow: 0 8px 24px rgb(20 28 25 / 20%);
+          font-size: 12px;
+          font-weight: 750;
+          line-height: 1.2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      </style>
+      <div class="pill" role="status" aria-live="polite">${escapeHtml(label)} · ${escapeHtml(selectedText)}</div>
+    `;
+
+    if (statusTimerId !== null) {
+      clearTimeout(statusTimerId);
+      statusTimerId = null;
+    }
+
+    if (options.autoHide) {
+      statusTimerId = setTimeout(hideSelectionStatus, STATUS_HIDE_MS);
+    }
+  }
+
+  function ensureStatusRoot() {
+    if (statusRoot && statusHost) {
+      return statusRoot;
+    }
+
+    if (typeof document.createElement !== "function" || !document.documentElement?.append) {
+      return null;
+    }
+
+    statusHost = document.createElement("saythis-selection-status");
+    statusRoot = statusHost.attachShadow?.({ mode: "open" });
+    if (!statusRoot) {
+      statusHost = null;
+      return null;
+    }
+
+    document.documentElement.append(statusHost);
+    return statusRoot;
+  }
+
+  function hideSelectionStatus() {
+    statusTimerId = null;
+    statusHost?.remove?.();
+    statusHost = null;
+    statusRoot = null;
+  }
+
+  function selectionStatusPosition() {
+    const rect = selectionClientRect();
+    const viewportWidth = Number(window.innerWidth) || 360;
+    const viewportHeight = Number(window.innerHeight) || 640;
+    const left = rect
+      ? Math.min(Math.max(12, rect.left), Math.max(12, viewportWidth - 272))
+      : 12;
+    const top = rect
+      ? Math.min(Math.max(12, rect.bottom + 8), Math.max(12, viewportHeight - 42))
+      : 12;
+    return { left, top };
+  }
+
+  function selectionClientRect() {
+    try {
+      const selection = window.getSelection?.();
+      if (!selection || selection.isCollapsed || !selection.rangeCount) {
+        return null;
+      }
+
+      const rect = selection.getRangeAt(0)?.getBoundingClientRect?.();
+      if (!rect || !Number.isFinite(rect.left) || !Number.isFinite(rect.bottom)) {
+        return null;
+      }
+
+      return rect;
+    } catch {
+      return null;
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
   function createTrace(action) {

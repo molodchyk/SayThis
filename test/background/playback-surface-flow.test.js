@@ -174,6 +174,32 @@ test("speaks unresolved title-case proper-name phrases with an English fallback 
   ]);
 });
 
+test("speaks unresolved long proper names with connector words", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getTtsVoices: async () => [
+      { voiceName: "English Default", lang: "en-US" }
+    ],
+    stopTts: () => calls.push(["stopTts"]),
+    speakTts: (text, options) => calls.push(["speakTts", text, options])
+  });
+
+  const result = await surface.speakResult({
+    query: "Cathedral Basilica of Saints Peter and Paul",
+    display: "Cathedral Basilica of Saints Peter and Paul",
+    sourceForm: "Cathedral Basilica of Saints Peter and Paul",
+    speakText: "Cathedral Basilica of Saints Peter and Paul",
+    sourceStatus: "best-effort-fallback"
+  });
+
+  assert.equal(result.spoken, true);
+  assert.equal(result.text, "Cathedral Basilica of Saints Peter and Paul");
+  assert.deepEqual(calls, [
+    ["stopTts"],
+    ["speakTts", "Cathedral Basilica of Saints Peter and Paul", { enqueue: false, rate: 0.82, lang: "en-US", voiceName: "English Default" }]
+  ]);
+});
+
 test("does not speak structured results through the default browser voice without a locale", async () => {
   const calls = [];
   const surface = createPlaybackSurface({
