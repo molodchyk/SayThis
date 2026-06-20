@@ -19,6 +19,7 @@
     correctionInput,
     escapeAttribute,
     escapeHtml,
+    fallbackSpeechResult = (result) => preferredSpeechResult(result),
     firstSourceUrl,
     getBestAudio,
     hasPreferredAudio = (result) => Boolean(getBestAudio(result)),
@@ -31,6 +32,7 @@
     normalizeLanguageHints,
     normalizeLongText,
     normalizeText,
+    playbackMeta = () => "",
     playbackItems,
     playbackStatus = (item) => item?.kind === "audio" ? "Playing recording." : "Speaking.",
     speechResultForPlaybackItem = (result) => result,
@@ -135,7 +137,10 @@
           ${communityText ? `<li>${escapeHtml(communityText)}</li>` : ""}
         </ul>
         ${alternates.length ? `<ul class="alternates">${alternates.map((item) => `<li><button type="button" data-action="alternate" data-alternate-index="${item.index}" data-playback-control="true">Speak</button><strong>${escapeHtml(item.display || "Alternate")}</strong><span>${escapeHtml(item.summary)}</span></li>`).join("")}</ul>` : ""}
-        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation playback">${recordings.map((item, index) => `<li><button type="button" data-action="recording" data-audio-index="${index}" data-playback-control="true">${item.kind === "audio" ? "Play" : "Speak"}</button><span>${escapeHtml(item.label || "Pronunciation audio")}</span></li>`).join("")}</ul>` : ""}
+        ${recordings.length ? `<ul class="recordings" aria-label="Pronunciation playback">${recordings.map((item, index) => {
+          const meta = playbackMeta(item);
+          return `<li><button type="button" data-action="recording" data-audio-index="${index}" data-playback-control="true">${item.kind === "audio" ? "Play" : "Speak"}</button><span class="playback-label">${escapeHtml(item.label || "Pronunciation audio")}</span>${meta ? `<span class="playback-meta">${escapeHtml(meta)}</span>` : ""}</li>`;
+        }).join("")}</ul>` : ""}
         ${sources.length ? `<ul class="sources">${sources.map((item) => `<li><a href="${escapeAttribute(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.label)}</a></li>`).join("")}</ul>` : ""}
         <label class="hint-field">
           <span>Lookup hints</span>
@@ -223,6 +228,7 @@
         } else {
           playAudioItem(item, result, 0.82, {
             button,
+            skipSharedAudio: true,
             status: playbackStatus(item, 0.82)
           });
         }
@@ -496,7 +502,7 @@
           return;
         }
 
-        speakCandidate(sharedResult, rate, { ...playbackOptions, skipSharedAudio: true, trace });
+        speakCandidate(fallbackSpeechResult(sharedResult), rate, { ...playbackOptions, skipSharedAudio: true, trace });
       });
       return;
     }
@@ -519,7 +525,7 @@
         return;
       }
 
-      speakCandidate(preferredSpeechResult(sharedResult), rate, { ...playbackOptions, skipSharedAudio: true, trace });
+      speakCandidate(fallbackSpeechResult(sharedResult), rate, { ...playbackOptions, skipSharedAudio: true, trace });
     });
   }
 
@@ -544,7 +550,7 @@
           return;
         }
 
-        speakCandidate(sharedResult, rate, {
+        speakCandidate(fallbackSpeechResult(sharedResult), rate, {
           ...playbackOptions,
           skipSharedAudio: true,
           trace
@@ -562,7 +568,12 @@
       ...(options.skipSharedAudio ? { skipSharedAudio: true } : {})
     })).then((response) => {
       if (response?.ok) {
-        markPlaybackStarted(playbackOptions.uiToken, playbackOptions.button, rate < 0.7 ? "Speaking slow" : "Speaking", speakingStatus(response, rate));
+        markPlaybackStarted(
+          playbackOptions.uiToken,
+          playbackOptions.button,
+          speechButtonLabel(result, response),
+          speakingStatus(response, rate, result)
+        );
       } else {
         failPlayback(playbackOptions.uiToken, response?.error || "Speech failed.");
       }
@@ -574,7 +585,8 @@
       return Promise.resolve(result);
     }
 
-    setStatus("Requesting shared voice.");
+    setStatus("Checking shared audio database.");
+    setPlaybackButton(options.button, "Shared...", "is-busy");
     return responseWithinSharedAudioWait(sendOverlayMessage({
       type: "SAYTHIS_REQUEST_SHARED_AUDIO",
       text: result.query || result.display || result.sourceForm,
@@ -585,7 +597,7 @@
       if (!response?.ok || !getBestAudio(response.result)) {
         if (response?.timedOut) {
           recordDebugEvent("shared-audio:ui-timeout", options.trace, { rate });
-          setStatus("Using speech fallback.");
+          setStatus("No shared audio yet. Using speech fallback.");
         }
         return result;
       }
@@ -645,16 +657,22 @@
 
       fallbackStarted = true;
       setStatus("Audio failed. Using speech fallback.");
+      const speechResult = fallbackSpeechResult(result);
       stopPlayback(playbackOptions.stopPrevious).then(() => sendOverlayMessage({
         type: "SAYTHIS_SPEAK",
-        text: result.query || result.display,
-        result,
+        text: speechResult.query || speechResult.display,
+        result: speechResult,
         rate,
         skipSharedAudio: true,
         trace
       })).then((response) => {
         if (response?.ok) {
-          markPlaybackStarted(playbackOptions.uiToken, playbackOptions.button, rate < 0.7 ? "Speaking slow" : "Speaking", speakingStatus(response, rate));
+          markPlaybackStarted(
+            playbackOptions.uiToken,
+            playbackOptions.button,
+            speechButtonLabel(speechResult, response),
+            speakingStatus(response, rate, speechResult)
+          );
         } else {
           failPlayback(playbackOptions.uiToken, response?.error || "Speech failed.");
         }
@@ -681,7 +699,7 @@
           playbackOptions.uiToken,
           playbackOptions.button,
           rate < 0.7 ? "Playing slow" : "Playing",
-          options.status || startedStatus(rate, elapsedMs(trace))
+          options.status || audioStartedStatus(audio, rate, elapsedMs(trace))
         );
       });
       return true;
@@ -704,7 +722,7 @@
           playbackOptions.uiToken,
           playbackOptions.button,
           rate < 0.7 ? "Playing slow" : "Playing",
-          options.status || startedStatus(rate, elapsedMs(trace))
+          options.status || audioStartedStatus(audio, rate, elapsedMs(trace))
         );
       }).catch(() => {
         recordDebugEvent("audio:overlay-error", trace, {
@@ -783,9 +801,13 @@
     return trace?.startedAt ? Math.max(0, Date.now() - Number(trace.startedAt)) : undefined;
   }
 
-  function startedStatus(rate, ms) {
+  function audioStartedStatus(audio, rate, ms) {
     const value = Number.isFinite(Number(ms)) ? ` in ${Math.round(Number(ms))} ms` : "";
-    return rate < 0.7 ? `Audio started slowly${value}.` : `Audio started${value}.`;
+    const source = playbackStatus({
+      ...(audio || {}),
+      kind: "audio"
+    }, rate).replace(/\.$/, "");
+    return `${source}${value}.`;
   }
 
   function hostLabel(url) {
@@ -817,17 +839,51 @@
     return Number.isFinite(number) ? Math.max(0, number) : fallback;
   }
 
-  function speakingStatus(response, rate) {
+  function speechButtonLabel(result, response) {
+    if (response?.speech?.fallback === "audio") {
+      return "Audio";
+    }
+
+    if (isGuideSpeechResult(result, response)) {
+      return "Guide TTS";
+    }
+
+    if (response?.speech?.fallback === "web-speech") {
+      return "Web Speech";
+    }
+
+    return "Browser TTS";
+  }
+
+  function speakingStatus(response, rate, result = {}) {
     if (response?.speech?.fallback === "audio") {
       return rate < 0.7 ? "Playing audio slowly." : "Playing audio.";
     }
 
-    const guide = response?.speech?.fallback === "guide";
-    if (guide) {
-      return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+    if (isGuideSpeechResult(result, response)) {
+      return playbackStatus({ kind: "guide" }, rate);
     }
 
-    return rate < 0.7 ? "Speaking slowly." : "Speaking.";
+    if (response?.speech?.fallback === "web-speech") {
+      const lang = normalizeText(result.ttsLang || response?.speech?.lang);
+      return `Speaking with browser Web Speech${rate < 0.7 ? " slowly" : ""}${lang ? ` (${lang})` : ""}.`;
+    }
+
+    return playbackStatus({
+      kind: "speech",
+      label: result.speakText && result.speakText === result.query ? "Selected text speech" : "Source-form speech",
+      lang: result.ttsLang || result.language
+    }, rate);
+  }
+
+  function isGuideSpeechResult(result = {}, response = {}) {
+    if (response?.speech?.fallback === "guide") {
+      return true;
+    }
+
+    const speakText = normalizeText(result.speakText);
+    const guide = normalizeText(result.pronunciation?.simple);
+    return Boolean(speakText && guide && speakText === guide && normalizeText(result.ttsLang).toLowerCase().startsWith("en"));
   }
 
 })();

@@ -162,10 +162,11 @@
           display: grid;
           grid-template-columns: auto minmax(0, 1fr);
           align-items: center;
-          gap: 8px;
+          gap: 2px 8px;
         }
 
         .recordings button {
+          grid-row: span 2;
           border: 1px solid #0f6b58;
           border-radius: 6px;
           padding: 5px 8px;
@@ -175,6 +176,17 @@
           font-size: 12px;
           font-weight: 750;
           cursor: pointer;
+        }
+
+        .recordings .playback-label {
+          color: #16211f;
+          font-weight: 750;
+          overflow-wrap: anywhere;
+        }
+
+        .recordings .playback-meta {
+          color: #4d5a56;
+          overflow-wrap: anywhere;
         }
 
         [data-playback-control="true"].is-busy,

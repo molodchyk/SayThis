@@ -61,9 +61,10 @@ export function audioItemsForResult(result, limit = 4) {
 }
 
 export function playbackItemsForResult(result, limit = 4) {
-  const audio = audioItemsForResult(result, limit)
-    .map((item) => ({ ...item, kind: "audio" }));
   const selectedAlias = selectedAliasSpeechItemForResult(result);
+  const audio = audioItemsForResult(result, limit)
+    .filter((item) => !shouldSuppressGeneratedAudioForSelectedAlias(item, selectedAlias))
+    .map((item) => ({ ...item, kind: "audio" }));
   const speech = sourceSpeechItemForResult(result);
   const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
   const fallback = speechFallbackItems(selectedAlias, speech, guide);
@@ -111,18 +112,18 @@ function speechFallbackItems(selectedAlias, speech, guide) {
 
 export function playbackStatusForItem(item = {}, rate = 0.82) {
   if (item.kind === "audio" && isGeneratedAudioItem(item)) {
-    return rate < 0.7 ? "Playing generated audio slowly." : "Playing generated audio.";
+    return playbackSentence("Playing generated audio", audioSourceLabel(item), rate);
   }
 
   if (item.kind === "audio") {
-    return rate < 0.7 ? "Playing recording slowly." : "Playing recording.";
+    return playbackSentence("Playing recording", audioSourceLabel(item), rate);
   }
 
   if (item.kind === "guide") {
-    return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+    return speechPlaybackSentence("Speaking guide", "en-US", rate);
   }
 
-  return rate < 0.7 ? "Speaking slowly." : "Speaking.";
+  return speechPlaybackSentence(item.label === "Selected text speech" ? "Speaking selected text" : "Speaking source form", item.lang, rate);
 }
 
 export function shouldPreferSpeechBeforeAudio(result = {}) {
@@ -138,6 +139,17 @@ export function preferredSpeechResultForResult(result) {
   const items = playbackItemsForResult(result);
   const item = items.find((candidate) => candidate.kind === "speech")
     || items.find((candidate) => candidate.kind === "guide");
+  return speechResultForPlaybackItem(result, item);
+}
+
+export function fallbackSpeechResultForResult(result) {
+  const items = playbackItemsForResult(result);
+  const selectedAlias = items.find((candidate) => candidate.kind === "speech" && candidate.label === "Selected text speech");
+  const speech = items.find((candidate) => candidate.kind === "speech");
+  const guide = items.find((candidate) => candidate.kind === "guide");
+  const item = selectedAlias ||
+    (shouldPreferGuideSpeechFallback(result, speech, guide) ? guide : speech) ||
+    guide;
   return speechResultForPlaybackItem(result, item);
 }
 
@@ -171,11 +183,31 @@ export function speechResultForPlaybackItem(result, item = {}) {
   return result;
 }
 
+export function playbackMetaForItem(item = {}) {
+  if (item.kind === "audio") {
+    return compactMeta([
+      item.source,
+      playbackQualityLabel(item.quality),
+      audioLocationLabel(item.url)
+    ]);
+  }
+
+  if (item.kind === "speech") {
+    return compactMeta([item.lang, "browser TTS source"]);
+  }
+
+  if (item.kind === "guide") {
+    return "en-US / browser TTS guide";
+  }
+
+  return "";
+}
+
 export function alternateItemsForResult(result, limit = 3) {
   const alternates = Array.isArray(result?.alternateResults) ? result.alternateResults : [];
   return alternates
     .map((item, index) => normalizeAlternateItem(item, index))
-    .filter((item) => item.sourceForm || item.display)
+    .filter((item) => (item.sourceForm || item.display) && !hasUnsafeWikiMarkup(item.summary))
     .slice(0, limit);
 }
 
@@ -202,11 +234,12 @@ function uniqueAudioItems(items) {
 
   for (const item of rankedAudioItems(items)) {
     const audio = normalizeAudioItem(item);
-    if (!audio.url || seen.has(audio.url)) {
+    const key = canonicalAudioUrlKey(audio.url);
+    if (!audio.url || seen.has(key)) {
       continue;
     }
 
-    seen.add(audio.url);
+    seen.add(key);
     result.push(audio);
   }
 
@@ -262,6 +295,10 @@ function isGeneratedAudioItem(item = {}) {
   return isGeneratedAudioQuality(item.quality);
 }
 
+function shouldSuppressGeneratedAudioForSelectedAlias(item = {}, selectedAlias = null) {
+  return Boolean(selectedAlias && isGeneratedAudioItem(item));
+}
+
 function isPreferredPlaybackAudioItem(item = {}, result = {}) {
   const quality = normalizeSelection(item.quality).toLowerCase();
   if (!item.url || quality === "generated") {
@@ -282,6 +319,107 @@ function isPreferredPlaybackAudioItem(item = {}, result = {}) {
 
 function isGeneratedAudioQuality(value) {
   return normalizeSelection(value).toLowerCase() === "generated";
+}
+
+function playbackSentence(action, source, rate) {
+  const suffix = normalizeSelection(source) ? ` from ${normalizeSelection(source)}` : "";
+  return `${action}${rate < 0.7 ? " slowly" : ""}${suffix}.`;
+}
+
+function speechPlaybackSentence(action, lang, rate) {
+  const suffix = normalizeSelection(lang) ? ` (${normalizeSelection(lang)})` : "";
+  return `${action}${rate < 0.7 ? " slowly" : ""} with browser TTS${suffix}.`;
+}
+
+function shouldPreferGuideSpeechFallback(result = {}, speech = null, guide = null) {
+  if (!speech || !guide || speech.label === "Best-effort speech" || speech.label === "Selected text speech") {
+    return false;
+  }
+
+  const lang = normalizeTtsLanguage(speech.lang || result.ttsLang, result.language);
+  return Boolean(lang && baseLanguage(lang) !== "en");
+}
+
+function playbackQualityLabel(value) {
+  const quality = normalizeSelection(value).toLowerCase();
+  if (!quality) {
+    return "";
+  }
+
+  if (quality === "generated") {
+    return "generated audio";
+  }
+
+  if (quality === "native-speaker" || quality === "native speaker") {
+    return "native speaker recording";
+  }
+
+  if (quality === "source-backed") {
+    return "source-backed recording";
+  }
+
+  if (quality === "curated") {
+    return "curated recording";
+  }
+
+  if (quality === "verified") {
+    return "verified recording";
+  }
+
+  return quality;
+}
+
+function compactMeta(values = []) {
+  return values
+    .map(normalizeSelection)
+    .filter(Boolean)
+    .join(" / ");
+}
+
+function audioSourceLabel(item = {}) {
+  const source = normalizeSelection(item.source);
+  const host = hostLabel(item.url);
+  if (source && host && !source.toLocaleLowerCase().includes(host.toLocaleLowerCase())) {
+    return `${source} via ${host}`;
+  }
+
+  return source || host || normalizeSelection(item.label);
+}
+
+function audioLocationLabel(url) {
+  return compactMeta([hostLabel(url), audioFileName(url)]);
+}
+
+function audioFileName(url) {
+  if (!url) {
+    return "";
+  }
+
+  try {
+    const value = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).pop() || "");
+    return normalizeSelection(value).slice(0, 80);
+  } catch {
+    return "";
+  }
+}
+
+function canonicalAudioUrlKey(url) {
+  if (!url) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLocaleLowerCase();
+    const path = decodeURIComponent(parsed.pathname).toLocaleLowerCase();
+    return `${parsed.protocol}//${host}${path}`;
+  } catch {
+    return normalizeSelection(url).toLocaleLowerCase();
+  }
+}
+
+function hasUnsafeWikiMarkup(value = "") {
+  return /\[\[|\]\]|\{\{|\}\}/.test(String(value || ""));
 }
 
 function sourceSpeechItemForResult(result = {}) {

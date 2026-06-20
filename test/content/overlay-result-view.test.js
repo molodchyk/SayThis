@@ -203,6 +203,36 @@ test("normalizes overlay result display helpers", () => {
     kind: "audio",
     quality: "generated"
   }), "Playing generated audio.");
+  assert.equal(view.playbackMeta({
+    kind: "audio",
+    label: "Kyiv recording",
+    source: "Wiktionary",
+    quality: "native-speaker",
+    url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kyiv.wav?download=1"
+  }), "Wiktionary / native speaker recording / commons.wikimedia.org / LL-Q1860 (eng)-Vealhurl-Kyiv.wav");
+  assert.deepEqual(plain(view.audioItems({
+    pronunciation: {
+      audio: [{
+        label: "Kyiv recording",
+        source: "Wiktionary",
+        quality: "native-speaker",
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kyiv.wav"
+      }, {
+        label: "Same recording",
+        source: "Wiktionary",
+        quality: "native-speaker",
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kyiv.wav?download=1"
+      }, {
+        label: "Kiev recording",
+        source: "Wiktionary",
+        quality: "native-speaker",
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kiev.wav"
+      }]
+    }
+  })).map((item) => item.url), [
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kyiv.wav",
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kiev.wav"
+  ]);
   assert.deepEqual(plain(view.playbackItems({
     query: "Exampletown",
     display: "Exampletown",
@@ -331,6 +361,29 @@ test("normalizes overlay result display helpers", () => {
     index: 0,
     display: "gnocco",
     summary: "gnocco · Italian · structured-source · NYOH-koh"
+  }]);
+  assert.deepEqual(plain(view.alternateItems({
+    alternateResults: [{
+      display: "Kyiv",
+      sourceForm: "Kyiv",
+      languageName: "Italian",
+      sourceLabel: "Structured source",
+      pronunciation: {
+        ipa: "[[Soviet Union]"
+      }
+    }, {
+      display: "Kyiv",
+      sourceForm: "Київ",
+      languageName: "Ukrainian",
+      sourceLabel: "Structured source",
+      pronunciation: {
+        simple: "kih-yeev"
+      }
+    }]
+  })), [{
+    index: 1,
+    display: "Kyiv",
+    summary: "Київ · Ukrainian · Structured source · kih-yeev"
   }]);
 });
 

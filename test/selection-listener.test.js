@@ -21,6 +21,7 @@ test("committed selection sends speak with shared-audio preparation hint", async
   assert.equal(harness.sentMessages[0].text, "Exampletown");
   assert.equal(harness.sentMessages[0].rate, 0.82);
   assert.equal(harness.sentMessages[0].prepareSharedAudio, true);
+  assert.equal(harness.sentMessages[0].stopPreviousPlayback, true);
 });
 
 test("committed selection trims adjacent sentence punctuation before speaking", async () => {

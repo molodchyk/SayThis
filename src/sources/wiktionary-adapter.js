@@ -316,7 +316,7 @@ function firstIpa(text) {
     }
   }
 
-  const rawIpa = text.match(/(?:IPA|pronunciation)[^/\[]*([/\[][^\n|{}]+?[\/\]])/i);
+  const rawIpa = text.match(/(?:IPA|pronunciation)[^/\[]*(\/[^\n|{}]+?\/|\[[^\[\]\n|{}]+?\])/i);
   return stripWikitext(rawIpa?.[1] || "");
 }
 

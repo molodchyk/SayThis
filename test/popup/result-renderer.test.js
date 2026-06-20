@@ -51,8 +51,8 @@ test("renders playback, alternate, evidence, and source lists", () => {
   renderPopupResult(sampleResult(), elements, {
     document: fakeDocument(),
     speakAlternate: (index, rate) => spokenAlternates.push({ index, rate }),
-    playAudioItem: (item, result, rate) => {
-      playedAudio.push({ item, result, rate });
+    playAudioItem: (item, result, rate, options) => {
+      playedAudio.push({ item, result, rate, options });
       return true;
     },
     setStatus: (value) => statuses.push(value)
@@ -66,9 +66,10 @@ test("renders playback, alternate, evidence, and source lists", () => {
   audioButton.events.click();
   assert.equal(playedAudio[0].item.url, "https://example.test/audio.ogg");
   assert.equal(playedAudio[0].rate, 0.82);
-  assert.deepEqual(statuses, ["Playing recording."]);
+  assert.deepEqual(playedAudio[0].options, { skipSharedAudio: true });
+  assert.deepEqual(statuses, ["Playing recording from Dictionary audio via example.test."]);
   assert.equal(elements.audioList.children[0].children[1].textContent, "Recording");
-  assert.equal(elements.audioList.children[0].children[2].textContent, "Dictionary audio / verified recording");
+  assert.equal(elements.audioList.children[0].children[2].textContent, "Dictionary audio / verified recording / example.test / audio.ogg");
 
   assert.equal(elements.evidence.children[0].textContent, "Structured source");
   assert.equal(elements.sources.children[0].children[0].href, "https://example.test/source");
@@ -95,7 +96,7 @@ test("renders guide speech when no recording exists", () => {
   const label = elements.audioList.children[0].children[1];
   assert.equal(button.textContent, "Speak");
   assert.equal(label.textContent, "Guide speech");
-  assert.equal(elements.audioList.children[0].children[2].textContent, "en-US / guide speech");
+  assert.equal(elements.audioList.children[0].children[2].textContent, "en-US / browser TTS guide");
 
   button.events.click();
 
@@ -126,7 +127,7 @@ test("renders best-effort proper-name speech when unresolved", () => {
   const meta = elements.audioList.children[0].children[2];
   assert.equal(button.textContent, "Speak");
   assert.equal(label.textContent, "Best-effort speech");
-  assert.equal(meta.textContent, "en-US / voice required");
+  assert.equal(meta.textContent, "en-US / browser TTS source");
 
   button.events.click();
 
@@ -156,10 +157,10 @@ test("renders source-form speech before guide speech", () => {
 
   assert.equal(elements.audioList.children[0].children[0].textContent, "Speak");
   assert.equal(elements.audioList.children[0].children[1].textContent, "Source-form speech");
-  assert.equal(elements.audioList.children[0].children[2].textContent, "pl-PL / voice required");
+  assert.equal(elements.audioList.children[0].children[2].textContent, "pl-PL / browser TTS source");
   assert.equal(elements.audioList.children[1].children[0].textContent, "Speak");
   assert.equal(elements.audioList.children[1].children[1].textContent, "Guide speech");
-  assert.equal(elements.audioList.children[1].children[2].textContent, "en-US / guide speech");
+  assert.equal(elements.audioList.children[1].children[2].textContent, "en-US / browser TTS guide");
 
   elements.audioList.children[0].children[0].events.click();
 
@@ -193,8 +194,8 @@ test("renders generated fallback audio without recording status", () => {
     }
   }, elements, {
     document: fakeDocument(),
-    playAudioItem: (item, result, rate) => {
-      playedAudio.push({ item, result, rate });
+    playAudioItem: (item, result, rate, options) => {
+      playedAudio.push({ item, result, rate, options });
       return true;
     },
     speakResult: (result, rate) => spoken.push({ result, rate }),
@@ -202,16 +203,17 @@ test("renders generated fallback audio without recording status", () => {
   });
 
   assert.equal(elements.audioList.children[0].children[1].textContent, "Generated fallback: Voice service audio");
-  assert.equal(elements.audioList.children[0].children[2].textContent, "Voice service / generated fallback");
+  assert.equal(elements.audioList.children[0].children[2].textContent, "Voice service / generated audio / voice.example / exampleterm.ogg");
   assert.equal(elements.audioList.children[1].children[1].textContent, "Source-form speech");
-  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / voice required");
+  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / browser TTS source");
   assert.equal(elements.audioList.children[2].children[1].textContent, "Guide speech");
-  assert.equal(elements.audioList.children[2].children[2].textContent, "en-US / guide speech");
+  assert.equal(elements.audioList.children[2].children[2].textContent, "en-US / browser TTS guide");
   elements.audioList.children[0].children[0].events.click();
   elements.audioList.children[1].children[0].events.click();
 
   assert.equal(playedAudio[0].item.quality, "generated");
-  assert.deepEqual(statuses, ["Playing generated audio."]);
+  assert.deepEqual(playedAudio[0].options, { skipSharedAudio: true });
+  assert.deepEqual(statuses, ["Playing generated audio from Voice service via voice.example."]);
   assert.equal(spoken[0].result.speakText, "Przykladowo");
   assert.equal(spoken[0].result.ttsLang, "pl-PL");
 });
@@ -238,11 +240,11 @@ test("renders practice alternatives for unknown-quality audio", () => {
   });
 
   assert.equal(elements.audioList.children[0].children[1].textContent, "Unreviewed audio");
-  assert.equal(elements.audioList.children[0].children[2].textContent, "Archive");
+  assert.equal(elements.audioList.children[0].children[2].textContent, "Archive / audio.example / unreviewed.ogg");
   assert.equal(elements.audioList.children[1].children[1].textContent, "Source-form speech");
-  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / voice required");
+  assert.equal(elements.audioList.children[1].children[2].textContent, "pl-PL / browser TTS source");
   assert.equal(elements.audioList.children[2].children[1].textContent, "Guide speech");
-  assert.equal(elements.audioList.children[2].children[2].textContent, "en-US / guide speech");
+  assert.equal(elements.audioList.children[2].children[2].textContent, "en-US / browser TTS guide");
 });
 
 function sampleResult() {

@@ -1,6 +1,8 @@
 import { getBestAudio, normalizeSelection } from "../resolver-core.js";
 import {
+  fallbackSpeechResultForResult,
   playbackItemsForResult,
+  playbackStatusForItem,
   preferredSpeechResultForResult,
   shouldPreferSpeechBeforeAudio,
   speechResultForPlaybackItem
@@ -175,7 +177,7 @@ async function speakSelection(rate) {
 
   const speechResult = shouldPreferSpeechBeforeAudio(currentResult)
     ? preferredSpeechResultForResult(currentResult)
-    : currentResult;
+    : fallbackSpeechResultForResult(currentResult);
   const response = await sendMessage(createSpeakMessage(text, {
     result: speechResult,
     rate,
@@ -186,7 +188,7 @@ async function speakSelection(rate) {
   if (response.ok) {
     currentResult = response.result;
     renderResult(currentResult);
-    setStatus(speakingStatus(response, rate));
+    setStatus(speakingStatus(response, rate, speechResult));
   } else {
     setStatus(response.error || "Speech failed.");
   }
@@ -235,7 +237,7 @@ async function speakUnresolvedSelection(text, rate, trace) {
   if (response.ok) {
     currentResult = response.result;
     renderResult(currentResult);
-    setStatus(speakingStatus(response, rate));
+    setStatus(speakingStatus(response, rate, response.result || {}));
   } else {
     setStatus(response.error || "Speech failed.");
   }
@@ -402,15 +404,16 @@ async function speakResultCandidate(result, rate, statusBase = "Speaking", optio
     return;
   }
 
+  const speechResult = fallbackSpeechResultForResult(sharedAudioResult);
   const response = await sendMessage(createSpeakMessage(text, {
-    result: sharedAudioResult,
+    result: speechResult,
     rate,
     skipSharedAudio: true,
     trace
   }));
 
   setStatus(response.ok
-    ? speakingStatus(response, rate, statusBase)
+    ? speakingStatus(response, rate, speechResult, statusBase)
     : response.error || "Speech failed.");
 }
 
@@ -424,7 +427,7 @@ async function ensureSharedAudio(result, rate, options = {}) {
     return result;
   }
 
-  setStatus("Requesting shared voice.");
+  setStatus("Checking shared audio database.");
   const response = await responseWithinSharedAudioWait(sendMessage(createRequestSharedAudioMessage(text, {
     result,
     rate,
@@ -433,7 +436,7 @@ async function ensureSharedAudio(result, rate, options = {}) {
   if (!response.ok || !getBestAudio(response.result)) {
     if (response.timedOut) {
       recordTimingEvent("shared-audio:ui-timeout", options.trace, { rate });
-      setStatus("Using speech fallback.");
+      setStatus("No shared audio yet. Using speech fallback.");
     }
     return result;
   }
@@ -487,8 +490,9 @@ function playAudioItem(audio, result, rate, options = {}) {
   const fallbackToSpeech = async () => {
     setStatus("Audio failed. Using speech fallback.");
     const text = normalizeSelection(selectionInput.value);
+    const speechResult = fallbackSpeechResultForResult(result);
     const response = await sendMessage(createSpeakMessage(text, {
-      result,
+      result: speechResult,
       rate,
       skipSharedAudio: true,
       trace
@@ -498,7 +502,7 @@ function playAudioItem(audio, result, rate, options = {}) {
         currentResult = response.result;
         renderResult(currentResult);
       }
-      setStatus(speakingStatus(response, rate));
+      setStatus(speakingStatus(response, rate, speechResult));
     } else {
       setStatus(response.error || "Speech failed.");
     }
@@ -515,7 +519,7 @@ function playAudioItem(audio, result, rate, options = {}) {
       }
 
       recordTimingEvent("audio:offscreen-response", trace, response.playback || {});
-      setStatus(startedStatus(rate, elapsedMs(trace)));
+      setStatus(audioStartedStatus(audio, rate, elapsedMs(trace)));
     });
     return true;
   }
@@ -523,7 +527,7 @@ function playAudioItem(audio, result, rate, options = {}) {
   return audioPlayback.playUrl(audio.url, rate, fallbackToSpeech, {
     onStart: (details) => {
       recordTimingEvent("audio:popup-start", trace, details);
-      setStatus(startedStatus(rate, elapsedMs(trace)));
+      setStatus(audioStartedStatus(audio, rate, elapsedMs(trace)));
     },
     onError: (details) => {
       recordTimingEvent("audio:popup-error", trace, details);
@@ -599,9 +603,13 @@ function setStatus(value) {
   statusText.textContent = value;
 }
 
-function startedStatus(rate, ms) {
+function audioStartedStatus(audio, rate, ms) {
   const value = Number.isFinite(Number(ms)) ? ` in ${Math.round(Number(ms))} ms` : "";
-  return rate < 0.7 ? `Audio started slowly${value}.` : `Audio started${value}.`;
+  const source = playbackStatusForItem({
+    ...(audio || {}),
+    kind: "audio"
+  }, rate).replace(/\.$/, "");
+  return `${source}${value}.`;
 }
 
 function hostLabel(url) {
@@ -624,15 +632,34 @@ function updateButtonState() {
   slowButton.disabled = !hasText;
 }
 
-function speakingStatus(response, rate, base = "Speaking") {
+function speakingStatus(response, rate, result = {}, base = "Speaking") {
   if (response?.speech?.fallback === "audio") {
     return rate < 0.7 ? "Playing audio slowly." : "Playing audio.";
   }
 
-  const guide = response?.speech?.fallback === "guide";
-  if (guide) {
-    return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+  if (isGuideSpeechResult(result, response)) {
+    return playbackStatusForItem({ kind: "guide" }, rate);
   }
 
-  return rate < 0.7 ? `${base} slowly.` : `${base}.`;
+  if (response?.speech?.fallback === "web-speech") {
+    const lang = normalizeSelection(result.ttsLang || response?.speech?.lang);
+    return `Speaking with browser Web Speech${rate < 0.7 ? " slowly" : ""}${lang ? ` (${lang})` : ""}.`;
+  }
+
+  const status = playbackStatusForItem({
+    kind: "speech",
+    label: result.speakText && result.speakText === result.query ? "Selected text speech" : "Source-form speech",
+    lang: result.ttsLang || result.language
+  }, rate);
+  return status || (rate < 0.7 ? `${base} slowly.` : `${base}.`);
+}
+
+function isGuideSpeechResult(result = {}, response = {}) {
+  if (response?.speech?.fallback === "guide") {
+    return true;
+  }
+
+  const speakText = normalizeSelection(result.speakText);
+  const guide = normalizeSelection(result.pronunciation?.simple);
+  return Boolean(speakText && guide && speakText === guide && normalizeSelection(result.ttsLang).toLowerCase().startsWith("en"));
 }

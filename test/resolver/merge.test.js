@@ -248,6 +248,51 @@ test("preserves useful displaced remote candidates", () => {
   assert.equal(merged.alternateResults[0].pronunciation.simple, "eg-ZAM-pluh-term");
 });
 
+test("keeps native source form primary over incompatible English audio", () => {
+  const native = createRemoteStructuredResult("Kyiv", {
+    id: "wikidata:kyiv",
+    display: "Kyiv",
+    sourceForm: "Київ",
+    language: "uk",
+    pronunciation: {
+      simple: "kih-yeev"
+    },
+    evidence: [
+      "Wikidata entity Q1899",
+      "Source form from native label"
+    ]
+  });
+  const englishAudio = createRemoteStructuredResult("Kyiv", {
+    id: "wiktionary:kyiv",
+    display: "Kyiv",
+    sourceForm: "Kyiv",
+    language: "en",
+    pronunciation: {
+      ipa: "/ˈkiːɪv/",
+      audio: [{
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kiev.wav",
+        label: "Lingua Libre audio",
+        source: "Wiktionary (Lingua Libre)",
+        quality: "native-speaker"
+      }]
+    },
+    evidence: ["Pronunciation audio from Wiktionary"]
+  });
+
+  for (const merged of [
+    mergeRemoteResult(native, englishAudio),
+    mergeRemoteResult(englishAudio, native)
+  ]) {
+    assert.equal(merged.id, "wikidata:kyiv");
+    assert.equal(merged.sourceForm, "Київ");
+    assert.equal(merged.language, "uk");
+    assert.equal(merged.pronunciation.simple, "kih-yeev");
+    assert.equal(merged.pronunciation.audio.length, 0);
+    assert.equal(merged.alternateResults.length, 1);
+    assert.equal(merged.alternateResults[0].id, "wiktionary:kyiv");
+  }
+});
+
 test("does not expose best-effort fallback as an alternate candidate", () => {
   const fallback = resolveTerm("Unlistedterm", { entries: [] });
   const remote = createRemoteStructuredResult("Unlistedterm", {

@@ -46,16 +46,21 @@ test("fails when a large file grows past its baseline", () => {
 
 test("tracks folder density with the same baseline rule", () => {
   const insideBaseline = folderDensityFindings([{
-    path: "test",
-    fileCount: 19
+    path: "test/background",
+    fileCount: 17
   }]);
   const pastBaseline = folderDensityFindings([{
-    path: "test",
-    fileCount: 21
+    path: "test/background",
+    fileCount: 18
+  }]);
+  const unbaselined = folderDensityFindings([{
+    path: "src/new-area",
+    fileCount: 13
   }]);
 
   assert.equal(insideBaseline[0].severity, "notice");
   assert.equal(pastBaseline[0].severity, "hard");
+  assert.equal(unbaselined[0].severity, "hard");
 });
 
 test("keeps Chrome APIs behind runtime adapter boundaries", () => {

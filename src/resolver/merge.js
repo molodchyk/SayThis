@@ -12,6 +12,7 @@ import {
 } from "./status.js";
 import {
   createLookupKey,
+  detectScript,
   normalizeSelection
 } from "./text.js";
 import {
@@ -50,6 +51,14 @@ export function mergeRemoteResult(localResult, remoteResult) {
 
   if (shouldMergeAudioIntoResult(remoteResult, localResult)) {
     return withAlternateResults(mergeAudioIntoResult(remoteResult, localResult), localResult.alternateResults || []);
+  }
+
+  if (shouldKeepPronunciationTargetPrimary(localResult, remoteResult)) {
+    return withAlternateResults(localResult, [remoteResult]);
+  }
+
+  if (shouldKeepPronunciationTargetPrimary(remoteResult, localResult)) {
+    return withAlternateResults(remoteResult, [localResult]);
   }
 
   if (remoteRank > localRank) {
@@ -143,6 +152,51 @@ function hasCompatibleLanguage(primary = {}, candidate = {}) {
 function sharesPronunciationTarget(primary = {}, candidate = {}) {
   const primaryKeys = new Set(pronunciationTargetKeys(primary));
   return pronunciationTargetKeys(candidate).some((key) => primaryKeys.has(key));
+}
+
+function shouldKeepPronunciationTargetPrimary(primary = {}, challenger = {}) {
+  const selected = normalizeSelection(primary.query || challenger.query || primary.display || challenger.display);
+  const primaryLanguage = baseLanguage(primary.language);
+  const challengerLanguage = baseLanguage(challenger.language);
+  if (
+    !selected ||
+    !primaryLanguage ||
+    primaryLanguage === "en" ||
+    hasCompatibleLanguage(primary, challenger) ||
+    !hasNativeSourceFormAdvantage(primary, selected)
+  ) {
+    return false;
+  }
+
+  return hasAudioResult(challenger) && (
+    !challengerLanguage ||
+    challengerLanguage === "en" ||
+    sourceFormMatchesSelected(challenger.sourceForm || challenger.display, selected)
+  );
+}
+
+function hasNativeSourceFormAdvantage(result = {}, selected = "") {
+  const sourceForm = normalizeSelection(result.sourceForm || result.display || result.query);
+  if (!sourceForm || sourceFormMatchesSelected(sourceForm, selected)) {
+    return false;
+  }
+
+  const sourceScript = detectScript(sourceForm).script;
+  const selectedScript = detectScript(selected).script;
+  if (sourceScript !== "Unknown" && selectedScript !== "Unknown" && sourceScript !== selectedScript) {
+    return true;
+  }
+
+  const evidence = (Array.isArray(result.evidence) ? result.evidence : [])
+    .join(" ")
+    .toLowerCase();
+  return /source form from (?:native label|native name|official name)|source form matched lookup language hint/.test(evidence);
+}
+
+function sourceFormMatchesSelected(sourceForm, selected) {
+  const sourceKey = createLookupKey(sourceForm);
+  const selectedKey = createLookupKey(selected);
+  return Boolean(sourceKey && selectedKey && sourceKey === selectedKey);
 }
 
 function pronunciationTargetKeys(result = {}) {

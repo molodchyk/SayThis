@@ -165,6 +165,72 @@ test("select-to-hear uses stored exact audio while speak-started shared lookup i
   clearPreparedSharedAudioForTests();
 });
 
+test("select-to-hear stops previous playback before starting the next speech", async () => {
+  const responses = [];
+  const calls = [];
+  const resolved = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const trace = selectionTrace("trace-stop-previous-selection");
+  let stopStarted = false;
+  let stopFinished = false;
+  let finishStop;
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    stopPreviousPlayback: true,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    stopPlayback: async () => {
+      stopStarted = true;
+      calls.push(["stopPlayback:start"]);
+      await new Promise((resolve) => {
+        finishStop = resolve;
+      });
+      stopFinished = true;
+      calls.push(["stopPlayback:finish"]);
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options, { stopStarted }]);
+      return resolved;
+    },
+    speakResult: async (result, options) => {
+      calls.push(["speakResult", result, options, { stopFinished }]);
+      return {
+        spoken: true,
+        text: result.sourceForm,
+        options: {
+          lang: result.ttsLang
+        }
+      };
+    },
+    lastResultKey: "lastResult"
+  });
+
+  await delay(0);
+
+  assert.equal(handled, true);
+  assert.equal(stopStarted, true);
+  assert.equal(calls.some((call) => call[0] === "resolveSelection" && call[3].stopStarted), true);
+  assert.equal(calls.some((call) => call[0] === "speakResult"), false);
+  assert.deepEqual(responses, []);
+
+  finishStop();
+  await delay(0);
+
+  assert.equal(responses[0].ok, true);
+  assert.equal(calls.some((call) => call[0] === "speakResult" && call[3].stopFinished), true);
+});
+
 async function firstResponseWithin(responses, waitMs) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < waitMs) {

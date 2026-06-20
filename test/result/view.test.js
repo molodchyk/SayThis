@@ -5,6 +5,8 @@ import {
   audioItemsForResult,
   evidenceItemsForResult,
   playbackItemsForResult,
+  fallbackSpeechResultForResult,
+  playbackMetaForItem,
   playbackStatusForItem,
   preferredSpeechResultForResult,
   shouldPreferSpeechBeforeAudio,
@@ -174,6 +176,38 @@ test("builds playable audio items", () => {
     quality: "generated",
     url: "https://voice.example/generic.ogg"
   }]);
+});
+
+test("deduplicates audio items by canonical file path", () => {
+  const items = audioItemsForResult({
+    pronunciation: {
+      audio: [{
+        label: "Kyiv recording",
+        source: "Wiktionary",
+        quality: "native-speaker",
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kyiv.wav"
+      }, {
+        label: "Same recording with query",
+        source: "Wiktionary",
+        quality: "native-speaker",
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kyiv.wav?download=1#ignored"
+      }, {
+        label: "Kiev recording",
+        source: "Wiktionary",
+        quality: "native-speaker",
+        url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kiev.wav"
+      }]
+    }
+  });
+
+  assert.deepEqual(items.map((item) => item.url), [
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kyiv.wav",
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/LL-Q1860%20(eng)-Vealhurl-Kiev.wav"
+  ]);
+  assert.equal(playbackMetaForItem({
+    ...items[0],
+    kind: "audio"
+  }), "Wiktionary / native speaker recording / commons.wikimedia.org / LL-Q1860 (eng)-Vealhurl-Kyiv.wav");
 });
 
 test("builds playback items from audio before source speech and guide speech", () => {
@@ -399,12 +433,6 @@ test("prefers selected surface speech before mismatched source-form audio", () =
     text: "Targetname",
     lang: "ru-RU"
   }, {
-    kind: "audio",
-    label: "Generated shared audio",
-    source: "",
-    quality: "generated",
-    url: "https://example.com/audio.ogg"
-  }, {
     kind: "speech",
     label: "Source-form speech",
     text: "Староназва",
@@ -566,7 +594,34 @@ test("describes generated fallback playback without calling it a recording", () 
   }), "Playing recording.");
   assert.equal(playbackStatusForItem({
     kind: "guide"
-  }, 0.62), "Speaking guide slowly.");
+  }, 0.62), "Speaking guide slowly with browser TTS (en-US).");
+  assert.equal(playbackStatusForItem({
+    kind: "speech",
+    lang: "ru-RU"
+  }), "Speaking source form with browser TTS (ru-RU).");
+  assert.equal(playbackMetaForItem({
+    kind: "speech",
+    lang: "ru-RU"
+  }), "ru-RU / browser TTS source");
+});
+
+test("uses guide speech for main no-audio fallback on non-English source-form results", () => {
+  const result = {
+    display: "Borisoglebsk",
+    sourceForm: "Борисоглебск",
+    language: "ru",
+    ttsLang: "ru-RU",
+    sourceStatus: "structured-source",
+    pronunciation: {
+      simple: "boh-ree-soh-glehbsk"
+    }
+  };
+
+  assert.deepEqual(fallbackSpeechResultForResult(result), {
+    ...result,
+    speakText: "boh-ree-soh-glehbsk",
+    ttsLang: "en-US"
+  });
 });
 
 test("builds compact alternate candidate summaries", () => {
@@ -594,5 +649,37 @@ test("builds compact alternate candidate summaries", () => {
     source: "Structured source",
     guide: "eg-ZAM-pluh-term",
     summary: "Exampleterm · Latin · Structured source · eg-ZAM-pluh-term"
+  }]);
+});
+
+test("hides malformed alternate candidate summaries with raw wiki markup", () => {
+  const items = alternateItemsForResult({
+    alternateResults: [{
+      display: "Kyiv",
+      sourceForm: "Kyiv",
+      languageName: "Italian",
+      sourceLabel: "Structured source",
+      pronunciation: {
+        ipa: "[[Soviet Union]"
+      }
+    }, {
+      display: "Kyiv",
+      sourceForm: "Київ",
+      languageName: "Ukrainian",
+      sourceLabel: "Structured source",
+      pronunciation: {
+        simple: "kih-yeev"
+      }
+    }]
+  });
+
+  assert.deepEqual(items, [{
+    index: 1,
+    display: "Kyiv",
+    sourceForm: "Київ",
+    language: "Ukrainian",
+    source: "Structured source",
+    guide: "kih-yeev",
+    summary: "Київ · Ukrainian · Structured source · kih-yeev"
   }]);
 });

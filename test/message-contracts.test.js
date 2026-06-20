@@ -79,10 +79,14 @@ test("builds a speak message with clamped rate and resolved result", () => {
     useOnline: false
   });
 
-  assert.deepEqual(createSpeakMessage(" gnocchi ", { skipSharedAudio: true }), {
+  assert.deepEqual(createSpeakMessage(" gnocchi ", {
+    skipSharedAudio: true,
+    stopPreviousPlayback: true
+  }), {
     type: MESSAGE_TYPES.speak,
     text: "gnocchi",
-    skipSharedAudio: true
+    skipSharedAudio: true,
+    stopPreviousPlayback: true
   });
 });
 

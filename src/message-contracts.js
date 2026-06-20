@@ -49,6 +49,7 @@ export function createSpeakMessage(text, options = {}) {
     useOnline: normalizeOptionalBoolean(options, "useOnline"),
     languageHints: normalizeLanguageHints(options.languageHints),
     skipSharedAudio: normalizeOptionalBoolean(options, "skipSharedAudio"),
+    stopPreviousPlayback: normalizeOptionalBoolean(options, "stopPreviousPlayback"),
     trace: normalizeTrace(options.trace)
   });
 }

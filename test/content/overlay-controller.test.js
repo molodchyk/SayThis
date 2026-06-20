@@ -651,7 +651,7 @@ test("speak action falls back to source-form speech when shared audio wait expir
   assert.deepEqual(sentMessages[1].dependencies, { surface: "content" });
 });
 
-test("generated recording row requests shared audio before playback", async () => {
+test("generated recording row plays its exact row audio without shared replacement", async () => {
   const sentMessages = [];
   const fakeDom = createFakeDom();
   let showResultListener;
@@ -678,22 +678,6 @@ test("generated recording row requests shared audio before playback", async () =
     },
     async sendRuntimeMessage(message) {
       sentMessages.push({ message });
-      if (message.type === "SAYTHIS_REQUEST_SHARED_AUDIO") {
-        return {
-          ok: true,
-          result: {
-            ...message.result,
-            pronunciation: {
-              audio: [{
-                label: "Shared generated audio",
-                url: "https://audio.example/shared.ogg",
-                quality: "generated"
-              }]
-            }
-          }
-        };
-      }
-
       return { ok: true };
     }
   };
@@ -706,10 +690,9 @@ test("generated recording row requests shared audio before playback", async () =
   await flushPromises();
 
   assert.deepEqual(sentMessages.map((item) => item.message.type), [
-    "SAYTHIS_REQUEST_SHARED_AUDIO",
     "SAYTHIS_PLAY_AUDIO"
   ]);
-  assert.equal(sentMessages[1].message.audio.url, "https://audio.example/shared.ogg");
+  assert.equal(sentMessages[0].message.audio.url, "https://voice.example/generated.ogg");
 });
 
 test("generated audio does not prefill correction audio source", () => {

@@ -470,6 +470,7 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /selectToHear !== false/);
   assert.match(source, /SAYTHIS_SPEAK/);
   assert.match(source, /SAYTHIS_PREPARE_PLAYBACK/);
+  assert.match(source, /stopPreviousPlayback: true/);
   assert.match(source, /timedStatusLabel\(status, trace\)/);
   assert.match(source, /timedStatusLabel\("Unavailable", trace\)/);
   assert.match(source, /selectionElapsedMs/);
@@ -559,6 +560,7 @@ test("popup source-audio failure uses speech fallback", async () => {
   const source = await readText("src/popup/index.js");
   const audioSource = await readText("src/popup/audio-playback.js");
   const resultSource = await readText("src/popup/result-renderer.js");
+  const viewSource = await readText("src/result/view.js");
   const html = await readText("src/popup/popup.html");
 
   assert.match(html, /id="audio-list"/);
@@ -574,9 +576,10 @@ test("popup source-audio failure uses speech fallback", async () => {
   assert.match(resultSource, /item\.kind !== "audio"/);
   assert.match(source, /replaceCurrent: false/);
   assert.match(source, /ensureSharedAudio\(result, rate, options\)/);
-  assert.match(resultSource, /playAudioItem\(item, result, 0\.82\)/);
+  assert.match(resultSource, /playAudioItem\(item, result, 0\.82, \{ skipSharedAudio: true \}\)/);
   assert.match(source, /Audio failed\. Using speech fallback\./);
-  assert.match(source, /Speaking guide\./);
+  assert.match(viewSource, /Speaking guide/);
+  assert.match(viewSource, /browser TTS/);
   assert.match(source, /response\?\.speech\?\.fallback === "guide"/);
   assert.match(source, /const fallbackToSpeech = async \(\) =>/);
   assert.match(source, /createSpeakMessage\(text, \{/);
@@ -586,9 +589,11 @@ test("popup source-audio failure uses speech fallback", async () => {
 
 test("overlay source-audio failure uses speech fallback", async () => {
   const source = await readText("src/content-overlay.js");
+  const viewSource = await readText("src/content/overlay-result-view.js");
 
   assert.match(source, /Audio failed\. Using speech fallback\./);
-  assert.match(source, /Speaking guide\./);
+  assert.match(viewSource, /Speaking guide/);
+  assert.match(viewSource, /browser TTS/);
   assert.match(source, /response\?\.speech\?\.fallback === "guide"/);
   assert.match(source, /const fallbackToSpeech = \(\) =>/);
   assert.match(source, /audioPlayer\.addEventListener\("error"/);

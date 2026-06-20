@@ -303,6 +303,7 @@
       text: selectedText,
       rate: 0.82,
       prepareSharedAudio: !preparedTrace,
+      stopPreviousPlayback: true,
       trace
     }).then((response) => {
       if (!response?.ok) {

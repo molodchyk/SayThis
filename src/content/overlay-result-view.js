@@ -80,11 +80,12 @@
 
     for (const item of rankedAudioItems(audio)) {
       const normalized = normalizeAudioItem(item);
-      if (!normalized.url || seen.has(normalized.url)) {
+      const key = canonicalAudioUrlKey(normalized.url);
+      if (!normalized.url || seen.has(key)) {
         continue;
       }
 
-      seen.add(normalized.url);
+      seen.add(key);
       items.push(normalized);
     }
 
@@ -92,8 +93,10 @@
   }
 
   function playbackItems(result) {
-    const audio = audioItems(result).map((item) => ({ ...item, kind: "audio" }));
     const selectedAlias = selectedAliasSpeechItem(result);
+    const audio = audioItems(result)
+      .filter((item) => !shouldSuppressGeneratedAudioForSelectedAlias(item, selectedAlias))
+      .map((item) => ({ ...item, kind: "audio" }));
     const speech = sourceSpeechItem(result);
     const guide = normalizeSpeakableGuide(result?.pronunciation?.simple);
     const fallback = speechFallbackItems(selectedAlias, speech, guide);
@@ -135,6 +138,17 @@
     const items = playbackItems(result);
     const item = items.find((candidate) => candidate.kind === "speech")
       || items.find((candidate) => candidate.kind === "guide");
+    return speechResultForPlaybackItem(result, item);
+  }
+
+  function fallbackSpeechResult(result) {
+    const items = playbackItems(result);
+    const selectedAlias = items.find((candidate) => candidate.kind === "speech" && candidate.label === "Selected text speech");
+    const speech = items.find((candidate) => candidate.kind === "speech");
+    const guide = items.find((candidate) => candidate.kind === "guide");
+    const item = selectedAlias ||
+      (shouldPreferGuideSpeechFallback(result, speech, guide) ? guide : speech) ||
+      guide;
     return speechResultForPlaybackItem(result, item);
   }
 
@@ -222,7 +236,7 @@
           summary: [sourceForm, language, source, guide].filter(Boolean).join(" · ")
         };
       })
-      .filter((item) => item.display || item.summary);
+      .filter((item) => (item.display || item.summary) && !hasUnsafeWikiMarkup(item.summary));
   }
 
   function normalizeText(value) {
@@ -326,6 +340,62 @@
       : `Generated fallback: ${fallback}`;
   }
 
+  function playbackMeta(item = {}) {
+    if (item.kind === "audio") {
+      return compactMeta([
+        item.source,
+        playbackQualityLabel(item.quality),
+        audioLocationLabel(item.url)
+      ]);
+    }
+
+    if (item.kind === "speech") {
+      return compactMeta([item.lang, "browser TTS source"]);
+    }
+
+    if (item.kind === "guide") {
+      return "en-US / browser TTS guide";
+    }
+
+    return "";
+  }
+
+  function playbackQualityLabel(value) {
+    const quality = normalizeText(value).toLowerCase();
+    if (!quality) {
+      return "";
+    }
+
+    if (quality === "generated") {
+      return "generated audio";
+    }
+
+    if (quality === "native-speaker" || quality === "native speaker") {
+      return "native speaker recording";
+    }
+
+    if (quality === "source-backed") {
+      return "source-backed recording";
+    }
+
+    if (quality === "curated") {
+      return "curated recording";
+    }
+
+    if (quality === "verified") {
+      return "verified recording";
+    }
+
+    return quality;
+  }
+
+  function compactMeta(values = []) {
+    return values
+      .map(normalizeText)
+      .filter(Boolean)
+      .join(" / ");
+  }
+
   function rankedAudioItems(audio) {
     return (Array.isArray(audio) ? audio : [])
       .filter((item) => item?.url)
@@ -344,6 +414,10 @@
 
     return qualityScore(quality) >= 85 ||
       ["verified-audio", "community-confirmed"].includes(normalizeText(sourceStatus));
+  }
+
+  function shouldSuppressGeneratedAudioForSelectedAlias(item = {}, selectedAlias = null) {
+    return Boolean(selectedAlias && normalizeText(item.quality).toLowerCase() === "generated");
   }
 
   function audioScore(item) {
@@ -443,6 +517,15 @@
   function shouldHideCrossLanguageEnglishSpeech(language, lang) {
     const languageBase = baseLanguage(language);
     return Boolean(languageBase && !["unknown", "und", "en", "eng"].includes(languageBase) && baseLanguage(lang) === "en");
+  }
+
+  function shouldPreferGuideSpeechFallback(result = {}, speech = null, guide = null) {
+    if (!speech || !guide || speech.label === "Best-effort speech" || speech.label === "Selected text speech") {
+      return false;
+    }
+
+    const lang = normalizeTtsLanguage(speech.lang || result.ttsLang, result.language);
+    return Boolean(lang && baseLanguage(lang) !== "en");
   }
 
   const NAME_CONNECTOR_WORDS = new Set(["a", "al", "and", "ap", "bin", "da", "de", "del", "der", "di", "du", "el", "ibn", "in", "la", "le", "of", "saint", "san", "santa", "st", "the", "van", "von"]);
@@ -621,6 +704,7 @@
     correctionInput,
     escapeAttribute,
     escapeHtml,
+    fallbackSpeechResult,
     firstSourceUrl,
     getBestAudio,
     hasPreferredAudio,
@@ -631,6 +715,7 @@
     normalizeLongText,
     normalizeSpeakableGuide,
     normalizeText,
+    playbackMeta,
     playbackItems,
     playbackStatus,
     preferredSpeechResult,
@@ -644,17 +729,73 @@
 
   function playbackStatus(item = {}, rate = 0.82) {
     if (item.kind === "audio" && normalizeText(item.quality).toLowerCase() === "generated") {
-      return rate < 0.7 ? "Playing generated audio slowly." : "Playing generated audio.";
+      return playbackSentence("Playing generated audio", audioSourceLabel(item), rate);
     }
 
     if (item.kind === "audio") {
-      return rate < 0.7 ? "Playing recording slowly." : "Playing recording.";
+      return playbackSentence("Playing recording", audioSourceLabel(item), rate);
     }
 
     if (item.kind === "guide") {
-      return rate < 0.7 ? "Speaking guide slowly." : "Speaking guide.";
+      return speechPlaybackSentence("Speaking guide", "en-US", rate);
     }
 
-    return rate < 0.7 ? "Speaking slowly." : "Speaking.";
+    return speechPlaybackSentence(item.label === "Selected text speech" ? "Speaking selected text" : "Speaking source form", item.lang, rate);
+  }
+
+  function playbackSentence(action, source, rate) {
+    const normalizedSource = normalizeText(source);
+    return `${action}${rate < 0.7 ? " slowly" : ""}${normalizedSource ? ` from ${normalizedSource}` : ""}.`;
+  }
+
+  function speechPlaybackSentence(action, lang, rate) {
+    const normalizedLang = normalizeText(lang);
+    return `${action}${rate < 0.7 ? " slowly" : ""} with browser TTS${normalizedLang ? ` (${normalizedLang})` : ""}.`;
+  }
+
+  function audioSourceLabel(item = {}) {
+    const source = normalizeText(item.source);
+    const host = hostLabel(item.url);
+    if (source && host && !source.toLocaleLowerCase().includes(host.toLocaleLowerCase())) {
+      return `${source} via ${host}`;
+    }
+
+    return source || host || normalizeText(item.label);
+  }
+
+  function audioLocationLabel(url) {
+    return compactMeta([hostLabel(url), audioFileName(url)]);
+  }
+
+  function audioFileName(url) {
+    if (!url) {
+      return "";
+    }
+
+    try {
+      const value = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).pop() || "");
+      return normalizeText(value).slice(0, 80);
+    } catch {
+      return "";
+    }
+  }
+
+  function canonicalAudioUrlKey(url) {
+    if (!url) {
+      return "";
+    }
+
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLocaleLowerCase();
+      const path = decodeURIComponent(parsed.pathname).toLocaleLowerCase();
+      return `${parsed.protocol}//${host}${path}`;
+    } catch {
+      return normalizeText(url).toLocaleLowerCase();
+    }
+  }
+
+  function hasUnsafeWikiMarkup(value = "") {
+    return /\[\[|\]\]|\{\{|\}\}/.test(String(value || ""));
   }
 })();

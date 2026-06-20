@@ -56,6 +56,9 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     };
     const resolverOptions = withoutPlaybackOnlyOptions(options);
     startPreparingPlayback(dependencies, message.trace);
+    const stopPreviousPlaybackPromise = message.stopPreviousPlayback === true
+      ? stopPlaybackQuietly(dependencies)
+      : Promise.resolve(null);
     let directSharedAudioResult = null;
     let resolvedPlayableResult = null;
     let storedPlayableResult = null;
@@ -205,6 +208,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         const playableResult = isVisibleAudio || isStoredAudio || isDirectSharedAudio || isResolvedPlayable
           ? result
           : await resolvePlayableResult(selectedText, result, options, dependencies);
+        await stopPreviousPlaybackPromise;
         const playback = await playResolvedAudio(playableResult, message.rate, dependencies, message.trace);
         if (playback) {
           storeRuntimeResult(playableResult, dependencies);
@@ -654,6 +658,14 @@ function startPreparingPlayback(dependencies = {}, trace = null) {
     }
   } catch {
     // Playback can still try to prepare its surface at the point of use.
+  }
+}
+
+function stopPlaybackQuietly(dependencies = {}) {
+  try {
+    return Promise.resolve(dependencies.stopPlayback?.()).catch(() => null);
+  } catch {
+    return Promise.resolve(null);
   }
 }
 

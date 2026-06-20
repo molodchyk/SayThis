@@ -25,8 +25,10 @@ const DEFAULT_FILE_BASELINE = {
   "test/background/runtime-message-flow.test.js": 2210
 };
 const DEFAULT_FOLDER_BASELINE = {
-  src: 24,
-  test: 19
+  server: 13,
+  "src/background": 16,
+  test: 13,
+  "test/background": 17
 };
 const CHROME_API_PATTERN = /\b(?:chrome\.(?:commands|contextMenus|offscreen|permissions|runtime|scripting|storage|tabs|tts)|globalThis\.chrome)\b/g;
 const CHROME_API_ALLOWED_PATHS = [
@@ -144,12 +146,12 @@ export function folderDensityFindings(folders = [], options = {}) {
       const path = normalizeAuditPath(folder.path);
       const fileCount = Number(folder.fileCount || 0);
       const baseline = Number(normalizedOptions.folderBaseline[path] || 0);
-      const limit = normalizedOptions.folderHardLimit;
+      const limit = normalizedOptions.folderSoftLimit;
 
-      if (fileCount > limit) {
+      if (fileCount > (baseline || limit)) {
         return {
           type: "folder-density",
-          severity: fileCount > Math.max(limit, baseline) ? "hard" : "notice",
+          severity: "hard",
           path,
           count: fileCount,
           limit,
