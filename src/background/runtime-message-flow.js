@@ -88,13 +88,30 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     const preparedSharedAudioIsPending = preferImmediatePlayback &&
       !message.result &&
       hasPreparedSharedAudio(selectedText, message);
+    const quickLocalSharedAudioPromise = preferImmediatePlayback &&
+      !message.result &&
+      !preparedSharedAudioIsPending
+      ? requestLocalSharedAudio(selectedText, message, dependencies)
+      : Promise.resolve(null);
     const directSharedAudioPromise = message.result
       ? Promise.resolve(null)
       : (preparedSharedAudioIsPending
         ? requestPreparedOrDirectSharedAudio(selectedText, message, dependencies)
-        : immediateLookupGatePromise.then((fastResult) => fastResult
-          ? null
-          : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies))).then((result) => {
+        : preferImmediatePlayback
+          ? firstNonNullResult([
+            quickLocalSharedAudioPromise,
+            promiseWithinWait(
+              quickLocalSharedAudioPromise,
+              dependencies.localSharedAudioGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS
+            ).then((localResult) => localResult
+              ? null
+              : immediateLookupGatePromise.then((fastResult) => fastResult
+                ? null
+                : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies)))
+          ])
+          : immediateLookupGatePromise.then((fastResult) => fastResult
+            ? null
+            : requestPreparedOrDirectSharedAudio(selectedText, message, dependencies))).then((result) => {
           directSharedAudioResult = result;
           return result;
         });
@@ -352,6 +369,17 @@ async function fallbackRuntimeAudioCandidate(
     promiseWithinWait(directSharedAudioPromise, fallbackWaitMs),
     promiseWithinWait(resolvedPlayablePromise, fallbackWaitMs)
   ]);
+}
+
+async function requestLocalSharedAudio(selectedText, message = {}, dependencies = {}) {
+  try {
+    return await requestPreparedOrDirectSharedAudio(selectedText, {
+      ...message,
+      sharedAudioLocalOnly: true
+    }, dependencies);
+  } catch {
+    return null;
+  }
 }
 
 async function preferAudioBeforeSpeechFallback(fastResult, options = {}) {

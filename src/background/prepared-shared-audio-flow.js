@@ -19,7 +19,8 @@ export async function requestDirectSharedAudio(selectedText, options = {}, depen
       rate: options.rate,
       trace: options.trace,
       directLookup: true,
-      skipRefresh: true
+      skipRefresh: true,
+      sharedAudioLocalOnly: options.sharedAudioLocalOnly === true ? true : undefined
     }));
   } catch {
     return null;

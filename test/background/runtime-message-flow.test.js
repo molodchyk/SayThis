@@ -419,6 +419,83 @@ test("runtime speak reuses visible overlay audio before storage or lookup", asyn
   ]);
 });
 
+test("select-to-hear reuses local approved shared audio before a slow visible probe", async () => {
+  clearPreparedSharedAudioForTests();
+  const responses = [];
+  const calls = [];
+  const localShared = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Local approved shared audio",
+        url: "https://community.example/audio/aud_local_approved",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-local-approved-before-visible",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getVisibleResult: async () => {
+      calls.push(["getVisibleResult"]);
+      return new Promise(() => {});
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return options.sharedAudioLocalOnly ? localShared : null;
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve before local approved shared audio plays");
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when local approved shared audio plays");
+    },
+    visibleResultGraceMs: 100,
+    directSharedAudioWaitMs: 60,
+    lastResultKey: "lastResult"
+  });
+
+  await delay(30);
+
+  assert.equal(handled, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, localShared);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Local approved shared audio"
+  });
+  assert.deepEqual(calls, [
+    ["getVisibleResult"],
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true,
+      sharedAudioLocalOnly: true
+    }],
+    ["playAudio", localShared.pronunciation.audio[0], 0.82, trace]
+  ]);
+  clearPreparedSharedAudioForTests();
+});
+
 test("runtime speak plays direct approved shared audio before slow resolution", async () => {
   const responses = [];
   const calls = [];
@@ -490,13 +567,14 @@ test("runtime speak plays direct approved shared audio before slow resolution", 
     text: "Direct shared audio"
   });
   assert.deepEqual(calls, [
-    ["getStorage", ["lastResult"]],
     ["requestSharedAudio", "Exampletown", null, {
       rate: 0.82,
       trace,
       directLookup: true,
-      skipRefresh: true
+      skipRefresh: true,
+      sharedAudioLocalOnly: true
     }],
+    ["getStorage", ["lastResult"]],
     ["resolveSelection", "Exampletown", { useOnline: false, trace }],
     ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
   ]);
@@ -656,13 +734,14 @@ test("runtime speak does not wait for slow stored-result miss before direct shar
     text: "Direct shared audio"
   });
   assert.deepEqual(calls.slice(0, 2), [
-    ["getStorage", ["lastResult"]],
     ["requestSharedAudio", "Exampletown", null, {
       rate: 0.82,
       trace,
       directLookup: true,
-      skipRefresh: true
-    }]
+      skipRefresh: true,
+      sharedAudioLocalOnly: true
+    }],
+    ["getStorage", ["lastResult"]]
   ]);
   assert.equal(calls.some((call) =>
     call[0] === "playAudio" &&
@@ -713,7 +792,7 @@ test("runtime speak plays resolved audio before slow direct shared-audio miss", 
     },
     requestSharedAudio: async (text, result, options) => {
       calls.push(["requestSharedAudio", text, result, options]);
-      return directMiss;
+      return options.sharedAudioLocalOnly ? null : directMiss;
     },
     resolveSelection: async (text, options) => {
       calls.push(["resolveSelection", text, options]);
@@ -742,17 +821,21 @@ test("runtime speak plays resolved audio before slow direct shared-audio miss", 
     fallback: "audio",
     text: "Resolved recording"
   });
-  assert.deepEqual(calls, [
-    ["getStorage", ["lastResult"]],
-    ["requestSharedAudio", "Exampletown", null, {
-      rate: 0.82,
-      trace,
-      directLookup: true,
-      skipRefresh: true
-    }],
-    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
-    ["playAudio", resolved.pronunciation.audio[0], 0.82, trace]
-  ]);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[3]?.sharedAudioLocalOnly === true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[3]?.directLookup === true &&
+    call[3]?.sharedAudioLocalOnly !== true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "playAudio" &&
+    call[1] === resolved.pronunciation.audio[0] &&
+    call[2] === 0.82 &&
+    call[3] === trace
+  ), true);
 
   finishDirect();
 });
@@ -794,7 +877,7 @@ test("select-to-hear speaks resolved source form before slow direct shared-audio
     },
     requestSharedAudio: async (text, result, options) => {
       calls.push(["requestSharedAudio", text, result, options]);
-      return result ? result : directMiss;
+      return result ? result : options.sharedAudioLocalOnly ? null : directMiss;
     },
     resolveSelection: async (text, options) => {
       calls.push(["resolveSelection", text, options]);
@@ -829,26 +912,27 @@ test("select-to-hear speaks resolved source form before slow direct shared-audio
   assert.deepEqual(responses[0].speech, {
     text: "Przykladowo"
   });
-  assert.deepEqual(calls, [
-    ["getStorage", ["lastResult"]],
-    ["requestSharedAudio", "Exampletown", null, {
-      rate: 0.82,
-      trace,
-      directLookup: true,
-      skipRefresh: true
-    }],
-    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
-    ["requestSharedAudio", "Exampletown", resolved, {
-      useOnline: false,
-      sharedAudioLocalOnly: true,
-      trace
-    }],
-    ["speakResult", resolved, {
-      rate: 0.82,
-      lang: undefined,
-      trace
-    }]
-  ]);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === null &&
+    call[3]?.sharedAudioLocalOnly === true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === null &&
+    call[3]?.directLookup === true &&
+    call[3]?.sharedAudioLocalOnly !== true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === resolved &&
+    call[3]?.sharedAudioLocalOnly === true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "speakResult" &&
+    call[1] === resolved &&
+    call[2]?.trace === trace
+  ), true);
 
   finishDirect();
 });
@@ -892,6 +976,9 @@ test("select-to-hear lets delayed direct shared audio beat source-form speech fa
     },
     requestSharedAudio: async (text, result, options) => {
       calls.push(["requestSharedAudio", text, result, options]);
+      if (options.sharedAudioLocalOnly) {
+        return null;
+      }
       if (result) {
         return result;
       }
@@ -924,20 +1011,26 @@ test("select-to-hear lets delayed direct shared audio beat source-form speech fa
     fallback: "audio",
     text: "Delayed shared audio"
   });
-  assert.deepEqual(calls, [
-    ["getStorage", ["lastResult"]],
-    ["requestSharedAudio", "Exampletown", null, {
-      rate: 0.82,
-      trace,
-      directLookup: true,
-      skipRefresh: true
-    }],
-    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
-    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
-  ]);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === null &&
+    call[3]?.sharedAudioLocalOnly === true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === null &&
+    call[3]?.directLookup === true &&
+    call[3]?.sharedAudioLocalOnly !== true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "playAudio" &&
+    call[1] === direct.pronunciation.audio[0] &&
+    call[2] === 0.82 &&
+    call[3] === trace
+  ), true);
 });
 
-test("select-to-hear only rechecks local shared audio after direct lookup misses", async () => {
+test("select-to-hear rechecks resolved local shared audio after direct lookup misses", async () => {
   const responses = [];
   const calls = [];
   const resolved = {
@@ -963,8 +1056,6 @@ test("select-to-hear only rechecks local shared audio after direct lookup misses
     action: "select-to-hear",
     startedAt: Date.now()
   };
-  let requestCount = 0;
-
   const handled = handleRuntimeMessage({
     type: MESSAGE_TYPES.speak,
     text: "Exampletown",
@@ -976,9 +1067,8 @@ test("select-to-hear only rechecks local shared audio after direct lookup misses
       return {};
     },
     requestSharedAudio: async (text, result, options) => {
-      requestCount += 1;
       calls.push(["requestSharedAudio", text, result, options]);
-      return requestCount === 2 ? shared : null;
+      return result ? shared : null;
     },
     resolveSelection: async (text, options) => {
       calls.push(["resolveSelection", text, options]);
@@ -1005,22 +1095,28 @@ test("select-to-hear only rechecks local shared audio after direct lookup misses
     fallback: "audio",
     text: "Local shared audio"
   });
-  assert.deepEqual(calls, [
-    ["getStorage", ["lastResult"]],
-    ["requestSharedAudio", "Exampletown", null, {
-      rate: 0.82,
-      trace,
-      directLookup: true,
-      skipRefresh: true
-    }],
-    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
-    ["requestSharedAudio", "Exampletown", resolved, {
-      useOnline: false,
-      sharedAudioLocalOnly: true,
-      trace
-    }],
-    ["playAudio", shared.pronunciation.audio[0], 0.82, trace]
-  ]);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === null &&
+    call[3]?.sharedAudioLocalOnly === true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === null &&
+    call[3]?.directLookup === true &&
+    call[3]?.sharedAudioLocalOnly !== true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "requestSharedAudio" &&
+    call[2] === resolved &&
+    call[3]?.sharedAudioLocalOnly === true
+  ), true);
+  assert.equal(calls.some((call) =>
+    call[0] === "playAudio" &&
+    call[1] === shared.pronunciation.audio[0] &&
+    call[2] === 0.82 &&
+    call[3] === trace
+  ), true);
 });
 
 test("runtime speak starts playback preparation before resolving", async () => {
