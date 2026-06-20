@@ -326,6 +326,38 @@ test("pointer release speaks late browser selection without waiting for stable d
   ]);
 });
 
+test("double click speaks word selection without waiting for stable debounce", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  harness.dispatch("pointerup");
+  await delay(30);
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  harness.dispatch("dblclick");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
+test("double click does not replay when pointer release already spoke", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  harness.setSelection("Exampletown");
+  harness.dispatch("pointerup");
+  await delay(25);
+  harness.dispatch("dblclick");
+  await delay(25);
+
+  assert.equal(harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK").length, 1);
+});
+
 test("pointer cancellation speaks after a selected word survives the canceled gesture", async () => {
   const harness = await installSelectionListener();
 

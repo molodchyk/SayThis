@@ -89,6 +89,7 @@
   }, true);
   document.addEventListener("pointerup", scheduleCommittedSelectionCheck, true);
   document.addEventListener("mouseup", scheduleCommittedSelectionCheck, true);
+  document.addEventListener("dblclick", scheduleCommittedSelectionCheck, true);
   document.addEventListener("select", scheduleCommittedSelectionCheck, true);
   document.addEventListener("keyup", scheduleKeyboardCommittedSelectionCheck, true);
   document.addEventListener("touchend", scheduleCommittedSelectionCheck, true);
