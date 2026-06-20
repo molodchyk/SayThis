@@ -43,6 +43,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
 
     const preferImmediatePlayback = shouldPreferImmediatePlayback(message);
     recordSelectionTrigger(selectedText, message.trace, dependencies);
+    storeRuntimeSelection(selectedText, message.trace, dependencies);
     const options = {
       ...useOnlineMessageOptions(message),
       ...(preferImmediatePlayback ? {
@@ -146,6 +147,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
           : await resolvePlayableResult(selectedText, result, options, dependencies);
         const playback = await playResolvedAudio(playableResult, message.rate, dependencies, message.trace);
         if (playback) {
+          storeRuntimeResult(playableResult, dependencies);
           return { result: playableResult, speech: playback };
         }
 
@@ -157,6 +159,7 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         if (!speech || speech.spoken === false) {
           throw new Error(speech?.error || "Speech unavailable.");
         }
+        storeRuntimeResult(playableResult, dependencies);
         return { result: playableResult, speech: speechSummary(speech) };
       }),
       sendResponse,
@@ -547,6 +550,47 @@ function recordSelectionTrigger(selectedText, trace = null, dependencies = {}) {
     text: selectedText,
     trace
   });
+}
+
+function storeRuntimeSelection(selectedText, trace = null, dependencies = {}) {
+  setStorageBestEffort(dependencies, {
+    [dependencies.lastSelectionKey || "lastSelection"]: selectedText,
+    [dependencies.lastSourceKey || "lastSource"]: runtimeSourceLabel(trace)
+  });
+}
+
+function storeRuntimeResult(result = {}, dependencies = {}) {
+  if (!result || typeof result !== "object") {
+    return;
+  }
+
+  setStorageBestEffort(dependencies, {
+    [dependencies.lastResultKey || "lastResult"]: result
+  });
+}
+
+function setStorageBestEffort(dependencies = {}, value = {}) {
+  if (!value || typeof dependencies.setStorage !== "function") {
+    return;
+  }
+
+  try {
+    const stored = dependencies.setStorage(value);
+    if (stored && typeof stored.catch === "function") {
+      stored.catch(() => {});
+    }
+  } catch {
+    // Storage bookkeeping must not delay or break pronunciation.
+  }
+}
+
+function runtimeSourceLabel(trace = null) {
+  const action = normalizeSelection(trace?.action);
+  if (action) {
+    return action;
+  }
+
+  return normalizeSelection(trace?.source) || "runtime-speak";
 }
 
 function speechSummary(speech = {}) {

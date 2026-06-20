@@ -271,6 +271,78 @@ test("runtime speak reuses matching stored audio without resolving", async () =>
   ]);
 });
 
+test("runtime speak stores selection and result without waiting for storage writes", async () => {
+  const calls = [];
+  const resolved = {
+    query: "Exampletown",
+    display: "Exampletown",
+    pronunciation: {
+      audio: [{
+        label: "Resolved recording",
+        url: "https://example.com/resolved.mp3",
+        quality: "source-backed"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-store-runtime",
+    source: "popup",
+    action: "popup-speak",
+    startedAt: Date.now()
+  };
+  const responsePromise = new Promise((resolve) => {
+    const handled = handleRuntimeMessage({
+      type: MESSAGE_TYPES.speak,
+      text: "Exampletown",
+      rate: 0.82,
+      trace
+    }, resolve, {
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return {};
+      },
+      setStorage: (value) => {
+        calls.push(["setStorage", value]);
+        return new Promise(() => {});
+      },
+      resolveSelection: async (text, options) => {
+        calls.push(["resolveSelection", text, options]);
+        return resolved;
+      },
+      playAudio: async (audio, rate, messageTrace) => {
+        calls.push(["playAudio", audio, rate, messageTrace]);
+        return true;
+      },
+      speakResult: async () => {
+        throw new Error("should not speak when resolved audio plays");
+      },
+      lastResultKey: "lastResult",
+      lastSelectionKey: "lastSelection",
+      lastSourceKey: "lastSource"
+    });
+    assert.equal(handled, true);
+  });
+
+  const response = await Promise.race([
+    responsePromise,
+    delay(50).then(() => "timeout")
+  ]);
+
+  assert.notEqual(response, "timeout");
+  assert.equal(response.ok, true);
+  assert.equal(response.result, resolved);
+  assert.deepEqual(calls, [
+    ["setStorage", {
+      lastSelection: "Exampletown",
+      lastSource: "popup-speak"
+    }],
+    ["getStorage", ["lastResult"]],
+    ["resolveSelection", "Exampletown", { trace }],
+    ["playAudio", resolved.pronunciation.audio[0], 0.82, trace],
+    ["setStorage", { lastResult: resolved }]
+  ]);
+});
+
 test("runtime speak reuses visible overlay audio before storage or lookup", async () => {
   const responses = [];
   const calls = [];

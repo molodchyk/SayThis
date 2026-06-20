@@ -564,8 +564,12 @@ function runtimeMessageDependencies(sender = {}) {
     prepareAudio,
     getVisibleResult: () => getVisibleResultOnTab(sender?.tab?.id),
     getStorage: platform.getStorage,
+    setStorage: platform.setStorage,
     getDebugState,
-    recordDebugEvent
+    recordDebugEvent,
+    lastResultKey: STORAGE_KEYS.lastResult,
+    lastSelectionKey: STORAGE_KEYS.lastSelection,
+    lastSourceKey: STORAGE_KEYS.lastSource
   };
 }
 
