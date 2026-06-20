@@ -35,8 +35,21 @@ test("reads and normalizes selected text from a tab", async () => {
   const selection = await adapters.readSelectionFromTab(7);
 
   assert.equal(selection, "Gnocchi alla romana");
-  assert.deepEqual(calls[0].target, { tabId: 7 });
+  assert.deepEqual(calls[0].target, { tabId: 7, allFrames: true });
   assert.equal(typeof calls[0].func, "function");
+});
+
+test("uses the first non-empty frame selection from a tab", async () => {
+  const adapters = createRuntimeAdapters({
+    executeScript: async () => [
+      { result: "" },
+      { result: "   " },
+      { result: "  Chiaroscuro  " },
+      { result: "Ignored later selection" }
+    ]
+  });
+
+  assert.equal(await adapters.readSelectionFromTab(7), "Chiaroscuro");
 });
 
 test("returns an empty selection when tab script execution fails", async () => {

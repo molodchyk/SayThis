@@ -61,15 +61,21 @@ export function createRuntimeAdapters(dependencies = {}) {
 
   async function readSelectionFromTab(tabId) {
     try {
-      const [result] = await dependencies.executeScript?.({
-        target: { tabId },
+      const results = await dependencies.executeScript?.({
+        target: { tabId, allFrames: true },
         func: () => window.getSelection()?.toString() || ""
       });
 
-      return normalizeSelection(result?.result);
+      return firstNormalizedSelection(results);
     } catch {
       return "";
     }
+  }
+
+  function firstNormalizedSelection(results = []) {
+    return (Array.isArray(results) ? results : [])
+      .map((item) => normalizeSelection(item?.result))
+      .find(Boolean) || "";
   }
 
   async function fetchJson(url) {
