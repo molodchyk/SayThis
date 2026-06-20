@@ -381,6 +381,23 @@ test("pointer cancellation speaks after a selected word survives the canceled ge
   ]);
 });
 
+test("pointer cancellation speaks late browser selection without waiting for stable debounce", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  harness.dispatch("pointercancel");
+  await delay(5);
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(35);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
 test("overlay pointer cancellation does not speak the page selection", async () => {
   const harness = await installSelectionListener();
 

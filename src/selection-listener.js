@@ -171,12 +171,8 @@
     }
 
     clearSelectionGestureInProgress();
-    if (!readSelectedText()) {
-      return;
-    }
-
     markActiveSelectionStarted();
-    scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true });
+    scheduleSelectionCheck(committedSelectionDelayMs());
   }
 
   function clearScheduledCheck() {
