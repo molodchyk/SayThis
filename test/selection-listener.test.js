@@ -65,6 +65,32 @@ test("committed selection trims non-latin brackets before speaking", async () =>
   ]);
 });
 
+test("committed selection trims angle brackets before speaking", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("<Exampletown>");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
+test("committed selection trims code backticks before speaking", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("`Exampletown`");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
 test("committed selection preserves internal symbol terms while trimming wrappers", async () => {
   const harness = await installSelectionListener();
 
