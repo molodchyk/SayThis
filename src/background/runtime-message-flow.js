@@ -60,6 +60,12 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
     let resolvedPlayableResult = null;
     let storedPlayableResult = null;
     let visiblePlayableResult = null;
+    const shouldPrepareSharedAudioFromSpeak = preferImmediatePlayback &&
+      !message.result &&
+      message.prepareSharedAudio === true;
+    if (shouldPrepareSharedAudioFromSpeak) {
+      startPreparingSharedAudio(selectedText, message, dependencies);
+    }
     const preparedSharedAudioIsPending = preferImmediatePlayback &&
       !message.result &&
       hasPreparedSharedAudio(selectedText, message);
@@ -647,6 +653,17 @@ function startPreparingPlayback(dependencies = {}, trace = null) {
     }
   } catch {
     // Playback can still try to prepare its surface at the point of use.
+  }
+}
+
+function startPreparingSharedAudio(selectedText, message = {}, dependencies = {}) {
+  try {
+    const prepared = prepareSharedAudio(selectedText, message, dependencies);
+    if (prepared && typeof prepared.catch === "function") {
+      prepared.catch(() => {});
+    }
+  } catch {
+    // Direct shared-audio lookup can still run through the normal playback path.
   }
 }
 

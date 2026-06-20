@@ -8,7 +8,7 @@ import test from "node:test";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-test("committed selection sends prepare and speak with one trace", async () => {
+test("committed selection sends speak with shared-audio preparation hint", async () => {
   const harness = await installSelectionListener();
 
   harness.setSelection("Exampletown");
@@ -16,14 +16,11 @@ test("committed selection sends prepare and speak with one trace", async () => {
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => message.type), [
-    "SAYTHIS_PREPARE_PLAYBACK",
     "SAYTHIS_SPEAK"
   ]);
   assert.equal(harness.sentMessages[0].text, "Exampletown");
-  assert.equal(harness.sentMessages[1].text, "Exampletown");
   assert.equal(harness.sentMessages[0].rate, 0.82);
-  assert.equal(harness.sentMessages[1].rate, 0.82);
-  assert.equal(harness.sentMessages[0].trace.id, harness.sentMessages[1].trace.id);
+  assert.equal(harness.sentMessages[0].prepareSharedAudio, true);
 });
 
 test("committed selection trims adjacent sentence punctuation before speaking", async () => {
@@ -34,7 +31,6 @@ test("committed selection trims adjacent sentence punctuation before speaking", 
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
 });
@@ -47,7 +43,6 @@ test("committed selection trims typographic edge punctuation before speaking", a
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
 });
@@ -60,7 +55,6 @@ test("committed selection trims non-latin brackets before speaking", async () =>
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
 });
@@ -73,7 +67,6 @@ test("committed selection trims angle brackets before speaking", async () => {
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
 });
@@ -86,7 +79,6 @@ test("committed selection trims code backticks before speaking", async () => {
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
 });
@@ -99,7 +91,6 @@ test("committed selection preserves internal symbol terms while trimming wrapper
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "P&L"],
     ["SAYTHIS_SPEAK", "P&L"]
   ]);
 });
@@ -113,7 +104,6 @@ test("committed selection speaks without waiting for a timer tick", async () => 
   await Promise.resolve();
 
   assert.deepEqual(harness.sentMessages.map((message) => message.type), [
-    "SAYTHIS_PREPARE_PLAYBACK",
     "SAYTHIS_SPEAK"
   ]);
 });
@@ -152,7 +142,6 @@ test("native select event speaks textarea selection", async () => {
   await Promise.resolve();
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "Chiaroscuro"],
     ["SAYTHIS_SPEAK", "Chiaroscuro"]
   ]);
 });
@@ -198,7 +187,6 @@ test("committed selection does not wait for an unresolved settings read by defau
   await delay(60);
 
   assert.deepEqual(harness.sentMessages.map((message) => message.type), [
-    "SAYTHIS_PREPARE_PLAYBACK",
     "SAYTHIS_SPEAK"
   ]);
 
@@ -215,12 +203,11 @@ test("committed selection does not wait for the settings grace window", async ()
   await Promise.resolve();
 
   assert.deepEqual(harness.sentMessages.map((message) => message.type), [
-    "SAYTHIS_PREPARE_PLAYBACK",
     "SAYTHIS_SPEAK"
   ]);
 });
 
-test("committed selection prepares from speak path when earlier prepare is still waiting", async () => {
+test("committed selection asks speak path to prepare shared audio when settings are still loading", async () => {
   let resolveSettings;
   const settingsPromise = new Promise((resolve) => {
     resolveSettings = resolve;
@@ -233,15 +220,14 @@ test("committed selection prepares from speak path when earlier prepare is still
   await delay(25);
 
   assert.deepEqual(harness.sentMessages.map((message) => message.type), [
-    "SAYTHIS_PREPARE_PLAYBACK",
     "SAYTHIS_SPEAK"
   ]);
-  assert.equal(harness.sentMessages[0].trace.id, harness.sentMessages[1].trace.id);
+  assert.equal(harness.sentMessages[0].prepareSharedAudio, true);
 
   resolveSettings({ selectToHear: true });
   await delay(5);
 
-  assert.equal(harness.sentMessages.filter((message) => message.type === "SAYTHIS_PREPARE_PLAYBACK").length, 1);
+  assert.equal(harness.sentMessages.filter((message) => message.type === "SAYTHIS_PREPARE_PLAYBACK").length, 0);
 });
 
 test("stable selection preparation does not wait for unresolved settings", async () => {
@@ -385,6 +371,7 @@ test("pointer selection prepares while dragging and speaks on release", async ()
     ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
+  assert.equal(harness.sentMessages[2].prepareSharedAudio, false);
 });
 
 test("pointer release speaks late browser selection without waiting for stable debounce", async () => {
@@ -399,9 +386,9 @@ test("pointer release speaks late browser selection without waiting for stable d
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
+  assert.equal(harness.sentMessages[1].prepareSharedAudio, true);
 });
 
 test("double click speaks word selection without waiting for stable debounce", async () => {
@@ -418,9 +405,9 @@ test("double click speaks word selection without waiting for stable debounce", a
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
+  assert.equal(harness.sentMessages[1].prepareSharedAudio, true);
 });
 
 test("double click does not replay when pointer release already spoke", async () => {
@@ -457,6 +444,7 @@ test("pointer cancellation speaks after a selected word survives the canceled ge
     ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
+  assert.equal(harness.sentMessages[2].prepareSharedAudio, false);
 });
 
 test("pointer cancellation speaks late browser selection without waiting for stable debounce", async () => {
@@ -471,9 +459,9 @@ test("pointer cancellation speaks late browser selection without waiting for sta
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
+  assert.equal(harness.sentMessages[1].prepareSharedAudio, true);
 });
 
 test("overlay pointer cancellation does not speak the page selection", async () => {
@@ -523,9 +511,9 @@ test("keyboard selection shortcuts commit selected text on keyup", async () => {
   await Promise.resolve();
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
+  assert.equal(harness.sentMessages[0].prepareSharedAudio, true);
 });
 
 test("keyboard release speaks late browser selection without waiting for stable debounce", async () => {
@@ -540,9 +528,9 @@ test("keyboard release speaks late browser selection without waiting for stable 
 
   assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
     ["SAYTHIS_PREPARE_PLAYBACK", ""],
-    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
     ["SAYTHIS_SPEAK", "Exampletown"]
   ]);
+  assert.equal(harness.sentMessages[1].prepareSharedAudio, true);
 });
 
 test("ordinary keyup over an existing selection does not speak", async () => {

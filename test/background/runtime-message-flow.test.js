@@ -1555,6 +1555,95 @@ test("routes prepare playback messages without resolving", async () => {
   assert.deepEqual(responses, [{ ok: true }]);
 });
 
+test("select-to-hear speak can start prepared shared audio itself", async () => {
+  clearPreparedSharedAudioForTests();
+  const responses = [];
+  const calls = [];
+  const resolved = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const direct = {
+    ...resolved,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Self-prepared shared audio",
+        url: "https://community.example/audio/aud_self_prepared",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-self-prepared-direct",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  const dependencies = {
+    getVisibleResult: async () => {
+      calls.push(["getVisibleResult"]);
+      return null;
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      return direct;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak when self-prepared shared audio plays");
+    },
+    directSharedAudioWaitMs: 120,
+    lastResultKey: "lastResult"
+  };
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    prepareSharedAudio: true,
+    trace
+  }, (value) => responses.push(value), dependencies);
+
+  await delay(70);
+
+  assert.equal(handled, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, direct);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Self-prepared shared audio"
+  });
+  assert.equal(calls.some((call) => call[0] === "getVisibleResult"), false);
+  assert.equal(calls.some((call) => call[0] === "getStorage"), false);
+  assert.deepEqual(calls.slice(0, 3), [
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
+    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+  ]);
+  clearPreparedSharedAudioForTests();
+});
+
 test("select-to-hear lets fast prepared shared audio beat source-form fallback", async () => {
   clearPreparedSharedAudioForTests();
   const responses = [];

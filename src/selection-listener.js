@@ -118,7 +118,6 @@
     const mode = options.stable === true ? "stable" : "committed";
     if (mode === "committed") {
       clearScheduledPrepare();
-      preparePotentialSelection();
     } else {
       schedulePotentialSelectionPreparation(SELECTION_PREPARE_DEBOUNCE_MS);
     }
@@ -291,13 +290,11 @@
     lastSentSelectionStartedAt = activeSelectionStartedAt;
     const preparedTrace = sentPreparedTraceForKey(key);
     const trace = preparedTrace || pendingPreparedTraceForKey(key) || createTrace("select-to-hear");
-    if (!preparedTrace) {
-      sendPrepareForSelection(selectedText, key, trace);
-    }
     sendRuntimeMessage({
       type: MESSAGE_TYPE_SPEAK,
       text: selectedText,
       rate: 0.82,
+      prepareSharedAudio: !preparedTrace,
       trace
     }).then((response) => {
       if (!response?.ok) {
