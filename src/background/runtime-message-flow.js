@@ -20,6 +20,7 @@ import {
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 120;
 const DEFAULT_DIRECT_SHARED_AUDIO_FALLBACK_WAIT_MS = 1200;
+const DEFAULT_SELECT_TO_HEAR_AUDIO_FALLBACK_WAIT_MS = 700;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
 const DEFAULT_PREPARED_AUDIO_FALLBACK_GRACE_MS = 32;
 
@@ -116,6 +117,17 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         resolvedPlayablePromise,
         dependencies
       );
+    const selectionAudioFallbackPromise = message.result || !preferImmediatePlayback
+      ? Promise.resolve(null)
+      : fallbackRuntimeAudioCandidate(
+        directSharedAudioPromise,
+        resolvedPlayablePromise,
+        {
+          ...dependencies,
+          directSharedAudioFallbackWaitMs: dependencies.selectionAudioFallbackWaitMs ??
+            DEFAULT_SELECT_TO_HEAR_AUDIO_FALLBACK_WAIT_MS
+        }
+      );
     const resultPromise = message.result
       ? Promise.resolve(message.result)
       : firstNonNullResult([
@@ -137,7 +149,11 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
           )
           : null
       ])
-        .then((fastResult) => fastResult || fallbackAudioPromise)
+        .then((fastResult) => preferAudioBeforeSpeechFallback(fastResult, {
+          fallbackAudioPromise,
+          selectionAudioFallbackPromise,
+          preferImmediatePlayback
+        }))
         .then((result) => result || resolvedSelectionPromise);
     respondWithResult(
       resultPromise.then(async (result) => {
@@ -334,6 +350,19 @@ async function fallbackRuntimeAudioCandidate(
     promiseWithinWait(directSharedAudioPromise, fallbackWaitMs),
     promiseWithinWait(resolvedPlayablePromise, fallbackWaitMs)
   ]);
+}
+
+async function preferAudioBeforeSpeechFallback(fastResult, options = {}) {
+  if (!fastResult) {
+    return options.fallbackAudioPromise || null;
+  }
+
+  if (!options.preferImmediatePlayback || getBestAudio(fastResult)?.url) {
+    return fastResult;
+  }
+
+  const audioResult = await options.selectionAudioFallbackPromise;
+  return audioResult || fastResult;
 }
 
 async function waitForStoredResultGrace(storedResultPromise, waitMs) {

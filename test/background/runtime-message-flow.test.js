@@ -815,6 +815,7 @@ test("select-to-hear speaks resolved source form before slow direct shared-audio
       };
     },
     directSharedAudioWaitMs: 100,
+    selectionAudioFallbackWaitMs: 5,
     storedResultGraceMs: 5,
     lastResultKey: "lastResult"
   });
@@ -850,6 +851,90 @@ test("select-to-hear speaks resolved source form before slow direct shared-audio
   ]);
 
   finishDirect();
+});
+
+test("select-to-hear lets delayed direct shared audio beat source-form speech fallback", async () => {
+  const responses = [];
+  const calls = [];
+  const resolved = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const direct = {
+    ...resolved,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Delayed shared audio",
+        url: "https://community.example/audio/aud_delayed_direct",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-delayed-direct-before-speech",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+
+  const handled = handleRuntimeMessage({
+    type: MESSAGE_TYPES.speak,
+    text: "Exampletown",
+    rate: 0.82,
+    trace
+  }, (value) => responses.push(value), {
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      return {};
+    },
+    requestSharedAudio: async (text, result, options) => {
+      calls.push(["requestSharedAudio", text, result, options]);
+      if (result) {
+        return result;
+      }
+      await delay(45);
+      return direct;
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return resolved;
+    },
+    playAudio: async (audio, rate, messageTrace) => {
+      calls.push(["playAudio", audio, rate, messageTrace]);
+      return true;
+    },
+    speakResult: async () => {
+      throw new Error("should not speak source-form fallback when delayed shared audio arrives");
+    },
+    directSharedAudioWaitMs: 5,
+    selectionAudioFallbackWaitMs: 80,
+    storedResultGraceMs: 5,
+    lastResultKey: "lastResult"
+  });
+
+  await delay(90);
+
+  assert.equal(handled, true);
+  assert.equal(responses[0].ok, true);
+  assert.equal(responses[0].result, direct);
+  assert.deepEqual(responses[0].speech, {
+    fallback: "audio",
+    text: "Delayed shared audio"
+  });
+  assert.deepEqual(calls, [
+    ["getStorage", ["lastResult"]],
+    ["requestSharedAudio", "Exampletown", null, {
+      rate: 0.82,
+      trace,
+      directLookup: true,
+      skipRefresh: true
+    }],
+    ["resolveSelection", "Exampletown", { useOnline: false, trace }],
+    ["playAudio", direct.pronunciation.audio[0], 0.82, trace]
+  ]);
 });
 
 test("select-to-hear only rechecks local shared audio after direct lookup misses", async () => {
