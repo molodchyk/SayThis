@@ -63,6 +63,9 @@ export async function handleActiveSelectionCommand(options = {}, dependencies = 
     const candidate = await firstActiveSelectionAudioCandidate(selectedText, tracedOptions, dependencies, trace);
     if (candidate?.result) {
       const storedResult = candidate.result;
+      if (candidate.source !== "stored" && getBestAudio(storedResult)?.url) {
+        storeLastResultBestEffort(dependencies, storedResult);
+      }
       await dependencies.playResolvedResult?.(storedResult, tab.id, trace);
       return { handled: true, result: storedResult, reusedStored: true };
     }
@@ -110,6 +113,9 @@ async function handleOnlineLookupAndPronounce(selectedText, tabId, options = {},
   const playedImmediate = Boolean(getBestAudio(immediateResult)?.url);
 
   if (playedImmediate) {
+    if (immediateCandidate?.source !== "stored" && getBestAudio(immediateResult)?.url) {
+      storeLastResultBestEffort(dependencies, immediateResult);
+    }
     await dependencies.playResolvedResult?.(immediateResult, tabId, trace);
   }
 
@@ -360,6 +366,16 @@ function setStorageBestEffort(dependencies = {}, value = {}) {
   } catch {
     // Storage bookkeeping should not block pronunciation.
   }
+}
+
+function storeLastResultBestEffort(dependencies = {}, result = {}) {
+  if (!result || typeof result !== "object") {
+    return;
+  }
+
+  setStorageBestEffort(dependencies, {
+    [dependencies.lastResultKey || "lastResult"]: result
+  });
 }
 
 function recordStoredResultHit(selectedText, result = {}, dependencies = {}, trace = null) {

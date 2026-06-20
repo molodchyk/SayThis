@@ -201,6 +201,7 @@ test("online keyboard command plays shared audio before refreshing the result", 
       trace: { action: "keyboard-online" }
     }],
     ["requestSharedAudio", "Exampletown", local],
+    ["setStorage", { lastResult: shared }],
     ["playResolvedResult", shared, 7],
     ["resolveSelection", "Exampletown", {
       source: "keyboard-online",
@@ -265,7 +266,7 @@ test("keyboard command plays direct approved shared audio before slow local reso
   assert.equal(result.handled, true);
   assert.equal(result.result, direct);
   assert.equal(resolveStarted, true);
-  assert.deepEqual(compactTraceCalls(calls.slice(0, 6)), [
+  assert.deepEqual(compactTraceCalls(calls.slice(0, 7)), [
     ["readSelectionFromTab", 7],
     ["setStorage", { lastSelection: "Exampletown", lastSource: "keyboard" }],
     ["getStorage", ["lastResult"]],
@@ -279,6 +280,7 @@ test("keyboard command plays direct approved shared audio before slow local reso
       useOnline: false,
       trace: { action: "keyboard" }
     }],
+    ["setStorage", { lastResult: direct }],
     ["playResolvedResult", direct, 7]
   ]);
 
@@ -407,7 +409,7 @@ test("keyboard command reuses shared audio prepared from selection", async () =>
   assert.equal(result.handled, true);
   assert.equal(result.result, direct);
   assert.equal(calls.filter((call) => call[0] === "requestSharedAudio").length, 1);
-  assert.deepEqual(compactTraceCalls(calls.slice(0, 6)), [
+  assert.deepEqual(compactTraceCalls(calls.slice(0, 7)), [
     ["requestSharedAudio", "Exampletown", null, {
       rate: 0.82,
       trace: selectionTrace,
@@ -422,6 +424,7 @@ test("keyboard command reuses shared audio prepared from selection", async () =>
       useOnline: false,
       trace: { action: "keyboard" }
     }],
+    ["setStorage", { lastResult: direct }],
     ["playResolvedResult", direct, 7]
   ]);
 
