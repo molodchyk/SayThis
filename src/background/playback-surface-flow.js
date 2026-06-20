@@ -460,13 +460,22 @@ export function createPlaybackSurface(dependencies = {}) {
           "src/content-overlay.js"
         ]
       });
-      await dependencies.sendTabMessage?.(tabId, createShowResultMessage(result, {
+      const visibleResult = preloadVisibleResultAudio(result, options.trace);
+      await dependencies.sendTabMessage?.(tabId, createShowResultMessage(visibleResult, {
         autoPlay: Boolean(options.autoPlay)
       }));
       return true;
     } catch {
       // Some pages do not allow extension script injection.
       return false;
+    }
+  }
+
+  function preloadVisibleResultAudio(result, trace) {
+    try {
+      return dependencies.preloadVisibleResultAudio?.(result, trace) || result;
+    } catch {
+      return result;
     }
   }
 

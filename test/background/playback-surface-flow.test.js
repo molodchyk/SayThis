@@ -522,6 +522,75 @@ test("injects the overlay and sends result messages when enabled", async () => {
   assert.equal(calls[1][2].result.display, "Gnocchi");
 });
 
+test("preloads visible result audio before sending overlay result", async () => {
+  const calls = [];
+  const trace = {
+    id: "trace-visible-preload",
+    source: "background",
+    action: "show-result",
+    startedAt: Date.now()
+  };
+  const generated = {
+    display: "Exampletown",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.test/generated.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  const cached = {
+    ...generated,
+    pronunciation: {
+      audio: [{
+        ...generated.pronunciation.audio[0],
+        cacheBeforePlayback: true
+      }]
+    }
+  };
+  const surface = createPlaybackSurface({
+    getStorage: async () => ({
+      settings: { showOverlay: true }
+    }),
+    executeScript: async (details) => calls.push(["executeScript", details]),
+    sendTabMessage: async (tabId, message) => calls.push(["sendTabMessage", tabId, message]),
+    preloadVisibleResultAudio: (result, messageTrace) => {
+      calls.push(["preloadVisibleResultAudio", result, messageTrace]);
+      return cached;
+    }
+  });
+
+  const shown = await surface.showResultOnTab(7, generated, { trace });
+
+  assert.equal(shown, true);
+  assert.equal(calls[1][0], "preloadVisibleResultAudio");
+  assert.equal(calls[1][1], generated);
+  assert.equal(calls[1][2], trace);
+  assert.equal(calls[2][0], "sendTabMessage");
+  assert.equal(calls[2][2].result.pronunciation.audio[0].cacheBeforePlayback, true);
+});
+
+test("visible result preload failures do not block overlay display", async () => {
+  const calls = [];
+  const surface = createPlaybackSurface({
+    getStorage: async () => ({
+      settings: { showOverlay: true }
+    }),
+    executeScript: async (details) => calls.push(["executeScript", details]),
+    sendTabMessage: async (tabId, message) => calls.push(["sendTabMessage", tabId, message]),
+    preloadVisibleResultAudio: () => {
+      throw new Error("preload failed");
+    }
+  });
+
+  const shown = await surface.showResultOnTab(7, AUDIO_RESULT);
+
+  assert.equal(shown, true);
+  assert.equal(calls[1][0], "sendTabMessage");
+  assert.equal(calls[1][2].result, AUDIO_RESULT);
+});
+
 test("does not inject the overlay when disabled or target data is missing", async () => {
   const surface = createPlaybackSurface({
     getStorage: async () => ({

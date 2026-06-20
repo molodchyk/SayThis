@@ -54,7 +54,8 @@ import {
 const platform = createBackgroundPlatformAdapters();
 const playbackSurface = createPlaybackSurface({
   ...createPlaybackSurfacePlatformDependencies(platform, STORAGE_KEYS),
-  onDebugEvent: recordPlaybackDebugEvent
+  onDebugEvent: recordPlaybackDebugEvent,
+  preloadVisibleResultAudio: preloadSharedAudioForPlayback
 });
 const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDependencies(platform, STORAGE_KEYS));
 const debugEvents = [];
