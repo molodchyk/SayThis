@@ -41,6 +41,7 @@ const DEFAULT_STORAGE_KEYS = {
   syncSummary: "syncSummary",
   settings: "settings"
 };
+const RECENT_EVENT_LIMIT = 120;
 
 export async function buildDebugDiagnostics(dependencies = {}) {
   const storageKeys = {
@@ -61,7 +62,7 @@ export async function buildDebugDiagnostics(dependencies = {}) {
   });
   const queue = normalizeSubmissionQueue(stored[storageKeys.syncQueue]);
   const cache = normalizeResultCache(stored[storageKeys.resultCache]);
-  const events = recentEvents(dependencies);
+  const events = debugEvents(dependencies);
 
   return {
     generatedAt: nowIso(dependencies),
@@ -84,7 +85,7 @@ export async function buildDebugDiagnostics(dependencies = {}) {
     offscreenSpeech,
     playback: playbackSummary(lastResult),
     timing: playbackTimingSummary(events),
-    recentEvents: events
+    recentEvents: recentEvents(events)
   };
 }
 
@@ -266,9 +267,13 @@ function extensionSummary(dependencies = {}) {
   };
 }
 
-function recentEvents(dependencies = {}) {
+function debugEvents(dependencies = {}) {
   const events = dependencies.getDebugEvents?.();
-  return Array.isArray(events) ? events.slice(-60) : [];
+  return Array.isArray(events) ? events : [];
+}
+
+function recentEvents(events = []) {
+  return events.slice(-RECENT_EVENT_LIMIT);
 }
 
 function playbackTimingSummary(events = []) {

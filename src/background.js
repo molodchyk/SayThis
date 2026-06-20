@@ -71,6 +71,7 @@ const playbackSurface = createPlaybackSurface({
 });
 const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDependencies(platform, STORAGE_KEYS));
 const debugEvents = [];
+const DEBUG_EVENT_LIMIT = 180;
 const APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_MS = 15 * 60 * 1000;
 let approvedSharedEntriesRefreshPromise = null;
 let approvedSharedEntriesLastRefreshAt = 0;
@@ -609,7 +610,7 @@ function recordDebugEvent(kind, payload = {}) {
       sinceTraceStartMs: Math.max(0, now - trace.startedAt)
     } : {})
   });
-  while (debugEvents.length > 60) {
+  while (debugEvents.length > DEBUG_EVENT_LIMIT) {
     debugEvents.shift();
   }
 }

@@ -321,3 +321,45 @@ test("summarizes debug payloads without full objects", () => {
     }
   });
 });
+
+test("keeps user playback timing when later background events fill the recent window", async () => {
+  const userTrace = {
+    id: "trace-user-playback",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: 1800000000000
+  };
+  const backgroundEvents = Array.from({ length: 80 }, (_value, index) => ({
+    at: new Date(1800000002000 + index).toISOString(),
+    kind: "audio-prepare:result",
+    trace: {
+      id: `background-${index}`,
+      source: "background",
+      action: "playback-prime-startup",
+      startedAt: 1800000002000 + index
+    },
+    sinceTraceStartMs: 1,
+    elapsedMs: 1
+  }));
+
+  const diagnostics = await buildDebugDiagnostics({
+    now: () => "2026-06-19T00:00:00.000Z",
+    getStorage: async () => ({}),
+    getDebugEvents: () => [{
+      at: "2026-06-19T00:00:00.000Z",
+      kind: "ui:selection-auto-speak",
+      trace: userTrace,
+      sinceTraceStartMs: 0
+    }, {
+      at: "2026-06-19T00:00:00.050Z",
+      kind: "audio:result",
+      trace: userTrace,
+      sinceTraceStartMs: 50,
+      elapsedMs: 5
+    }, ...backgroundEvents]
+  });
+
+  assert.equal(diagnostics.timing.traceId, "trace-user-playback");
+  assert.equal(diagnostics.timing.audioStartMs, 50);
+  assert.equal(diagnostics.recentEvents.length, 82);
+});
