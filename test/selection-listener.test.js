@@ -674,6 +674,10 @@ test("clearing selection allows the same word to be heard again immediately", as
 });
 
 async function installSelectionListener(options = {}) {
+  const adapterSource = await readFile(
+    join(root, "src", "content", "selection-runtime-adapters.js"),
+    "utf8"
+  );
   const source = await readFile(join(root, "src", "selection-listener.js"), "utf8");
   const listeners = new Map();
   const sentMessages = [];
@@ -736,6 +740,10 @@ async function installSelectionListener(options = {}) {
     String
   };
   context.globalThis = context;
+
+  vm.runInNewContext(adapterSource, context, {
+    filename: "src/content/selection-runtime-adapters.js"
+  });
 
   vm.runInNewContext(source, context, {
     filename: "src/selection-listener.js"

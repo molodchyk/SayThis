@@ -18,7 +18,8 @@
   const MAX_AUTO_WORDS = 5;
   const EDGE_SELECTED_TEXT_PUNCTUATION =
     /^[\s"'`([{<\u00a1\u00ab\u00bf\u2010-\u2015\u2018-\u201f\u2039\u3008\u300a\u300c\u300e\u3010\u3014\u3016\u3018\u301a\uff08]+|[\s"'`)>\]},.;:!?\u00bb\u2010-\u2015\u2018-\u201f\u2026\u203a\u3002\u3009\u300b\u300d\u300f\u3011\u3015\u3017\u3019\u301b\uff09]+$/g;
-  const chromeApi = globalThis.chrome;
+  const runtimeAdapters = globalThis.__sayThisSelectionRuntimeAdapters
+    ?.createSelectionRuntimeAdapters?.() || {};
 
   let timerId = null;
   let prepareTimerId = null;
@@ -105,7 +106,7 @@
     }
   });
 
-  chromeApi?.storage?.onChanged?.addListener?.((changes, areaName) => {
+  runtimeAdapters.addStorageChangedListener?.((changes, areaName) => {
     if (areaName === "local" && Object.prototype.hasOwnProperty.call(changes, SETTINGS_KEY)) {
       lastSettings = changes[SETTINGS_KEY].newValue || {};
       settingsPromise = null;
@@ -518,7 +519,7 @@
 
   async function readStoredSettings() {
     try {
-      const stored = await chromeApi?.storage?.local?.get?.([SETTINGS_KEY]);
+      const stored = await runtimeAdapters.getStorage?.([SETTINGS_KEY]);
       lastSettings = stored?.[SETTINGS_KEY] || {};
     } catch {
       lastSettings = {};
@@ -543,12 +544,12 @@
   }
 
   function sendRuntimeMessage(message) {
-    if (typeof chromeApi?.runtime?.sendMessage !== "function") {
+    if (typeof runtimeAdapters.sendMessage !== "function") {
       return Promise.resolve({ ok: false });
     }
 
     try {
-      const response = chromeApi.runtime.sendMessage(message);
+      const response = runtimeAdapters.sendMessage(message);
       return response && typeof response.then === "function"
         ? response.catch(() => ({ ok: false }))
         : Promise.resolve(response).catch(() => ({ ok: false }));

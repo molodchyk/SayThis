@@ -33,7 +33,10 @@ test("manifest installs the low-friction selection listener", () => {
   const scripts = manifest.content_scripts || [];
   assert.equal(scripts.length, 1);
   assert.deepEqual(scripts[0].matches, ["<all_urls>"]);
-  assert.deepEqual(scripts[0].js, ["src/selection-listener.js"]);
+  assert.deepEqual(scripts[0].js, [
+    "src/content/selection-runtime-adapters.js",
+    "src/selection-listener.js"
+  ]);
   assert.equal(scripts[0].run_at, "document_start");
   assert.equal(scripts[0].all_frames, true);
   assert.equal(scripts[0].match_about_blank, true);

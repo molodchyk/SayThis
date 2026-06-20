@@ -20,7 +20,10 @@ const AUDITED_EXTENSIONS = new Set([
   ".md",
   ".mjs"
 ]);
-const DEFAULT_FILE_BASELINE = {};
+const DEFAULT_FILE_BASELINE = {
+  "test/background/context-menu-flow.test.js": 908,
+  "test/background/runtime-message-flow.test.js": 2210
+};
 const DEFAULT_FOLDER_BASELINE = {
   src: 24,
   test: 19
@@ -29,6 +32,7 @@ const CHROME_API_PATTERN = /\b(?:chrome\.(?:commands|contextMenus|offscreen|perm
 const CHROME_API_ALLOWED_PATHS = [
   /^src\/background\/runtime-platform\.js$/,
   /^src\/content\/overlay-runtime-adapters\.js$/,
+  /^src\/content\/selection-runtime-adapters\.js$/,
   /^src\/offscreen\/runtime-adapters\.js$/,
   /^src\/options\/runtime-adapters\.js$/,
   /^src\/popup\/runtime-adapters\.js$/

@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   activateSelectionListenerOnOpenTabs,
   registerContextMenus,
-  SELECTION_LISTENER_FILE
+  SELECTION_LISTENER_FILES
 } from "../../src/background/install-activation-flow.js";
 
 test("registers context menu definitions", () => {
@@ -46,11 +46,11 @@ test("activates the selection listener in existing tabs best-effort", async () =
     ["queryTabs", {}],
     ["executeScript", {
       target: { tabId: 7, allFrames: true },
-      files: [SELECTION_LISTENER_FILE]
+      files: SELECTION_LISTENER_FILES
     }],
     ["executeScript", {
       target: { tabId: 8, allFrames: true },
-      files: [SELECTION_LISTENER_FILE]
+      files: SELECTION_LISTENER_FILES
     }]
   ]);
   assert.equal(calls.at(-1)[0], "recordDebugEvent");

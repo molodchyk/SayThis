@@ -1,4 +1,8 @@
 export const SELECTION_LISTENER_FILE = "src/selection-listener.js";
+export const SELECTION_LISTENER_FILES = [
+  "src/content/selection-runtime-adapters.js",
+  SELECTION_LISTENER_FILE
+];
 
 export function registerContextMenus(definitions = [], dependencies = {}) {
   for (const item of definitions) {
@@ -50,7 +54,8 @@ export async function activateSelectionListenerOnOpenTabs(dependencies = {}) {
     try {
       await dependencies.executeScript?.({
         target: { tabId: tab.id, allFrames: true },
-        files: [dependencies.listenerFile || SELECTION_LISTENER_FILE]
+        files: dependencies.listenerFiles ||
+          (dependencies.listenerFile ? [dependencies.listenerFile] : SELECTION_LISTENER_FILES)
       });
       injected += 1;
     } catch {

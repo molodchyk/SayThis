@@ -33,6 +33,7 @@
         "<all_urls>"
       ],
       "js": [
+        "src/content/selection-runtime-adapters.js",
         "src/selection-listener.js"
       ],
       "run_at": "document_start",
