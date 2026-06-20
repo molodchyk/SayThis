@@ -52,6 +52,24 @@ test("uses the first non-empty frame selection from a tab", async () => {
   assert.equal(await adapters.readSelectionFromTab(7), "Chiaroscuro");
 });
 
+test("reads selected text from active text controls in a tab", async () => {
+  const adapters = createRuntimeAdapters({
+    executeScript: async (details) => [{
+      result: runSelectionReader(details.func, {
+        activeElement: {
+          tagName: "textarea",
+          value: "Say Chiaroscuro today",
+          selectionStart: 4,
+          selectionEnd: 15
+        },
+        selectionText: ""
+      })
+    }]
+  });
+
+  assert.equal(await adapters.readSelectionFromTab(7), "Chiaroscuro");
+});
+
 test("returns an empty selection when tab script execution fails", async () => {
   const adapters = createRuntimeAdapters({
     executeScript: async () => {
@@ -94,3 +112,34 @@ test("builds active-selection dependencies from browser adapters and workflows",
     ["setStorage", { customLastSelection: "Gnocchi" }]
   ]);
 });
+
+function runSelectionReader(func, options = {}) {
+  const previousDocument = globalThis.document;
+  const previousWindow = globalThis.window;
+  const hadDocument = Object.prototype.hasOwnProperty.call(globalThis, "document");
+  const hadWindow = Object.prototype.hasOwnProperty.call(globalThis, "window");
+
+  try {
+    globalThis.document = {
+      activeElement: options.activeElement || null
+    };
+    globalThis.window = {
+      getSelection: () => ({
+        toString: () => options.selectionText || ""
+      })
+    };
+    return func();
+  } finally {
+    if (hadDocument) {
+      globalThis.document = previousDocument;
+    } else {
+      delete globalThis.document;
+    }
+
+    if (hadWindow) {
+      globalThis.window = previousWindow;
+    } else {
+      delete globalThis.window;
+    }
+  }
+}

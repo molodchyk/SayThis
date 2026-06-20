@@ -436,6 +436,7 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(manifestSource, /"match_about_blank": true/);
   assert.match(source, /selectionchange/);
   assert.match(source, /selectstart/);
+  assert.match(source, /addEventListener\("select"/);
   assert.match(source, /pointerdown/);
   assert.match(source, /keydown/);
   assert.match(source, /SELECTION_CHANGE_DEBOUNCE_MS = 40/);

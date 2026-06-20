@@ -40,6 +40,25 @@ test("committed selection speaks without waiting for a timer tick", async () => 
   ]);
 });
 
+test("native select event speaks textarea selection", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setActiveElement({
+    tagName: "textarea",
+    value: "Practice Chiaroscuro today",
+    selectionStart: 9,
+    selectionEnd: 20
+  });
+  harness.dispatch("select");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Chiaroscuro"],
+    ["SAYTHIS_SPEAK", "Chiaroscuro"]
+  ]);
+});
+
 test("committed selection does not wait for an unresolved settings read by default", async () => {
   let resolveSettings;
   const settingsPromise = new Promise((resolve) => {
@@ -278,6 +297,7 @@ async function installSelectionListener(options = {}) {
   const sentMessages = [];
   let storageListener = null;
   let selectedText = "";
+  let activeElement = null;
 
   const context = {
     globalThis: {},
@@ -291,7 +311,9 @@ async function installSelectionListener(options = {}) {
     },
     document: {
       visibilityState: "visible",
-      activeElement: null,
+      get activeElement() {
+        return activeElement;
+      },
       addEventListener: (type, listener) => {
         const existing = listeners.get(type) || [];
         existing.push(listener);
@@ -342,6 +364,9 @@ async function installSelectionListener(options = {}) {
     sentMessages,
     setSelection(value) {
       selectedText = value;
+    },
+    setActiveElement(element) {
+      activeElement = element;
     },
     dispatch(type, event = {}) {
       for (const listener of listeners.get(type) || []) {

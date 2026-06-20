@@ -62,6 +62,7 @@
   }, true);
   document.addEventListener("pointerup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("mouseup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
+  document.addEventListener("select", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("keyup", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("touchend", () => scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS), true);
   document.addEventListener("visibilitychange", () => {

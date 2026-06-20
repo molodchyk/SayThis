@@ -63,7 +63,23 @@ export function createRuntimeAdapters(dependencies = {}) {
     try {
       const results = await dependencies.executeScript?.({
         target: { tabId, allFrames: true },
-        func: () => window.getSelection()?.toString() || ""
+        func: () => {
+          const element = document.activeElement;
+          const tagName = String(element?.tagName || "").toLowerCase();
+          const type = String(element?.type || "text").toLowerCase();
+          const isTextControl = tagName === "textarea" ||
+            (tagName === "input" && ["", "email", "search", "tel", "text", "url"].includes(type));
+
+          if (isTextControl) {
+            const start = Number(element.selectionStart);
+            const end = Number(element.selectionEnd);
+            if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+              return String(element.value || "").slice(start, end);
+            }
+          }
+
+          return window.getSelection()?.toString() || "";
+        }
       });
 
       return firstNormalizedSelection(results);
