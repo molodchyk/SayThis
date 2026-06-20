@@ -470,6 +470,9 @@ test("selection listener speaks bounded selected text directly", async () => {
   assert.match(source, /selectToHear !== false/);
   assert.match(source, /SAYTHIS_SPEAK/);
   assert.match(source, /SAYTHIS_PREPARE_PLAYBACK/);
+  assert.match(source, /timedStatusLabel\(status, trace\)/);
+  assert.match(source, /timedStatusLabel\("Unavailable", trace\)/);
+  assert.match(source, /selectionElapsedMs/);
   assert.doesNotMatch(source, /SAYTHIS_DEBUG_EVENT/);
   assert.match(runtimeSource, /ui:selection-auto-speak/);
   assert.match(runtimeSource, /MESSAGE_TYPES\.preparePlayback/);

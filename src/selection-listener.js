@@ -309,11 +309,12 @@
         lastSentKey = "";
         lastSentAt = 0;
         lastSentSelectionStartedAt = 0;
-        showSelectionStatus(selectedText, "Unavailable", { autoHide: true });
+        showSelectionStatus(selectedText, timedStatusLabel("Unavailable", trace), { autoHide: true });
         return;
       }
 
-      showSelectionStatus(selectedText, response.speech?.fallback === "audio" ? "Playing" : "Speaking", {
+      const status = response.speech?.fallback === "audio" ? "Playing" : "Speaking";
+      showSelectionStatus(selectedText, timedStatusLabel(status, trace), {
         autoHide: true
       });
     });
@@ -633,6 +634,22 @@
     if (options.autoHide) {
       statusTimerId = setTimeout(hideSelectionStatus, STATUS_HIDE_MS);
     }
+  }
+
+  function timedStatusLabel(label, trace = null) {
+    const elapsed = selectionElapsedMs(trace);
+    return Number.isFinite(elapsed)
+      ? `${label} in ${elapsed} ms`
+      : label;
+  }
+
+  function selectionElapsedMs(trace = null) {
+    const startedAt = Number(trace?.startedAt);
+    if (!Number.isFinite(startedAt) || startedAt <= 0) {
+      return Number.NaN;
+    }
+
+    return Math.max(0, Math.round(Date.now() - startedAt));
   }
 
   function ensureStatusRoot() {
