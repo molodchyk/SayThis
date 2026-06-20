@@ -325,6 +325,58 @@ test("context menu plays direct approved shared audio before slow local resoluti
   await delay(0);
 });
 
+test("context menu still plays shared audio after the fast wait window", async () => {
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Delayed shared audio",
+        url: "https://audio.example/delayed.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await Promise.race([
+    handleContextMenuClick({ menuItemId: "say", selectionText: " Exampletown " }, { id: 42 }, {
+      resolveOptionsForMenuId: () => ({
+        ok: true,
+        source: "context-menu",
+        options: { useOnline: false }
+      }),
+      normalizeSelection: (value) => String(value || "").trim(),
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return {};
+      },
+      setStorage: async (value) => calls.push(["setStorage", value]),
+      requestSharedAudio: async (text, value, options) => {
+        calls.push(["requestSharedAudio", text, value, options]);
+        await delay(75);
+        return value ? value : direct;
+      },
+      resolveSelection: async (text, options) => {
+        calls.push(["resolveSelection", text, options]);
+        await delay(500);
+        return { display: "Late result" };
+      },
+      playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+      directSharedAudioWaitMs: 5,
+      directSharedAudioFallbackWaitMs: 150,
+      lastResultKey: "lastResult"
+    }),
+    delay(250).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
+});
+
 test("plain context menu only checks local shared audio after local resolution", async () => {
   const calls = [];
   const resolved = {

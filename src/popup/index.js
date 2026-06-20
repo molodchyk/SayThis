@@ -144,7 +144,8 @@ async function speakSelection(rate) {
   });
 
   if (!currentResult) {
-    await resolveSelection();
+    await speakUnresolvedSelection(text, rate, trace);
+    return;
   }
 
   const sharedAudioResult = await ensureSharedAudio(currentResult, rate, { trace });
@@ -202,9 +203,10 @@ async function init() {
       return;
     }
 
-    const result = await resolveSelection();
-    if (settings.autoSpeakPopup && result) {
+    if (settings.autoSpeakPopup) {
       await speakSelection(0.82);
+    } else {
+      await resolveSelection();
     }
   } else {
     selectionInput.value = stored.lastSelection || "";
@@ -216,6 +218,21 @@ async function init() {
   }
 
   updateButtonState();
+}
+
+async function speakUnresolvedSelection(text, rate, trace) {
+  const response = await sendMessage(createSpeakMessage(text, {
+    rate,
+    trace
+  }));
+
+  if (response.ok) {
+    currentResult = response.result;
+    renderResult(currentResult);
+    setStatus(speakingStatus(response, rate));
+  } else {
+    setStatus(response.error || "Speech failed.");
+  }
 }
 
 async function resolveSelection(useOnline) {

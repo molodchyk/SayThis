@@ -432,6 +432,81 @@ test("runtime speak plays direct approved shared audio before slow resolution", 
   finishResolve();
 });
 
+test("runtime speak still plays shared audio after the fast wait window", async () => {
+  clearPreparedSharedAudioForTests();
+  const calls = [];
+  const direct = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Delayed shared audio",
+        url: "https://community.example/audio/aud_delayed",
+        quality: "generated"
+      }]
+    }
+  };
+  const trace = {
+    id: "trace-delayed-direct",
+    source: "popup",
+    action: "popup-speak",
+    startedAt: Date.now()
+  };
+  const responsePromise = new Promise((resolve) => {
+    const handled = handleRuntimeMessage({
+      type: MESSAGE_TYPES.speak,
+      text: "Exampletown",
+      rate: 0.82,
+      trace
+    }, resolve, {
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return {};
+      },
+      requestSharedAudio: async (text, result, options) => {
+        calls.push(["requestSharedAudio", text, result, options]);
+        await delay(75);
+        return result || direct;
+      },
+      resolveSelection: async (text, options) => {
+        calls.push(["resolveSelection", text, options]);
+        await delay(500);
+        return { display: "Late result" };
+      },
+      playAudio: async (audio, rate, messageTrace) => {
+        calls.push(["playAudio", audio, rate, messageTrace]);
+        return true;
+      },
+      speakResult: async () => {
+        throw new Error("should not speak when delayed shared audio plays");
+      },
+      directSharedAudioWaitMs: 5,
+      directSharedAudioFallbackWaitMs: 150,
+      lastResultKey: "lastResult"
+    });
+    assert.equal(handled, true);
+  });
+
+  const response = await Promise.race([
+    responsePromise,
+    delay(250).then(() => "timeout")
+  ]);
+
+  assert.notEqual(response, "timeout");
+  assert.equal(response.ok, true);
+  assert.equal(response.result, direct);
+  assert.deepEqual(response.speech, {
+    fallback: "audio",
+    text: "Delayed shared audio"
+  });
+  assert.equal(calls.some((call) => call[0] === "playAudio" && call[1] === direct.pronunciation.audio[0]), true);
+  clearPreparedSharedAudioForTests();
+});
+
 test("runtime speak does not wait for slow stored-result miss before direct shared audio", async () => {
   const responses = [];
   const calls = [];

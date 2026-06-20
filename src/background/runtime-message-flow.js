@@ -19,6 +19,7 @@ import {
 } from "./prepared-shared-audio-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 120;
+const DEFAULT_DIRECT_SHARED_AUDIO_FALLBACK_WAIT_MS = 1200;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
 const DEFAULT_PREPARED_AUDIO_FALLBACK_GRACE_MS = 32;
 
@@ -104,6 +105,13 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         resolvedPlayableResult = getBestAudio(playableResult)?.url ? playableResult : null;
         return resolvedPlayableResult;
       }));
+    const fallbackAudioPromise = message.result
+      ? Promise.resolve(null)
+      : fallbackRuntimeAudioCandidate(
+        directSharedAudioPromise,
+        resolvedPlayablePromise,
+        dependencies
+      );
     const resultPromise = message.result
       ? Promise.resolve(message.result)
       : firstNonNullResult([
@@ -124,7 +132,9 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
             dependencies
           )
           : null
-      ]).then((fastResult) => fastResult || resolvedSelectionPromise);
+      ])
+        .then((fastResult) => fastResult || fallbackAudioPromise)
+        .then((result) => result || resolvedSelectionPromise);
     respondWithResult(
       resultPromise.then(async (result) => {
         const isVisibleAudio = visiblePlayableResult && visiblePlayableResult === result;
@@ -305,6 +315,19 @@ async function delayResolvedFallbackWhenPreparedAudioIsPending(promise, isPendin
   const result = await promise;
   await new Promise((resolve) => setTimeout(resolve, graceMs));
   return result;
+}
+
+async function fallbackRuntimeAudioCandidate(
+  directSharedAudioPromise,
+  resolvedPlayablePromise,
+  dependencies = {}
+) {
+  const fallbackWaitMs = dependencies.directSharedAudioFallbackWaitMs ??
+    DEFAULT_DIRECT_SHARED_AUDIO_FALLBACK_WAIT_MS;
+  return firstNonNullResult([
+    promiseWithinWait(directSharedAudioPromise, fallbackWaitMs),
+    promiseWithinWait(resolvedPlayablePromise, fallbackWaitMs)
+  ]);
 }
 
 async function waitForStoredResultGrace(storedResultPromise, waitMs) {

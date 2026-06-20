@@ -286,6 +286,59 @@ test("keyboard command plays direct approved shared audio before slow local reso
   await delay(0);
 });
 
+test("keyboard command still plays shared audio after the fast wait window", async () => {
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Delayed shared audio",
+        url: "https://audio.example/delayed.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await Promise.race([
+    handleActiveSelectionCommand({ source: "keyboard" }, {
+      getActiveTab: async () => ({ id: 7 }),
+      readSelectionFromTab: async (tabId) => {
+        calls.push(["readSelectionFromTab", tabId]);
+        return "Exampletown";
+      },
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return {};
+      },
+      setStorage: async (value) => calls.push(["setStorage", value]),
+      requestSharedAudio: async (text, value, options) => {
+        calls.push(["requestSharedAudio", text, value, options]);
+        await delay(75);
+        return value ? value : direct;
+      },
+      resolveSelection: async (text, options) => {
+        calls.push(["resolveSelection", text, options]);
+        await delay(500);
+        return { display: "Late result" };
+      },
+      playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+      directSharedAudioWaitMs: 5,
+      directSharedAudioFallbackWaitMs: 150,
+      lastSelectionKey: "lastSelection",
+      lastSourceKey: "lastSource",
+      lastResultKey: "lastResult"
+    }),
+    delay(250).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
+});
+
 test("keyboard command reuses shared audio prepared from selection", async () => {
   clearPreparedSharedAudioForTests();
   const calls = [];

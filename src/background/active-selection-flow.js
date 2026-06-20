@@ -10,6 +10,7 @@ import {
 } from "./prepared-shared-audio-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 120;
+const DEFAULT_DIRECT_SHARED_AUDIO_FALLBACK_WAIT_MS = 1200;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
 
 const KEYBOARD_COMMANDS = {
@@ -172,10 +173,30 @@ async function firstActiveSelectionAudioCandidate(selectedText, options = {}, de
     : null);
   const waitMs = dependencies.directSharedAudioWaitMs ?? DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS;
 
-  return await firstNonNullResult([
+  const fastSelected = await firstNonNullResult([
     promiseWithinWait(storedCandidatePromise, waitMs),
     promiseWithinWait(directSharedAudioPromise, waitMs),
     promiseWithinWait(localAudioPromise, waitMs)
+  ]);
+  return fastSelected || await fallbackAudioCandidate(
+    directSharedAudioPromise,
+    localAudioPromise,
+    localPlayablePromise,
+    dependencies
+  );
+}
+
+async function fallbackAudioCandidate(
+  directSharedAudioPromise,
+  localAudioPromise,
+  localPlayablePromise,
+  dependencies = {}
+) {
+  const fallbackWaitMs = dependencies.directSharedAudioFallbackWaitMs ??
+    DEFAULT_DIRECT_SHARED_AUDIO_FALLBACK_WAIT_MS;
+  return await firstNonNullResult([
+    promiseWithinWait(directSharedAudioPromise, fallbackWaitMs),
+    promiseWithinWait(localAudioPromise, fallbackWaitMs)
   ]) || await localPlayablePromise;
 }
 

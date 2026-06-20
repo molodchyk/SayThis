@@ -425,6 +425,17 @@ test("options page exposes shared-entry data controls", async () => {
   assert.match(summarySource, /wrong-result flags/);
 });
 
+test("popup auto-speak does not force resolve before speaking", async () => {
+  const source = await readText("src/popup/index.js");
+
+  assert.match(source, /async function speakUnresolvedSelection\(text, rate, trace\)/);
+  assert.match(source, /createSpeakMessage\(text, \{\s*rate,\s*trace\s*\}\)/);
+  assert.match(source, /if \(!currentResult\) \{\s*await speakUnresolvedSelection\(text, rate, trace\);\s*return;\s*\}/);
+  assert.match(source, /if \(settings\.autoSpeakPopup\) \{\s*await speakSelection\(0\.82\);\s*\} else \{\s*await resolveSelection\(\);\s*\}/);
+  assert.doesNotMatch(source, /if \(!currentResult\) \{\s*await resolveSelection\(\);/);
+  assert.doesNotMatch(source, /const result = await resolveSelection\(\);\s*if \(settings\.autoSpeakPopup && result\)/);
+});
+
 test("selection listener speaks bounded selected text directly", async () => {
   const manifestSource = await readText("manifest.json");
   const source = await readText("src/selection-listener.js");
