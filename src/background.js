@@ -58,6 +58,9 @@ const playbackSurface = createPlaybackSurface({
 });
 const runtimeAdapters = createRuntimeAdapters(createRuntimeAdapterPlatformDependencies(platform, STORAGE_KEYS));
 const debugEvents = [];
+const APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_MS = 15 * 60 * 1000;
+let approvedSharedEntriesRefreshPromise = null;
+let approvedSharedEntriesLastRefreshAt = 0;
 
 platform.addInstalledListener(() => {
   registerContextMenus(contextMenuDefinitions(), {
@@ -332,6 +335,8 @@ async function stopPlayback() {
 }
 
 async function preparePlayback(trace) {
+  refreshApprovedSharedEntriesForSelectionPrime(trace);
+
   if (!platform.hasOffscreenAudioSupport?.()) {
     return false;
   }
@@ -376,10 +381,19 @@ function primePlaybackSurface(reason) {
 
 function refreshApprovedSharedEntries(reason) {
   const startedAt = Date.now();
+  if (approvedSharedEntriesRefreshPromise) {
+    recordDebugEvent("approved-pull:skip", {
+      reason,
+      skipped: "pending"
+    });
+    return approvedSharedEntriesRefreshPromise;
+  }
+
+  approvedSharedEntriesLastRefreshAt = startedAt;
   recordDebugEvent("approved-pull:start", {
     reason
   });
-  pullApprovedCommunityEntries()
+  approvedSharedEntriesRefreshPromise = pullApprovedCommunityEntries()
     .then((summary) => {
       recordDebugEvent("approved-pull:result", {
         reason,
@@ -395,7 +409,24 @@ function refreshApprovedSharedEntries(reason) {
         elapsedMs: Date.now() - startedAt,
         error: errorMessage(error)
       });
+    })
+    .finally(() => {
+      approvedSharedEntriesRefreshPromise = null;
     });
+  return approvedSharedEntriesRefreshPromise;
+}
+
+function refreshApprovedSharedEntriesForSelectionPrime(trace = null) {
+  const normalizedTrace = normalizeDebugTrace(trace);
+  if (normalizedTrace?.source !== "content-selection") {
+    return;
+  }
+
+  if (Date.now() - approvedSharedEntriesLastRefreshAt < APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_MS) {
+    return;
+  }
+
+  refreshApprovedSharedEntries("selection-prime");
 }
 
 function preloadLastResultAudio(reason) {

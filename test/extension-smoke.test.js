@@ -147,9 +147,13 @@ test("background routes local and online keyboard commands", async () => {
   assert.match(source, /primePlaybackSurface\("startup"\)/);
   assert.match(source, /refreshApprovedSharedEntries\("installed"\)/);
   assert.match(source, /refreshApprovedSharedEntries\("startup"\)/);
+  assert.match(source, /APPROVED_SHARED_ENTRIES_SELECTION_REFRESH_MS = 15 \* 60 \* 1000/);
+  assert.match(source, /refreshApprovedSharedEntriesForSelectionPrime\(trace\)/);
+  assert.match(source, /refreshApprovedSharedEntries\("selection-prime"\)/);
   assert.match(source, /preloadLastResultAudio\("installed"\)/);
   assert.match(source, /preloadLastResultAudio\("startup"\)/);
   assert.match(source, /preloadSharedAudioForPlayback\(sharedResult, options\.trace\)/);
+  assert.match(source, /approved-pull:skip/);
   assert.match(source, /approved-pull:result/);
   assert.match(source, /last-audio-preload:result/);
   assert.match(source, /cacheBeforePlayback: true/);
