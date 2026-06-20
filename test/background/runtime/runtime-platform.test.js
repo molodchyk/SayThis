@@ -38,6 +38,10 @@ test("maps background platform adapters to browser APIs", async () => {
     },
     contextMenus: {
       create: item => calls.push(["createContextMenu", item]),
+      removeAll: callback => {
+        calls.push(["removeAllContextMenus"]);
+        callback();
+      },
       onClicked: {
         addListener: listener => {
           listeners.contextMenu = listener;
@@ -127,6 +131,7 @@ test("maps background platform adapters to browser APIs", async () => {
   platform.addStartupListener(() => "startup");
   platform.addStorageChangedListener(() => "storage");
   platform.createContextMenu({ id: "saythis" });
+  await platform.removeAllContextMenus();
   await platform.getStorage(["settings"]);
   await platform.setStorage({ settings: {} });
   await platform.queryTabs({ active: true });
@@ -151,6 +156,7 @@ test("maps background platform adapters to browser APIs", async () => {
   assert.deepEqual(Object.keys(listeners).sort(), ["command", "contextMenu", "installed", "message", "startup", "storage"]);
   assert.deepEqual(calls, [
     ["createContextMenu", { id: "saythis" }],
+    ["removeAllContextMenus"],
     ["getStorage", ["settings"]],
     ["setStorage", { settings: {} }],
     ["queryTabs", { active: true }],

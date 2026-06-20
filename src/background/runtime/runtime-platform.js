@@ -48,12 +48,32 @@ export function createBackgroundPlatformAdapters(chromeApi = globalThis.chrome, 
       ? environment.clients.matchAll()
       : [],
     queryTabs: query => tabs?.query?.(query),
+    removeAllContextMenus: () => removeAllContextMenus(contextMenus),
     sendRuntimeMessage: message => runtime?.sendMessage?.(message),
     sendTabMessage: (tabId, message) => tabs?.sendMessage?.(tabId, message),
     setStorage: value => storage?.set?.(value),
     speakTts: (text, options) => speakTts(tts, text, options),
     stopTts: () => tts?.stop?.()
   };
+}
+
+function removeAllContextMenus(contextMenus) {
+  if (typeof contextMenus?.removeAll !== "function") {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    try {
+      const result = contextMenus.removeAll(() => resolve());
+      if (result && typeof result.then === "function") {
+        result.then(resolve, resolve);
+      } else if (contextMenus.removeAll.length === 0) {
+        resolve();
+      }
+    } catch {
+      resolve();
+    }
+  });
 }
 
 function getTtsVoices(tts) {

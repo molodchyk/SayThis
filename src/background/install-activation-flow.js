@@ -1,10 +1,17 @@
 export const SELECTION_LISTENER_FILE = "src/selection-listener.js";
 export const SELECTION_LISTENER_FILES = [
   "src/content/selection-runtime-adapters.js",
+  "src/content/selection-floating-controls.js",
   SELECTION_LISTENER_FILE
 ];
 
-export function registerContextMenus(definitions = [], dependencies = {}) {
+export async function registerContextMenus(definitions = [], dependencies = {}) {
+  try {
+    await dependencies.removeAllContextMenus?.();
+  } catch {
+    // Menu cleanup is best-effort; creation below can still succeed.
+  }
+
   for (const item of definitions) {
     dependencies.createContextMenu?.(item);
   }

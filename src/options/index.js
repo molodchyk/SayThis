@@ -51,6 +51,8 @@ const statusText = document.getElementById("status");
 const onlineDefault = document.getElementById("online-default");
 const showOverlay = document.getElementById("show-overlay");
 const autoSpeakPopup = document.getElementById("auto-speak-popup");
+const contextMenuEnabled = document.getElementById("context-menu-enabled");
+const selectionPlayButton = document.getElementById("selection-play-button");
 const selectToHear = document.getElementById("select-to-hear");
 const lookupLanguageHints = document.getElementById("lookup-language-hints");
 const customSourceEnabled = document.getElementById("custom-source-enabled");
@@ -91,6 +93,8 @@ init();
 onlineDefault.addEventListener("change", saveSettings);
 showOverlay.addEventListener("change", saveSettings);
 autoSpeakPopup.addEventListener("change", saveSettings);
+contextMenuEnabled.addEventListener("change", saveSettings);
+selectionPlayButton.addEventListener("change", saveSettings);
 selectToHear.addEventListener("change", saveSettings);
 lookupLanguageHints.addEventListener("change", saveSettings);
 customSourceEnabled.addEventListener("change", saveSettings);
@@ -135,6 +139,8 @@ async function init() {
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
   autoSpeakPopup.checked = settings.autoSpeakPopup;
+  contextMenuEnabled.checked = settings.contextMenuEnabled;
+  selectionPlayButton.checked = settings.selectionPlayButton;
   selectToHear.checked = settings.selectToHear;
   lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
   customSourceEnabled.checked = settings.customSourceEnabled;
@@ -189,6 +195,8 @@ async function saveSettings() {
   }, optionsRuntimeAdapters());
   customSourceEnabled.checked = settings.customSourceEnabled;
   autoSpeakPopup.checked = settings.autoSpeakPopup;
+  contextMenuEnabled.checked = settings.contextMenuEnabled;
+  selectionPlayButton.checked = settings.selectionPlayButton;
   selectToHear.checked = settings.selectToHear;
   lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
   customSourceEndpoint.value = settings.customSourceEndpoint;
@@ -284,6 +292,8 @@ async function importData() {
   onlineDefault.checked = settings.onlineByDefault;
   showOverlay.checked = settings.showOverlay;
   autoSpeakPopup.checked = settings.autoSpeakPopup;
+  contextMenuEnabled.checked = settings.contextMenuEnabled;
+  selectionPlayButton.checked = settings.selectionPlayButton;
   selectToHear.checked = settings.selectToHear;
   lookupLanguageHints.value = settings.lookupLanguageHints.join(", ");
   customSourceEnabled.checked = settings.customSourceEnabled;
@@ -446,6 +456,8 @@ async function settingsFromControls(credentials) {
     onlineByDefault: onlineDefault.checked,
     showOverlay: showOverlay.checked,
     autoSpeakPopup: autoSpeakPopup.checked,
+    contextMenuEnabled: contextMenuEnabled.checked,
+    selectionPlayButton: selectionPlayButton.checked,
     selectToHear: selectToHear.checked,
     lookupLanguageHints: normalizeLanguageHints(lookupLanguageHints.value),
     customSourceEnabled: customSourceEnabled.checked,

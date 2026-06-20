@@ -7,6 +7,9 @@ import {
   createGetVisibleResultMessage
 } from "./message-contracts.js";
 import {
+  normalizeSettings
+} from "./shared/settings.js";
+import {
   contextMenuDefinitions,
   resolveOptionsForMenuId
 } from "./extension-actions.js";
@@ -79,9 +82,7 @@ let approvedSharedEntriesLastRefreshAt = 0;
 let approvedSharedEntriesSelectionRefreshTimer = null;
 
 platform.addInstalledListener(() => {
-  registerContextMenus(contextMenuDefinitions(), {
-    createContextMenu: platform.createContextMenu
-  });
+  syncContextMenus("installed");
   activateSelectionListenerOnOpenTabs(selectionActivationDependencies());
   primePlaybackSurface("installed");
   refreshApprovedSharedEntries("installed");
@@ -96,6 +97,9 @@ platform.addStartupListener(() => {
 });
 platform.addStorageChangedListener?.((changes, areaName) => {
   sharedAudioStorage.applyStorageChanges(changes, areaName);
+  if (areaName === "local" && Object.prototype.hasOwnProperty.call(changes, STORAGE_KEYS.settings)) {
+    syncContextMenus("settings");
+  }
 });
 
 platform.addContextMenuClickedListener((info, tab) => {
@@ -128,6 +132,30 @@ platform.addCommandListener((command) => {
 
 platform.addMessageListener((message, sender, sendResponse) =>
   handleRuntimeMessage(message, sendResponse, runtimeMessageDependencies(sender)));
+
+syncContextMenus("startup");
+
+function syncContextMenus(reason = "settings") {
+  Promise.resolve()
+    .then(async () => {
+      const stored = await platform.getStorage?.([STORAGE_KEYS.settings]) || {};
+      const settings = normalizeSettings(stored[STORAGE_KEYS.settings]);
+      await registerContextMenus(contextMenuDefinitions(settings), {
+        createContextMenu: platform.createContextMenu,
+        removeAllContextMenus: platform.removeAllContextMenus
+      });
+      recordDebugEvent("context-menu:sync", {
+        reason,
+        enabled: settings.contextMenuEnabled
+      });
+    })
+    .catch((error) => {
+      recordDebugEvent("context-menu:sync-error", {
+        reason,
+        error: error?.message || String(error || "Context menu sync failed")
+      });
+    });
+}
 
 async function resolveSelection(text, options = {}) {
   const startedAt = Date.now();

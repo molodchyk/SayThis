@@ -6,16 +6,18 @@ import {
   SELECTION_LISTENER_FILES
 } from "../../src/background/install-activation-flow.js";
 
-test("registers context menu definitions", () => {
+test("registers context menu definitions after clearing old menus", async () => {
   const calls = [];
-  registerContextMenus([
+  await registerContextMenus([
     { id: "saythis-local", title: "SayThis" },
     { id: "saythis-online", title: "SayThis online" }
   ], {
+    removeAllContextMenus: async () => calls.push("removeAll"),
     createContextMenu: item => calls.push(item)
   });
 
   assert.deepEqual(calls, [
+    "removeAll",
     { id: "saythis-local", title: "SayThis" },
     { id: "saythis-online", title: "SayThis online" }
   ]);

@@ -34,6 +34,7 @@
       ],
       "js": [
         "src/content/selection-runtime-adapters.js",
+        "src/content/selection-floating-controls.js",
         "src/selection-listener.js"
       ],
       "run_at": "document_start",

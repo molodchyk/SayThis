@@ -2,7 +2,11 @@ export const MENU_IDS = {
   pronounceSelection: "saythis-pronounce-selection"
 };
 
-export function contextMenuDefinitions() {
+export function contextMenuDefinitions(settings = {}) {
+  if (settings.contextMenuEnabled === false) {
+    return [];
+  }
+
   return [{
     id: MENU_IDS.pronounceSelection,
     title: "SayThis: pronounce \"%s\"",

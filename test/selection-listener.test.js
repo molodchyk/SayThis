@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { fileURLToPath } from "node:url";
-import vm from "node:vm";
 import test from "node:test";
-
-const root = fileURLToPath(new URL("..", import.meta.url));
+import {
+  installSelectionListener,
+  overlayNode
+} from "./helpers/selection-listener-harness.js";
 
 test("committed selection sends speak with shared-audio preparation hint", async () => {
   const harness = await installSelectionListener();
@@ -592,6 +590,32 @@ test("selection changes do not prime playback when select-to-hear is disabled", 
   assert.deepEqual(harness.sentMessages, []);
 });
 
+test("selection can show a floating play button without automatic speech", async () => {
+  const harness = await installSelectionListener({
+    settings: {
+      selectToHear: false,
+      selectionPlayButton: true
+    }
+  });
+
+  harness.setSelection("Robotyne");
+  harness.dispatch("selectionchange");
+  await delay(45);
+
+  assert.equal(harness.sentMessages.some((message) => message.type === "SAYTHIS_SPEAK"), false);
+  assert.ok(harness.selectionPlayButtonRoot?.innerHTML.includes("&#9658;"));
+  assert.ok(harness.selectionPlayButtonRoot?.innerHTML.includes("Robotyne"));
+
+  harness.clickSelectionPlayButton();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  const speakMessages = harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK");
+  assert.equal(speakMessages.length, 1);
+  assert.equal(speakMessages[0].text, "Robotyne");
+  assert.equal(speakMessages[0].trace.trigger, "selection-play-button");
+});
+
 test("changing selection does not prepare transient fragments", async () => {
   const harness = await installSelectionListener();
 
@@ -696,114 +720,3 @@ test("clearing selection allows the same word to be heard again immediately", as
   assert.equal(speakMessages[1].text, "Exampletown");
   assert.notEqual(speakMessages[0].trace.id, speakMessages[1].trace.id);
 });
-
-async function installSelectionListener(options = {}) {
-  const adapterSource = await readFile(
-    join(root, "src", "content", "selection-runtime-adapters.js"),
-    "utf8"
-  );
-  const source = await readFile(join(root, "src", "selection-listener.js"), "utf8");
-  const listeners = new Map();
-  const sentMessages = [];
-  let storageListener = null;
-  let selectedText = "";
-  let activeElement = null;
-
-  const context = {
-    globalThis: {},
-    window: {
-      getSelection: () => ({
-        isCollapsed: !selectedText,
-        anchorNode: {},
-        focusNode: {},
-        toString: () => selectedText
-      })
-    },
-    document: {
-      visibilityState: "visible",
-      get activeElement() {
-        return activeElement;
-      },
-      addEventListener: (type, listener) => {
-        const existing = listeners.get(type) || [];
-        existing.push(listener);
-        listeners.set(type, existing);
-      }
-    },
-    chrome: {
-      runtime: {
-        sendMessage: (message) => {
-          sentMessages.push(message);
-          return Promise.resolve(options.runtimeResponse || { ok: true });
-        }
-      },
-      storage: {
-        local: {
-          get: async () => {
-            const settings = options.settingsPromise
-              ? await options.settingsPromise
-              : options.settings || { selectToHear: true };
-            return { settings };
-          }
-        },
-        onChanged: {
-          addListener: (listener) => {
-            storageListener = listener;
-          }
-        }
-      }
-    },
-    setTimeout,
-    clearTimeout,
-    Date: options.Date || Date,
-    Math,
-    Number,
-    Object,
-    Promise,
-    RegExp,
-    String
-  };
-  context.globalThis = context;
-
-  vm.runInNewContext(adapterSource, context, {
-    filename: "src/content/selection-runtime-adapters.js"
-  });
-
-  vm.runInNewContext(source, context, {
-    filename: "src/selection-listener.js"
-  });
-  await delay(0);
-
-  return {
-    sentMessages,
-    setSelection(value) {
-      selectedText = value;
-    },
-    setActiveElement(element) {
-      activeElement = element;
-    },
-    dispatch(type, event = {}) {
-      for (const listener of listeners.get(type) || []) {
-        listener(event);
-      }
-    },
-    dispatchStorageChange(settings) {
-      storageListener?.({
-        settings: {
-          newValue: settings
-        }
-      }, "local");
-    }
-  };
-}
-
-function overlayNode(tagName = "span") {
-  return {
-    tagName,
-    getRootNode: () => ({
-      host: {
-        tagName: "saythis-overlay"
-      }
-    })
-  };
-}

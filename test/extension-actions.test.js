@@ -17,6 +17,10 @@ test("defines one selected-text context menu action", () => {
   assert.equal(definitions[0].title, "SayThis: pronounce \"%s\"");
 });
 
+test("hides selected-text context menu action when disabled", () => {
+  assert.deepEqual(contextMenuDefinitions({ contextMenuEnabled: false }), []);
+});
+
 test("maps context menu actions to resolver options", () => {
   assert.deepEqual(resolveOptionsForMenuId(MENU_IDS.pronounceSelection), {
     ok: true,
