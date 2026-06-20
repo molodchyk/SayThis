@@ -45,11 +45,11 @@ test("activates the selection listener in existing tabs best-effort", async () =
     ["recordDebugEvent", "selection-listener:activate:start", {}],
     ["queryTabs", {}],
     ["executeScript", {
-      target: { tabId: 7 },
+      target: { tabId: 7, allFrames: true },
       files: [SELECTION_LISTENER_FILE]
     }],
     ["executeScript", {
-      target: { tabId: 8 },
+      target: { tabId: 8, allFrames: true },
       files: [SELECTION_LISTENER_FILE]
     }]
   ]);

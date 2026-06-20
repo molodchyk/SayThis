@@ -49,7 +49,7 @@ export async function activateSelectionListenerOnOpenTabs(dependencies = {}) {
 
     try {
       await dependencies.executeScript?.({
-        target: { tabId: tab.id },
+        target: { tabId: tab.id, allFrames: true },
         files: [dependencies.listenerFile || SELECTION_LISTENER_FILE]
       });
       injected += 1;
