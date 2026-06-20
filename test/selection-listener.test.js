@@ -433,6 +433,23 @@ test("keyboard selection shortcuts commit selected text on keyup", async () => {
   ]);
 });
 
+test("keyboard release speaks late browser selection without waiting for stable debounce", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("keydown", { key: "ArrowRight", shiftKey: true });
+  harness.dispatch("keyup", { key: "ArrowRight", shiftKey: true });
+  await delay(5);
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(35);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
 test("ordinary keyup over an existing selection does not speak", async () => {
   const harness = await installSelectionListener();
 

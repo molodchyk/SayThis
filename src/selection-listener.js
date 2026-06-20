@@ -152,10 +152,7 @@
 
     markActiveSelectionStarted();
     clearSelectionGestureInProgress();
-    const delayMs = readSelectedText()
-      ? COMMITTED_SELECTION_DEBOUNCE_MS
-      : LATE_COMMITTED_SELECTION_DEBOUNCE_MS;
-    scheduleSelectionCheck(delayMs);
+    scheduleSelectionCheck(committedSelectionDelayMs());
   }
 
   function scheduleKeyboardCommittedSelectionCheck(event) {
@@ -165,7 +162,7 @@
 
     markActiveSelectionStarted();
     keyboardSelectionInProgress = false;
-    scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
+    scheduleSelectionCheck(committedSelectionDelayMs());
   }
 
   function scheduleCanceledSelectionCheck(event) {
@@ -208,6 +205,12 @@
 
   function hasCommittedCheckPending() {
     return timerId !== null && scheduledCheckMode === "committed";
+  }
+
+  function committedSelectionDelayMs() {
+    return readSelectedText()
+      ? COMMITTED_SELECTION_DEBOUNCE_MS
+      : LATE_COMMITTED_SELECTION_DEBOUNCE_MS;
   }
 
   function resetSelectionTracking() {
