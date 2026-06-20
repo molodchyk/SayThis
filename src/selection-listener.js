@@ -91,8 +91,8 @@
   document.addEventListener("select", scheduleCommittedSelectionCheck, true);
   document.addEventListener("keyup", scheduleKeyboardCommittedSelectionCheck, true);
   document.addEventListener("touchend", scheduleCommittedSelectionCheck, true);
-  document.addEventListener("pointercancel", clearSelectionGestureInProgress, true);
-  document.addEventListener("touchcancel", clearSelectionGestureInProgress, true);
+  document.addEventListener("pointercancel", scheduleCanceledSelectionCheck, true);
+  document.addEventListener("touchcancel", scheduleCanceledSelectionCheck, true);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       clearScheduledCheck();
@@ -161,6 +161,20 @@
     markActiveSelectionStarted();
     keyboardSelectionInProgress = false;
     scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
+  }
+
+  function scheduleCanceledSelectionCheck(event) {
+    if (isSayThisOverlayEvent(event)) {
+      return;
+    }
+
+    clearSelectionGestureInProgress();
+    if (!readSelectedText()) {
+      return;
+    }
+
+    markActiveSelectionStarted();
+    scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true });
   }
 
   function clearScheduledCheck() {

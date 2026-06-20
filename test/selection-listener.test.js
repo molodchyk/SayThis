@@ -309,6 +309,43 @@ test("pointer selection prepares while dragging and speaks on release", async ()
   ]);
 });
 
+test("pointer cancellation speaks after a selected word survives the canceled gesture", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(35);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
+  ]);
+
+  harness.dispatch("pointercancel");
+  await delay(50);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
+test("overlay pointer cancellation does not speak the page selection", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(35);
+
+  harness.dispatch("pointercancel", { target: overlayNode("button") });
+  await delay(50);
+
+  assert.equal(harness.sentMessages.filter((message) => message.type === "SAYTHIS_SPEAK").length, 0);
+});
+
 test("keyboard selection prepares while extending and speaks on release", async () => {
   const harness = await installSelectionListener();
 
