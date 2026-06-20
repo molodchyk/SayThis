@@ -24,15 +24,10 @@ const DEFAULT_FILE_BASELINE = {
   "test/background/context-menu-flow.test.js": 908,
   "test/background/runtime-message-flow.test.js": 2210
 };
-const DEFAULT_FOLDER_BASELINE = {
-  server: 13,
-  "src/background": 16,
-  test: 13,
-  "test/background": 17
-};
+const DEFAULT_FOLDER_BASELINE = {};
 const CHROME_API_PATTERN = /\b(?:chrome\.(?:commands|contextMenus|offscreen|permissions|runtime|scripting|storage|tabs|tts)|globalThis\.chrome)\b/g;
 const CHROME_API_ALLOWED_PATHS = [
-  /^src\/background\/runtime-platform\.js$/,
+  /^src\/background\/runtime\/runtime-platform\.js$/,
   /^src\/content\/overlay-runtime-adapters\.js$/,
   /^src\/content\/selection-runtime-adapters\.js$/,
   /^src\/offscreen\/runtime-adapters\.js$/,

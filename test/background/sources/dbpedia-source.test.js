@@ -3,11 +3,11 @@ import test from "node:test";
 import {
   buildDbpediaLookupUrl,
   buildDbpediaResult
-} from "../../src/background/dbpedia-source.js";
+} from "../../../src/background/sources/dbpedia-source.js";
 import {
   resolveWithDbpedia,
   resolveWithDbpediaCandidates
-} from "../../src/background/online-sources.js";
+} from "../../../src/background/sources/online-sources.js";
 
 test("builds a DBpedia-compatible lookup URL", () => {
   const url = new URL(buildDbpediaLookupUrl(" Chiaroscuro ", "https://lookup.example/api/search?class=Thing", {

@@ -5,7 +5,7 @@ import {
 } from "../../../src/resolver-core.js";
 import {
   resolveWithCustomSourceCandidates
-} from "../../../src/background/online-sources.js";
+} from "../../../src/background/sources/online-sources.js";
 
 test("retries custom source with resolved source-form candidates", async () => {
   const originalFetch = globalThis.fetch;

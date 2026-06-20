@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createEmptyStore } from "../../server/community-store.js";
 import { handleCommunityRequest } from "../../server/community-service.js";
-import { createLocalAudioObjectStore } from "../../server/audio-object-store.js";
+import { createLocalAudioObjectStore } from "../../server/audio/audio-object-store.js";
 
 test("stores generated audio bytes outside metadata when an object store is configured", async (t) => {
   const rootDir = await mkdtemp(join(tmpdir(), "saythis-audio-"));

@@ -6,8 +6,8 @@ import {
   languageCodeFromLanguage,
   normalizeTtsLanguage
 } from "../src/resolver/language.js";
-import { normalizeAudioArtifactMap } from "./community-audio-store.js";
-import { normalizeGenerationUsageMap } from "./generation-budget.js";
+import { normalizeAudioArtifactMap } from "./audio/community-audio-store.js";
+import { normalizeGenerationUsageMap } from "./providers/generation-budget.js";
 
 export const STORE_SCHEMA_VERSION = 1;
 

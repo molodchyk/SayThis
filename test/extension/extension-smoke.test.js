@@ -5,9 +5,9 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   collectPackageFiles
-} from "../scripts/package-extension.mjs";
+} from "../../scripts/package-extension.mjs";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const manifest = JSON.parse(await readText("manifest.json"));
 const packageFiles = new Set(await collectPackageFiles(root));
 
@@ -133,7 +133,7 @@ test("background routes local and online keyboard commands", async () => {
   const source = await readText("src/background.js");
   const activeSelection = await readText("src/background/active-selection-flow.js");
   const playbackSurface = await readText("src/background/playback-surface-flow.js");
-  const runtimeAdapters = await readText("src/background/runtime-adapters-flow.js");
+  const runtimeAdapters = await readText("src/background/runtime/runtime-adapters-flow.js");
 
   assert.match(source, /resolveSelectionFlow\(text, options, \{/);
   assert.match(source, /handleContextMenuClick\(info, tab, \{/);
@@ -183,7 +183,7 @@ test("background routes local and online keyboard commands", async () => {
 test("online source resolver retries Wiktionary with resolved source forms", async () => {
   const background = await readText("src/background.js");
   const selectionResolver = await readText("src/background/selection-resolver-flow.js");
-  const source = await readText("src/background/online-sources.js");
+  const source = await readText("src/background/sources/online-sources.js");
 
   assert.match(background, /resolveSelectionFlow/);
   assert.match(selectionResolver, /resolveWithOnlineSources/);
@@ -207,7 +207,7 @@ test("online source resolver exposes deterministic helpers", async () => {
     resolveSafely,
     resolveWithNominatimCandidates,
     uniqueWikidataMatches
-  } = await import("../src/background/online-sources.js");
+  } = await import("../../src/background/sources/online-sources.js");
   const originalFetch = globalThis.fetch;
   const requestedUrls = [];
 
@@ -263,7 +263,7 @@ test("online source resolver exposes deterministic helpers", async () => {
 test("online source resolver passes language hints to gazetteer lookup", async () => {
   const {
     resolveWithNominatim
-  } = await import("../src/background/online-sources.js");
+  } = await import("../../src/background/sources/online-sources.js");
   const originalFetch = globalThis.fetch;
   let requestedUrl = "";
 
@@ -307,7 +307,7 @@ test("online source resolver passes language hints to gazetteer lookup", async (
 test("online source resolver uses language hints for Forvo candidates", async () => {
   const {
     resolveWithForvoCandidates
-  } = await import("../src/background/online-sources.js");
+  } = await import("../../src/background/sources/online-sources.js");
   const originalFetch = globalThis.fetch;
   let requestedUrl = "";
 
@@ -346,7 +346,7 @@ test("online source resolver uses language hints for Forvo candidates", async ()
 test("online source resolver tries hinted Wiktionary editions", async () => {
   const {
     resolveWithWiktionary
-  } = await import("../src/background/online-sources.js");
+  } = await import("../../src/background/sources/online-sources.js");
   const originalFetch = globalThis.fetch;
   const requestedHosts = [];
 

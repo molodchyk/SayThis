@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   createGoogleAccessTokenProvider,
   createServiceAccountJwt
-} from "../../server/google-auth.js";
+} from "../../server/providers/google-auth.js";
 
 test("creates service-account JWTs for Google OAuth token exchange", () => {
   const credentials = serviceAccountCredentials();

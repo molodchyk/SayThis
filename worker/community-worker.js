@@ -9,7 +9,7 @@ import {
 import {
   approvedAudioEntryForRequest,
   upsertGeneratedAudioArtifact
-} from "../server/community-audio-store.js";
+} from "../server/audio/community-audio-store.js";
 import {
   AUDIO_CACHE_CONTROL,
   DEFAULT_MAX_AUDIO_BYTES,
@@ -19,7 +19,7 @@ import {
   normalizePublicBaseEndpoint,
   publicAudioArtifact,
   publicAudioUrl
-} from "../server/audio-artifact-core.js";
+} from "../server/audio/audio-artifact-core.js";
 import {
   createLookupKey,
   normalizeSelection

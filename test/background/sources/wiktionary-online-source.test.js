@@ -6,7 +6,7 @@ import {
 import {
   resolveWithWiktionary,
   resolveWithWiktionaryCandidates
-} from "../../../src/background/online-sources.js";
+} from "../../../src/background/sources/online-sources.js";
 
 test("uses lookup language hints for Wiktionary section selection", async () => {
   const originalFetch = globalThis.fetch;

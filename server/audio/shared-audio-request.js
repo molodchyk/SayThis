@@ -12,19 +12,19 @@ import {
 } from "./audio-object-store.js";
 import {
   generatedAudioArtifactFromTts
-} from "./tts-provider.js";
+} from "../providers/tts-provider.js";
 import {
   consumePublicAudioGenerationBudget
-} from "./generation-budget.js";
+} from "../providers/generation-budget.js";
 import {
   hasUsefulSharedAudioTarget
-} from "../src/result/shared-audio.js";
+} from "../../src/result/shared-audio.js";
 import {
   normalizeSelection
-} from "../src/resolver-core.js";
+} from "../../src/resolver-core.js";
 import {
   normalizeTtsLanguage
-} from "../src/resolver/language.js";
+} from "../../src/resolver/language.js";
 
 const DEFAULT_MAX_BODY_BYTES = 16 * 1024;
 

@@ -5,7 +5,7 @@ import {
   generatedAudioArtifactFromTts,
   preferredGoogleVoiceNamesForLocale,
   selectGoogleVoiceName
-} from "../../server/tts-provider.js";
+} from "../../server/providers/tts-provider.js";
 
 test("selects preferred provider voice names for configured locales", () => {
   assert.equal(selectGoogleVoiceName({ languageCode: "uk-UA" }), "uk-UA-Chirp3-HD-Gacrux");

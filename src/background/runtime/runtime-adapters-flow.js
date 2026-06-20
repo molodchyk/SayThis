@@ -1,6 +1,6 @@
 import {
   normalizeSelection
-} from "../resolver-core.js";
+} from "../../resolver-core.js";
 
 const DEFAULT_SEED_DATA_URL = "data/pronunciation-seed.json";
 const DEFAULT_STORAGE_KEYS = {

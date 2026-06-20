@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createRuntimeAdapters
-} from "../../src/background/runtime-adapters-flow.js";
+} from "../../../src/background/runtime/runtime-adapters-flow.js";
 
 test("loads seed data through runtime URLs and caches the request", async () => {
   const requestedUrls = [];

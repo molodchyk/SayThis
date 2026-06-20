@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import {
   languageCodeFromLanguage,
   normalizeTtsLanguage
-} from "../src/resolver/language.js";
+} from "../../src/resolver/language.js";
 import {
   audioStorageKey,
   DEFAULT_MAX_AUDIO_BYTES,

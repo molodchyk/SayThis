@@ -45,19 +45,32 @@ test("fails when a large file grows past its baseline", () => {
 });
 
 test("tracks folder density with the same baseline rule", () => {
+  const atLimit = folderDensityFindings([{
+    path: "test/background",
+    fileCount: 12
+  }]);
   const insideBaseline = folderDensityFindings([{
     path: "test/background",
     fileCount: 17
-  }]);
+  }], {
+    folderBaseline: {
+      "test/background": 17
+    }
+  });
   const pastBaseline = folderDensityFindings([{
     path: "test/background",
     fileCount: 18
-  }]);
+  }], {
+    folderBaseline: {
+      "test/background": 17
+    }
+  });
   const unbaselined = folderDensityFindings([{
     path: "src/new-area",
     fileCount: 13
   }]);
 
+  assert.equal(atLimit.length, 0);
   assert.equal(insideBaseline[0].severity, "notice");
   assert.equal(pastBaseline[0].severity, "hard");
   assert.equal(unbaselined[0].severity, "hard");

@@ -6,7 +6,7 @@ import {
   createBackgroundPlatformAdapters,
   createPlaybackSurfacePlatformDependencies,
   createRuntimeAdapterPlatformDependencies
-} from "../../src/background/runtime-platform.js";
+} from "../../../src/background/runtime/runtime-platform.js";
 
 test("defines stable background storage keys", () => {
   assert.equal(BACKGROUND_OFFSCREEN_AUDIO_URL, "src/offscreen-audio.html");

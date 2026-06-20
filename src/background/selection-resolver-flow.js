@@ -20,7 +20,7 @@ import {
 } from "../shared/settings.js";
 import {
   resolveWithOnlineSources
-} from "./online-sources.js";
+} from "./sources/online-sources.js";
 
 const DEFAULT_STORAGE_KEYS = {
   approvedCommunityEntries: "approvedCommunityEntries",

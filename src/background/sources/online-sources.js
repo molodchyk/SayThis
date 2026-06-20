@@ -2,46 +2,46 @@ import {
   hasTopTierAudio,
   mergeRemoteResult,
   normalizeSelection
-} from "../resolver-core.js";
+} from "../../resolver-core.js";
 import {
   selectBestWikidataResult,
   wikidataSearchLanguages
-} from "../sources/wikidata-adapter.js";
+} from "../../sources/wikidata-adapter.js";
 import {
   buildWiktionaryApiUrl,
   buildWiktionaryResult,
   wiktionarySourceLanguages
-} from "../sources/wiktionary-adapter.js";
+} from "../../sources/wiktionary-adapter.js";
 import {
   buildNominatimResult,
   buildNominatimSearchUrl,
   nominatimAcceptLanguage
-} from "../sources/nominatim-adapter.js";
+} from "../../sources/nominatim-adapter.js";
 import {
   buildForvoResult,
   buildForvoWordPronunciationsUrl
-} from "../sources/forvo-adapter.js";
+} from "../../sources/forvo-adapter.js";
 import {
   additionalPronunciationLookupCandidates,
   pronunciationLookupCandidates
-} from "../pronunciation-source-plan.js";
+} from "../../pronunciation-source-plan.js";
 import {
   transliterationLookupCandidates
-} from "../resolver/transliteration.js";
+} from "../../resolver/transliteration.js";
 import {
   buildCustomSourceResult,
   buildCustomSourceUrl
-} from "../sources/custom-source-adapter.js";
+} from "../../sources/custom-source-adapter.js";
 import {
   buildDbpediaLookupUrl,
   buildDbpediaResult
 } from "./dbpedia-source.js";
 import {
   fetchWikimediaApi
-} from "./sources/wikimedia-api.js";
+} from "./wikimedia-api.js";
 import {
   resolveWithCommonsAudioCandidates
-} from "./sources/commons-audio-source.js";
+} from "./commons-audio-source.js";
 
 export async function resolveWithOnlineSources(text, settings = {}, credentials = {}, context = {}) {
   const languageHints = onlineLookupLanguageHints(settings.lookupLanguageHints, context.localResult);

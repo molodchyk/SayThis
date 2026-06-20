@@ -1,11 +1,11 @@
 import {
   createLookupKey,
   normalizeSelection
-} from "../src/resolver-core.js";
+} from "../../src/resolver-core.js";
 import {
   languageCodeFromLanguage,
   normalizeTtsLanguage
-} from "../src/resolver/language.js";
+} from "../../src/resolver/language.js";
 import {
   normalizeAudioMimeType,
   normalizeAudioStorageKey

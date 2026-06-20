@@ -4,13 +4,13 @@ import {
   createRemoteStructuredResult,
   getBestAudio,
   resolveTerm
-} from "../../src/resolver-core.js";
+} from "../../../src/resolver-core.js";
 import {
   onlineLookupLanguageHints,
   resolveWithForvoCandidates,
   resolveWithWikidata,
   resolveWithOnlineSources
-} from "../../src/background/online-sources.js";
+} from "../../../src/background/sources/online-sources.js";
 
 test("adds local fallback language to online lookup hints", () => {
   assert.deepEqual(onlineLookupLanguageHints(["tr", "pl"], {

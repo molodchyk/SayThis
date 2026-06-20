@@ -8,7 +8,7 @@ import {
 } from "../scripts/audit-release-readiness.mjs";
 import {
   BACKGROUND_STORAGE_KEYS
-} from "../src/background/runtime-platform.js";
+} from "../src/background/runtime/runtime-platform.js";
 import {
   OPTIONS_STORAGE_KEYS
 } from "../src/options/runtime-adapters.js";

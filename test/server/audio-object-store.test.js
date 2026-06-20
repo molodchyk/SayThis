@@ -9,7 +9,7 @@ import {
   normalizeAudioStorageKey,
   persistAudioArtifactBytes,
   readAudioArtifactBytes
-} from "../../server/audio-object-store.js";
+} from "../../server/audio/audio-object-store.js";
 
 test("normalizes only deterministic audio object storage keys", () => {
   const hash = "a".repeat(64);

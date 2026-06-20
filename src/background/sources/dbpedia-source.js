@@ -2,10 +2,10 @@ import {
   createLookupKey,
   createRemoteStructuredResult,
   normalizeSelection
-} from "../resolver-core.js";
+} from "../../resolver-core.js";
 import {
   normalizeHttpsEndpoint
-} from "../shared/settings.js";
+} from "../../shared/settings.js";
 
 export function buildDbpediaLookupUrl(query, endpoint, options = {}) {
   const selectedText = normalizeSelection(query);

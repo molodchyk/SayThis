@@ -15,35 +15,35 @@ import {
 import {
   DEFAULT_PUBLIC_AUDIO_GENERATION_LIMIT,
   DEFAULT_PUBLIC_AUDIO_GENERATION_WINDOW_MS
-} from "./generation-budget.js";
+} from "./providers/generation-budget.js";
 import {
   DEFAULT_MAX_AUDIO_BYTES,
   generatedAudioArtifactFromBody,
   normalizePublicBaseEndpoint,
   publicAudioArtifact
-} from "./community-audio-artifacts.js";
+} from "./audio/community-audio-artifacts.js";
 import {
   audioArtifactPayload,
   upsertGeneratedAudioArtifact
-} from "./community-audio-store.js";
+} from "./audio/community-audio-store.js";
 import {
   checkPublicAudioStorage,
   createConfiguredAudioObjectStoreFromEnvironment,
   persistAudioArtifactBytes,
   readAudioArtifactBytes
-} from "./audio-object-store.js";
+} from "./audio/audio-object-store.js";
 import {
   createConfiguredTtsProvider,
   generatedAudioArtifactFromTts
-} from "./tts-provider.js";
+} from "./providers/tts-provider.js";
 import {
   adminTokenMatches,
   corsAllowOrigin,
   createMemoryRateLimiter,
   normalizeAllowedOrigins,
   requestOriginAllowed
-} from "./request-policy.js";
-import { handleSharedAudioRequest } from "./shared-audio-request.js";
+} from "./http/request-policy.js";
+import { handleSharedAudioRequest } from "./audio/shared-audio-request.js";
 import { renderAdminPage } from "./admin-page.js";
 
 const DEFAULT_PORT = 8787;
@@ -60,7 +60,7 @@ export {
   createMemoryRateLimiter,
   normalizeAllowedOrigins,
   requestOriginAllowed
-} from "./request-policy.js";
+} from "./http/request-policy.js";
 
 export async function handleCommunityRequest(request, store, options = {}) {
   const url = new URL(request.url, "http://localhost");

@@ -33,7 +33,7 @@ import {
 } from "./background/playback-surface-flow.js";
 import {
   createHotStorageCache
-} from "./background/hot-storage-cache.js";
+} from "./background/storage/hot-storage-cache.js";
 import {
   activateSelectionListenerOnOpenTabs,
   registerContextMenus
@@ -46,13 +46,13 @@ import {
 } from "./background/debug-diagnostics-flow.js";
 import {
   createRuntimeAdapters
-} from "./background/runtime-adapters-flow.js";
+} from "./background/runtime/runtime-adapters-flow.js";
 import {
   BACKGROUND_STORAGE_KEYS as STORAGE_KEYS,
   createBackgroundPlatformAdapters,
   createPlaybackSurfacePlatformDependencies,
   createRuntimeAdapterPlatformDependencies
-} from "./background/runtime-platform.js";
+} from "./background/runtime/runtime-platform.js";
 
 const platform = createBackgroundPlatformAdapters();
 const sharedAudioStorage = createHotStorageCache({

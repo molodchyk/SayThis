@@ -21,8 +21,8 @@ test("collects only extension runtime package files", async () => {
 
   assert.ok(files.includes("manifest.json"));
   assert.ok(files.includes("src/background.js"));
-  assert.ok(files.includes("src/background/online-sources.js"));
-  assert.ok(files.includes("src/background/runtime-platform.js"));
+  assert.ok(files.includes("src/background/sources/online-sources.js"));
+  assert.ok(files.includes("src/background/runtime/runtime-platform.js"));
   assert.ok(files.includes("src/content/overlay-language.js"));
   assert.ok(files.includes("src/content/overlay-runtime-adapters.js"));
   assert.ok(files.includes("src/content/overlay-result-view.js"));

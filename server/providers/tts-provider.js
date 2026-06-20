@@ -1,13 +1,13 @@
-import { generatedAudioArtifactFromBody } from "./community-audio-artifacts.js";
+import { generatedAudioArtifactFromBody } from "../audio/community-audio-artifacts.js";
 import { createGoogleAccessTokenProvider } from "./google-auth.js";
 import {
   normalizeTtsLanguage
-} from "../src/resolver/language.js";
+} from "../../src/resolver/language.js";
 import {
   normalizeVoiceLocale,
   preferredVoiceNamesForLocale,
   voiceLocaleMatchesRequest
-} from "../src/shared/voice-preferences.js";
+} from "../../src/shared/voice-preferences.js";
 
 const DEFAULT_GOOGLE_TTS_ENDPOINT = "https://texttospeech.googleapis.com/v1/text:synthesize";
 const DEFAULT_AUDIO_ENCODING = "MP3";

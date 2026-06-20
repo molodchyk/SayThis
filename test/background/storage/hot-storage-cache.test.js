@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createHotStorageCache
-} from "../../src/background/hot-storage-cache.js";
+} from "../../../src/background/storage/hot-storage-cache.js";
 
 test("reuses cached hot storage keys without another storage read", async () => {
   const calls = [];
