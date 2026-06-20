@@ -136,10 +136,23 @@ export function handleRuntimeMessage(message = {}, sendResponse = () => {}, depe
         resolvedPlayablePromise,
         dependencies
       );
+    const selectionDirectSharedAudioPromise = preferImmediatePlayback && preparedSharedAudioIsPending
+      ? waitForSelectionPreparedSharedAudio(
+        selectedText,
+        message,
+        directSharedAudioPromise,
+        dependencies
+      ).then((result) => {
+        if (result) {
+          directSharedAudioResult = result;
+        }
+        return result;
+      })
+      : directSharedAudioPromise;
     const selectionAudioFallbackPromise = message.result || !preferImmediatePlayback
       ? Promise.resolve(null)
       : fallbackRuntimeAudioCandidate(
-        directSharedAudioPromise,
+        selectionDirectSharedAudioPromise,
         resolvedPlayablePromise,
         {
           ...dependencies,
@@ -380,6 +393,36 @@ async function requestLocalSharedAudio(selectedText, message = {}, dependencies 
   } catch {
     return null;
   }
+}
+
+async function waitForSelectionPreparedSharedAudio(
+  selectedText,
+  message = {},
+  directSharedAudioPromise,
+  dependencies = {}
+) {
+  const fastResult = await directSharedAudioPromise;
+  if (fastResult || !hasPreparedSharedAudio(selectedText, message)) {
+    return fastResult || null;
+  }
+
+  const totalWaitMs = normalizeWaitMs(
+    dependencies.selectionAudioFallbackWaitMs,
+    DEFAULT_SELECT_TO_HEAR_AUDIO_FALLBACK_WAIT_MS
+  );
+  const alreadyWaitedMs = normalizeWaitMs(
+    dependencies.preparedSharedAudioWaitMs,
+    DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS
+  );
+  const remainingWaitMs = Math.max(0, totalWaitMs - alreadyWaitedMs);
+  if (!remainingWaitMs) {
+    return null;
+  }
+
+  return requestPreparedOrDirectSharedAudio(selectedText, message, {
+    ...dependencies,
+    preparedSharedAudioWaitMs: remainingWaitMs
+  });
 }
 
 async function preferAudioBeforeSpeechFallback(fastResult, options = {}) {
