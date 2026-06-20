@@ -377,6 +377,71 @@ test("context menu still plays shared audio after the fast wait window", async (
   assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
 });
 
+test("context menu uses local fallback after the audio fallback budget", async () => {
+  const calls = [];
+  const local = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "structured-source"
+  };
+  const direct = {
+    ...local,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Delayed shared audio",
+        url: "https://audio.example/delayed-after-budget.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  let finishDirect;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+
+  const result = await Promise.race([
+    handleContextMenuClick({ menuItemId: "say", selectionText: " Exampletown " }, { id: 42 }, {
+      resolveOptionsForMenuId: () => ({
+        ok: true,
+        source: "context-menu",
+        options: { useOnline: false }
+      }),
+      normalizeSelection: (value) => String(value || "").trim(),
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return {};
+      },
+      setStorage: async (value) => calls.push(["setStorage", value]),
+      requestSharedAudio: async (text, value, options) => {
+        calls.push(["requestSharedAudio", text, value, options]);
+        return value ? null : directPromise;
+      },
+      resolveSelection: async (text, options) => {
+        calls.push(["resolveSelection", text, options]);
+        await delay(10);
+        return local;
+      },
+      playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+      directSharedAudioWaitMs: 5,
+      contextMenuAudioFallbackWaitMs: 25,
+      directSharedAudioFallbackWaitMs: 300,
+      sharedAudioWaitMs: 5,
+      lastResultKey: "lastResult"
+    }),
+    delay(80).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.equal(result.result, local);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === local), true);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), false);
+
+  finishDirect();
+  await delay(0);
+});
+
 test("plain context menu only checks local shared audio after local resolution", async () => {
   const calls = [];
   const resolved = {

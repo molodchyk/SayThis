@@ -11,7 +11,7 @@ import {
 } from "./prepared-shared-audio-flow.js";
 
 const DEFAULT_DIRECT_SHARED_AUDIO_WAIT_MS = 120;
-const DEFAULT_DIRECT_SHARED_AUDIO_FALLBACK_WAIT_MS = 1200;
+const DEFAULT_CONTEXT_MENU_AUDIO_FALLBACK_WAIT_MS = 700;
 const DEFAULT_STORED_RESULT_GRACE_MS = 10;
 
 export async function handleContextMenuClick(info = {}, tab = {}, dependencies = {}) {
@@ -196,8 +196,9 @@ async function fallbackAudioCandidate(
   localPlayablePromise,
   dependencies = {}
 ) {
-  const fallbackWaitMs = dependencies.directSharedAudioFallbackWaitMs ??
-    DEFAULT_DIRECT_SHARED_AUDIO_FALLBACK_WAIT_MS;
+  const fallbackWaitMs = dependencies.contextMenuAudioFallbackWaitMs ??
+    dependencies.directSharedAudioFallbackWaitMs ??
+    DEFAULT_CONTEXT_MENU_AUDIO_FALLBACK_WAIT_MS;
   return await firstNonNullResult([
     promiseWithinWait(directSharedAudioPromise, fallbackWaitMs),
     promiseWithinWait(localAudioPromise, fallbackWaitMs)

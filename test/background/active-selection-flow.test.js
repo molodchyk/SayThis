@@ -341,6 +341,72 @@ test("keyboard command still plays shared audio after the fast wait window", asy
   assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
 });
 
+test("keyboard command uses local fallback after the audio fallback budget", async () => {
+  const calls = [];
+  const local = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "structured-source"
+  };
+  const direct = {
+    ...local,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Delayed shared audio",
+        url: "https://audio.example/delayed-after-budget.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  let finishDirect;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+
+  const result = await Promise.race([
+    handleActiveSelectionCommand({ source: "keyboard" }, {
+      getActiveTab: async () => ({ id: 7 }),
+      readSelectionFromTab: async (tabId) => {
+        calls.push(["readSelectionFromTab", tabId]);
+        return "Exampletown";
+      },
+      getStorage: async (keys) => {
+        calls.push(["getStorage", keys]);
+        return {};
+      },
+      setStorage: async (value) => calls.push(["setStorage", value]),
+      requestSharedAudio: async (text, value, options) => {
+        calls.push(["requestSharedAudio", text, value, options]);
+        return value ? null : directPromise;
+      },
+      resolveSelection: async (text, options) => {
+        calls.push(["resolveSelection", text, options]);
+        await delay(10);
+        return local;
+      },
+      playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+      directSharedAudioWaitMs: 5,
+      activeSelectionAudioFallbackWaitMs: 25,
+      directSharedAudioFallbackWaitMs: 300,
+      sharedAudioWaitMs: 5,
+      lastSelectionKey: "lastSelection",
+      lastSourceKey: "lastSource",
+      lastResultKey: "lastResult"
+    }),
+    delay(80).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.equal(result.result, local);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === local), true);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), false);
+
+  finishDirect();
+  await delay(0);
+});
+
 test("keyboard command reuses shared audio prepared from selection", async () => {
   clearPreparedSharedAudioForTests();
   const calls = [];

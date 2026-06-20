@@ -427,7 +427,9 @@ async function waitForSelectionPreparedSharedAudio(
 
 async function preferAudioBeforeSpeechFallback(fastResult, options = {}) {
   if (!fastResult) {
-    return options.fallbackAudioPromise || null;
+    return options.preferImmediatePlayback
+      ? options.selectionAudioFallbackPromise || options.fallbackAudioPromise || null
+      : options.fallbackAudioPromise || null;
   }
 
   if (!options.preferImmediatePlayback || getBestAudio(fastResult)?.url) {
