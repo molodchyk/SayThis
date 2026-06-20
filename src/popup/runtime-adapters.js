@@ -39,15 +39,21 @@ export async function readActiveTabSelection(dependencies = {}) {
       return "";
     }
 
-    const [result] = await dependencies.executeScript?.({
-      target: { tabId: tab.id },
+    const results = await dependencies.executeScript?.({
+      target: { tabId: tab.id, allFrames: true },
       func: () => window.getSelection()?.toString() || ""
     });
 
-    return normalizeSelection(result?.result);
+    return firstNormalizedSelection(results);
   } catch {
     return "";
   }
+}
+
+function firstNormalizedSelection(results = []) {
+  return (Array.isArray(results) ? results : [])
+    .map((item) => normalizeSelection(item?.result))
+    .find(Boolean) || "";
 }
 
 export async function readPopupSettings(dependencies = {}) {

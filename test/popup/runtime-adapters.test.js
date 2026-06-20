@@ -96,8 +96,22 @@ test("reads and normalizes active tab selection", async () => {
   assert.equal(selection, "Gnocchi alla romana");
   assert.deepEqual(calls, [
     ["queryTabs", { active: true, currentWindow: true }],
-    ["executeScript", { tabId: 7 }]
+    ["executeScript", { tabId: 7, allFrames: true }]
   ]);
+});
+
+test("reads the first non-empty active tab frame selection", async () => {
+  const selection = await readActiveTabSelection({
+    queryTabs: async () => [{ id: 7 }],
+    executeScript: async () => [
+      { result: "" },
+      { result: "   " },
+      { result: "  Chiaroscuro  " },
+      { result: "Ignored later selection" }
+    ]
+  });
+
+  assert.equal(selection, "Chiaroscuro");
 });
 
 test("returns empty selection when there is no readable active tab", async () => {
