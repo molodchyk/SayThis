@@ -433,6 +433,80 @@ test("keyboard command reuses shared audio prepared from selection", async () =>
   clearPreparedSharedAudioForTests();
 });
 
+test("keyboard command plays prepared shared audio without waiting for stored probe", async () => {
+  clearPreparedSharedAudioForTests();
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Prepared shared audio",
+        url: "https://audio.example/prepared-fast.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  const selectionTrace = {
+    id: "selection-preload-fast-keyboard",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let finishDirect;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+  const dependencies = {
+    getActiveTab: async () => ({ id: 7 }),
+    readSelectionFromTab: async (tabId) => {
+      calls.push(["readSelectionFromTab", tabId]);
+      return "Exampletown";
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      await delay(100);
+      return {};
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return directPromise;
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve before prepared shared audio plays");
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    storedResultGraceMs: 100,
+    directSharedAudioWaitMs: 200,
+    preparedSharedAudioTtlMs: 1000,
+    lastSelectionKey: "lastSelection",
+    lastSourceKey: "lastSource",
+    lastResultKey: "lastResult"
+  };
+
+  prepareSharedAudio("Exampletown", {
+    rate: 0.82,
+    trace: selectionTrace
+  }, dependencies);
+  const resultPromise = handleActiveSelectionCommand({ source: "keyboard" }, dependencies);
+  setTimeout(finishDirect, 10);
+
+  const result = await Promise.race([
+    resultPromise,
+    delay(60).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
+
+  await delay(0);
+  clearPreparedSharedAudioForTests();
+});
+
 test("online keyboard command reuses matching stored audio before local fallback can resolve it", async () => {
   const calls = [];
   const stored = {

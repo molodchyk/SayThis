@@ -529,6 +529,88 @@ test("context menu reuses shared audio prepared from selection", async () => {
   clearPreparedSharedAudioForTests();
 });
 
+test("context menu plays prepared shared audio without waiting for visible or stored probes", async () => {
+  clearPreparedSharedAudioForTests();
+  const calls = [];
+  const direct = {
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        label: "Prepared shared audio",
+        url: "https://audio.example/prepared-fast.mp3",
+        quality: "generated"
+      }]
+    }
+  };
+  const selectionTrace = {
+    id: "selection-preload-fast-context",
+    source: "content-selection",
+    action: "select-to-hear",
+    startedAt: Date.now()
+  };
+  let finishDirect;
+  const directPromise = new Promise((resolve) => {
+    finishDirect = () => resolve(direct);
+  });
+  const dependencies = {
+    resolveOptionsForMenuId: () => ({
+      ok: true,
+      source: "context-menu",
+      options: { useOnline: false }
+    }),
+    normalizeSelection: (value) => String(value || "").trim(),
+    getVisibleResultOnTab: async (tabId) => {
+      calls.push(["getVisibleResultOnTab", tabId]);
+      return new Promise(() => {});
+    },
+    getStorage: async (keys) => {
+      calls.push(["getStorage", keys]);
+      await delay(100);
+      return {};
+    },
+    setStorage: async (value) => calls.push(["setStorage", value]),
+    requestSharedAudio: async (text, value, options) => {
+      calls.push(["requestSharedAudio", text, value, options]);
+      return directPromise;
+    },
+    resolveSelection: async () => {
+      throw new Error("should not resolve before prepared shared audio plays");
+    },
+    playResolvedResult: async (value, tabId) => calls.push(["playResolvedResult", value, tabId]),
+    visibleResultGraceMs: 100,
+    storedResultGraceMs: 100,
+    directSharedAudioWaitMs: 200,
+    preparedSharedAudioTtlMs: 1000,
+    lastResultKey: "lastResult"
+  };
+
+  prepareSharedAudio("Exampletown", {
+    rate: 0.82,
+    trace: selectionTrace
+  }, dependencies);
+  const resultPromise = handleContextMenuClick(
+    { menuItemId: "say", selectionText: " Exampletown " },
+    { id: 42 },
+    dependencies
+  );
+  setTimeout(finishDirect, 10);
+
+  const result = await Promise.race([
+    resultPromise,
+    delay(60).then(() => "timeout")
+  ]);
+
+  assert.notEqual(result, "timeout");
+  assert.equal(result.handled, true);
+  assert.equal(result.result, direct);
+  assert.equal(calls.some((call) => call[0] === "playResolvedResult" && call[1] === direct), true);
+
+  await delay(0);
+  clearPreparedSharedAudioForTests();
+});
+
 test("context menu does not wait on a stuck prepared shared-audio request", async () => {
   clearPreparedSharedAudioForTests();
   const calls = [];

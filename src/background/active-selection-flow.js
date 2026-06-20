@@ -6,6 +6,7 @@ import {
   resolvePlayableResult
 } from "./pronunciation-playback-flow.js";
 import {
+  hasPreparedSharedAudio,
   requestPreparedOrDirectSharedAudio
 } from "./prepared-shared-audio-flow.js";
 
@@ -168,9 +169,11 @@ async function firstActiveSelectionAudioCandidate(selectedText, options = {}, de
     storedCandidatePromise,
     dependencies.storedResultGraceMs ?? DEFAULT_STORED_RESULT_GRACE_MS
   );
-  const directSharedAudioPromise = storedGracePromise.then((candidate) => candidate
-    ? null
-    : directSharedAudioCandidate(selectedText, options, dependencies, trace));
+  const directSharedAudioPromise = hasPreparedSharedAudio(selectedText, { trace })
+    ? directSharedAudioCandidate(selectedText, options, dependencies, trace)
+    : storedGracePromise.then((candidate) => candidate
+      ? null
+      : directSharedAudioCandidate(selectedText, options, dependencies, trace));
   const localPlayablePromise = storedGracePromise.then((candidate) => candidate
     ? candidate
     : localPlayableCandidate(selectedText, options, dependencies, trace));
