@@ -352,6 +352,71 @@ test("reuses local approved shared audio before requesting the endpoint", async 
   assert.equal(storage.state.lastResult, refreshed);
 });
 
+test("passes playback trace through local approved shared audio refresh", async () => {
+  const storage = storageHarness({
+    approvedCommunityEntries: {
+      exampletown: {
+        term: "Exampletown",
+        lookupKey: "exampletown",
+        sourceForm: "Przykladowo",
+        language: "pl",
+        ttsLang: "pl-PL",
+        audioUrl: "https://example.com/audio/aud_1234567890abcdef",
+        sourceStatus: "generated-audio",
+        trustSignals: ["moderator-reviewed", "generated-audio", "audio-backed"]
+      }
+    },
+    settings: {
+      communityEndpoint: "https://example.com/community"
+    }
+  });
+  const calls = [];
+  const trace = {
+    id: "background-trace",
+    source: "background",
+    action: "context-menu",
+    startedAt: 1800000000000
+  };
+  const baseResult = {
+    query: "Exampletown",
+    display: "Exampletown",
+    sourceForm: "Przykladowo",
+    language: "pl",
+    ttsLang: "pl-PL",
+    sourceStatus: "structured-source"
+  };
+  const refreshed = {
+    ...baseResult,
+    sourceStatus: "generated-audio",
+    pronunciation: {
+      audio: [{
+        url: "https://example.com/audio/aud_1234567890abcdef",
+        quality: "generated"
+      }]
+    }
+  };
+
+  const result = await requestSharedAudioForResult("Exampletown", baseResult, { trace }, {
+    ...storage.dependencies,
+    fetch: async () => {
+      throw new Error("should not fetch shared audio that is already approved locally");
+    },
+    resolveSelection: async (text, options) => {
+      calls.push(["resolveSelection", text, options]);
+      return refreshed;
+    }
+  });
+
+  assert.equal(result, refreshed);
+  assert.deepEqual(calls, [
+    ["resolveSelection", "Exampletown", {
+      useOnline: false,
+      localResult: baseResult,
+      trace
+    }]
+  ]);
+});
+
 test("local-only shared audio returns local approved audio without requesting the endpoint", async () => {
   const storage = storageHarness({
     approvedCommunityEntries: {

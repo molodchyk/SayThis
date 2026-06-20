@@ -189,6 +189,10 @@ export async function requestSharedAudioForResult(text, result = null, options =
     throw new Error("Shared audio needs a useful resolved source form and language.");
   }
   const skipRefresh = options.skipRefresh === true || (options.directLookup === true && !baseResult);
+  const refreshOptions = {
+    skipRefresh,
+    ...(options.trace ? { trace: options.trace } : {})
+  };
 
   const localEntry = approvedAudioEntryForRequest(stored[storageKeys.approvedCommunityEntries], body);
   if (localEntry) {
@@ -208,7 +212,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
       aliasEntry || localEntry,
       dependencies,
       storageKeys,
-      { skipRefresh }
+      refreshOptions
     );
   }
 
@@ -251,7 +255,7 @@ export async function requestSharedAudioForResult(text, result = null, options =
     attachedEntry,
     dependencies,
     storageKeys,
-    { skipRefresh }
+    refreshOptions
   );
 }
 
@@ -521,11 +525,18 @@ function optionalListField(key, value) {
   return normalized.length ? { [key]: normalized } : {};
 }
 
-async function refreshSharedAudioResult(selectedText, baseResult, dependencies = {}, storageKeys = DEFAULT_STORAGE_KEYS) {
+async function refreshSharedAudioResult(
+  selectedText,
+  baseResult,
+  dependencies = {},
+  storageKeys = DEFAULT_STORAGE_KEYS,
+  options = {}
+) {
   const resolved = typeof dependencies.resolveSelection === "function"
     ? await dependencies.resolveSelection(selectedText, {
       useOnline: false,
-      localResult: baseResult
+      localResult: baseResult,
+      ...(options.trace ? { trace: options.trace } : {})
     })
     : baseResult;
 
@@ -550,7 +561,7 @@ async function refreshSharedAudioResultWithEntry(
   let refreshed = baseResult;
   if (!options.skipRefresh) {
     try {
-      refreshed = await refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys);
+      refreshed = await refreshSharedAudioResult(selectedText, baseResult, dependencies, storageKeys, options);
     } catch {
       refreshed = baseResult;
     }
