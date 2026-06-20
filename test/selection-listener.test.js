@@ -26,6 +26,32 @@ test("committed selection sends prepare and speak with one trace", async () => {
   assert.equal(harness.sentMessages[0].trace.id, harness.sentMessages[1].trace.id);
 });
 
+test("committed selection trims adjacent sentence punctuation before speaking", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection('"Exampletown,"');
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
+test("committed selection preserves internal symbol terms while trimming wrappers", async () => {
+  const harness = await installSelectionListener();
+
+  harness.setSelection("(P&L),");
+  harness.dispatch("pointerup");
+  await delay(25);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", "P&L"],
+    ["SAYTHIS_SPEAK", "P&L"]
+  ]);
+});
+
 test("committed selection speaks without waiting for a timer tick", async () => {
   const harness = await installSelectionListener();
 

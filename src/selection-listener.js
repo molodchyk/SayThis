@@ -16,6 +16,7 @@
   const PLAYBACK_PRIME_COOLDOWN_MS = 3000;
   const MAX_AUTO_TEXT_LENGTH = 80;
   const MAX_AUTO_WORDS = 5;
+  const EDGE_SELECTED_TEXT_PUNCTUATION = /^[\s"'([{]+|[\s"')\]},.;:!?]+$/g;
   const chromeApi = globalThis.chrome;
 
   let timerId = null;
@@ -403,7 +404,7 @@
   function readSelectedText() {
     const editableText = readEditableSelection();
     if (editableText) {
-      return normalizeSelection(editableText);
+      return normalizeSelectedText(editableText);
     }
 
     const selection = window.getSelection?.();
@@ -411,7 +412,7 @@
       return "";
     }
 
-    return normalizeSelection(selection.toString());
+    return normalizeSelectedText(selection.toString());
   }
 
   function readEditableSelection() {
@@ -585,5 +586,11 @@
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, 160);
+  }
+
+  function normalizeSelectedText(value) {
+    return normalizeSelection(value)
+      .replace(EDGE_SELECTED_TEXT_PUNCTUATION, "")
+      .trim();
   }
 })();
