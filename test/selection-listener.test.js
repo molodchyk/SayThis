@@ -285,6 +285,54 @@ test("keyboard selection shortcuts prime playback before selected text exists", 
   ]);
 });
 
+test("pointer selection prepares while dragging and speaks on release", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("pointerdown");
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(60);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
+  ]);
+
+  harness.dispatch("pointerup");
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
+test("keyboard selection prepares while extending and speaks on release", async () => {
+  const harness = await installSelectionListener();
+
+  harness.dispatch("keydown", { key: "ArrowRight", shiftKey: true });
+  harness.setSelection("Exampletown");
+  harness.dispatch("selectionchange");
+  await delay(60);
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"]
+  ]);
+
+  harness.dispatch("keyup", { key: "ArrowRight", shiftKey: true });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(harness.sentMessages.map((message) => [message.type, message.text || ""]), [
+    ["SAYTHIS_PREPARE_PLAYBACK", ""],
+    ["SAYTHIS_PREPARE_PLAYBACK", "Exampletown"],
+    ["SAYTHIS_SPEAK", "Exampletown"]
+  ]);
+});
+
 test("keyboard selection shortcuts commit selected text on keyup", async () => {
   const harness = await installSelectionListener();
 

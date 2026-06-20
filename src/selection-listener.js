@@ -30,6 +30,8 @@
   let lastPreparedTrace = null;
   let selectionGestureStartedAt = 0;
   let activeSelectionStartedAt = 0;
+  let pointerSelectionInProgress = false;
+  let keyboardSelectionInProgress = false;
   let lastPrimeAt = 0;
   let primePlaybackPromise = null;
   let lastSettings = null;
@@ -43,6 +45,7 @@
     }
 
     markSelectionGestureStarted();
+    pointerSelectionInProgress = true;
     primePlaybackSurface();
   }, true);
   document.addEventListener("selectstart", (event) => {
@@ -60,6 +63,7 @@
 
     if (isLikelyKeyboardSelection(event)) {
       markSelectionGestureStarted();
+      keyboardSelectionInProgress = true;
       primePlaybackSurface();
     }
   }, true);
@@ -76,6 +80,10 @@
     if (!hasCommittedCheckPending()) {
       primePlaybackSurface();
     }
+    if (isSelectionGestureInProgress()) {
+      schedulePotentialSelectionPreparation(SELECTION_PREPARE_DEBOUNCE_MS);
+      return;
+    }
     scheduleSelectionCheck(SELECTION_CHANGE_DEBOUNCE_MS, { stable: true });
   }, true);
   document.addEventListener("pointerup", scheduleCommittedSelectionCheck, true);
@@ -83,10 +91,13 @@
   document.addEventListener("select", scheduleCommittedSelectionCheck, true);
   document.addEventListener("keyup", scheduleKeyboardCommittedSelectionCheck, true);
   document.addEventListener("touchend", scheduleCommittedSelectionCheck, true);
+  document.addEventListener("pointercancel", clearSelectionGestureInProgress, true);
+  document.addEventListener("touchcancel", clearSelectionGestureInProgress, true);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       clearScheduledCheck();
       clearScheduledPrepare();
+      clearSelectionGestureInProgress();
     }
   });
 
@@ -138,6 +149,7 @@
     }
 
     markActiveSelectionStarted();
+    clearSelectionGestureInProgress();
     scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
   }
 
@@ -147,6 +159,7 @@
     }
 
     markActiveSelectionStarted();
+    keyboardSelectionInProgress = false;
     scheduleSelectionCheck(COMMITTED_SELECTION_DEBOUNCE_MS);
   }
 
@@ -188,6 +201,7 @@
     lastPreparedTrace = null;
     selectionGestureStartedAt = 0;
     activeSelectionStartedAt = 0;
+    clearSelectionGestureInProgress();
   }
 
   function markSelectionGestureStarted() {
@@ -199,6 +213,15 @@
     if (!activeSelectionStartedAt) {
       activeSelectionStartedAt = selectionGestureStartedAt || Date.now();
     }
+  }
+
+  function isSelectionGestureInProgress() {
+    return pointerSelectionInProgress || keyboardSelectionInProgress;
+  }
+
+  function clearSelectionGestureInProgress() {
+    pointerSelectionInProgress = false;
+    keyboardSelectionInProgress = false;
   }
 
   function primePlaybackSurface() {
